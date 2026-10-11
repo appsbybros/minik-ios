@@ -63,6 +63,10 @@ struct RootView: View {
                 )
             }
         }
+        // ISSUE-004: iPadOS 26 draws the portrait-only language apps between black bars
+        // on an iPad held in landscape; the notice asks to turn the iPad upright. It is
+        // applied inside the locale and layout-direction environment below.
+        .minikPortraitNotice(isEnabled: configuration.contentDomain == .language)
         // The language and Math apps are drawn in the light rainbow-sky design with
         // dark text on light surfaces; in Dark Mode the system's default text turned
         // white on Math's white answer tiles. The standalone Ping Pong keeps the system's.

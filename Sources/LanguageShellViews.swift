@@ -3,29 +3,73 @@ import UIKit
 
 /// Android IntroScreen / fragment_intro_plus.xml in the rainbow-sky design: the sky,
 /// the MINIK+plus logo with the score tiles beside it, and a glass panel with the
-/// welcome, Parent Area and Practice. These are Language routes; Math has its own hub.
+/// welcome, the child selector with Add, Edit and Delete, Parent Area, Practice
+/// and Remove Ads. These are Language routes; Math has its own hub.
 struct LanguageIntroView: View {
     let rewards: RewardState
     let variant: ProductVariant
+    let childProfiles: ChildProfileStore
+    let commerceController: MinikCommerceController
+    /// Another child (or the guest) now plays: the hub reloads that learner's values.
+    let onLearnerChanged: () -> Void
     let onPractice: () -> Void
     let onParentArea: () -> Void
     @Environment(\.interfaceLocaleID) private var interfaceLocaleID
     // Android's sp text follows the font-size setting; this follows Dynamic Type.
     @ScaledMetric(relativeTo: .title2) private var textPercent: CGFloat = 100
+    @State private var childDialog: ChildProfileDialogRequest?
+    @State private var removeAdsGateIsPresented = false
+    /// A grown-up started a purchase here, so its outcome is shown under the button.
+    @State private var removeAdsWasRequested = false
 
     init(
         rewards: RewardState,
         variant: ProductVariant = .minikPlus,
+        childProfiles: ChildProfileStore,
+        commerceController: MinikCommerceController,
+        onLearnerChanged: @escaping () -> Void,
         onPractice: @escaping () -> Void,
         onParentArea: @escaping () -> Void
     ) {
         self.rewards = rewards
         self.variant = variant
+        self.childProfiles = childProfiles
+        self.commerceController = commerceController
+        self.onLearnerChanged = onLearnerChanged
         self.onPractice = onPractice
         self.onParentArea = onParentArea
     }
 
     var body: some View {
+        ZStack {
+            introScreen
+                // The name dialog's keyboard does not reflow the intro behind it.
+                .ignoresSafeArea(.keyboard)
+            if let request = childDialog {
+                ChildProfileDialog(request: request, store: childProfiles) { learnerChanged in
+                    closeChildDialog()
+                    if learnerChanged {
+                        onLearnerChanged()
+                    }
+                }
+                .transition(.opacity)
+                .zIndex(1)
+            }
+        }
+        // Apple's Kids rules: a grown-up check comes before any purchase.
+        .sheet(isPresented: $removeAdsGateIsPresented) {
+            ParentalGateView(
+                onCancel: { removeAdsGateIsPresented = false },
+                onUnlock: {
+                    removeAdsGateIsPresented = false
+                    removeAdsWasRequested = true
+                    Task { await commerceController.purchaseRemoveAds() }
+                }
+            )
+        }
+    }
+
+    private var introScreen: some View {
         GeometryReader { geometry in
             let metrics = LanguagePrettyMetrics(size: geometry.size)
             let panelWidth = max(1, min(metrics.panelMaxWidth, geometry.size.width - 2 * metrics.panelMargin))
@@ -34,11 +78,15 @@ struct LanguageIntroView: View {
                 header(metrics)
                 MinikGlassPanel(padding: 0, cornerRadius: metrics.panelRadius) {
                     // The panel fits the screen at ordinary sizes, its buttons at the
-                    // bottom; when larger text makes it taller, it scrolls instead.
+                    // bottom. On shorter screens Minik's picture gets smaller first, as
+                    // Android's fitWelcomeImageToCard does; when the content still does
+                    // not fit (larger text), the panel scrolls.
                     ViewThatFits(in: .vertical) {
                         panelContent(metrics, artWidth: artWidth, fillsHeight: true)
+                        panelContent(metrics, artWidth: artWidth * 0.78, fillsHeight: true)
+                        panelContent(metrics, artWidth: artWidth * 0.6, fillsHeight: true)
                         ScrollView {
-                            panelContent(metrics, artWidth: artWidth, fillsHeight: false)
+                            panelContent(metrics, artWidth: artWidth * 0.6, fillsHeight: false)
                         }
                         .scrollBounceBehavior(.basedOnSize)
                         .scrollIndicators(.hidden)
@@ -81,9 +129,10 @@ struct LanguageIntroView: View {
         .padding(.top, metrics.topMargin)
     }
 
-    /// The navy welcome title, Minik on the rainbow, and the two big pill buttons:
-    /// Parent Area (purple) and Practice (warm), as on Android; centred in the panel
-    /// when it has room to spare (tall phones, iPad).
+    /// The navy welcome title, Minik on the rainbow, the child section, and the big
+    /// pill buttons: Parent Area (purple) and Practice (warm), with the white
+    /// Remove Ads under them, as on Android; centred in the panel when it has room
+    /// to spare (tall phones, iPad).
     private func panelContent(_ metrics: LanguagePrettyMetrics, artWidth: CGFloat, fillsHeight: Bool) -> some View {
         VStack(spacing: 0) {
             if fillsHeight {
@@ -101,6 +150,21 @@ struct LanguageIntroView: View {
                 .frame(width: artWidth, height: artWidth / MinikPretty.Art.welcomeAspect)
                 .padding(.top, 2)
                 .padding(.bottom, metrics.introSectionGap)
+            ChildProfileSection(
+                store: childProfiles,
+                metrics: ChildProfileSectionMetrics(
+                    tablet: metrics.tablet,
+                    scale: metrics.scale,
+                    textScale: textScale
+                ),
+                onSelect: selectChild,
+                onAdd: { presentChildDialog(.add) },
+                onEdit: { child in presentChildDialog(.rename(child)) },
+                onDelete: { child in presentChildDialog(.delete(child)) }
+            )
+            .frame(maxWidth: metrics.introColumnMaxWidth)
+            .padding(.horizontal, metrics.introContentMargin)
+            .padding(.bottom, metrics.introSectionGap)
             VStack(spacing: metrics.buttonGap) {
                 Button(action: onParentArea) {
                     Text(interfaceLocaleID.text("Parent Area"))
@@ -120,6 +184,13 @@ struct LanguageIntroView: View {
                     fontSize: metrics.buttonTextSize * textScale,
                     minHeight: metrics.buttonHeight
                 ))
+                LanguageIntroRemoveAdsButton(
+                    commerce: commerceController,
+                    fontSize: metrics.removeAdsTextSize * textScale,
+                    minHeight: metrics.removeAdsHeight,
+                    showsPurchaseOutcome: removeAdsWasRequested,
+                    onRemoveAds: { removeAdsGateIsPresented = true }
+                )
             }
             .frame(maxWidth: metrics.introColumnMaxWidth)
             .padding(.horizontal, metrics.introContentMargin)
@@ -135,6 +206,121 @@ struct LanguageIntroView: View {
     /// Dynamic Type for the intro's text, within what its fixed layout holds.
     private var textScale: CGFloat {
         min(1.3, max(0.9, textPercent / 100))
+    }
+
+    /// Android's child spinner: the chosen child's points and progress replace
+    /// the previous child's.
+    private func selectChild(_ id: UUID) {
+        guard id != childProfiles.selectedChildID else { return }
+        childProfiles.selectChild(id)
+        onLearnerChanged()
+    }
+
+    private func presentChildDialog(_ request: ChildProfileDialogRequest) {
+        withAnimation(.easeOut(duration: 0.2)) {
+            childDialog = request
+        }
+    }
+
+    private func closeChildDialog() {
+        withAnimation(.easeOut(duration: 0.2)) {
+            childDialog = nil
+        }
+    }
+}
+
+/// Android's removeAdsButton under Practice: a white pill with a lavender rim and
+/// pretty_purple_text (bg_pretty_button_white). Here it opens the grown-up check
+/// and then the App Store purchase the Parent Area offers. It is hidden once ads
+/// are removed, or where this build sells no Remove Ads; after a purchase made
+/// here it shows the outcome instead of Android's toast.
+private struct LanguageIntroRemoveAdsButton: View {
+    @ObservedObject var commerce: MinikCommerceController
+    let fontSize: CGFloat
+    let minHeight: CGFloat
+    let showsPurchaseOutcome: Bool
+    let onRemoveAds: () -> Void
+    @Environment(\.interfaceLocaleID) private var interfaceLocaleID
+
+    /// bg_pretty_button_white: a white face, the #CDBDFB rim and a soft #223A2C7A lip.
+    private static let look = MinikPretty.PillLook(
+        top: Color.white,
+        bottom: MinikPretty.color(0xFBF9FF),
+        lip: MinikPretty.shadowInk.opacity(0.13),
+        rim: MinikPretty.lavenderRim,
+        ink: MinikPretty.color(0x6A55D6),
+        inkShadow: Color.clear
+    )
+
+    init(
+        commerce: MinikCommerceController,
+        fontSize: CGFloat,
+        minHeight: CGFloat,
+        showsPurchaseOutcome: Bool,
+        onRemoveAds: @escaping () -> Void
+    ) {
+        self.commerce = commerce
+        self.fontSize = fontSize
+        self.minHeight = minHeight
+        self.showsPurchaseOutcome = showsPurchaseOutcome
+        self.onRemoveAds = onRemoveAds
+    }
+
+    var body: some View {
+        if commerce.isRemoveAdsActive {
+            if showsPurchaseOutcome {
+                Label {
+                    Text(verbatim: interfaceLocaleID.text("Ads removed"))
+                } icon: {
+                    Image(systemName: "checkmark.seal.fill")
+                }
+                .font(MinikPretty.titleFont(fontSize))
+                .foregroundStyle(MinikPretty.color(0x1F8A5B))
+                .frame(maxWidth: .infinity, minHeight: minHeight)
+                .accessibilityElement(children: .combine)
+            }
+        } else if commerce.configuration.removeAdsProductID != nil {
+            VStack(spacing: 6) {
+                Button(action: onRemoveAds) {
+                    Text(verbatim: interfaceLocaleID.text("Remove Ads"))
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(MinikPretty.HeroButtonStyle(
+                    look: Self.look,
+                    fontSize: fontSize,
+                    minHeight: minHeight
+                ))
+                .disabled(isPurchasing)
+                .accessibilityHint(Text(verbatim: interfaceLocaleID.text("Opens a grown-up check before contacting the App Store")))
+                if showsPurchaseOutcome, let outcome = purchaseOutcome {
+                    Text(verbatim: outcome)
+                        .font(MinikPretty.bodyFont(max(13, fontSize * 0.75)))
+                        .foregroundStyle(commerce.status == .failed ? MinikPretty.color(0xC2416E) : MinikPretty.softInk)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+    }
+
+    private var isPurchasing: Bool {
+        commerce.status == .purchasing || commerce.status == .restoring
+    }
+
+    /// The Parent Area's purchase messages, in the interface language.
+    private var purchaseOutcome: String? {
+        switch commerce.status {
+        case .purchasing:
+            return interfaceLocaleID.text("Contacting the App Store…")
+        case .pending:
+            return interfaceLocaleID.text("Purchase approval is pending.")
+        case .cancelled:
+            return interfaceLocaleID.text("Purchase cancelled.")
+        case .failed:
+            return interfaceLocaleID.text("The App Store request could not be completed.")
+        case .unconfigured, .loading, .ready, .restoring:
+            return nil
+        }
     }
 }
 
@@ -944,6 +1130,9 @@ private struct LanguagePrettyMetrics {
     var buttonHeight: CGFloat { value(68, 84) }
     var buttonGap: CGFloat { value(12, 20) }
     var buttonTextSize: CGFloat { value(28, 36) }
+    // pretty_intro_remove_ads_height and pretty_intro_remove_ads_text.
+    var removeAdsHeight: CGFloat { value(50, 60) }
+    var removeAdsTextSize: CGFloat { value(18, 24) }
 }
 
 private struct LanguageMenuRow: Identifiable {

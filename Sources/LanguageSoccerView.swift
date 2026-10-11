@@ -29,6 +29,31 @@ private struct LanguageSoccerGoalStar {
     let delay: Double
 }
 
+/// A kicked letter's ball, Android's ball1, ball2 or ball3. As on Android the
+/// next letter can be kicked as soon as one is, so several balls can fly at once:
+/// each has its own lifecycle and task, and its result counts in kick order.
+private struct LanguageSoccerFlight: Identifiable {
+    let id: UUID
+    let ball: SoccerAnswerBall
+    /// Worked out when the letter is kicked, against the keeper it will meet.
+    let resolution: LanguageSoccerShotResolution
+    /// Where the keeper is when the ball reaches it.
+    let keeperXAtImpact: Double
+    var lifecycle: LanguageSoccerShotLifecycle
+    /// Where the ball is drawn; nil once it has landed.
+    var point: CGPoint?
+    var shotTask: Task<Void, Never>?
+}
+
+/// A counted shot's keeper bookkeeping (shot totals, the keeper's next move). It
+/// waits until no ball is on its way, so every ball in the air meets the keeper
+/// its outcome was worked out against.
+private struct LanguageSoccerKeeperTally {
+    let scored: Bool
+    let gameContinues: Bool
+    let keeperXAtImpact: Double
+}
+
 /// The keeper sprite for one frame: facing, squash and hop.
 private struct LanguageSoccerKeeperPose {
     let mirrored: Bool
@@ -62,17 +87,31 @@ private struct LanguageSoccerIntroMetrics {
     var starBox: CGSize { wide ? CGSize(width: 162, height: 144) : CGSize(width: 80, height: 70) }
     var frameInsetX: CGFloat { 14 }
     var frameInsetY: CGFloat { 18 }
+    /// Between the four short lines, and above and inside "More Information".
+    var lineSpacing: CGFloat { wide ? 10 : 6 }
+    var moreInformationTop: CGFloat { wide ? 24 : 14 }
+    var moreInformationPadding: CGFloat { wide ? 20 : 12 }
 }
 
 struct LanguageSoccerView: View {
     @State private var practice: LanguageSoccerPracticeSession
-    @State private var lifecycle = LanguageSoccerShotLifecycle()
+    /// The finger: idle, or dragging one letter. A kick hands the letter its own
+    /// lifecycle (`flights`) and frees the finger for the next letter at once.
+    @State private var dragLifecycle = LanguageSoccerShotLifecycle()
     @State private var dragPoint: CGPoint?
     @State private var dragOffset = CGSize.zero
     @State private var lastDragSample: LanguageSoccerDragSample?
     @State private var dragVelocity = LanguageSoccerVector(dx: 0, dy: -1)
-    @State private var shotPoint: CGPoint?
-    @State private var shotTask: Task<Void, Never>?
+    /// Where the drag that kicked each letter began: that finger, still down,
+    /// never grabs its letter again, even once a wrong letter is back in its slot
+    /// (Android's per-letter `kicked` flag).
+    @State private var kickingDragStarts: [SoccerBallID: CGPoint] = [:]
+    /// The kicked letters, oldest first, until their result counts.
+    @State private var flights: [LanguageSoccerFlight] = []
+    @State private var keeperTallies: [LanguageSoccerKeeperTally] = []
+    /// The last counted shot, for the field's accessibility label.
+    @State private var lastSettledOutcome: GameOutcome?
+    @State private var celebrationTask: Task<Void, Never>?
     @State private var targetStartedAt = Date()
     @State private var roundStartedAt = Date()
     @State private var attemptIndex = 1
@@ -84,6 +123,8 @@ struct LanguageSoccerView: View {
     @State private var attemptTracker = LanguageOrderedTokenAttemptTracker()
     @State private var didEvaluateIntroduction = false
     @State private var showsIntroduction = false
+    /// The introduction's "More Information" starts closed every time.
+    @State private var showsMoreInformation = false
     @State private var introductionSecondsLeft = 44
     @State private var introductionCountdown: Task<Void, Never>?
     @State private var hasKicked = false
@@ -446,10 +487,13 @@ struct LanguageSoccerView: View {
 
     @ViewBuilder
     private func flightLayer(metrics: SoccerBoardMetrics, date: Date) -> some View {
-        if let selected = selectedBall, let shotPoint {
-            launchedBall(selected, metrics: metrics)
-                .position(shotPoint)
-                .accessibilityHidden(true)
+        // Every kicked letter's ball, as Android flies ball1, ball2 and ball3 at once.
+        ForEach(flights) { flight in
+            if let point = flight.point {
+                launchedBall(flight.ball, metrics: metrics)
+                    .position(point)
+                    .accessibilityHidden(true)
+            }
         }
         if let roundCelebration, roundCelebration.childWon {
             winningMinik(roundCelebration, metrics: metrics, date: date)
@@ -691,23 +735,26 @@ struct LanguageSoccerView: View {
 
     /// The letters keep their slots: a kicked letter leaves its gap, as Android
     /// hides the letter view instead of removing it. The view that owns the drag
-    /// stays in place for the whole drag (it follows the finger, then hides while
-    /// its ball flies), so the gesture is never torn down mid-drag. As on Android,
-    /// a wrong letter is back in its slot as soon as its ball disappears.
+    /// stays in place for the whole drag (it follows the finger), so the gesture
+    /// is never torn down mid-drag. A kicked letter hides and cannot be grabbed
+    /// while its ball flies; the other letters can be dragged at once, as on
+    /// Android. A wrong letter is back in its slot as soon as its result counts.
     @ViewBuilder
     private func letterRow(metrics: SoccerBoardMetrics, keeperMinX: Double) -> some View {
         let balls = session.round.answerBalls
         let availableIDs = Set(session.availableBalls.map(\.id))
+        let kickedIDs = kickedBallIDs
+        let heldBallID = draggingBallID
         ForEach(Array(balls.enumerated()), id: \.element.id) { index, ball in
             let resting = slotCenter(index: index, count: balls.count, metrics: metrics)
             if availableIDs.contains(ball.id) {
-                let isActive = activeBallID == ball.id
-                let followsFinger = isActive && isDraggingLetter
-                let isKicked = isActive && isShotAirborne
+                let isKicked = kickedIDs.contains(ball.id)
+                let followsFinger = heldBallID == ball.id
                 letterBall(ball, metrics: metrics)
                     .opacity(isKicked ? 0 : 1)
                     .position(followsFinger ? (dragPoint ?? resting) : resting)
                     .gesture(dragGesture(for: ball, resting: resting, metrics: metrics, keeperMinX: keeperMinX))
+                    .allowsHitTesting(!isKicked)
                     .accessibilityAction {
                         beginAccessibleShot(ball: ball, resting: resting, metrics: metrics, keeperMinX: keeperMinX)
                     }
@@ -716,19 +763,16 @@ struct LanguageSoccerView: View {
         }
     }
 
-    private var isDraggingLetter: Bool {
-        if case .dragging = lifecycle.phase { return true }
-        return false
+    /// The letter the finger holds, if any.
+    private var draggingBallID: SoccerBallID? {
+        guard case .dragging(let ballID) = dragLifecycle.phase else { return nil }
+        return ballID
     }
 
-    /// Launched, in flight or rebounding: the kicked letter's ball is in the air.
-    private var isShotAirborne: Bool {
-        switch lifecycle.phase {
-        case .launched, .inFlight, .rebounding:
-            return true
-        case .idle, .dragging, .finalized:
-            return false
-        }
+    /// The kicked letters whose result has not counted yet: flying, or landed and
+    /// waiting for an earlier kick. None of them can be grabbed again.
+    private var kickedBallIDs: Set<SoccerBallID> {
+        Set(flights.map(\.ball.id))
     }
 
     /// Android's letters flow right to left in centred rows of 68 dp slots
@@ -941,8 +985,11 @@ struct LanguageSoccerView: View {
         DragGesture(minimumDistance: 6, coordinateSpace: .named("languageSoccerGame"))
             .onChanged { value in
                 guard value.startLocation.y > metrics.releaseLineY else { return }
-                if lifecycle.acceptsNewDrag {
-                    guard lifecycle.beginDragging(ballID: ball.id) else { return }
+                // Android has no input lock: a free finger grabs any letter not in
+                // the air, even while other balls still fly. The finger that kicked
+                // this letter never grabs it again before it is lifted.
+                if dragLifecycle.acceptsNewDrag {
+                    guard kickingDragStarts[ball.id] != value.startLocation, grabLetter(ball.id) else { return }
                     lastDragSample = .init(point: value.startLocation, date: Date())
                     // Android keeps the letter where it was grabbed under the finger.
                     dragOffset = CGSize(
@@ -950,7 +997,7 @@ struct LanguageSoccerView: View {
                         height: resting.y - value.startLocation.y
                     )
                 }
-                guard activeBallID == ball.id, case .dragging = lifecycle.phase else { return }
+                guard draggingBallID == ball.id else { return }
                 updateVelocity(with: value.location)
                 let letterPoint = draggedLetterPoint(for: value.location)
                 dragPoint = letterPoint
@@ -958,11 +1005,15 @@ struct LanguageSoccerView: View {
                     locationY: Double(value.location.y),
                     releaseLineY: Double(metrics.releaseLineY)
                 ) {
+                    kickingDragStarts[ball.id] = value.startLocation
                     launch(ball: ball, start: letterPoint, metrics: metrics, keeperMinX: keeperMinX)
                 }
             }
             .onEnded { value in
-                guard activeBallID == ball.id, case .dragging = lifecycle.phase else { return }
+                if kickingDragStarts[ball.id] == value.startLocation {
+                    kickingDragStarts[ball.id] = nil
+                }
+                guard draggingBallID == ball.id else { return }
                 updateVelocity(with: value.location)
                 if LanguageSoccerLaunchPolicy.shouldLaunchOnRelease(
                     locationY: Double(value.location.y),
@@ -975,12 +1026,19 @@ struct LanguageSoccerView: View {
                         keeperMinX: keeperMinX
                     )
                 } else {
-                    lifecycle.cancelDrag(ballID: ball.id)
+                    dragLifecycle.cancelDrag(ballID: ball.id)
                     dragPoint = nil
                     lastDragSample = nil
                     dragOffset = .zero
                 }
             }
+    }
+
+    /// The finger takes a letter, unless that letter is already kicked and its
+    /// result has not counted yet.
+    private func grabLetter(_ ballID: SoccerBallID) -> Bool {
+        guard !kickedBallIDs.contains(ballID) else { return false }
+        return dragLifecycle.beginDragging(ballID: ballID)
     }
 
     private func draggedLetterPoint(for location: CGPoint) -> CGPoint {
@@ -1005,32 +1063,36 @@ struct LanguageSoccerView: View {
         metrics: SoccerBoardMetrics,
         keeperMinX: Double
     ) {
-        guard lifecycle.beginDragging(ballID: ball.id) else { return }
+        guard grabLetter(ball.id) else { return }
         dragVelocity = .init(dx: 0, dy: -1)
         launch(ball: ball, start: resting, metrics: metrics, keeperMinX: keeperMinX)
     }
 
+    /// Kicks the dragged letter. The kicks still in the air count first, as the
+    /// word is built in kick order, so the letter is judged against them. Its ball
+    /// then flies on its own and the finger is free for the next letter at once:
+    /// Android's LettersSoccerGame has no wait between kicks.
     private func launch(
         ball: SoccerAnswerBall,
         start: CGPoint,
         metrics: SoccerBoardMetrics,
         keeperMinX: Double
     ) {
-        guard let shotID = lifecycle.launch(ballID: ball.id) else { return }
+        let kickSession = practice.sessionForKick(ball.id, after: flights.map(\.ball.id))
+        guard let shotID = dragLifecycle.launch(ballID: ball.id) else { return }
+        let launchedLifecycle = dragLifecycle
+        dragLifecycle = LanguageSoccerShotLifecycle()
         dragPoint = nil
         dragOffset = .zero
-        shotPoint = start
         lastDragSample = nil
-        practice.selectBall(ball.id)
-        guard session.selectedBallID == ball.id else {
-            lifecycle.cancelAll()
-            shotPoint = nil
-            return
-        }
+        guard kickSession.selectedBallID == ball.id else { return }
 
         hasKicked = true
-        recordAttempt(for: ball)
-        if let cue = session.selectedOrderedTokenSpeechCue { speechPlayer.speak(cue) }
+        lastSettledOutcome = nil
+        recordAttempt(in: kickSession)
+        // The next letter's answer time runs from this kick.
+        targetStartedAt = Date()
+        if let cue = kickSession.selectedOrderedTokenSpeechCue { speechPlayer.speak(cue) }
         soundPlayer.playKick()
 
         let preliminary = shotGeometry(layout: metrics, keeperMinX: keeperMinX).resolve(
@@ -1045,13 +1107,16 @@ struct LanguageSoccerView: View {
             start: .init(x: Double(start.x), y: Double(start.y)),
             dragVelocity: dragVelocity
         )
-        runShot(
-            shotID: shotID,
-            start: start,
+        flights.append(LanguageSoccerFlight(
+            id: shotID,
+            ball: ball,
             resolution: resolution,
             keeperXAtImpact: projectedKeeperX,
-            metrics: metrics
-        )
+            lifecycle: launchedLifecycle,
+            point: start,
+            shotTask: nil
+        ))
+        runShot(shotID: shotID, start: start, resolution: resolution, metrics: metrics)
     }
 
     private func shotGeometry(layout: SoccerBoardMetrics, keeperMinX: Double) -> LanguageSoccerShotGeometry {
@@ -1069,29 +1134,30 @@ struct LanguageSoccerView: View {
         )
     }
 
+    /// One kicked ball's flight, on its own task so that other balls can fly at
+    /// the same time: to the goal line, then on into the net or back off the
+    /// keeper or a post. When it lands, the results that are due count.
     private func runShot(
         shotID: UUID,
         start: CGPoint,
         resolution: LanguageSoccerShotResolution,
-        keeperXAtImpact: Double,
         metrics: SoccerBoardMetrics
     ) {
-        shotTask?.cancel()
-        shotTask = Task { @MainActor in
-            guard lifecycle.beginFlight(shotID: shotID) else { return }
+        let shotTask = Task { @MainActor in
+            guard startFlight(shotID) else { return }
             let flightDuration = reduceMotion ? 0.02 : resolution.durationSeconds
             let impact = CGPoint(x: resolution.impactPoint.x, y: resolution.impactPoint.y)
             withAnimation(reduceMotion ? nil : .linear(duration: flightDuration)) {
-                shotPoint = impact
+                moveFlight(shotID, to: impact)
             }
             try? await Task.sleep(for: .seconds(flightDuration))
             guard !Task.isCancelled else { return }
 
             if let rebound = resolution.reboundPoint {
-                guard lifecycle.beginRebound(shotID: shotID) else { return }
+                guard startRebound(shotID) else { return }
                 let reboundDuration = reduceMotion ? 0.02 : (resolution.collision == .keeper ? 0.5 : 0.45)
                 withAnimation(reduceMotion ? nil : .easeOut(duration: reboundDuration)) {
-                    shotPoint = CGPoint(x: rebound.x, y: rebound.y)
+                    moveFlight(shotID, to: CGPoint(x: rebound.x, y: rebound.y))
                 }
                 soundPlayer.playKick()
                 try? await Task.sleep(for: .seconds(reboundDuration))
@@ -1107,59 +1173,143 @@ struct LanguageSoccerView: View {
                     flightDuration: flightDuration
                 )
                 withAnimation(.linear(duration: netDuration)) {
-                    shotPoint = net
+                    moveFlight(shotID, to: net)
                 }
                 try? await Task.sleep(for: .seconds(netDuration))
                 guard !Task.isCancelled else { return }
             }
 
-            guard lifecycle.finalize(shotID: shotID, outcome: resolution.outcome) else { return }
             // Android's finishShot hides the ball as soon as the shot ends.
-            shotPoint = nil
-            let educationalWasCorrect = session.educationalIsCorrect
-            practice.resolveShot(outcome: resolution.outcome)
-            let correctGoal = educationalWasCorrect == true && resolution.outcome == .goal
-            if educationalWasCorrect == false, resolution.outcome == .goal {
-                soundPlayer.playWrongLetterGoal()
-            }
-            if correctGoal {
-                goalStarsStartedAt = Date()
-            }
-            totalShots += 1
-            if resolution.outcome == .goal { goals += 1 }
-            recentGoalResults.append(resolution.outcome == .goal)
-            if recentGoalResults.count > 10 { recentGoalResults.removeFirst() }
+            guard landFlight(shotID, outcome: resolution.outcome) else { return }
+            settleLandedShots(metrics: metrics)
+        }
+        if let index = flightIndex(shotID) {
+            flights[index].shotTask = shotTask
+        }
+    }
 
-            let completedRound = session.isComplete
-            updateKeeperAfterShot(currentX: keeperXAtImpact, gameContinues: !completedRound)
-            let feedbackDuration: Double
-            // When the speech still running is cut during the feedback (a won match).
-            var speechCutoff: Double?
-            if completedRound {
-                let celebration = LanguageSoccerRoundCelebration(
-                    startedAt: Date(),
-                    childScore: session.childScore,
-                    keeperScore: session.keeperScore
+    private func flightIndex(_ shotID: UUID) -> Int? {
+        flights.firstIndex { $0.id == shotID }
+    }
+
+    private func startFlight(_ shotID: UUID) -> Bool {
+        guard let index = flightIndex(shotID) else { return false }
+        return flights[index].lifecycle.beginFlight(shotID: shotID)
+    }
+
+    private func startRebound(_ shotID: UUID) -> Bool {
+        guard let index = flightIndex(shotID) else { return false }
+        return flights[index].lifecycle.beginRebound(shotID: shotID)
+    }
+
+    private func moveFlight(_ shotID: UUID, to point: CGPoint) {
+        guard let index = flightIndex(shotID) else { return }
+        flights[index].point = point
+    }
+
+    /// The ball's flight is over: it disappears, and its result waits for the
+    /// kicks before it.
+    private func landFlight(_ shotID: UUID, outcome: GameOutcome) -> Bool {
+        guard let index = flightIndex(shotID),
+              flights[index].lifecycle.finalize(shotID: shotID, outcome: outcome) else {
+            return false
+        }
+        flights[index].point = nil
+        flights[index].shotTask = nil
+        return true
+    }
+
+    /// Results count in kick order, as the word is built: the oldest kick counts
+    /// once its ball has landed, and a ball that landed sooner waits for it (an
+    /// earlier, slanting shot can fly longer). Each kick was judged against the
+    /// kicks before it, so the order keeps every judgment. The keeper's
+    /// bookkeeping follows once no ball is on its way.
+    private func settleLandedShots(metrics: SoccerBoardMetrics?) {
+        while roundCelebration == nil,
+              let flight = flights.first,
+              flight.lifecycle.landedOutcome != nil {
+            flights.removeFirst()
+            settle(flight)
+        }
+        updateKeeperIfAirIsClear(metrics: metrics)
+    }
+
+    /// One kick's result: the physical outcome worked out at the kick scores the
+    /// letter, which is judged as it was when kicked (the same kicks count before
+    /// it). A right letter joins the word, a wrong one is back in its slot at once,
+    /// as Android shows it again in finishShot.
+    private func settle(_ flight: LanguageSoccerFlight) {
+        let resolution = flight.resolution
+        practice.selectBall(flight.ball.id)
+        guard session.selectedBallID == flight.ball.id else { return }
+        let educationalWasCorrect = session.educationalIsCorrect
+        practice.resolveShot(outcome: resolution.outcome)
+        lastSettledOutcome = resolution.outcome
+        let correctGoal = educationalWasCorrect == true && resolution.outcome == .goal
+        if educationalWasCorrect == false, resolution.outcome == .goal {
+            soundPlayer.playWrongLetterGoal()
+        }
+        if correctGoal {
+            goalStarsStartedAt = Date()
+        }
+        let completedRound = session.isComplete
+        keeperTallies.append(LanguageSoccerKeeperTally(
+            scored: resolution.outcome == .goal,
+            gameContinues: !completedRound,
+            keeperXAtImpact: flight.keeperXAtImpact
+        ))
+        if completedRound {
+            celebrateCompletedRound()
+        } else {
+            if correctGoal, goalSpeechAllowed() {
+                speechPlayer.enqueueInterfaceSpeech(
+                    interfaceLocaleID.text("Goal"),
+                    interfaceLocale: interfaceLocaleID
                 )
-                roundCelebration = celebration
-                onMatchResolved(completedMatchOutcome)
-                speakCompletedRoundResult()
-                // Android keeps a won match on screen for 6.5 s in Plus, others for 4 s.
-                feedbackDuration = celebration.childWon ? Self.winCelebrationSeconds : Self.otherCelebrationSeconds
-                // No speech over Minik's victory celebration: Android stops all speech
-                // when its victory video starts, two seconds after the end.
-                if celebration.childWon {
-                    speechCutoff = Self.winningMinikDelay
-                }
-            } else {
-                if correctGoal, goalSpeechAllowed() {
-                    speechPlayer.enqueueInterfaceSpeech(
-                        interfaceLocaleID.text("Goal"),
-                        interfaceLocale: interfaceLocaleID
-                    )
-                }
-                feedbackDuration = reduceMotion ? 0.12 : 0.4
             }
+            practice.prepareNextKick()
+        }
+    }
+
+    /// The keeper changes only while no ball is on its way, so every ball still in
+    /// the air meets the keeper its outcome was worked out against at its kick. A
+    /// moving keeper that stops stays where it is now.
+    private func updateKeeperIfAirIsClear(metrics: SoccerBoardMetrics?) {
+        guard !keeperTallies.isEmpty,
+              !flights.contains(where: { $0.lifecycle.isAirborne }) else { return }
+        let currentX = metrics.map { keeperPosition(at: Date(), layout: $0) }
+        let tallies = keeperTallies
+        keeperTallies.removeAll()
+        for tally in tallies {
+            totalShots += 1
+            if tally.scored { goals += 1 }
+            recentGoalResults.append(tally.scored)
+            if recentGoalResults.count > 10 { recentGoalResults.removeFirst() }
+            updateKeeperAfterShot(
+                currentX: currentX ?? tally.keeperXAtImpact,
+                gameContinues: tally.gameContinues
+            )
+        }
+    }
+
+    /// The word is complete: the final score, the result and Android's
+    /// celebration, then the next word after 6.5 s (a win) or 4 s.
+    private func celebrateCompletedRound() {
+        let celebration = LanguageSoccerRoundCelebration(
+            startedAt: Date(),
+            childScore: session.childScore,
+            keeperScore: session.keeperScore
+        )
+        roundCelebration = celebration
+        onMatchResolved(completedMatchOutcome)
+        speakCompletedRoundResult()
+        // Android keeps a won match on screen for 6.5 s in Plus, others for 4 s.
+        let feedbackDuration = celebration.childWon ? Self.winCelebrationSeconds : Self.otherCelebrationSeconds
+        // No speech over Minik's victory celebration: Android stops all speech
+        // when its victory video starts, two seconds after the end.
+        let speechCutoff: Double? = celebration.childWon ? Self.winningMinikDelay : nil
+        celebrationTask?.cancel()
+        celebrationTask = Task { @MainActor in
             if let speechCutoff {
                 try? await Task.sleep(for: .seconds(speechCutoff))
                 guard !Task.isCancelled else { return }
@@ -1167,7 +1317,13 @@ struct LanguageSoccerView: View {
             }
             try? await Task.sleep(for: .seconds(feedbackDuration - (speechCutoff ?? 0)))
             guard !Task.isCancelled else { return }
-            settleFinalizedShot(shotID: shotID, speakNextRound: true)
+            finishCompletedRound(speakNextRound: true)
+        }
+    }
+
+    private func cancelFlightTasks() {
+        for flight in flights {
+            flight.shotTask?.cancel()
         }
     }
 
@@ -1233,29 +1389,30 @@ struct LanguageSoccerView: View {
         if keeperMoving { stationaryKeeperX = nil }
     }
 
-    private func settleFinalizedShot(shotID: UUID, speakNextRound: Bool) {
-        guard lifecycle.resetAfterFinalized(shotID: shotID) else { return }
-        shotPoint = nil
-        if session.isComplete {
-            roundCelebration = nil
-            goalStarsStartedAt = nil
-            onWordCompleted()
-            guard practice.advanceToNextRound() else { return }
-            if let boundary = practice.lastAdvanceBoundary {
-                onPoolExhausted(boundary)
-                if let replacement = makeNextPracticeSession?() {
-                    practice = replacement
-                }
+    /// The celebration is over (or the app left the foreground during it): the
+    /// next word starts. Runs once per completed word.
+    private func finishCompletedRound(speakNextRound: Bool) {
+        guard roundCelebration != nil, session.isComplete else { return }
+        celebrationTask = nil
+        roundCelebration = nil
+        goalStarsStartedAt = nil
+        lastSettledOutcome = nil
+        cancelFlightTasks()
+        flights.removeAll()
+        kickingDragStarts.removeAll()
+        onWordCompleted()
+        guard practice.advanceToNextRound() else { return }
+        if let boundary = practice.lastAdvanceBoundary {
+            onPoolExhausted(boundary)
+            if let replacement = makeNextPracticeSession?() {
+                practice = replacement
             }
-            roundStartedAt = Date()
-            keeperMoving = tuning.initiallyMoves
-            stationaryKeeperX = nil
-            targetStartedAt = Date()
-            if speakNextRound { speakRoundCue() }
-        } else {
-            practice.prepareNextKick()
-            targetStartedAt = Date()
         }
+        roundStartedAt = Date()
+        keeperMoving = tuning.initiallyMoves
+        stationaryKeeperX = nil
+        targetStartedAt = Date()
+        if speakNextRound { speakRoundCue() }
     }
 
     private var completedMatchOutcome: LanguageSoccerMatchOutcome {
@@ -1268,16 +1425,19 @@ struct LanguageSoccerView: View {
         return .minikWin
     }
 
-    private func recordAttempt(for ball: SoccerAnswerBall) {
-        guard let correct = session.educationalIsCorrect,
+    /// The kick's attempt, judged as `kickSession` sees it: after the kicks still
+    /// waiting for their result, so the letter index and the verdict match the
+    /// result that counts later.
+    private func recordAttempt(in kickSession: SoccerSession) {
+        guard let correct = kickSession.educationalIsCorrect,
               let attempt = attemptTracker.makeAttempt(
                   presentationIndex: practice.roundNumber,
                   contentItemID: practice.currentContentItemID,
-                  tokenIndex: session.progressCount,
+                  tokenIndex: kickSession.progressCount,
                   result: correct ? .correct : .incorrect,
                   responseDurationSeconds: Date().timeIntervalSince(targetStartedAt),
                   activityFamily: .soccer,
-                  languageVocabularyLevel: session.orderedTokenContent?.vocabularyLevel
+                  languageVocabularyLevel: kickSession.orderedTokenContent?.vocabularyLevel
               ) else { return }
         onAttempt(attempt)
     }
@@ -1297,24 +1457,6 @@ struct LanguageSoccerView: View {
             goal: layout.goal,
             keeperWidth: Double(layout.keeperSize.width)
         )
-    }
-
-    private var activeBallID: SoccerBallID? {
-        switch lifecycle.phase {
-        case .dragging(let ballID), .launched(_, let ballID), .inFlight(_, let ballID),
-             .rebounding(_, let ballID), .finalized(_, let ballID, _): ballID
-        case .idle: nil
-        }
-    }
-
-    private var finalizedOutcome: GameOutcome? {
-        guard case .finalized(_, _, let outcome) = lifecycle.phase else { return nil }
-        return outcome
-    }
-
-    private var selectedBall: SoccerAnswerBall? {
-        guard let activeBallID else { return nil }
-        return session.round.answerBalls.first { $0.id == activeBallID }
     }
 
     // MARK: - Introduction (SoccerIntroDialog)
@@ -1377,19 +1519,104 @@ struct LanguageSoccerView: View {
                 .padding(.horizontal, metrics.titleSidePadding)
                 .padding(.top, metrics.titleTop)
                 .accessibilityAddTraits(.isHeader)
-            // explainText: bold navy from the reading start, not centred.
-            Text(soccerIntroductionText)
-                .font(.system(size: introTextFontBase * metrics.textScale, weight: .bold))
-                .foregroundStyle(MinikPretty.navy)
-                .multilineTextAlignment(.leading)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            // explainText: four short lines (QA ISSUE-008) in bold navy from the
+            // reading start, not centred, read by VoiceOver as one block.
+            VStack(alignment: .leading, spacing: metrics.lineSpacing) {
+                ForEach(soccerIntroductionLines, id: \.self) { line in
+                    Text(line)
+                        .font(.system(size: introTextFontBase * metrics.textScale, weight: .bold))
+                        .foregroundStyle(MinikPretty.navy)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+            .padding(.horizontal, metrics.textSideMargin)
+            .padding(.top, metrics.textTop)
+            moreInformation(metrics: metrics)
                 .padding(.horizontal, metrics.textSideMargin)
-                .padding(.top, metrics.textTop)
+                .padding(.top, metrics.moreInformationTop)
             Spacer(minLength: 12)
             introductionBottomRow(metrics: metrics)
         }
         .frame(maxWidth: .infinity)
+    }
+
+    /// "More Information" (QA ISSUE-008): the rest of the rules, folded away under
+    /// a lavender pill with a chevron that opens a lavender panel below it. It is
+    /// closed whenever the introduction appears; the four lines never need it.
+    private func moreInformation(metrics: LanguageSoccerIntroMetrics) -> some View {
+        let size = introTextFontBase * metrics.textScale
+        return VStack(alignment: .leading, spacing: metrics.lineSpacing) {
+            Button(action: toggleMoreInformation) {
+                HStack(spacing: 8) {
+                    Text(interfaceLocaleID.text("More Information"))
+                        .font(MinikPretty.titleFont(size * 0.9))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: size * 0.65, weight: .bold))
+                        .rotationEffect(.degrees(showsMoreInformation ? 180 : 0))
+                        .accessibilityHidden(true)
+                }
+                .foregroundStyle(MinikPretty.navy)
+                .padding(.horizontal, size * 0.9)
+                .frame(minHeight: max(44, size * 1.9))
+                .background(MinikPretty.lavender, in: Capsule())
+                .overlay {
+                    Capsule().strokeBorder(MinikPretty.lavenderRim, lineWidth: 1.5)
+                }
+                .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .accessibilityValue(moreInformationState)
+
+            if showsMoreInformation {
+                VStack(alignment: .leading, spacing: metrics.lineSpacing) {
+                    ForEach(soccerMoreInformationLines, id: \.self) { line in
+                        Text(line)
+                            .font(.system(size: size * 0.85, weight: .semibold))
+                            .foregroundStyle(MinikPretty.navy)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                .padding(metrics.moreInformationPadding)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    MinikPretty.lavender,
+                    in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .strokeBorder(MinikPretty.lavenderRim, lineWidth: 1.5)
+                }
+                .transition(.opacity)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Opening "More Information" restarts the Start countdown, so the match does
+    /// not begin by itself while the extra rules are being read.
+    private func toggleMoreInformation() {
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
+            showsMoreInformation.toggle()
+        }
+        if showsMoreInformation, showsIntroduction {
+            startIntroductionCountdown()
+        }
+    }
+
+    /// VoiceOver hears whether "More Information" is open.
+    private var moreInformationState: String {
+        if showsMoreInformation {
+            return interfaceLocaleID.text("Expanded")
+        }
+        return interfaceLocaleID.text("Collapsed")
     }
 
     /// Minik in goalkeeper gloves at the bottom left, the faded yellow ball at the
@@ -1477,8 +1704,31 @@ struct LanguageSoccerView: View {
         .accessibilityHidden(true)
     }
 
+    /// The four short lines children see, and hear, before the match (QA ISSUE-008).
+    private var soccerIntroductionLines: [String] {
+        [
+            interfaceLocaleID.text("Drag the letters in the correct order to spell the word shown."),
+            interfaceLocaleID.text("Try to score a goal against Minik with each letter."),
+            interfaceLocaleID.text("Correct letter + goal = 1 point for you!"),
+            interfaceLocaleID.text("Wrong letter + no goal = 1 point for Minik!")
+        ]
+    }
+
     private var soccerIntroductionText: String {
-        interfaceLocaleID.text("Drag letters upward in the correct order to kick toward the goal.\nA goal with the right letter earns you a point.\nMissing or being saved with a wrong letter gives the keeper a point.\nThe round continues until the word is complete.")
+        soccerIntroductionLines.joined(separator: "\n")
+    }
+
+    /// The rest of the game's rules, under "More Information": how a kick works,
+    /// the two scoring cases the four lines leave out, the end of the match and
+    /// replaying the word.
+    private var soccerMoreInformationLines: [String] {
+        [
+            interfaceLocaleID.text("Drag letters upward in the correct order, past the dashed line, to kick them toward the goal."),
+            interfaceLocaleID.text("Correct letter + no goal = no point, but the letter still goes into the word."),
+            interfaceLocaleID.text("Wrong letter + goal = no point, and the letter comes back to try again."),
+            interfaceLocaleID.text("When the word is complete, whoever has more points wins."),
+            interfaceLocaleID.text("Tap the word or the picture to hear it again.")
+        ]
     }
 
     /// start_with_seconds: "Start… 44" down to "Start… 1".
@@ -1576,28 +1826,36 @@ struct LanguageSoccerView: View {
     }
 
     private func stopAudioAndMotion() {
-        shotTask?.cancel()
-        shotTask = nil
+        cancelFlightTasks()
+        flights.removeAll()
+        celebrationTask?.cancel()
+        celebrationTask = nil
         introductionCountdown?.cancel()
         introductionCountdown = nil
         practice.cancelUnresolvedShot()
-        lifecycle.cancelAll()
+        dragLifecycle.cancelAll()
         dragPoint = nil
-        shotPoint = nil
         roundCelebration = nil
         stopAudio()
     }
 
+    /// The app leaves the foreground: the balls that already landed still count,
+    /// in kick order. A kick still in the air is dropped, and so is every kick
+    /// after it, since each was judged after it; their letters are back in their
+    /// slots. A finished word moves straight on to the next one.
     private func suspendActiveShot() {
-        shotTask?.cancel()
-        shotTask = nil
-        if case .finalized(let shotID, _, _) = lifecycle.phase {
-            settleFinalizedShot(shotID: shotID, speakNextRound: false)
-        } else {
-            practice.cancelUnresolvedShot()
-            lifecycle.cancelAll()
-            dragPoint = nil
-            shotPoint = nil
+        cancelFlightTasks()
+        settleLandedShots(metrics: nil)
+        flights.removeAll()
+        updateKeeperIfAirIsClear(metrics: nil)
+        practice.cancelUnresolvedShot()
+        dragLifecycle.cancelAll()
+        dragPoint = nil
+        dragOffset = .zero
+        lastDragSample = nil
+        if roundCelebration != nil {
+            celebrationTask?.cancel()
+            finishCompletedRound(speakNextRound: false)
         }
         stopAudio()
     }
@@ -1618,7 +1876,7 @@ struct LanguageSoccerView: View {
     }
 
     private var sceneAccessibilityLabel: String {
-        if let outcome = finalizedOutcome {
+        if let outcome = lastSettledOutcome {
             return interfaceFormat("Soccer field. %@.", outcomeLabel(outcome))
         }
         return interfaceLocaleID.text("Drag and drop the letters in the right order toward the goal")

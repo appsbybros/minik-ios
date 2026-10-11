@@ -42,7 +42,10 @@ struct MinikActivityHubView: View {
     @State private var publicAliasIsSaving = false
     @State private var pendingPublicationNoticeIsPresented = false
     @State private var lastPendingNoticeKey: String?
-    @StateObject private var publicLeaderboardController: PublicLeaderboardController
+    /// The playing child's public Top 20 controls; replaced when another child plays.
+    @State private var publicLeaderboardController: PublicLeaderboardController
+    /// The children on this device and whose progress is in place (Android IntroScreen).
+    @StateObject private var childProfiles: ChildProfileStore
 
     private let mathFactory: MathActivitySessionFactory
     private let mathM1Factory: MathM1ActivitySessionFactory?
@@ -59,7 +62,9 @@ struct MinikActivityHubView: View {
     @State private var wordRewardService: LanguageWordPracticeRewardService
     private let rewardRepository: LocalRewardRepository
     private let rewardService: LocalRewardService
-    private let rewardRecordSubmissionService: RewardRecordSubmissionService
+    /// The playing child's record submissions, under that child's own public identity.
+    @State private var rewardRecordSubmissionService: RewardRecordSubmissionService
+    private let injectedRecordsRepository: (any RecordsRepository)?
     /// The online Top 20 is set up in this build (Android's fireBaseInitiated), so
     /// it may open by itself.
     private let publicRecordsConfigured: Bool
@@ -89,6 +94,10 @@ struct MinikActivityHubView: View {
         self.learnedLanguageRepository = learnedLanguageRepository
         self.languageLevelRepository = languageLevelRepository
         self.languageAutoRepository = languageAutoRepository
+        // Before anything per child is loaded: an exchange of children that a
+        // stopped app left half done is completed first.
+        let activeLearner = ChildProfileStore.activeLearnerAfterRecovery(for: configuration.variant)
+        _childProfiles = StateObject(wrappedValue: ChildProfileStore(product: configuration.variant))
         self.mathFactory = MathActivitySessionFactory(configuration: configuration)
         let progressRepository = LocalProgressRepository()
         self.progressRepository = progressRepository
@@ -96,25 +105,18 @@ struct MinikActivityHubView: View {
         let rewardService = LocalRewardService(repository: rewardRepository)
         self.rewardRepository = rewardRepository
         self.rewardService = rewardService
-        let rewardScope = RewardScope(
-            ownerID: .localDefault,
-            product: configuration.variant
+        // The playing child's own public identity, alias and pending best (the
+        // guest keeps the identity the app had before child profiles).
+        let records = ChildProfileRecordsComposition.make(
+            product: configuration.variant,
+            ownerID: activeLearner.rewardOwnerID,
+            injectedRepository: remoteRecordsRepository
         )
-        let publicLeaderboardStore = UserDefaultsPublicLeaderboardStateStore(scope: rewardScope)
-        let resolvedRecordsRepository = remoteRecordsRepository
-            ?? ProductionRecordsRepositoryFactory.make(
-                for: configuration.variant,
-                ownerID: rewardScope.ownerID,
-                publicLeaderboardStore: publicLeaderboardStore
-            )
-        let rewardRecordSubmissionService = RewardRecordSubmissionService(
-            scope: rewardScope,
-            repository: resolvedRecordsRepository,
-            localStateStore: publicLeaderboardStore
-        )
-        self.rewardRecordSubmissionService = rewardRecordSubmissionService
-        self.publicRecordsConfigured = resolvedRecordsRepository != nil
-        _publicLeaderboardController = StateObject(wrappedValue: PublicLeaderboardController(
+        let rewardRecordSubmissionService = records.submission
+        _rewardRecordSubmissionService = State(initialValue: rewardRecordSubmissionService)
+        self.injectedRecordsRepository = remoteRecordsRepository
+        self.publicRecordsConfigured = records.isConfigured
+        _publicLeaderboardController = State(initialValue: PublicLeaderboardController(
             service: rewardRecordSubmissionService
         ))
         let wordRewardService = LanguageWordPracticeRewardService(repository: rewardRepository)
@@ -264,6 +266,8 @@ struct MinikActivityHubView: View {
             }
         }
         .onAppear(perform: applyStoreScreenshotScene)
+        // Public records of children deleted earlier whose deletion did not finish.
+        .onAppear(perform: cleanUpDeletedChildrenPublicRecords)
     }
 
     /// Android IntroFragment opens the Top 20 by itself once the opening is over.
@@ -401,9 +405,62 @@ struct MinikActivityHubView: View {
             LanguageIntroView(
                 rewards: languageRewards,
                 variant: configuration.variant,
+                childProfiles: childProfiles,
+                commerceController: commerceController,
+                onLearnerChanged: learnerDidChange,
                 onPractice: { languageMenuIsPresented = true },
                 onParentArea: { route = .parentArea }
             )
+        }
+    }
+
+    /// A child was added, chosen or deleted on the Intro, so every per-child value
+    /// in place now belongs to the learner on screen: the hub reloads what it keeps
+    /// in memory, and the Top 20 follows that learner's own public identity.
+    private func learnerDidChange() {
+        refreshLanguageRewards()
+        languageWordBonusRun = 0
+        selectedLanguage = learnedLanguageRepository.load(for: configuration)
+            ?? Self.defaultLearnedLanguage(for: configuration)
+        if configuration.contentDomain == .language {
+            let settings = languageLevelRepository.load(for: configuration.variant)
+            languageLevelSettings = settings
+            languageAutoState = languageAutoRepository.load(
+                scope: LanguageAutoScope(product: configuration.variant),
+                currentLevel: settings.wordLevel
+            )
+        }
+        let records = ChildProfileRecordsComposition.make(
+            product: configuration.variant,
+            ownerID: childProfiles.activeLearner.rewardOwnerID,
+            injectedRepository: injectedRecordsRepository
+        )
+        rewardRecordSubmissionService = records.submission
+        publicLeaderboardController = PublicLeaderboardController(service: records.submission)
+        lastPendingNoticeKey = nil
+        cleanUpDeletedChildrenPublicRecords()
+    }
+
+    /// Android deletes a removed child's public Top 20 records
+    /// (LeaderboardState.removeSlot). Each deleted child's records are deleted
+    /// through that child's own identity, right after the deletion and again at
+    /// later launches, until it succeeds or has failed three times.
+    private func cleanUpDeletedChildrenPublicRecords() {
+        guard configuration.contentDomain == .language else { return }
+        let profiles = childProfiles
+        for ownerID in profiles.beginPublicRecordCleanups() {
+            let submission = ChildProfileRecordsComposition.make(
+                product: configuration.variant,
+                ownerID: ownerID
+            ).submission
+            Task {
+                // Deletion is offered only once participation is off, as in the Parent Area.
+                _ = await submission.setParticipationEnabled(false)
+                let deleted = await submission.deletePublicRecords()
+                await MainActor.run {
+                    profiles.finishPublicRecordCleanup(for: ownerID, deleted: deleted)
+                }
+            }
         }
     }
 
@@ -1249,15 +1306,24 @@ struct MinikActivityHubView: View {
         let state = ((try? rewardRepository.loadLedger()) ?? RewardLedger()).state(
             for: RewardScope(ownerID: .localDefault, product: configuration.variant)
         )
-        let scope = RewardScope(ownerID: .localDefault, product: configuration.variant)
+        // The record belongs to the playing child's own public identity; the
+        // submission keeps it even if another child is chosen meanwhile.
+        let profiles = childProfiles
+        let learner = profiles.activeLearner
+        let scope = RewardScope(ownerID: learner.rewardOwnerID, product: configuration.variant)
         let noticeKey = "\(state.points)-\(state.bestStreak)"
+        let rewardRecordSubmissionService = self.rewardRecordSubmissionService
         Task {
             let result = await rewardRecordSubmissionService.submit(
                 state: state,
                 scope: scope,
                 achievedAt: Date()
             )
-            await MainActor.run { handleRecordSubmission(result, noticeKey: noticeKey) }
+            await MainActor.run {
+                // An alias prompt or Top 20 for a child no longer playing is not shown.
+                guard profiles.activeLearner == learner else { return }
+                handleRecordSubmission(result, noticeKey: noticeKey)
+            }
         }
     }
 

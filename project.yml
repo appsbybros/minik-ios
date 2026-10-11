@@ -113,7 +113,9 @@ targets:
         CFBundleLocalizations: [en, am, ar, de, es, fr, he, nl, pt-BR, pt-PT, ru]
         # Portrait only, as on Android (sensorPortrait); iPad allows that only as a
         # full-screen app. :REPLACE stops XcodeGen appending the template's landscape
-        # entries to these arrays.
+        # entries to these arrays. iPadOS 26 no longer turns the screen for a
+        # portrait-only app and draws it between black bars on an iPad held in
+        # landscape, so Sources/PortraitNotice.swift asks to turn the iPad (ISSUE-004).
         UIRequiresFullScreen: true
         UISupportedInterfaceOrientations:REPLACE:
           - UIInterfaceOrientationPortrait
@@ -211,7 +213,9 @@ targets:
         CFBundleLocalizations: [en, am, ar, de, es, fr, nl, pt-BR, pt-PT, ru]
         # Portrait only, as on Android (sensorPortrait); iPad allows that only as a
         # full-screen app. :REPLACE stops XcodeGen appending the template's landscape
-        # entries to these arrays.
+        # entries to these arrays. iPadOS 26 no longer turns the screen for a
+        # portrait-only app and draws it between black bars on an iPad held in
+        # landscape, so Sources/PortraitNotice.swift asks to turn the iPad (ISSUE-004).
         UIRequiresFullScreen: true
         UISupportedInterfaceOrientations:REPLACE:
           - UIInterfaceOrientationPortrait

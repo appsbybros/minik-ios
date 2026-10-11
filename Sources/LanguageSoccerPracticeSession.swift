@@ -81,6 +81,26 @@ struct LanguageSoccerPracticeSession: Sendable {
         currentSession.cancelUnresolvedShot()
     }
 
+    /// The round as a new kick finds it. Android lets the next letter be kicked
+    /// before the last one lands; the word is built in kick order, so the kicks
+    /// still waiting for their result count first. A right letter counts whatever
+    /// its shot does, so their outcomes cannot change which letter comes next.
+    /// The returned session has the kicked ball selected (`selectedBallID`) when
+    /// the kick is possible, and says whether it is the right letter.
+    func sessionForKick(
+        _ ballID: SoccerBallID,
+        after earlierKicks: [SoccerBallID]
+    ) -> SoccerSession {
+        var session = currentSession
+        for earlierBallID in earlierKicks {
+            session.selectBall(earlierBallID)
+            session.resolveShot(outcome: .miss)
+            session.prepareNextKick()
+        }
+        session.selectBall(ballID)
+        return session
+    }
+
     @discardableResult
     mutating func advanceToNextRound() -> Bool {
         guard currentSession.isComplete else {

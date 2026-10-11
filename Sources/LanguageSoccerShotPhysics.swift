@@ -71,6 +71,28 @@ struct LanguageSoccerShotLifecycle: Equatable, Sendable {
     }
 }
 
+/// Android's LettersSoccerGame keeps no input lock between kicks: the next letter
+/// can be dragged as soon as one is kicked, and up to three balls fly at once.
+/// On iOS the finger's lifecycle hands each launched kick its own lifecycle,
+/// which flies, lands and settles on its own.
+extension LanguageSoccerShotLifecycle {
+    /// Kicked and still on its way: launched, flying or bouncing back.
+    var isAirborne: Bool {
+        switch phase {
+        case .launched, .inFlight, .rebounding:
+            return true
+        case .idle, .dragging, .finalized:
+            return false
+        }
+    }
+
+    /// How the shot ended, once its ball has landed.
+    var landedOutcome: GameOutcome? {
+        guard case .finalized(_, _, let outcome) = phase else { return nil }
+        return outcome
+    }
+}
+
 struct LanguageSoccerPoint: Equatable, Sendable {
     var x: Double
     var y: Double

@@ -58,6 +58,26 @@ enum LearningSpeechVoiceLocale {
     }
 }
 
+/// Apple's voices read a lone capital letter as "Capital D". The letter
+/// activities show capitals only and never teach the difference, so a lone
+/// letter is handed to the voice in lowercase, which it reads as the bare
+/// letter name ("D"), as Android's voice says it and as Learn already does
+/// ("a" for "A a"). Only the spoken copy changes; screens keep the capitals.
+/// Words and sentences are left as they are, and so are caseless letters
+/// (Hebrew).
+enum LearningSpeechLetterName {
+    static func spokenText(_ text: String) -> String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count == 1,
+              let letter = trimmed.first,
+              letter.isLetter,
+              letter.isUppercase else {
+            return text
+        }
+        return trimmed.lowercased()
+    }
+}
+
 @MainActor
 final class LearningSpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
     private let synthesizer = AVSpeechSynthesizer()
@@ -72,10 +92,12 @@ final class LearningSpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesize
     func speak(_ plan: LearningSpeechPlan) { speak(plan.utterances) }
     func speak(_ utterance: LearningSpeechUtterance) { speak([utterance]) }
 
+    /// Every letter, word and prompt of the learning screens is said here: a lone
+    /// letter by its name only (LearningSpeechLetterName), never "Capital D".
     func speak(_ utterances: [LearningSpeechUtterance]) {
         stop()
         for item in utterances where !item.text.isEmpty {
-            let utterance = AVSpeechUtterance(string: item.text)
+            let utterance = AVSpeechUtterance(string: LearningSpeechLetterName.spokenText(item.text))
             utterance.voice = AVSpeechSynthesisVoice(language: LearningSpeechVoiceLocale.identifier(for: item.language))
             enqueue(utterance)
         }
@@ -85,7 +107,9 @@ final class LearningSpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesize
     /// spoken copy gets the locale's pronunciation fixes (HebrewSpeechPronunciation).
     func enqueueInterfaceSpeech(_ text: String, interfaceLocale: InterfaceLocaleID) {
         guard !text.isEmpty else { return }
-        let utterance = AVSpeechUtterance(string: interfaceLocale.spokenText(for: text))
+        let utterance = AVSpeechUtterance(string: LearningSpeechLetterName.spokenText(
+            interfaceLocale.spokenText(for: text)
+        ))
         utterance.voice = AVSpeechSynthesisVoice(language: interfaceLocale.rawValue)
             ?? AVSpeechSynthesisVoice(language: interfaceLocale.locale.language.languageCode?.identifier)
             ?? AVSpeechSynthesisVoice(language: "en-US")

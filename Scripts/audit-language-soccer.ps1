@@ -4,7 +4,8 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 $checks = @(
     @{ File = 'Sources/SoccerIntroduction.swift'; Pattern = 'maximumPresentationCount = 3'; Label = 'Introduction is limited to first three presentations' },
     @{ File = 'Sources/MinikActivityHubView.swift'; Pattern = 'case \.soccer:[\s\S]*LanguageSoccerView\([\s\S]*parentSoccerLevel: languageLevelSettings\.soccerLevel'; Label = 'Production route consumes Parent Soccer level' },
-    @{ File = 'Sources/LanguageSoccerView.swift'; Pattern = 'interfaceLocaleID\.text\("Drag letters upward in the correct order'; Label = 'Language Soccer retains its drag introduction' },
+    @{ File = 'Sources/LanguageSoccerView.swift'; Pattern = 'interfaceLocaleID\.text\("Drag the letters in the correct order to spell the word shown\."\)[\s\S]*interfaceLocaleID\.text\("Try to score a goal against Minik with each letter\."\)[\s\S]*interfaceLocaleID\.text\("Correct letter \+ goal = 1 point for you!"\)[\s\S]*interfaceLocaleID\.text\("Wrong letter \+ no goal = 1 point for Minik!"\)'; Label = 'Language Soccer introduction is the four short drag lines (QA ISSUE-008)' },
+    @{ File = 'Sources/LanguageSoccerView.swift'; Pattern = '@State private var showsMoreInformation = false[\s\S]*interfaceLocaleID\.text\("More Information"\)[\s\S]*if showsMoreInformation \{[\s\S]*soccerMoreInformationLines'; Label = 'Further Soccer rules sit under More Information, collapsed by default' },
     @{ File = 'Sources/SoccerView.swift'; Pattern = 'String\(localized: "Tap letters in the correct order'; Label = 'Shared and Math Soccer retain the pre-reconstruction tap introduction' },
     @{ File = 'Sources/LanguageSoccerView.swift'; Pattern = 'DragGesture\(minimumDistance: 6'; Label = 'Primary interaction is drag' },
     @{ File = 'Sources/LanguageSoccerView.swift'; Pattern = 'shouldLaunchDuringDrag[\s\S]*shouldLaunchOnRelease'; Label = 'Crossing and release launch paths exist' },
