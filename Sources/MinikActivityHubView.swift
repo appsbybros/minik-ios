@@ -265,7 +265,17 @@ struct MinikActivityHubView: View {
                 presentRecordsAutomaticallyIfAllowed()
             }
         }
+        // Android retries a pending deletion whenever the app comes to the front
+        // (RecordsDetails, onActivityStarted).
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                cleanUpDeletedChildrenPublicRecords()
+            }
+        }
         .onAppear(perform: applyStoreScreenshotScene)
+        // Android's intro selects the last chosen child when it opens (selectUser),
+        // which brings back that child's interface language if another is showing.
+        .onAppear(perform: followChildInterfaceLanguage)
         // Public records of children deleted earlier whose deletion did not finish.
         .onAppear(perform: cleanUpDeletedChildrenPublicRecords)
     }
@@ -415,9 +425,11 @@ struct MinikActivityHubView: View {
     }
 
     /// A child was added, chosen or deleted on the Intro, so every per-child value
-    /// in place now belongs to the learner on screen: the hub reloads what it keeps
-    /// in memory, and the Top 20 follows that learner's own public identity.
+    /// in place now belongs to the learner on screen: the app takes that child's
+    /// interface language, the hub reloads what it keeps in memory, and the Top 20
+    /// follows that learner's own public identity.
     private func learnerDidChange() {
+        followChildInterfaceLanguage()
         refreshLanguageRewards()
         languageWordBonusRun = 0
         selectedLanguage = learnedLanguageRepository.load(for: configuration)
@@ -441,10 +453,21 @@ struct MinikActivityHubView: View {
         cleanUpDeletedChildrenPublicRecords()
     }
 
+    /// Android IntroScreen.selectUser, which runs for the added child, the chosen
+    /// child, and the first child left after a deletion: a child with an
+    /// interface language of their own brings it back. When the last child was
+    /// deleted, the guest's values return but the language on screen stays, as
+    /// setNoUsersExistView changes no language.
+    private func followChildInterfaceLanguage() {
+        guard case .child(_) = childProfiles.activeLearner else { return }
+        interfaceLocaleController.applyLearnerChoice()
+    }
+
     /// Android deletes a removed child's public Top 20 records
     /// (LeaderboardState.removeSlot). Each deleted child's records are deleted
     /// through that child's own identity, right after the deletion and again at
-    /// later launches, until it succeeds or has failed three times.
+    /// later launches and whenever the app comes back to the front, until it
+    /// succeeds, as Android's outbox keeps the deletion pending until then.
     private func cleanUpDeletedChildrenPublicRecords() {
         guard configuration.contentDomain == .language else { return }
         let profiles = childProfiles

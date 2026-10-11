@@ -5,6 +5,8 @@ import SwiftUI
 /// is. Text follows Dynamic Type through `textScale`, and the touch targets keep
 /// Apple's 44-point minimum.
 struct ChildProfileSectionMetrics {
+    /// layout-sw600dp: the iPad draws the selector as Android's tablet layout does.
+    let tablet: Bool
     let labelSize: CGFloat
     let fieldTextSize: CGFloat
     let spinnerMinHeight: CGFloat
@@ -16,6 +18,7 @@ struct ChildProfileSectionMetrics {
     let buttonGap: CGFloat
 
     init(tablet: Bool, scale: CGFloat, textScale: CGFloat) {
+        self.tablet = tablet
         let size: (CGFloat, CGFloat) -> CGFloat = { phone, pad in
             tablet ? pad * scale : phone
         }
@@ -40,8 +43,9 @@ struct ChildProfileSectionMetrics {
 /// Android IntroScreen's child section (fragment_intro_plus.xml childSection):
 /// "Child name:" over the rounded child selector, then Add and Delete as small
 /// pastel pills, with Edit between them to rename the child (iOS). With no
-/// child yet the caption says the name is optional and only Add shows, as on
-/// Android; the empty field then adds a child too.
+/// child yet the caption says the name is optional, only Add shows, and the
+/// selector is empty and does nothing, as on Android (setNoUsersExistView and
+/// addFakeItemToNameSpinner: one empty item in a disabled spinner).
 struct ChildProfileSection: View {
     @ObservedObject var store: ChildProfileStore
     let metrics: ChildProfileSectionMetrics
@@ -94,15 +98,14 @@ struct ChildProfileSection: View {
     }
 
     /// bg_pretty_field around the spinner: the chosen child, and the other
-    /// children in a menu.
+    /// children in a menu. With no child the field stays empty and a tap does
+    /// nothing, like Android's disabled spinner.
     @ViewBuilder
     private var selector: some View {
         if store.children.isEmpty {
-            Button(action: onAdd) {
-                field(name: "", showsArrow: false)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(Text(verbatim: interfaceLocaleID.text("Add a child")))
+            field(name: "")
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Text(verbatim: interfaceLocaleID.text("Child name")))
         } else {
             Menu {
                 ForEach(store.children) { child in
@@ -113,7 +116,7 @@ struct ChildProfileSection: View {
                     }
                 }
             } label: {
-                field(name: store.selectedChild?.name ?? "", showsArrow: true)
+                field(name: store.selectedChild?.name ?? "")
             }
             .menuOrder(.fixed)
             .accessibilityLabel(Text(verbatim: interfaceLocaleID.text("Child name")))
@@ -132,22 +135,42 @@ struct ChildProfileSection: View {
     }
 
     /// The white field with the lavender rim (bg_pretty_field) around Android's
-    /// spinner face (bg_spinner_arrow).
-    private func field(name: String, showsArrow: Bool) -> some View {
+    /// spinner face.
+    private func field(name: String) -> some View {
         let shape = RoundedRectangle(cornerRadius: 24, style: .continuous)
-        return LanguageParentDropdownLabel(
-            title: name,
-            fontSize: metrics.fieldTextSize,
-            minHeight: metrics.spinnerMinHeight,
-            showsArrow: showsArrow
-        )
-        .padding(2)
-        .frame(maxWidth: .infinity, minHeight: metrics.fieldMinHeight)
-        .background(Color.white, in: shape)
-        .overlay {
-            shape.strokeBorder(MinikPretty.lavenderRim, lineWidth: 2)
+        return spinnerFace(name: name)
+            .padding(2)
+            .frame(maxWidth: .infinity, minHeight: metrics.fieldMinHeight)
+            .background(Color.white, in: shape)
+            .overlay {
+                shape.strokeBorder(MinikPretty.lavenderRim, lineWidth: 2)
+            }
+            .contentShape(shape)
+    }
+
+    /// The spinner's face, with or without a child. Phones: bg_spinner_arrow, a
+    /// grey-rimmed white face with the down arrow at the end. iPad: the sw600dp
+    /// layout's bg_minik_white_pill, plain white with no arrow (paddingEnd 18dp).
+    @ViewBuilder
+    private func spinnerFace(name: String) -> some View {
+        if metrics.tablet {
+            Text(verbatim: name)
+                .font(.system(size: metrics.fieldTextSize))
+                .foregroundStyle(Color.black)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.leading, 17)
+                .padding(.trailing, 18)
+                .frame(maxWidth: .infinity, minHeight: metrics.spinnerMinHeight)
+        } else {
+            LanguageParentDropdownLabel(
+                title: name,
+                fontSize: metrics.fieldTextSize,
+                minHeight: metrics.spinnerMinHeight,
+                showsArrow: true
+            )
         }
-        .contentShape(shape)
     }
 
     /// addUserButton and deleteUserButton side by side, with Edit between them.

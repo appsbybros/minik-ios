@@ -87,9 +87,10 @@ struct ChildProfileStoredKey: Hashable, Sendable {
     let kind: Kind
 
     /// The per-child keys of the Language apps, with the repository that owns
-    /// each. A new per-child value needs its key here. The interface language,
-    /// purchases, ads and reminders stay with the device, and the public
-    /// leaderboard keys are named by the learner instead (rewardOwnerID).
+    /// each. A new per-child value needs its key here. The language on screen
+    /// (Android's app locale), purchases, ads and reminders stay with the
+    /// device, and the public leaderboard keys are named by the learner instead
+    /// (rewardOwnerID).
     static func learnerKeys(for product: ProductVariant) -> [ChildProfileStoredKey] {
         let productID = product.rawValue
         return [
@@ -99,6 +100,9 @@ struct ChildProfileStoredKey: Hashable, Sendable {
             ChildProfileStoredKey(name: "minik.activity-progress.v1", kind: .data),
             // LearnedLanguageRepository (Android UserLearningLanguageManager).
             learnedLanguage(for: product),
+            // InterfaceLocaleRepository's learner choice (Android userHostingLang):
+            // the interface language chosen for this learner in the Parent Area.
+            ChildProfileStoredKey(name: InterfaceLocaleRepository.learnerChoiceKey(for: product), kind: .string),
             // EncouragementPreferenceRepository (Android ShouldPlayGesture).
             ChildProfileStoredKey(name: "minik.encouragement-enabled.v1.\(productID)", kind: .bool),
             // LanguageParentLevelSettingsRepository (Android userLevel, KEY_AUTO, userLevel_SOCCER).
@@ -153,10 +157,6 @@ final class ChildProfileStore: ObservableObject {
     private var state: ChildProfileStoreState
     private var cleanupsInFlight: Set<String> = []
 
-    /// Android keeps a deleted child's identity until its public records are
-    /// deleted; here three failed attempts end it.
-    private static let maximumCleanupAttempts = 3
-
     init(product: ProductVariant, userDefaults: UserDefaults = .standard) {
         self.product = product
         self.userDefaults = userDefaults
@@ -192,8 +192,11 @@ final class ChildProfileStore: ObservableObject {
     }
 
     /// Android's Save in add mode: the new child is added and chosen, and starts
-    /// with no points or progress. Like saveLanguagesForNewUser, it keeps the
-    /// learned language chosen so far.
+    /// with no points or progress (ChildSlotStorage.clearSlot). The values of
+    /// the learner who played until now, the guest's too, are kept aside for
+    /// them. Like saveLanguagesForNewUser, the new child keeps the learned
+    /// language in use; it has no interface language of its own until one is
+    /// chosen for it in the Parent Area, so the language on screen stays.
     @discardableResult
     func addChild(named proposedName: String) -> ChildProfileNameProblem? {
         let name = ChildProfileLimits.normalizedName(proposedName)
@@ -204,7 +207,7 @@ final class ChildProfileStore: ObservableObject {
         let child = ChildProfile(id: UUID(), name: name, createdAt: Date())
         var startingValues: [String: Any] = [:]
         let learnedLanguage = ChildProfileStoredKey.learnedLanguage(for: product)
-        if let language = liveValue(for: learnedLanguage) {
+        if let language = learnedLanguageInUse() {
             startingValues[learnedLanguage.name] = language
         }
         writeArchive(startingValues, for: .child(child.id))
@@ -273,20 +276,18 @@ final class ChildProfileStore: ObservableObject {
     }
 
     /// Records the outcome of a deletion started by beginPublicRecordCleanups.
-    /// Once the records are deleted, or after the last failed attempt, the
+    /// As Android's outbox keeps a deleted child's deletion pending until it
+    /// succeeds (LeaderboardState.requestDelete, RecordsDetails.retryPending), a
+    /// failed deletion is tried again later. Once the records are deleted, the
     /// deleted child's leaderboard identity is removed from the device too.
     func finishPublicRecordCleanup(for ownerID: RewardOwnerID, deleted: Bool) {
         cleanupsInFlight.remove(ownerID.rawValue)
-        guard let index = state.publicRecordCleanups.firstIndex(where: {
-            $0.ownerRawValue == ownerID.rawValue
-        }) else { return }
-        if !deleted {
-            state.publicRecordCleanups[index].failedAttempts += 1
-        }
-        if deleted || state.publicRecordCleanups[index].failedAttempts >= Self.maximumCleanupAttempts {
-            state.publicRecordCleanups.remove(at: index)
-            removePublicLeaderboardValues(of: ownerID)
-        }
+        guard deleted,
+              let index = state.publicRecordCleanups.firstIndex(where: {
+                  $0.ownerRawValue == ownerID.rawValue
+              }) else { return }
+        state.publicRecordCleanups.remove(at: index)
+        removePublicLeaderboardValues(of: ownerID)
         saveState()
     }
 
@@ -376,6 +377,20 @@ final class ChildProfileStore: ObservableObject {
         return Self.checked(stored, as: key.kind)
     }
 
+    /// The learned language the playing learner has now (Android's
+    /// DeviceStatusManager.learningLanguage): the stored one, or else the app's
+    /// default for the language on screen, as the hub reads it.
+    private func learnedLanguageInUse() -> String? {
+        let defaults = userDefaults
+        let repository = LearnedLanguageRepository(
+            userDefaults: defaults,
+            interfaceLocale: { variant in
+                InterfaceLocaleRepository(userDefaults: defaults).load(for: variant)
+            }
+        )
+        return repository.load(for: ProductConfiguration.configuration(for: product))?.rawValue
+    }
+
     /// Every per-child key takes the learner's kept value, or is removed when
     /// the learner has none, so a new child starts clean.
     private func setLiveValues(_ values: [String: Any]) {
@@ -430,10 +445,7 @@ final class ChildProfileStore: ObservableObject {
             return
         }
         guard !state.publicRecordCleanups.contains(where: { $0.ownerRawValue == ownerID.rawValue }) else { return }
-        state.publicRecordCleanups.append(ChildProfilePublicRecordCleanup(
-            ownerRawValue: ownerID.rawValue,
-            failedAttempts: 0
-        ))
+        state.publicRecordCleanups.append(ChildProfilePublicRecordCleanup(ownerRawValue: ownerID.rawValue))
     }
 
     private func removePublicLeaderboardValues(of ownerID: RewardOwnerID) {
@@ -489,8 +501,8 @@ private struct ChildProfileStoreState: Codable {
     }
 }
 
-/// A deleted child whose public Top 20 records are still to be deleted.
+/// A deleted child whose public Top 20 records are still to be deleted. An
+/// earlier saved form also counted failed attempts; decoding ignores that count.
 private struct ChildProfilePublicRecordCleanup: Codable, Hashable {
     let ownerRawValue: String
-    var failedAttempts: Int
 }

@@ -147,11 +147,13 @@ struct TowerView: View {
     @State private var languageAttemptTracker = LanguageOrderedTokenAttemptTracker()
     // The Language Tower board: whether the word's first letter is gliding to the
     // sand (languageBaseLanded drives the glide) and whether it has arrived there,
-    // where loose blocks were left, the letter a wrong drop outlines, the tower's
+    // where loose blocks were left, the blocks that have been let go after a drag
+    // (drawn lower from then on), the letter a wrong drop outlines, the tower's
     // flash, the shimmer passes, the confetti and this visit's title colour order.
     @State private var languageBaseLanded = false
     @State private var languageBaseReady = false
     @State private var languageLooseOffsets: [TowerBlockID: CGSize] = [:]
+    @State private var languageReleasedBlocks: Set<TowerBlockID> = []
     @State private var languageRejection: LanguageTowerRejection? = nil
     @State private var languageTowerFlash = false
     @State private var languageRuntimeShimmerStart: Date? = nil
@@ -301,13 +303,17 @@ struct TowerView: View {
         plan: LanguageTowerPromptPlan,
         metrics: LanguageTowerMetrics
     ) -> some View {
+        // fragment_letters_tower draws the X, the speaker and the titles under the
+        // board, and the confetti over it: a letter lies over the buttons and is
+        // picked up before them.
         ZStack(alignment: .topLeading) {
             languageTowerGround(metrics)
 
             languageTowerColumn(content, plan: plan, metrics: metrics)
                 .accessibilitySortPriority(2)
 
-            languageTowerSpacers(metrics)
+            languageTowerNavigation(metrics)
+                .accessibilitySortPriority(3)
 
             languageTowerLetterBlocks(metrics)
                 .accessibilitySortPriority(1)
@@ -324,9 +330,6 @@ struct TowerView: View {
                         await endLanguageConfetti(startedAt: confettiStart)
                     }
             }
-
-            languageTowerNavigation(metrics)
-                .accessibilitySortPriority(3)
         }
         .frame(width: metrics.width, height: metrics.height, alignment: .topLeading)
         // Every position is worked out left to right; the texts get the interface's
@@ -541,32 +544,33 @@ struct TowerView: View {
         .frame(width: metrics.width, height: metrics.height, alignment: .topLeading)
     }
 
-    private func languageTowerSpacers(_ metrics: LanguageTowerMetrics) -> some View {
-        ZStack(alignment: .topLeading) {
-            ForEach(Array(languageStackSlots.enumerated()), id: \.element.id) { slotIndex, slot in
+    /// lettersLayer: the spacers and the letter blocks share one layer, so they are
+    /// drawn in Android's order (languageTowerBlockLayer).
+    private func languageTowerLetterBlocks(_ metrics: LanguageTowerMetrics) -> some View {
+        let allBlocks = session.orderedTokenRound?.blocks ?? []
+        let slots = languageStackSlots
+        let stackIndices = languageStackIndexByBlockID
+        let topStackIndex = slots.count - 1
+        let wordPositions = languageBlockWordPositions
+        return ZStack(alignment: .topLeading) {
+            ForEach(Array(slots.enumerated()), id: \.element.id) { slotIndex, slot in
                 switch slot {
                 case .block:
                     EmptyView()
                 case .spacer:
                     // createSpacerLikeNormalBlock: a #F5F5F5 block stands in for a space.
+                    // It takes no touches, so a letter under it can be picked up.
                     RoundedRectangle(cornerRadius: metrics.blockCornerRadius, style: .circular)
                         .fill(Color(white: 0.96))
                         .frame(width: metrics.blockSize, height: metrics.blockSize)
                         .shadow(color: Color.black.opacity(0.14), radius: 2.5, x: 0, y: 2)
                         .position(metrics.towerSlotCenter(slotIndex))
+                        .zIndex(LanguageTowerLayer.spacer + Double(slotIndex))
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
                 }
             }
-        }
-        .frame(width: metrics.width, height: metrics.height, alignment: .topLeading)
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
-    }
 
-    private func languageTowerLetterBlocks(_ metrics: LanguageTowerMetrics) -> some View {
-        let allBlocks = session.orderedTokenRound?.blocks ?? []
-        let stackIndices = languageStackIndexByBlockID
-        let topStackIndex = languageStackSlots.count - 1
-        return ZStack(alignment: .topLeading) {
             ForEach(allBlocks, id: \.id) { block in
                 let index = allBlocks.firstIndex(where: { $0.id == block.id }) ?? 0
                 languageTowerLetterBlock(
@@ -574,6 +578,8 @@ struct TowerView: View {
                     index: index,
                     stackIndex: stackIndices[block.id],
                     topStackIndex: topStackIndex,
+                    wordPosition: wordPositions[block.id] ?? index,
+                    blockCount: allBlocks.count,
                     metrics: metrics
                 )
             }
@@ -582,20 +588,16 @@ struct TowerView: View {
     }
 
     /// createLetterBlock: a solid colour block with 16 dp corners and a bold black
-    /// letter. A loose block follows the finger and rests where it is let go, in
-    /// full view (finishLanguageDrag); a placed block sits in its tower slot. One
-    /// view per block, so placing it glides it onto the tower.
-    ///
-    /// No loose letter can end up hidden or out of reach: the letter under the
-    /// finger is drawn over everything, the loose letters over the tower (only the
-    /// tower's newest block, gliding into place, passes over them, as Android's
-    /// bringToFront), and placed blocks let touches through to whatever is under
-    /// them, as Android's snapped cards (no touch listener, not clickable) do.
+    /// letter. A loose block follows the finger and stays where it is let go; a
+    /// placed block sits in its tower slot and takes no touches. One view per
+    /// block, so placing it glides it onto the tower.
     private func languageTowerLetterBlock(
         _ block: TowerBlock,
         index: Int,
         stackIndex: Int?,
         topStackIndex: Int,
+        wordPosition: Int,
+        blockCount: Int,
         metrics: LanguageTowerMetrics
     ) -> some View {
         let isPlaced = stackIndex != nil
@@ -623,14 +625,13 @@ struct TowerView: View {
         } else {
             labelFormat = interfaceLocaleID.text("Available letter %@")
         }
-        let layer: Double
-        if isDragged {
-            layer = 3
-        } else if isPlaced {
-            layer = session.acceptedBlockIDs.last == block.id ? 2 : 0
-        } else {
-            layer = 1
-        }
+        let layer = languageTowerBlockLayer(
+            isDragged: isDragged,
+            isReleased: languageReleasedBlocks.contains(block.id),
+            stackIndex: stackIndex,
+            wordPosition: wordPosition,
+            blockCount: blockCount
+        )
 
         return Text(letter)
             .font(.system(size: metrics.blockFontSize, weight: .bold))
@@ -675,6 +676,9 @@ struct TowerView: View {
                 languageTowerDrag(block, index: index, metrics: metrics),
                 including: isPlaced ? GestureMask.subviews : GestureMask.all
             )
+            // Like Android's placed cards (no touch listener, not clickable), a placed
+            // block takes no touches: a letter lying under the tower is picked up
+            // through it.
             .allowsHitTesting(!isPlaced)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(String(format: labelFormat, letter))
@@ -697,52 +701,68 @@ struct TowerView: View {
         if let stackIndex, stackIndex > 0 || languageBaseLanded || reduceMotion {
             return metrics.towerSlotCenter(stackIndex)
         }
+        let slot = metrics.looseSlotCenter(index: index, seed: languageRoundSeed)
         guard stackIndex == nil else {
             // animateFirstLetterToGroundAndLock: the first letter starts among the
             // loose letters and glides down onto the sand.
-            return metrics.looseSlotCenter(index: index, seed: languageRoundSeed)
+            return slot
         }
-        let resting = languageLooseRestingCenter(blockID, index: index, metrics: metrics)
-        guard let drag = languageDrag, drag.blockID == blockID else {
-            return resting
+        var offset = languageLooseOffsets[blockID] ?? .zero
+        if let drag = languageDrag, drag.blockID == blockID {
+            offset.width += drag.translation.width
+            offset.height += drag.translation.height
         }
         return metrics.clampedBlockCenter(CGPoint(
-            x: resting.x + drag.translation.width,
-            y: resting.y + drag.translation.height
+            x: slot.x + offset.width,
+            y: slot.y + offset.height
         ))
     }
 
-    /// Where a loose letter rests: its own spot, moved by where it was last left.
-    /// A place the board no longer allows (the card changed size after the drop)
-    /// gives the letter its own spot back, so it is never left under the tower.
-    private func languageLooseRestingCenter(
-        _ blockID: TowerBlockID,
-        index: Int,
-        metrics: LanguageTowerMetrics
-    ) -> CGPoint {
-        let home = metrics.looseSlotCenter(index: index, seed: languageRoundSeed)
-        guard let offset = languageLooseOffsets[blockID] else {
-            return home
+    /// The block's place in lettersLayer's drawing order. Android draws a card of
+    /// higher z over one of lower z, and cards of equal z in the order they were
+    /// added: placeBlocks adds the letters in the word's order, handleDropSequential
+    /// brings a snapped card to the front, and the base is never moved. A letter's z
+    /// is its 8 dp elevation (createLetterBlock) until it is first let go, when
+    /// enableDrag sets it to 0: from then on it lies under the 4 dp spacers and
+    /// under every letter not touched yet, the base among them. The letter under
+    /// the finger is drawn over all the others and the spacers.
+    private func languageTowerBlockLayer(
+        isDragged: Bool,
+        isReleased: Bool,
+        stackIndex: Int?,
+        wordPosition: Int,
+        blockCount: Int
+    ) -> Double {
+        if isDragged {
+            return LanguageTowerLayer.held
         }
-        let resting = metrics.clampedBlockCenter(CGPoint(
-            x: home.x + offset.width,
-            y: home.y + offset.height
-        ))
-        return metrics.keepsTowerAndButtonsClear(resting) ? resting : home
+        let order: Int
+        if let stackIndex, stackIndex > 0 {
+            order = blockCount + stackIndex
+        } else {
+            order = wordPosition
+        }
+        let group = isReleased ? LanguageTowerLayer.released : LanguageTowerLayer.untouched
+        return group + Double(order)
     }
 
-    /// Where the other loose letters rest now, so a letter let go never covers one.
-    private func languageOtherLooseCenters(
-        excluding blockID: TowerBlockID,
-        metrics: LanguageTowerMetrics
-    ) -> [CGPoint] {
-        let allBlocks = session.orderedTokenRound?.blocks ?? []
-        let looseIDs = Set(session.availableOrderedBlocks.map(\.id))
-        var centers: [CGPoint] = []
-        for (index, block) in allBlocks.enumerated() where block.id != blockID && looseIDs.contains(block.id) {
-            centers.append(languageLooseRestingCenter(block.id, index: index, metrics: metrics))
+    /// Each block's place in the word, the order placeBlocks adds the cards in; the
+    /// blocks of a repeated letter take its places in the round's order of blocks.
+    private var languageBlockWordPositions: [TowerBlockID: Int] {
+        guard let content = session.orderedTokenContent else {
+            return [:]
         }
-        return centers
+        let blocks = session.orderedTokenRound?.blocks ?? []
+        var positions: [TowerBlockID: Int] = [:]
+        for (position, token) in content.expectedTokenSequence.enumerated() {
+            let match = blocks.first(where: { candidate in
+                candidate.orderedToken == token && positions[candidate.id] == nil
+            })
+            if let match {
+                positions[match.id] = position
+            }
+        }
+        return positions
     }
 
     private func languageTowerDrag(
@@ -765,68 +785,41 @@ struct TowerView: View {
     }
 
     /// handleDropSequential: a block let go within 140 dp (200 dp on tablets) of the
-    /// next tower slot is tried there. A wrong letter glides back to its own spot
-    /// instead of staying on the tower, where the next blocks would bury it. A
-    /// letter let go anywhere else stays there, moved just enough to sit clear of
-    /// the tower, the speaker, the X and the other loose letters, so every letter
-    /// stays in view and can always be picked up again.
+    /// next tower slot is tried there; anywhere else it simply stays where it is.
+    /// Letting go lowers it in the drawing order for the rest of the word
+    /// (enableDrag's z 0).
     private func finishLanguageDrag(
         _ block: TowerBlock,
         index: Int,
         translation: CGSize,
         metrics: LanguageTowerMetrics
     ) {
+        languageReleasedBlocks.insert(block.id)
         guard session.availableOrderedBlocks.contains(where: { $0.id == block.id }) else {
             return
         }
-        let home = metrics.looseSlotCenter(index: index, seed: languageRoundSeed)
-        let start = languageLooseRestingCenter(block.id, index: index, metrics: metrics)
+        let slot = metrics.looseSlotCenter(index: index, seed: languageRoundSeed)
+        let previous = languageLooseOffsets[block.id] ?? .zero
         let dropped = metrics.clampedBlockCenter(CGPoint(
-            x: start.x + translation.width,
-            y: start.y + translation.height
+            x: slot.x + previous.width + translation.width,
+            y: slot.y + previous.height + translation.height
         ))
-        // The letter is where the finger left it; any glide starts from there.
         languageLooseOffsets[block.id] = CGSize(
-            width: dropped.x - home.x,
-            height: dropped.y - home.y
+            width: dropped.x - slot.x,
+            height: dropped.y - slot.y
         )
-        let others = languageOtherLooseCenters(excluding: block.id, metrics: metrics)
         // Nothing snaps before the first letter has landed as the base: Android's
         // towerStack stays empty until the glide's onAnimationEnd.
-        let target = metrics.towerSlotCenter(languageStackSlots.count)
-        let triesTower = (languageBaseReady || reduceMotion)
-            && abs(dropped.x - target.x) <= metrics.snapThreshold
-            && abs(dropped.y - target.y) <= metrics.snapThreshold
-        if triesTower {
-            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
-                _ = placeLanguageBlock(block.id)
-            }
-            guard session.availableOrderedBlocks.contains(where: { $0.id == block.id }) else {
-                return
-            }
-            // Not the next letter: back to its own spot, or the nearest free place
-            // when another letter has been left there. (Neighbouring spots may
-            // touch by their few points of jitter; that does not count.)
-            let back = metrics.isTaken(home, by: others, room: -3 * metrics.scale)
-                ? metrics.restingCenter(near: home, avoiding: others)
-                : home
-            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) {
-                languageLooseOffsets[block.id] = CGSize(
-                    width: back.x - home.x,
-                    height: back.y - home.y
-                )
-            }
+        guard languageBaseReady || reduceMotion else {
             return
         }
-        let resting = metrics.restingCenter(near: dropped, avoiding: others)
-        guard resting != dropped else {
+        let target = metrics.towerSlotCenter(languageStackSlots.count)
+        guard abs(dropped.x - target.x) <= metrics.snapThreshold,
+              abs(dropped.y - target.y) <= metrics.snapThreshold else {
             return
         }
         withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
-            languageLooseOffsets[block.id] = CGSize(
-                width: resting.x - home.x,
-                height: resting.y - home.y
-            )
+            _ = placeLanguageBlock(block.id)
         }
     }
 
@@ -1045,6 +1038,7 @@ struct TowerView: View {
         languageBaseLanded = false
         languageBaseReady = false
         languageLooseOffsets = [:]
+        languageReleasedBlocks = []
         languageRejection = nil
         languageTowerFlash = false
         languageRuntimeShimmerStart = nil
@@ -2046,6 +2040,17 @@ private struct LanguageTowerDrag: Equatable {
     let translation: CGSize
 }
 
+/// lettersLayer's drawing order (languageTowerBlockLayer), from the bottom: the
+/// letters let go after a drag (z 0), the spacers (4 dp), the letters not touched
+/// yet (8 dp) and the letter under the finger. Each group leaves room for its
+/// blocks' order of addition.
+private enum LanguageTowerLayer {
+    static let released: Double = 0
+    static let spacer: Double = 1_000
+    static let untouched: Double = 2_000
+    static let held: Double = 10_000
+}
+
 /// LettersTowerFragment's geometry in dp: fragment_letters_tower.xml with the
 /// reference phone's dimensions on its 357 x 745 dp card, and layout-sw600dp with
 /// the sw700dp dimensions on a 704 x 1041 dp card for iPad, then the fragment's own
@@ -2092,10 +2097,6 @@ private struct LanguageTowerMetrics {
     let towerX: CGFloat
     let towerBaseBottom: CGFloat
     let snapThreshold: CGFloat
-    /// The finished tower's slots (the word's characters, spaces included) and the
-    /// loose letters dealt for it.
-    let towerSlotCount: Int
-    let looseBlockCount: Int
 
     let sandSize: CGSize
     let sandCenter: CGPoint
@@ -2279,8 +2280,6 @@ private struct LanguageTowerMetrics {
         towerX = panelWidth / 2
         towerBaseBottom = min(boardHeight, groundTop + (wide ? 150 : 52) * s)
         snapThreshold = (wide ? 200 : 140) * s
-        towerSlotCount = max(0, wordLength)
-        looseBlockCount = max(0, blockCount)
 
         // sand2 fills the width, centred 30 dp (60 dp) above the bottom edge.
         sandSize = CGSize(width: panelWidth, height: panelWidth * 189 / 864)
@@ -2303,94 +2302,13 @@ private struct LanguageTowerMetrics {
         CGPoint(x: towerX, y: towerBaseBottom - blockSize / 2 - CGFloat(slot) * blockSize)
     }
 
-    /// The tower's column from the sand up through its first `slots` slots.
-    func towerColumn(slots: Int) -> CGRect {
-        let columnHeight = CGFloat(max(0, slots)) * blockSize
-        return CGRect(
-            x: towerX - blockSize / 2,
-            y: towerBaseBottom - columnHeight,
-            width: blockSize,
-            height: columnHeight
-        )
-    }
-
-    /// The speaker's and the X's tap targets, as languageTowerNavigation sizes them.
-    var buttonAreas: [CGRect] {
-        let speakerTarget = max(44, speakerSize)
-        let closeTarget = max(44, closeSize)
-        return [
-            CGRect(
-                x: speakerCenter.x - speakerTarget / 2,
-                y: speakerCenter.y - speakerTarget / 2,
-                width: speakerTarget,
-                height: speakerTarget
-            ),
-            CGRect(
-                x: closeCenter.x - closeTarget / 2,
-                y: closeCenter.y - closeTarget / 2,
-                width: closeTarget,
-                height: closeTarget
-            )
-        ]
-    }
-
-    func blockFrame(at center: CGPoint) -> CGRect {
-        CGRect(
-            x: center.x - blockSize / 2,
-            y: center.y - blockSize / 2,
-            width: blockSize,
-            height: blockSize
-        )
-    }
-
-    /// placeBlocks' grid slot for a block. A grid cell the tower grows over before
-    /// its last letter (or one under the speaker or the X) is passed over, and the
-    /// letters after it move on a cell, into another row when they need one, so no
-    /// letter ever starts where a placed block would cover it.
+    /// placeBlocks' grid slot for a block, with its small fixed jitter, counted from
+    /// the right edge in right-to-left interfaces (marginStart).
     func looseSlotCenter(index: Int, seed: Int) -> CGPoint {
-        let centers = looseSlotCenters(seed: seed)
-        return centers.indices.contains(index)
-            ? centers[index]
-            : looseGridCellCenter(index, seed: seed)
-    }
-
-    func looseSlotCenters(seed: Int) -> [CGPoint] {
-        let count = looseBlockCount
-        // The tower before its last letter: every block that sits on it while a
-        // letter is still loose.
-        let covered = towerColumn(slots: towerSlotCount - 1)
-        let buttons = buttonAreas
-        var centers: [CGPoint] = []
-        centers.reserveCapacity(count)
-        let lastCell = count + 4 * looseColumns + 8
-        var cell = 0
-        while centers.count < count, cell < lastCell {
-            let center = looseGridCellCenter(cell, seed: seed)
-            let frame = blockFrame(at: center)
-            let isFree = !Self.overlaps(frame, covered)
-                && !buttons.contains(where: { Self.overlaps(frame, $0) })
-                && !centers.contains(where: { taken in
-                    abs(taken.x - center.x) < blockSize / 2 && abs(taken.y - center.y) < blockSize / 2
-                })
-            if isFree {
-                centers.append(center)
-            }
-            cell += 1
-        }
-        // A board too small for that keeps the plain grid for the rest.
-        while centers.count < count {
-            centers.append(looseGridCellCenter(centers.count, seed: seed))
-        }
-        return centers
-    }
-
-    /// One cell of placeBlocks' grid, with its small fixed jitter, counted from the
-    /// right edge in right-to-left interfaces (marginStart).
-    private func looseGridCellCenter(_ cell: Int, seed: Int) -> CGPoint {
-        let column = cell % looseColumns
-        let row = cell / looseColumns
-        let jitterX = (CGFloat(LanguageTowerNoise.unit(seed, cell, 1)) - 0.5) * 12 * scale
-        let jitterY = (CGFloat(LanguageTowerNoise.unit(seed, cell, 2)) - 0.5) * 8 * scale
+        let column = index % looseColumns
+        let row = index / looseColumns
+        let jitterX = (CGFloat(LanguageTowerNoise.unit(seed, index, 1)) - 0.5) * 12 * scale
+        let jitterY = (CGFloat(LanguageTowerNoise.unit(seed, index, 2)) - 0.5) * 8 * scale
         let fromStart = looseStart + CGFloat(column) * (blockSize + looseGap) + jitterX
         let leading = min(max(0, fromStart), max(0, width - blockSize))
         let rawTop = looseGridTop + CGFloat(row) * (blockSize + looseRowGap) + jitterY
@@ -2406,80 +2324,6 @@ private struct LanguageTowerMetrics {
             x: min(max(half, point.x), max(half, width - half)),
             y: min(max(half, point.y), max(half, height - half))
         )
-    }
-
-    /// The gap a loose letter keeps from the tower and from the other letters.
-    var restingRoom: CGFloat {
-        max(2 * scale, blockSize * 0.15)
-    }
-
-    /// Whether a loose letter here is in full view: off the finished tower's
-    /// column (with `room` to spare) and out from under the speaker and the X.
-    func keepsTowerAndButtonsClear(_ center: CGPoint, room: CGFloat = 0) -> Bool {
-        let frame = blockFrame(at: center)
-        let tower = towerColumn(slots: towerSlotCount).insetBy(dx: -room, dy: -room)
-        return !Self.overlaps(frame, tower)
-            && !buttonAreas.contains(where: { Self.overlaps(frame, $0) })
-    }
-
-    /// Whether one of the other loose letters rests where this one would.
-    func isTaken(_ center: CGPoint, by others: [CGPoint], room: CGFloat = 0) -> Bool {
-        let spacing = blockSize + room
-        return others.contains { other in
-            abs(other.x - center.x) < spacing && abs(other.y - center.y) < spacing
-        }
-    }
-
-    /// The nearest place to `point` where a loose letter rests in full view and in
-    /// reach: clear of the tower, the speaker, the X and the other loose letters.
-    /// A letter let go in a free place stays exactly where it is.
-    func restingCenter(near point: CGPoint, avoiding others: [CGPoint]) -> CGPoint {
-        let room = restingRoom
-        let start = clampedBlockCenter(point)
-        func isFree(_ center: CGPoint) -> Bool {
-            keepsTowerAndButtonsClear(center, room: room) && !isTaken(center, by: others, room: room)
-        }
-        if isFree(start) {
-            return start
-        }
-        // Rings around the drop, a quarter block apart, out to the first ring with
-        // a free place; the closest place on that ring wins.
-        let step = max(4, blockSize / 4)
-        let reach = max(width, height)
-        var radius = step
-        while radius <= reach {
-            let count = max(8, Int((2 * Double.pi * Double(radius / step)).rounded(.up)))
-            var best: CGPoint?
-            var bestDistance = CGFloat.greatestFiniteMagnitude
-            for spoke in 0 ..< count {
-                let angle = 2 * Double.pi * Double(spoke) / Double(count)
-                let candidate = clampedBlockCenter(CGPoint(
-                    x: start.x + radius * CGFloat(cos(angle)),
-                    y: start.y + radius * CGFloat(sin(angle))
-                ))
-                guard isFree(candidate) else {
-                    continue
-                }
-                let dx = candidate.x - start.x
-                let dy = candidate.y - start.y
-                let distance = dx * dx + dy * dy
-                if distance < bestDistance {
-                    best = candidate
-                    bestDistance = distance
-                }
-            }
-            if let best {
-                return best
-            }
-            radius += step
-        }
-        return start
-    }
-
-    /// Overlap with some area in common; blocks that only touch do not overlap.
-    private static func overlaps(_ first: CGRect, _ second: CGRect) -> Bool {
-        first.minX < second.maxX && second.minX < first.maxX
-            && first.minY < second.maxY && second.minY < first.maxY
     }
 }
 
