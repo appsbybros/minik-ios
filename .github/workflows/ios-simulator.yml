@@ -60,15 +60,15 @@ jobs:
           set -euo pipefail
           mkdir -p build/artifacts build/logs
 
-          SCHEMES=(MinikPlus MinikPlusEnglish MinikMath MinikPingPong MinikRetroPingPong)
+          SCHEMES=(MinikPlus MinikPlusEnglish MinikMathPlus MinikPingPong MinikRetroPingPong)
           minik_plus_built=false
           minik_plus_english_built=false
-          minik_math_built=false
+          minik_math_plus_built=false
           minik_ping_pong_built=false
           minik_retro_ping_pong_built=false
           minik_plus_ready=false
           minik_plus_english_ready=false
-          minik_math_ready=false
+          minik_math_plus_ready=false
           minik_ping_pong_ready=false
           minik_retro_ping_pong_ready=false
           failed_schemes=()
@@ -116,7 +116,7 @@ jobs:
             case "$SCHEME" in
               MinikPlus) minik_plus_built=true ;;
               MinikPlusEnglish) minik_plus_english_built=true ;;
-              MinikMath) minik_math_built=true ;;
+              MinikMathPlus) minik_math_plus_built=true ;;
               MinikPingPong) minik_ping_pong_built=true ;;
               MinikRetroPingPong) minik_retro_ping_pong_built=true ;;
             esac
@@ -137,7 +137,7 @@ jobs:
             case "$SCHEME" in
               MinikPlus) minik_plus_ready=true ;;
               MinikPlusEnglish) minik_plus_english_ready=true ;;
-              MinikMath) minik_math_ready=true ;;
+              MinikMathPlus) minik_math_plus_ready=true ;;
               MinikPingPong) minik_ping_pong_ready=true ;;
               MinikRetroPingPong) minik_retro_ping_pong_ready=true ;;
             esac
@@ -157,12 +157,12 @@ jobs:
           {
             echo "minikplus_built=$minik_plus_built"
             echo "minikplusenglish_built=$minik_plus_english_built"
-            echo "minikmath_built=$minik_math_built"
+            echo "minikmathplus_built=$minik_math_plus_built"
             echo "minikpingpong_built=$minik_ping_pong_built"
             echo "minikretropingpong_built=$minik_retro_ping_pong_built"
             echo "minikplus_ready=$minik_plus_ready"
             echo "minikplusenglish_ready=$minik_plus_english_ready"
-            echo "minikmath_ready=$minik_math_ready"
+            echo "minikmathplus_ready=$minik_math_plus_ready"
             echo "minikpingpong_ready=$minik_ping_pong_ready"
             echo "minikretropingpong_ready=$minik_retro_ping_pong_ready"
             echo "compiles_clean=$compiles_clean"
@@ -343,7 +343,7 @@ jobs:
           IPAD_READY: ${{ steps.prepare_simulator.outputs.ipad_ready }}
           MINIKPLUS_BUILT: ${{ steps.product_builds.outputs.minikplus_built }}
           MINIKPLUSENGLISH_BUILT: ${{ steps.product_builds.outputs.minikplusenglish_built }}
-          MINIKMATH_BUILT: ${{ steps.product_builds.outputs.minikmath_built }}
+          MINIKMATHPLUS_BUILT: ${{ steps.product_builds.outputs.minikmathplus_built }}
           MINIKPINGPONG_BUILT: ${{ steps.product_builds.outputs.minikpingpong_built }}
           MINIKRETROPINGPONG_BUILT: ${{ steps.product_builds.outputs.minikretropingpong_built }}
         run: |
@@ -354,7 +354,7 @@ jobs:
             > "$RESULTS_TSV"
           overall_clean=true
           DEVICE_ROLES=(iPhone iPad)
-          SCHEMES=(MinikPlus MinikPlusEnglish MinikMath MinikPingPong MinikRetroPingPong)
+          SCHEMES=(MinikPlus MinikPlusEnglish MinikMathPlus MinikPingPong MinikRetroPingPong)
 
           record_result() {
             local product="$1"
@@ -384,7 +384,7 @@ jobs:
               case "$SCHEME" in
                 MinikPlus) BUILD_SUCCEEDED="$MINIKPLUS_BUILT" ;;
                 MinikPlusEnglish) BUILD_SUCCEEDED="$MINIKPLUSENGLISH_BUILT" ;;
-                MinikMath) BUILD_SUCCEEDED="$MINIKMATH_BUILT" ;;
+                MinikMathPlus) BUILD_SUCCEEDED="$MINIKMATHPLUS_BUILT" ;;
                 MinikPingPong) BUILD_SUCCEEDED="$MINIKPINGPONG_BUILT" ;;
                 MinikRetroPingPong) BUILD_SUCCEEDED="$MINIKRETROPINGPONG_BUILT" ;;
               esac
@@ -613,14 +613,14 @@ jobs:
           if-no-files-found: error
           retention-days: 3
 
-      - name: Upload MinikMath Simulator artifact
-        if: ${{ !cancelled() && steps.product_builds.outputs.minikmath_ready == 'true' }}
+      - name: Upload MinikMathPlus Simulator artifact
+        if: ${{ !cancelled() && steps.product_builds.outputs.minikmathplus_ready == 'true' }}
         uses: actions/upload-artifact@v4
         with:
-          name: MinikMath-simulator
+          name: MinikMathPlus-simulator
           path: |
-            build/artifacts/MinikMath-simulator.zip
-            build/logs/MinikMath.log
+            build/artifacts/MinikMathPlus-simulator.zip
+            build/logs/MinikMathPlus.log
           if-no-files-found: error
           retention-days: 3
 

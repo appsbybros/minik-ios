@@ -5,6 +5,11 @@
 **Document status: v2 — canonical baseline plus the user-confirmed Ping Pong product decision and implementation sprint**
 **Repository path:** `ios/docs/MINIK_MASTER_PLAN.md`
 
+> **2026-10-12, owner decision.** The iOS math app this plan calls Minik Math is now **Minik Math Plus**
+> (target `MinikMathPlus`, `com.appsbybros.minik.math.plus`), like its Android twin. **Minik Math** (target
+> `MinikMath`, `com.appsbybros.minik.math`) is now Android Minik Math's web app in an iOS host:
+> `docs/minik-math-ios.md`.
+
 ---
 
 ## 0. Why this document exists

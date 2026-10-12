@@ -95,7 +95,7 @@ foreach ($target in @('MinikPlus', 'MinikPlusEnglish')) {
         $errors.Add("$target does not link FirebaseAuth and FirebaseFirestore.")
     }
 }
-foreach ($target in @('MinikMath', 'MinikPingPong')) {
+foreach ($target in @('MinikMathPlus', 'MinikMath', 'MinikPingPong')) {
     $match = [regex]::Match($project, "(?ms)^  ${target}:(?<body>[\s\S]*?)(?=^  [A-Za-z][A-Za-z0-9]+:|\z)")
     if ($match.Success -and $match.Groups['body'].Value -match 'product: Firebase') {
         $errors.Add("$target must not link the Language records Firebase products.")

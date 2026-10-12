@@ -53,8 +53,8 @@
          "caption": {"en": ["PRACTICE THAT FEELS LIKE PLAY", "Score with every right answer", "Soccer, towers and more word games."]}}
       ]
     },
-    "MinikMath": {
-      "name": "Minik Math",
+    "MinikMathPlus": {
+      "name": "Minik Math Plus",
       "palette": "math",
       "languages": ["en", "he"],
       "scenes": [

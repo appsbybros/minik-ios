@@ -1,4 +1,4 @@
-name: MinikMath Unsigned IPA
+name: MinikMathPlus Unsigned IPA
 
 on:
   workflow_dispatch:
@@ -35,11 +35,11 @@ jobs:
             exit 1
           fi
 
-      - name: Build unsigned MinikMath app
+      - name: Build unsigned MinikMathPlus app
         run: |
           xcodebuild \
             -project Minik.xcodeproj \
-            -scheme MinikMath \
+            -scheme MinikMathPlus \
             -configuration Debug \
             -destination 'generic/platform=iOS' \
             -derivedDataPath "$RUNNER_TEMP/MinikDerivedData" \
@@ -51,7 +51,7 @@ jobs:
         run: |
           BUILD_SETTINGS="$(xcodebuild \
             -project Minik.xcodeproj \
-            -scheme MinikMath \
+            -scheme MinikMathPlus \
             -configuration Debug \
             -destination 'generic/platform=iOS' \
             -derivedDataPath "$RUNNER_TEMP/MinikDerivedData" \
@@ -85,7 +85,7 @@ jobs:
           APP_MATCHES="$(find "$TARGET_BUILD_DIR" -maxdepth 1 -type d -name "$FULL_PRODUCT_NAME" -print)"
           APP_MATCH_COUNT="$(printf '%s\n' "$APP_MATCHES" | sed '/^$/d' | wc -l | tr -d ' ')"
           if [[ "$APP_MATCH_COUNT" != "1" ]]; then
-            echo "Error: Expected exactly one built MinikMath app, found $APP_MATCH_COUNT." >&2
+            echo "Error: Expected exactly one built MinikMathPlus app, found $APP_MATCH_COUNT." >&2
             printf '%s\n' "$APP_MATCHES" >&2
             exit 1
           fi
@@ -102,13 +102,13 @@ jobs:
           cp -R "$BUILT_APP_PATH" "$PACKAGE_ROOT/Payload/$BUILT_APP_NAME"
 
           cd "$PACKAGE_ROOT"
-          zip -qry "$GITHUB_WORKSPACE/MinikMath-unsigned.ipa" Payload
+          zip -qry "$GITHUB_WORKSPACE/MinikMathPlus-unsigned.ipa" Payload
 
       - name: Verify unsigned IPA
         run: |
-          IPA_PATH="$GITHUB_WORKSPACE/MinikMath-unsigned.ipa"
+          IPA_PATH="$GITHUB_WORKSPACE/MinikMathPlus-unsigned.ipa"
           if [[ ! -s "$IPA_PATH" ]]; then
-            echo "Error: MinikMath-unsigned.ipa is missing or empty." >&2
+            echo "Error: MinikMathPlus-unsigned.ipa is missing or empty." >&2
             exit 1
           fi
 
@@ -126,7 +126,7 @@ jobs:
       - name: Upload unsigned IPA
         uses: actions/upload-artifact@v7
         with:
-          name: MinikMath-unsigned-ipa
-          path: MinikMath-unsigned.ipa
+          name: MinikMathPlus-unsigned-ipa
+          path: MinikMathPlus-unsigned.ipa
           if-no-files-found: error
           compression-level: 0

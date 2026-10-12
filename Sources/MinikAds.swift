@@ -109,6 +109,13 @@ enum MinikInterstitialPresentationResult: Equatable, Sendable {
 protocol MinikInterstitialAdService: Sendable {
     func configure(_ configuration: MinikAdProviderConfiguration) async -> Bool
     func presentInterstitial() async -> MinikInterstitialPresentationResult
+    /// Returns once the presented interstitial has closed (at once when none is on screen).
+    /// Minik Math waits for it, as Android does, before a round's results appear.
+    func waitUntilDismissed() async
+}
+
+extension MinikInterstitialAdService {
+    func waitUntilDismissed() async {}
 }
 
 actor UnconfiguredMinikInterstitialAdService: MinikInterstitialAdService {

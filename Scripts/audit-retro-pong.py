@@ -32,7 +32,8 @@ for file in web.rglob('*'):
 project = text('project.yml')
 targets = project.split('\nschemes:\n')[0]
 retro = re.split(r'\n  [A-Za-z]+:\n', targets.split('  MinikRetroPingPong:\n', 1)[1], maxsplit=1)[0]
-math = targets.split('  MinikMath:\n', 1)[1].split('  MinikPingPong:', 1)[0]
+# The original iOS Math app, now Minik Math Plus, hosts both Ping Pong games.
+math = targets.split('  MinikMathPlus:\n', 1)[1].split('  MinikMath:\n', 1)[0]
 check('type: folder' in retro and 'Resources/RetroPong' in retro, 'Standalone must preserve WebKit relative paths')
 check('Resources/RetroPong' in math and 'Resources/ModernPongAssets.xcassets' in math, 'Both current games need their resources in Math')
 check('com.appsbybros.minik.bouncelearn' in retro, 'Separate standalone app identity missing')

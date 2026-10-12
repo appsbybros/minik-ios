@@ -280,7 +280,10 @@ targets:
       - package: GoogleMobileAds
         product: GoogleMobileAds
 
-  MinikMath:
+  MinikMathPlus:
+    # The original, larger iOS math app, renamed Minik Math Plus as its Android twin
+    # (C:/Projects/MinikMathPlus, com.appsbybros.minik.math.plus). Its Swift code keeps the
+    # MINIK_MATH condition and the minikMath product variant.
     templates: [MinikApplication]
     sources:
       - path: Resources/RetroPong
@@ -310,17 +313,19 @@ targets:
         buildPhase: resources
     info:
       properties:
-        CFBundleDisplayName: Minik Math
+        CFBundleDisplayName: Minik Math Plus
         UIAppFonts: [fredoka_bold.ttf, fredoka_medium.ttf]
         CFBundleLocalizations: [en, am, ar, de, es, fr, he, nl, pt-BR, pt-PT, ru]
     settings:
       base:
-        MINIK_APP_ICON_NAME: MinikMathAppIcon
-        MINIK_MATH_BUNDLE_IDENTIFIER: com.appsbybros.minik.math
-        PRODUCT_BUNDLE_IDENTIFIER: $(MINIK_MATH_BUNDLE_IDENTIFIER)
-        # App Store product IDs are unique per developer account.
-        MINIK_REMOVE_ADS_PRODUCT_IDENTIFIER: remove_ads_math
-        PRODUCT_NAME: MinikMath
+        # Android Minik Math Plus's store icon (play-store/current/sources/square-icon-master.png).
+        MINIK_APP_ICON_NAME: MinikMathPlusAppIcon
+        MINIK_MATH_PLUS_BUNDLE_IDENTIFIER: com.appsbybros.minik.math.plus
+        PRODUCT_BUNDLE_IDENTIFIER: $(MINIK_MATH_PLUS_BUNDLE_IDENTIFIER)
+        # App Store product IDs are unique per developer account; remove_ads_math stays with
+        # the Minik Math app record, which the small Minik Math now uses.
+        MINIK_REMOVE_ADS_PRODUCT_IDENTIFIER: remove_ads_math_plus
+        PRODUCT_NAME: MinikMathPlus
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) MINIK_MATH"
         OTHER_LDFLAGS: "$(inherited) -ObjC"
         # Release shows child-directed, non-personalized interstitials; Debug keeps
@@ -338,6 +343,64 @@ targets:
         product: AppStoreCommerceKit
       - package: GoogleMobileAds
         product: GoogleMobileAds
+
+  MinikMath:
+    # Android Minik Math (C:/Projects/minikMath, com.appsbybros.minik.math): its web app,
+    # app/src/main/assets/www copied byte for byte into Resources/MinikMathWeb, in a native
+    # host that does what Android's MainActivity and monetization package do
+    # (Sources/MinikMathWeb, docs/minik-math-ios.md).
+    templates: [MinikApplication]
+    sources:
+      - path: Resources/MinikMathWeb
+        type: folder
+        buildPhase: resources
+      - path: Resources/Localization/All/Localizable.xcstrings
+        buildPhase: resources
+      - path: Resources/Privacy/LocalOnly/PrivacyInfo.xcprivacy
+        buildPhase: resources
+    info:
+      properties:
+        CFBundleDisplayName: Minik Math
+        # The web app is in English and Hebrew, as on Android.
+        CFBundleLocalizations: [en, he]
+    settings:
+      base:
+        # The "MINIK Math" icon is Android Minik Math's app_icon.png.
+        MINIK_APP_ICON_NAME: MinikMathAppIcon
+        MINIK_MATH_BUNDLE_IDENTIFIER: com.appsbybros.minik.math
+        PRODUCT_BUNDLE_IDENTIFIER: $(MINIK_MATH_BUNDLE_IDENTIFIER)
+        MINIK_REMOVE_ADS_PRODUCT_IDENTIFIER: remove_ads_math
+        PRODUCT_NAME: MinikMath
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) MINIK_MATH_WEB"
+        OTHER_LDFLAGS: "$(inherited) -ObjC"
+        # Child-directed, non-personalized interstitials on Android's schedule
+        # (MinikMathAdPolicy). Until Minik Math Plus has its own AdMob app, both Math
+        # apps use these IDs. Debug keeps Google's sample app ID (ads off).
+        MINIK_ADS_ENABLED: YES
+        MINIK_ADS_POLICY_APPROVED: YES
+        MINIK_ADS_APPLICATION_IDENTIFIER: "ca-app-pub-6728099379581161~7244879780"
+        MINIK_INTERSTITIAL_AD_UNIT_IDENTIFIER: "ca-app-pub-6728099379581161/4754447817"
+      configs:
+        Debug:
+          MINIK_ADS_APPLICATION_IDENTIFIER: "ca-app-pub-3940256099942544~1458002511"
+          MINIK_INTERSTITIAL_AD_UNIT_IDENTIFIER: ""
+    dependencies:
+      - package: AppStoreCommerceKit
+        product: AppStoreCommerceKit
+      - package: GoogleMobileAds
+        product: GoogleMobileAds
+
+  MinikMathTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests/MinikMathTests
+    dependencies:
+      - target: MinikMath
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.appsbybros.minik.math.tests
+        GENERATE_INFOPLIST_FILE: YES
 
   MinikPingPong:
     templates: [MinikApplication]
@@ -634,6 +697,14 @@ schemes:
     build:
       targets:
         MinikMath: all
+        MinikMathTests: [test]
+    test:
+      targets:
+        - MinikMathTests
+  MinikMathPlus:
+    build:
+      targets:
+        MinikMathPlus: all
   MinikPingPong:
     build:
       targets:

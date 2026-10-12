@@ -24,6 +24,7 @@ APPS = [
     ("com.appsbybros.minik.plus", "Minik Plus", True),
     ("com.appsbybros.minik.plus.english", "Minik Plus English Only", True),
     ("com.appsbybros.minik.math", "Minik Math", False),
+    ("com.appsbybros.minik.math.plus", "Minik Math Plus", False),
     ("com.appsbybros.minik.pingpong", "Minik Ping Pong", False),
     ("com.appsbybros.minik.bouncelearn", "Minik Bounce", False),
     ("com.appsbybros.minik.crosspong", "Multi Ping Pong", False),
@@ -133,7 +134,9 @@ def main():
 SCHEME_BUNDLES = {
     "MinikPlus": "com.appsbybros.minik.plus",
     "MinikPlusEnglish": "com.appsbybros.minik.plus.english",
+    # The small Minik Math (Android's web app); Minik Math Plus is the original, larger iOS app.
     "MinikMath": "com.appsbybros.minik.math",
+    "MinikMathPlus": "com.appsbybros.minik.math.plus",
     "MinikPingPong": "com.appsbybros.minik.pingpong",
     "MinikRetroPingPong": "com.appsbybros.minik.bouncelearn",
     "MinikMultiPingPong": "com.appsbybros.minik.crosspong",

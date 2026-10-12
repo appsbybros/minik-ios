@@ -13,6 +13,13 @@ artwork is used.
 composition used by the checked-in Xcode asset sets. Apple applies the final
 platform mask; rounded corners are not baked into the source.
 
-No established Minik Math or standalone Minik Ping Pong App Store icon was
+## Minik Math and Minik Math Plus (12 October 2026)
+
+| iOS set | Source |
+| --- | --- |
+| `MinikMathAppIcon` (target `MinikMath`) | the "MINIK Math" icon; the same art as Android Minik Math's `app/src/main/res/drawable/app_icon.png` (1024 x 1024) |
+| `MinikMathPlusAppIcon` (target `MinikMathPlus`) | Android Minik Math Plus's store icon master `C:/Projects/MinikMathPlus/play-store/current/sources/square-icon-master.png` (1254 x 1254, not committed there; SHA-256 begins `531675cf926d5385`), scaled to 1024 x 1024, RGB |
+
+Earlier note (before the Math icons): no established Minik Math or standalone Minik Ping Pong App Store icon was
 found in the workspace or Git history. Those two targets intentionally keep the
 app-icon build setting empty rather than repurposing unrelated branding.

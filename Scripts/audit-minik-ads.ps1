@@ -72,7 +72,7 @@ foreach ($match in $hardcodedProviderIDs) {
 }
 
 $project = $projectText
-foreach ($target in @('MinikPlus', 'MinikPlusEnglish', 'MinikMath', 'MinikPingPong')) {
+foreach ($target in @('MinikPlus', 'MinikPlusEnglish', 'MinikMathPlus', 'MinikMath', 'MinikPingPong')) {
     $match = [regex]::Match($project, "(?ms)^  ${target}:(?<body>[\s\S]*?)(?=^  [A-Za-z][A-Za-z0-9]+:|\z)")
     if (-not $match.Success -or $match.Groups['body'].Value -notmatch 'package: GoogleMobileAds') {
         $errors.Add("$target does not link the production Google Mobile Ads adapter.")

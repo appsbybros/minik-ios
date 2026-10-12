@@ -13,14 +13,15 @@ appsbybros.dev@gmail.com. Hebrew and Arabic pages use `dir="rtl"`.
 | --- | --- | --- | --- | --- |
 | `Minik/` | Minik | `MinikPlus` | `com.appsbybros.minik.plus` | English, Hebrew |
 | `MinikEnglish/` | Minik English (home-screen name "Minik") | `MinikPlusEnglish` | `com.appsbybros.minik.plus.english` | English, Hebrew |
-| `MinikMath/` | Minik Math | `MinikMath` | `com.appsbybros.minik.math` | English, Hebrew |
+| `MinikMath/` | Minik Math (Android Minik Math's web app) | `MinikMath` | `com.appsbybros.minik.math` | English, Hebrew |
+| `MinikMathPlus/` | Minik Math Plus (the original iOS math app) | `MinikMathPlus` | `com.appsbybros.minik.math.plus` | English, Hebrew |
 | `MinikPingPong/` | Minik Ping Pong | `MinikPingPong` | `com.appsbybros.minik.pingpong` | English, Hebrew |
 | `MinikBounce/` | Minik Bounce | `MinikRetroPingPong` | `com.appsbybros.minik.bouncelearn` | English, Hebrew |
 | `MultiPingPong/` | Multi Ping Pong | `MinikMultiPingPong` | `com.appsbybros.minik.crosspong` | English, Hebrew, Arabic, Spanish, Hindi, Dutch |
 | `Spud/` | Spud (localized names from `Amudu/*.lproj/InfoPlist.strings`) | `MinikAmudu` | `com.appsbybros.minik.spud` | same six |
 | `MinikSplash/` | Minik Splash | `MinikSplash` | `com.appsbybros.minik.splash` | same six |
 
-Each page is `appstore/privacy/<App>/<Language>/privacy.html`. `appstore/privacy/index.html` links all 28 pages.
+Each page is `appstore/privacy/<App>/<Language>/privacy.html`. `appstore/privacy/index.html` links all 30 pages.
 
 ## How the pages were made
 
@@ -46,10 +47,19 @@ and `C:\Projects\MinikSplash\website\<Language>\privacy.html`. Section order and
   Rewritten sentences reuse the existing translation of any sentence whose meaning did not change (for example "These
   settings limit targeting; they are not a legal certification." and "Adults should supervise …").
 
-### Minik, Minik English, Minik Math, Minik Ping Pong, Minik Bounce (English and Hebrew)
+### Minik Math (English and Hebrew, 12 October 2026)
+
+Adapted from the Minik Bounce pages, whose data handling is the closest: a game from bundled files in a web view,
+interstitials, Remove Ads behind the grown-up check. Changed: the app description; what is stored on the device;
+the website link at the bottom of the home screen, which opens in Safari only after the grown-up check; when ads
+show (after a finished round or Ping Pong game, never the first two rounds, at least two minutes apart); the
+"Parents · Remove ads" link on the home screen. The earlier Minik Math pages describe the original app and moved
+to `MinikMathPlus/`, with the new name.
+
+### Minik, Minik English, Minik Math Plus, Minik Ping Pong, Minik Bounce (English and Hebrew)
 
 Written from the iOS source. Sections: on your device; the app's online part (leaderboard, online services, online play,
-or "the game and the internet"); learning reminders (Minik, Minik English, Minik Math); speech/sound and permissions;
+or "the game and the internet"); learning reminders (Minik, Minik English, Minik Math Plus); speech/sound and permissions;
 ads and children; purchases; children and parents; providers and security; retention and deletion; choices and
 rights; contact and changes. The Hebrew pages keep the Latin app names, because these targets do not localize
 `CFBundleDisplayName` (`project.yml`).
@@ -58,10 +68,10 @@ rights; contact and changes. The Hebrew pages keep the Latin app names, because 
 
 Line numbers are from the current working tree.
 
-### Shared by the five Minik apps
+### Shared by the six Minik apps
 
 - **Ads on in Release.** `project.yml` sets `MINIK_ADS_ENABLED: YES`, `MINIK_ADS_POLICY_APPROVED: YES` and real AdMob IDs
-  for MinikPlus (125–128), MinikPlusEnglish (211–214), MinikMath (293–296), MinikPingPong (329–332) and
+  for MinikPlus (125–128), MinikPlusEnglish (211–214), MinikMathPlus and MinikMath, MinikPingPong (329–332) and
   MinikRetroPingPong (384–387); Debug uses Google's sample app ID, which `MinikAdsConfiguration` treats as "no ads"
   (`Sources/MinikAds.swift:76`, `:82-87`).
 - **Ad request flags.** `Sources/MinikAds.swift:64-70` (child-directed, under age of consent, G, no personalization);
@@ -124,7 +134,21 @@ Line numbers are from the current working tree.
 - **Local data:** progress statistics (`Sources/ActivityProgress.swift:196-231`), points and streaks (`Sources/Rewards.swift:19-29`),
   settings keys listed under `minik.*` in `Sources/`.
 
-### Minik Math
+### Minik Math (Android Minik Math's web app)
+
+- No Firebase dependency (`project.yml`, target `MinikMath`); the product variant is the Math variant only for its
+  separate local purchase and ad state.
+- The web view loads only the bundled files and cancels any other navigation; an http(s) link (the footer's main
+  site link) opens in Safari only after the grown-up check (`Sources/MinikMathWeb/MinikMathWebView.swift`,
+  `Sources/MinikMathWeb/MinikMathWebRootView.swift`). No `fetch`, `XMLHttpRequest`, WebSocket or `speechSynthesis`
+  in `Resources/MinikMathWeb`.
+- Local data in the web app's storage: `minikMathPracticeLevel`, `minik_last_completed_math_round`,
+  `minik_last_completed_pong_match`, `minik.pong.progress.v1` (points, levels and Ping Pong settings); the native
+  ad schedule `minik.math.ads.schedule.v1` and the Remove Ads cache.
+- Ads: Android Minik Math's AdPolicy (`Sources/MinikMathWeb/MinikMathAdPolicy.swift`) with the shared request flags.
+- No reminders and no speech synthesis.
+
+### Minik Math Plus
 
 - No Firebase dependency (`project.yml:301-305`); `RemoteRecordsConfiguration` returns nil for Math, the trophy is hidden
   (`Sources/RemoteRecords.swift:434`, `Sources/MinikActivityHubView.swift:437-447`).

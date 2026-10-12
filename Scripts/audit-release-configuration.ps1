@@ -62,6 +62,7 @@ $targetBodies = @{}
 $canonicalBundleConfigurations = @(
     @{ Target = 'MinikPlus'; Setting = 'MINIK_PLUS_BUNDLE_IDENTIFIER'; Identifier = 'com.appsbybros.minik.plus' },
     @{ Target = 'MinikPlusEnglish'; Setting = 'MINIK_PLUS_ENGLISH_BUNDLE_IDENTIFIER'; Identifier = 'com.appsbybros.minik.plus.english' },
+    @{ Target = 'MinikMathPlus'; Setting = 'MINIK_MATH_PLUS_BUNDLE_IDENTIFIER'; Identifier = 'com.appsbybros.minik.math.plus' },
     @{ Target = 'MinikMath'; Setting = 'MINIK_MATH_BUNDLE_IDENTIFIER'; Identifier = 'com.appsbybros.minik.math' },
     @{ Target = 'MinikPingPong'; Setting = 'MINIK_PING_PONG_BUNDLE_IDENTIFIER'; Identifier = 'com.appsbybros.minik.pingpong' },
     @{ Target = 'ProductConfigurationTests'; Setting = 'MINIK_TESTS_BUNDLE_IDENTIFIER'; Identifier = 'com.appsbybros.minik.tests' }
@@ -101,7 +102,8 @@ foreach ($forbiddenIdentifier in @(
 Require-Pattern $project 'ASSETCATALOG_COMPILER_APPICON_NAME: \$\(MINIK_APP_ICON_NAME\)' 'App icon build-setting hook is missing.'
 Require-Pattern $project 'MINIK_APP_ICON_NAME: MinikPlusAppIcon' 'MinikPlus Android-derived app icon is not selected.'
 Require-Pattern $project 'MinikPlusEnglish:[\s\S]*?MINIK_APP_ICON_NAME: MinikPlusAppIcon' 'MinikPlusEnglish must share the MinikPlus launcher icon, as on Android.'
-Require-Pattern $project 'MINIK_APP_ICON_NAME: MinikMathAppIcon' 'MinikMath owner-approved app icon is not selected.'
+Require-Pattern $project '(?m)^  MinikMath:[\s\S]*?MINIK_APP_ICON_NAME: MinikMathAppIcon' 'MinikMath must use the MINIK Math icon (Android Minik Math app_icon.png).'
+Require-Pattern $project '(?m)^  MinikMathPlus:[\s\S]*?MINIK_APP_ICON_NAME: MinikMathPlusAppIcon' 'MinikMathPlus must use the Android Minik Math Plus store icon.'
 $firebaseConfigurations = @(
     @{ Target = 'MinikPlus'; Path = 'Config/Firebase/MinikPlus/GoogleService-Info.plist'; BundleID = 'com.appsbybros.minik.plus' },
     @{ Target = 'MinikPlusEnglish'; Path = 'Config/Firebase/MinikPlusEnglish/GoogleService-Info.plist'; BundleID = 'com.appsbybros.minik.plus.english' }
@@ -121,7 +123,7 @@ foreach ($configuration in $firebaseConfigurations) {
     }
     Require-Pattern $gitIgnore "(?m)^!$([regex]::Escape($relativePath))\s*$" "$relativePath is still excluded from the canonical repository."
 }
-foreach ($target in @('MinikMath')) {
+foreach ($target in @('MinikMathPlus', 'MinikMath')) {
     if ($targetBodies[$target] -match 'MINIK_FIREBASE_PLIST_PATH|GoogleService-Info\.plist|FirebaseApple') {
         $errors.Add("$target must not receive Firebase configuration or SDK products.")
     }
@@ -181,7 +183,7 @@ foreach ($target in @('MinikPlus', 'MinikPlusEnglish')) {
     Require-Pattern $targetBodies[$target] 'CODE_SIGN_ENTITLEMENTS: Resources/Entitlements/MinikLanguage\.entitlements' "$target must use the shared App Attest entitlement."
     Require-Pattern $targetBodies[$target] 'product: FirebaseAppCheck' "$target must link FirebaseAppCheck."
 }
-foreach ($target in @('MinikMath', 'MinikPingPong')) {
+foreach ($target in @('MinikMathPlus', 'MinikMath', 'MinikPingPong')) {
     if ($targetBodies[$target] -match 'CODE_SIGN_ENTITLEMENTS|FirebaseAppCheck') {
         $errors.Add("$target must not inherit the Language App Attest capability.")
     }
@@ -196,10 +198,10 @@ foreach ($target in $portraitOnlyTargets) {
     Require-Pattern $targetBodies[$target] '(?m)^\s+UISupportedInterfaceOrientations~ipad:REPLACE:\s*\r?\n\s+- UIInterfaceOrientationPortrait\s*\r?\n\s+- UIInterfaceOrientationPortraitUpsideDown\s*\r?\n(?!\s*- )' "$target must replace the template's iPad orientations with the two portrait ones."
 }
 
-if ($iconSets.Count -ne 8) {
-    $errors.Add("Expected exactly eight app icon sets (two Language, Math, Modern, Retro and Multi Ping Pong, Amudu, Splash); found $($iconSets.Count).")
+if ($iconSets.Count -ne 9) {
+    $errors.Add("Expected exactly nine app icon sets (two Language, Math, Math Plus, Modern, Retro and Multi Ping Pong, Amudu, Splash); found $($iconSets.Count).")
 }
-foreach ($iconName in @('MinikPlusAppIcon', 'MinikPlusEnglishAppIcon', 'MinikMathAppIcon')) {
+foreach ($iconName in @('MinikPlusAppIcon', 'MinikPlusEnglishAppIcon', 'MinikMathAppIcon', 'MinikMathPlusAppIcon')) {
     $iconPath = Join-Path $RepositoryRoot "Resources\MinikVisuals.xcassets\$iconName.appiconset\$iconName-1024.png"
     if (-not (Test-Path -LiteralPath $iconPath -PathType Leaf)) {
         $errors.Add("Missing generated Language app icon: $iconPath")
@@ -234,7 +236,7 @@ Require-Pattern $releaseDocumentation 'privacy-policy-website-replacement\.md' '
 Require-Pattern $releaseDocumentation 'app-store-privacy-data-inventory\.md' 'Release documentation must route to the App Store privacy inventory.'
 Require-Pattern $releaseDocumentation 'apple-release-checklist\.md' 'Release documentation must route to the Apple handoff checklist.'
 Require-Pattern $privacyWebsiteReplacement 'child.s local or real profile name is not uploaded' 'Website privacy replacement must keep local names on device.'
-Require-Pattern $privacyDataInventory 'MinikPlus[\s\S]*MinikPlusEnglish[\s\S]*MinikMath[\s\S]*MinikPingPong' 'Privacy inventory must cover all four products.'
+Require-Pattern $privacyDataInventory 'MinikPlus[\s\S]*MinikPlusEnglish[\s\S]*MinikMathPlus[\s\S]*MinikMath\b[\s\S]*MinikPingPong' 'Privacy inventory must cover all five products.'
 Require-Pattern $appleReleaseChecklist 'READY IN REPO[\s\S]*OWNER ACTION[\s\S]*LEGAL/POLICY DECISION[\s\S]*MAC/XCODE REQUIRED' 'Apple release checklist must classify repository, owner, legal/policy, and Mac work.'
 Require-Pattern $project 'MINIK_REMOVE_ADS_PRODUCT_IDENTIFIER: remove_ads' 'Established Remove Ads product identifier is not configured.'
 Require-Pattern $project 'MINIK_PRIVACY_POLICY_URL: https://miniklearn\.com/privacy[\s\S]*MINIK_TERMS_OF_USE_URL: https://www\.easycallandanswer\.com/terms\.html[\s\S]*MINIK_SUPPORT_URL: https://miniklearn\.com/contact' 'Established release destinations are not configured.'

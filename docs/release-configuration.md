@@ -13,7 +13,8 @@ version:
 | --- | --- | --- | --- |
 | MinikPlus | `MINIK_PLUS_BUNDLE_IDENTIFIER` | `com.appsbybros.minik.plus` | canonical production Apple identifier |
 | MinikPlusEnglish | `MINIK_PLUS_ENGLISH_BUNDLE_IDENTIFIER` | `com.appsbybros.minik.plus.english` | canonical production Apple identifier |
-| MinikMath | `MINIK_MATH_BUNDLE_IDENTIFIER` | `com.appsbybros.minik.math` | canonical production Apple identifier |
+| MinikMathPlus | `MINIK_MATH_PLUS_BUNDLE_IDENTIFIER` | `com.appsbybros.minik.math.plus` | the original iOS math app, renamed Minik Math Plus like its Android twin (12 October 2026) |
+| MinikMath | `MINIK_MATH_BUNDLE_IDENTIFIER` | `com.appsbybros.minik.math` | Android Minik Math's application ID; Android's web app in an iOS host (`docs/minik-math-ios.md`) |
 | MinikPingPong | `MINIK_PING_PONG_BUNDLE_IDENTIFIER` | `com.appsbybros.minik.pingpong` | canonical production Apple identifier |
 | ProductConfigurationTests | `MINIK_TESTS_BUNDLE_IDENTIFIER` | `com.appsbybros.minik.tests` | canonical Apple test-bundle identifier |
 
@@ -111,10 +112,12 @@ covered by its local and native-host tests. One app-root startup creates one
 controller/update listener; foreground refresh and explicit restore reconcile
 the authoritative entitlement, and unavailable StoreKit fails safely.
 
-MinikPlus, MinikPlusEnglish and MinikMath expose purchase/restore in Parent
-Area behind the grown-up gate. MinikMath can show ads only through its included
+MinikPlus, MinikPlusEnglish and MinikMathPlus expose purchase/restore in Parent
+Area behind the grown-up gate. MinikMathPlus can show ads only through its included
 Ping Pong activity, so Remove Ads remains meaningful if that placement is
-enabled. Modern MinikPingPong now exposes native purchase/restore and Apple offer-code redemption for its own `remove_ads` product. It shares the existing transaction controller; production ads remain disabled until release setup is supplied. StoreKit fixture identifiers remain test-only;
+enabled. MinikMath exposes purchase/restore (`remove_ads_math`) on its parents page
+behind the same gate, as Android Minik Math does, and shows interstitials after
+finished rounds on Android Minik Math's schedule (`docs/minik-math-ios.md`). Modern MinikPingPong now exposes native purchase/restore and Apple offer-code redemption for its own `remove_ads` product. It shares the existing transaction controller; production ads remain disabled until release setup is supplied. StoreKit fixture identifiers remain test-only;
 the frozen hosted grace-period workflow is not part of this gate.
 
 ## Ads
@@ -139,8 +142,10 @@ so a Release build supplied with them remains unconfigured rather than showing
 test inventory.
 
 If ads are approved, MinikPlus and MinikPlusEnglish each need an iOS AdMob app
-ID and interstitial unit ID for Language placements. MinikMath needs its own pair
-only if its included Ping Pong placement will be enabled. MinikPingPong needs
+ID and interstitial unit ID for Language placements. MinikMath uses the iOS Minik
+Math AdMob app (`ca-app-pub-6728099379581161~7244879780`), since it now owns the
+Minik Math App Store record; MinikMathPlus still carries the same pair and needs
+its own before release. MinikPingPong needs
 its own pair before production ads are enabled. The new Modern adapter currently supports only the explicitly approved Debug Google test configuration (`MODERN_PONG_TEST_ADS=YES`); Release keeps it `NO`. Never copy Android IDs or invent Apple IDs.
 
 ## Local notifications

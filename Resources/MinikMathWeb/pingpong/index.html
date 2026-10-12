@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#6f65e8" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="format-detection" content="telephone=no" />
+  <title>Minik Ping Pong - Play with Minik</title>
+  <meta property="og:title" content="Minik Math - Learn Math with Fun and Games" />
+  <meta property="og:description" content="Practice multiplication and division with fun Minik games." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:title" content="Minik Math - Learn Math with Fun and Games" />
+  <link rel="stylesheet" href="styles.css?v=42" />
+  <link rel="stylesheet" href="pong-extras.css?v=44" />
+  <link rel="stylesheet" href="pong-layout.css?v=android-train-fullwidth-1" />
+</head>
+<body>
+  <div class="aurora aurora-a"></div>
+  <div class="aurora aurora-b"></div>
+
+  <header class="site-header">
+    <button id="homeBtn" class="brand" aria-label="Minik Math home">
+      <img id="brandLogo" src="assets/minik-brand.png" alt="Minik logo" />
+    </button>
+    <div id="screenTitle" class="screen-title" hidden></div>
+    <div class="header-actions">
+      <button id="langBtn" class="ghost-pill" type="button">EN</button>
+    </div>
+  </header>
+
+  <main id="app" class="app-shell" aria-live="polite"></main>
+
+  <div id="feedbackLayer" class="feedback-layer" aria-hidden="true"></div>
+
+  <footer class="site-footer">
+    <a id="mainSiteLink" href="https://miniklearn.com/">לאתר הראשי</a>
+    <span class="dot">•</span>
+    <span id="footerRights">© 2026 Apps By Bros · כל הזכויות שמורות</span>
+  </footer>
+
+  <script src="minik-audio-bank.js?v=android-train-fullwidth-1"></script>
+  <script src="minik-audio.js?v=android-train-fullwidth-1"></script>
+  <script src="pong-extras.js?v=android-train-fullwidth-1"></script>
+  <script src="../minik-monetization.js"></script>
+  <script src="app.js?v=android-train-fullwidth-1"></script>
+</body>
+</html>

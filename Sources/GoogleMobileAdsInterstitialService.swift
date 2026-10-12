@@ -23,6 +23,11 @@ actor GoogleMobileAdsInterstitialAdService: MinikInterstitialAdService {
         guard let driver else { return .unavailable }
         return await driver.presentInterstitial()
     }
+
+    func waitUntilDismissed() async {
+        guard let driver else { return }
+        await driver.waitUntilDismissed()
+    }
 }
 
 @MainActor
@@ -31,6 +36,9 @@ private final class GoogleMobileAdsInterstitialDriver: NSObject, FullScreenConte
     private var interstitialAdUnitIdentifier: String?
     private var presentationContinuation:
         CheckedContinuation<MinikInterstitialPresentationResult, Never>?
+    /// An interstitial is on screen; `waitUntilDismissed` callers wait for it to close.
+    private var isOnScreen = false
+    private var dismissalContinuations: [CheckedContinuation<Void, Never>] = []
 
     func configure(_ configuration: MinikAdProviderConfiguration) async -> Bool {
         guard configuration.isChildDirected,
@@ -76,7 +84,15 @@ private final class GoogleMobileAdsInterstitialDriver: NSObject, FullScreenConte
         }
     }
 
+    func waitUntilDismissed() async {
+        guard isOnScreen else { return }
+        await withCheckedContinuation { continuation in
+            dismissalContinuations.append(continuation)
+        }
+    }
+
     func adWillPresentFullScreenContent(_ ad: FullScreenPresentingAd) {
+        isOnScreen = true
         finishPresentation(with: .presented)
     }
 
@@ -86,11 +102,13 @@ private final class GoogleMobileAdsInterstitialDriver: NSObject, FullScreenConte
     ) {
         interstitial = nil
         finishPresentation(with: .failed)
+        endDismissalWait()
         Task { _ = await loadInterstitial() }
     }
 
     func adDidDismissFullScreenContent(_ ad: FullScreenPresentingAd) {
         interstitial = nil
+        endDismissalWait()
         Task { _ = await loadInterstitial() }
     }
 
@@ -117,6 +135,13 @@ private final class GoogleMobileAdsInterstitialDriver: NSObject, FullScreenConte
     private func finishPresentation(with result: MinikInterstitialPresentationResult) {
         presentationContinuation?.resume(returning: result)
         presentationContinuation = nil
+    }
+
+    private func endDismissalWait() {
+        isOnScreen = false
+        let waiting = dismissalContinuations
+        dismissalContinuations = []
+        waiting.forEach { $0.resume() }
     }
 }
 #endif

@@ -44,6 +44,7 @@ $bundleIdentifiers = @(
     'com.appsbybros.minik.plus',
     'com.appsbybros.minik.plus.english',
     'com.appsbybros.minik.math',
+    'com.appsbybros.minik.math.plus',
     'com.appsbybros.minik.pingpong'
 )
 foreach ($identifier in $bundleIdentifiers) {
@@ -74,7 +75,7 @@ Require $privacy 'must not be deployed until the administrator archive/clear cut
 Require $firebaseContract 'not deployable against legacy production data/clients' 'The Firebase identity/rules migration blocker is missing.'
 Require $firebaseMigration 'Owner/admin cutover sequence' 'The coordinated Firebase cutover runbook is missing.'
 
-foreach ($product in @('MinikPlus', 'MinikPlusEnglish', 'MinikMath', 'MinikPingPong')) {
+foreach ($product in @('MinikPlus', 'MinikPlusEnglish', 'MinikMathPlus', 'MinikMath', 'MinikPingPong')) {
     Require $inventory ([regex]::Escape($product)) "Privacy inventory omits $product."
 }
 foreach ($dataPath in @('Firebase anonymous UID', 'Generated alias', 'Google Mobile Ads', 'StoreKit', 'Local notifications')) {

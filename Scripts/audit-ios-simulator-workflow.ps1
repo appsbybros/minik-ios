@@ -34,7 +34,7 @@ Require-Match 'DERIVED_DATA="build/DerivedData/Shared"' "All products must share
 Require-Match '(?m)^    runs-on: macos-latest$' "The workflow must use macos-latest."
 Require-Match '(?m)^    timeout-minutes: 90$' "The workflow must have a 90-minute timeout."
 Require-Match '(?m)^      - name: Build and package all Simulator apps$' "The dedicated gate must build and package all products."
-Require-Match 'SCHEMES=\(MinikPlus MinikPlusEnglish MinikMath MinikPingPong MinikRetroPingPong\)' "The five-product scheme list is incomplete."
+Require-Match 'SCHEMES=\(MinikPlus MinikPlusEnglish MinikMathPlus MinikPingPong MinikRetroPingPong\)' "The five-product scheme list is incomplete."
 Reject-Match 'SELECTED_PRODUCT|SCHEMES=\("\$SELECTED_PRODUCT"\)' "The complete gate must not contain a one-product path."
 Require-Match 'Debug-iphonesimulator/\$SCHEME\.app' "The exact Simulator app path is missing."
 Require-Match 'ditto -c -k --sequesterRsrc --keepParent' "The app bundle must be packaged with ditto."
@@ -88,28 +88,28 @@ Require-Match '(?s)name: Upload Simulator smoke validation.*?name: Simulator-smo
 $productOutputs = [ordered]@{
     MinikPlus = "minikplus_ready"
     MinikPlusEnglish = "minikplusenglish_ready"
-    MinikMath = "minikmath_ready"
+    MinikMathPlus = "minikmathplus_ready"
     MinikPingPong = "minikpingpong_ready"
     MinikRetroPingPong = "minikretropingpong_ready"
 }
 $productBuildOutputs = [ordered]@{
     MinikPlus = "minikplus_built"
     MinikPlusEnglish = "minikplusenglish_built"
-    MinikMath = "minikmath_built"
+    MinikMathPlus = "minikmathplus_built"
     MinikPingPong = "minikpingpong_built"
     MinikRetroPingPong = "minikretropingpong_built"
 }
 $productBuildVariables = [ordered]@{
     MinikPlus = "minik_plus_built"
     MinikPlusEnglish = "minik_plus_english_built"
-    MinikMath = "minik_math_built"
+    MinikMathPlus = "minik_math_plus_built"
     MinikPingPong = "minik_ping_pong_built"
     MinikRetroPingPong = "minik_retro_ping_pong_built"
 }
 $productVariables = [ordered]@{
     MinikPlus = "minik_plus_ready"
     MinikPlusEnglish = "minik_plus_english_ready"
-    MinikMath = "minik_math_ready"
+    MinikMathPlus = "minik_math_plus_ready"
     MinikPingPong = "minik_ping_pong_ready"
     MinikRetroPingPong = "minik_retro_ping_pong_ready"
 }
@@ -134,7 +134,7 @@ foreach ($product in $productOutputs.Keys) {
     Require-Match 'build/smoke/screenshots/\$SCHEME-\$DEVICE_ROLE\.png' "The smoke loop must create a screenshot path for $product."
 }
 
-$schemeListCount = [regex]::Matches($workflow, 'SCHEMES=\(MinikPlus MinikPlusEnglish MinikMath MinikPingPong MinikRetroPingPong\)').Count
+$schemeListCount = [regex]::Matches($workflow, 'SCHEMES=\(MinikPlus MinikPlusEnglish MinikMathPlus MinikPingPong MinikRetroPingPong\)').Count
 if ($schemeListCount -ne 2) {
     $errors.Add("The exact all-product list must drive both build and smoke loops; found $schemeListCount copies.")
 }
@@ -196,7 +196,7 @@ Require-Match 'if \(\( \$\{#failures\[@\]\} > 0 \)\); then' "The final gate must
 Reject-Match '\|\|\s*true' "Hidden failure handling is forbidden."
 Reject-Match 'actions/cache@' "No cache action is allowed in this workflow."
 Reject-Match '(?m)^\s+build/DerivedData\s*$' "DerivedData must not be uploaded."
-Reject-Match '(?s)name: Upload (?:MinikPlus|MinikPlusEnglish|MinikMath|MinikPingPong|MinikRetroPingPong) Simulator artifact.*?steps\.product_builds\.outcome == ''success''' "Product artifact uploads must not depend on aggregate build-step success."
+Reject-Match '(?s)name: Upload (?:MinikPlus|MinikPlusEnglish|MinikMathPlus|MinikPingPong|MinikRetroPingPong) Simulator artifact.*?steps\.product_builds\.outcome == ''success''' "Product artifact uploads must not depend on aggregate build-step success."
 Reject-Match '(?i)codemagic|appetize|browserstack|sauce\s*labs|maestro' "The GitHub-hosted gate must not invoke an external testing service or optional Maestro setup."
 Reject-Match '(?i)AppStoreCommerceKit|grace[-_ ]?period' "The hosted AppStoreCommerceKit grace-period workflow/test is forbidden here."
 Reject-Match '\$\{\{\s*secrets\.' "The Simulator gate must not require repository secrets."

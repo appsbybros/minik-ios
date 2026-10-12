@@ -44,7 +44,7 @@ if ($record.Count -ne 13 -or
 }
 
 $project = Get-Content -LiteralPath (Join-Path $repoRoot 'project.yml') -Raw -Encoding utf8
-$targetMatch = [regex]::Match($project, '(?ms)^  MinikPlusEnglish:\r?\n(?<body>.*?)(?=^  MinikMath:)')
+$targetMatch = [regex]::Match($project, '(?ms)^  MinikPlusEnglish:\r?\n(?<body>.*?)(?=^  MinikMathPlus:)')
 if (-not $targetMatch.Success) {
     $errors.Add('MinikPlusEnglish target block is missing from project.yml.')
 } else {

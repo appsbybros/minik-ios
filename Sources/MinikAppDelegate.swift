@@ -12,4 +12,15 @@ final class MinikAppDelegate: NSObject, UIApplicationDelegate {
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
         return true
     }
+
+    #if MINIK_MATH_WEB
+    /// Minik Math turns phones to landscape for Ping Pong, as Android does (MinikMathOrientation).
+    @MainActor
+    func application(
+        _ application: UIApplication,
+        supportedInterfaceOrientationsFor window: UIWindow?
+    ) -> UIInterfaceOrientationMask {
+        MinikMathOrientation.supported
+    }
+    #endif
 }

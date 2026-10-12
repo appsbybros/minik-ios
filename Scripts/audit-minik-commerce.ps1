@@ -23,7 +23,7 @@ Require-Pattern 'Sources/ParentAreaView.swift' 'ParentalGateView[\s\S]*purchaseR
 Require-Pattern 'Tests/ProductConfigurationTests/MinikCommerceIntegrationTests.swift' 'testTransactionUpdateAndRestoreReconcileAuthoritativeState' 'transaction/restore regression missing'
 
 $project = [IO.File]::ReadAllText((Join-Path $root 'project.yml'), [Text.Encoding]::UTF8)
-foreach ($target in @('MinikPlus', 'MinikPlusEnglish', 'MinikMath', 'MinikPingPong', 'ProductConfigurationTests')) {
+foreach ($target in @('MinikPlus', 'MinikPlusEnglish', 'MinikMathPlus', 'MinikMath', 'MinikPingPong', 'ProductConfigurationTests')) {
     $match = [regex]::Match($project, "(?ms)^  ${target}:(?<body>[\s\S]*?)(?=^  [A-Za-z][A-Za-z0-9]+:|\z)")
     if (-not $match.Success -or $match.Groups['body'].Value -notmatch 'package: AppStoreCommerceKit') {
         $errors.Add("$target does not link AppStoreCommerceKit despite compiling the shared Sources layer.")

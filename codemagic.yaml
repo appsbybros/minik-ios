@@ -53,7 +53,7 @@ workflows:
         script: |
           set -euo pipefail
           mkdir -p build/artifacts build/logs
-          for SCHEME in MinikPlus MinikPlusEnglish MinikMath MinikPingPong; do
+          for SCHEME in MinikPlus MinikPlusEnglish MinikMathPlus MinikPingPong; do
             DERIVED_DATA="build/DerivedData/$SCHEME"
             xcodebuild build \
               -project Minik.xcodeproj \
@@ -79,5 +79,5 @@ workflows:
     artifacts:
       - build/artifacts/MinikPlus-simulator.zip
       - build/artifacts/MinikPlusEnglish-simulator.zip
-      - build/artifacts/MinikMath-simulator.zip
+      - build/artifacts/MinikMathPlus-simulator.zip
       - build/artifacts/MinikPingPong-simulator.zip

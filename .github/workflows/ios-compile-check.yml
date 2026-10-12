@@ -47,7 +47,26 @@ jobs:
           # minutes) a failing app stops the run; in a public one (free minutes) every app is
           # compiled, so one run lists all errors. A test failure never stops the apps.
           STOP_AT_FIRST_FAILURE="${{ github.event.repository.private }}"
-          for SCHEME in MinikPlus MinikPingPong MinikRetroPingPong MinikMath MinikPlusEnglish MinikMultiPingPong MinikAmudu MinikSplash; do
+          # Minik Math's unit tests also run, on the newest available iPhone simulator.
+          SIMULATOR_UDID="$(xcrun simctl list devices available -j | python3 -c '
+          import json
+          import re
+          import sys
+
+          best = None
+          for runtime, devices in json.load(sys.stdin)["devices"].items():
+              match = re.search(r"\.iOS-(\d+(?:-\d+)*)$", runtime)
+              if not match:
+                  continue
+              version = tuple(int(part) for part in match.group(1).split("-"))
+              for device in devices:
+                  if device.get("isAvailable") and device.get("name", "").startswith("iPhone"):
+                      key = (version, device["name"], device["udid"])
+                      if best is None or key[0] > best[0] or (key[0] == best[0] and key[1:] < best[1:]):
+                          best = key
+          print(best[2] if best else "")
+          ')"
+          for SCHEME in MinikPlus MinikPingPong MinikRetroPingPong MinikMathPlus MinikMath MinikPlusEnglish MinikMultiPingPong MinikAmudu MinikSplash; do
             echo "Compiling $SCHEME"
             xcodebuild build -scheme "$SCHEME" "${COMMON[@]}" > "build/logs/$SCHEME.log" 2>&1
             scheme_status=$?
@@ -63,6 +82,7 @@ jobs:
             TESTS=""
             case "$SCHEME" in
               MinikPlus) TESTS=ProductConfigurationTests ;;
+              MinikMath) TESTS=MinikMathTests ;;
               MinikMultiPingPong) TESTS=MultiPongTests ;;
               MinikAmudu) TESTS=AmuduTests ;;
               MinikSplash) TESTS=SplashTests ;;
@@ -74,6 +94,19 @@ jobs:
               if (( test_status != 0 )); then
                 echo "::error::Compile failed for $TESTS"
                 status=$test_status
+              elif [ "$SCHEME" = "MinikMath" ]; then
+                if [ -n "$SIMULATOR_UDID" ]; then
+                  echo "Running $TESTS"
+                  xcodebuild test-without-building -project Minik.xcodeproj -scheme "$SCHEME" -configuration Debug \
+                    -derivedDataPath "$DERIVED_DATA" -destination "id=$SIMULATOR_UDID" > "build/logs/$TESTS-run.log" 2>&1
+                  run_status=$?
+                  if (( run_status != 0 )); then
+                    echo "::error::Unit tests failed for $SCHEME (log: $TESTS-run.log)"
+                    status=$run_status
+                  fi
+                else
+                  echo "::warning::No iPhone simulator is available; $TESTS were compiled but not run."
+                fi
               fi
             fi
           done

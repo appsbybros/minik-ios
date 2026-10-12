@@ -8,7 +8,7 @@ on:
       products:
         description: Apps to capture, separated by spaces
         required: true
-        default: MinikPlus MinikPlusEnglish MinikMath MinikPingPong MinikRetroPingPong
+        default: MinikPlus MinikPlusEnglish MinikMathPlus MinikPingPong MinikRetroPingPong
 
 permissions:
   contents: read

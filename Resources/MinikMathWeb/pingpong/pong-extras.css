@@ -1,0 +1,260 @@
+/* MINIK v40. All selectors are scoped to the new Pong feature layer/dialog. */
+.pong-guide-overlay{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:16px;background:rgba(16,13,40,.70);backdrop-filter:blur(9px);box-sizing:border-box;overscroll-behavior:contain;}
+.pong-guide{width:min(960px,100%);max-height:calc(100dvh - 32px);min-height:0;display:flex;flex-direction:column;overflow:hidden;border:1px solid rgba(255,255,255,.8);border-radius:28px;background:linear-gradient(140deg,#fffaf1,#fcfaff 55%,#edfaff);color:#201e3c;box-shadow:0 18px 90px #15113666;font-family:inherit;text-align:start;}
+.pong-guide-heading{flex-shrink:0;display:flex;align-items:center;gap:14px;padding:15px 22px;border-bottom:1px solid #e8e3f4;}
+.pong-guide-heading>img{width:66px;height:66px;object-fit:contain;}
+.pong-guide-heading>div{flex:1;min-width:0;}
+.pong-guide-heading h2{margin:0 0 5px;font-size:clamp(20px,3vw,28px);font-weight:900;line-height:1.1;}
+.pong-guide-heading p{margin:0;color:#635e7e;font-size:14px;line-height:1.4;}
+.pong-guide-close{display:grid;place-items:center;border:1px solid #e3ddf2;border-radius:50%;width:38px;height:38px;min-width:38px;padding:0;font-size:29px;background:white;color:#201e3c;cursor:pointer;box-shadow:none;}
+.pong-guide-scroll{min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:16px 22px;scrollbar-width:thin;scrollbar-color:#8b79ee transparent;}
+.pong-guide-columns{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:16px;align-items:start;}
+.pong-guide-settings{display:grid;gap:12px;min-width:0;}
+.pong-guide-card{padding:16px;border-radius:18px;border:1px solid #e5dff5;background:#ffffffdd;min-width:0;}
+.pong-guide-card h3{margin:0 0 10px;font-size:19px;line-height:1.2;}
+.pong-guide-card p{margin:9px 0 0;font-size:13px;line-height:1.55;color:#494560;}
+.pong-guide-card .extras-muted{color:#79738a;font-size:12px;}
+.pong-guide-card .storage-warning{color:#96441c;background:#fff1d5;padding:8px;border-radius:8px;}
+.pong-guide .extras-label{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:14px;font-weight:800;margin:9px 0 6px;}
+.pong-guide-card>.extras-label:first-child{margin-top:0;}
+.pong-guide select{display:block;box-sizing:border-box;width:100%;max-width:100%;min-height:38px;border:1px solid #dad4ee;border-radius:11px;background:#f8f6ff;color:#302950;padding:6px 9px;font:700 14px inherit;font-family:inherit;font-size:14px;line-height:1.3;}
+.pong-guide input[type="range"]{display:block;width:100%;height:28px;accent-color:#7966ed;cursor:pointer;margin:8px 0 4px;}
+.train-level-label output{font-size:13px;white-space:nowrap;direction:ltr;color:#7662d4;}
+.train-example{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:8px 12px;background:linear-gradient(110deg,#fff3d4,#fff9e9);border:1px solid #efdcad;border-radius:10px;}
+.train-example>span{font-size:12px;color:#7c6a39;}
+.train-example strong{font-size:21px;font-weight:900;letter-spacing:.02em;unicode-bidi:isolate;white-space:nowrap;color:#483614;}
+.extras-match>summary{cursor:pointer;font-size:14px;font-weight:800;}
+.extras-match>label{display:block;margin:10px 0 4px;font-size:13px;}
+.extras-points{font-size:14px;font-weight:700;color:#6b5eb0;margin:8px 0 14px;}
+.extras-points strong{font-size:20px;}
+.extras-points progress{width:100%;height:8px;display:block;margin-top:8px;accent-color:#9479e8;}
+.pong-skin-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;}
+.pong-skin{padding:8px 6px;text-align:center;border:1px solid #e5e0f0;border-radius:14px;background:#faf9ff;min-width:0;position:relative;}
+.pong-skin.skin-current{border:2px solid #957be6;background:#f1ecff;box-shadow:0 3px 11px #b098e226;padding:7px 5px;}
+.skin-pair{display:flex;justify-content:center;align-items:center;gap:2px;height:46px;}
+.skin-pair img{width:48%;max-width:68px;height:46px;object-fit:contain;}
+.pong-skin>strong{display:block;font-size:12px;line-height:1.25;min-height:1.25em;margin-top:4px;}
+.pong-skin>span{display:block;font-size:12px;margin-top:3px;color:#5d5375;}
+.pong-skin>small{display:block;font-size:10px;line-height:1.2;color:#8e819e;margin-top:3px;}
+.skin-current>small{color:#6b50b4;font-weight:800;}
+.pong-guide-footer{flex-shrink:0;display:flex;justify-content:center;align-items:center;padding:11px 20px;border-top:1px solid #e9e2f6;background:rgba(255,255,255,.90);}
+.pong-guide .pong-guide-continue{min-height:40px;width:min(250px,70%);font:800 16px inherit;font-family:inherit;font-size:16px;padding:9px 22px;border:0;border-radius:22px;color:white;background:linear-gradient(120deg,#6e61df,#9173ff);box-shadow:0 5px 14px #8172dd30;cursor:pointer;}
+.pong-guide-open .pong-train-layer,.pong-guide-open .pong-extra-controls{pointer-events:none;}
+.pong-guide :focus-visible,.pong-extra-controls :focus-visible,.pong-train-layer :focus-visible{outline:3px solid #36c8ff;outline-offset:3px;}
+/* These controls are overlays, not extra grid rows: the fitted arena is unchanged. */
+.pong-extra-controls{position:absolute;inset:0;pointer-events:none;z-index:9;direction:ltr;}
+.pong-arrow{position:absolute;bottom:40px;width:68px;height:52px;padding:3px;border:0;border-radius:18px;background:#ffffff0c;box-shadow:none;cursor:pointer;pointer-events:auto;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;transition:background .12s,filter .12s;}
+.pong-arrow img{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 2px 6px #04041980);}
+.pong-arrow-negative{left:12px;}
+.pong-arrow-positive{right:12px;}
+.pong-arrow.is-held{background:#ffffff20;filter:brightness(1.2);}
+.pong-arrow[hidden]{display:none !important;}
+.pong-extra-tools{position:absolute;bottom:42px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:7px;pointer-events:auto;direction:ltr;}
+.pong-total{display:flex;align-items:center;gap:4px;border:1px solid #ffffff25;border-radius:20px;padding:5px 9px;background:#1d193de0;color:#ffe9ad;font:800 13px/1.1 inherit;white-space:nowrap;font-family:inherit;font-size:13px;}
+.pong-total small{font-size:10px;font-weight:600;color:#e7defc;margin-inline-start:3px;}
+.pong-help-button{display:inline-flex;align-items:center;justify-content:center;width:auto;min-width:0;height:36px;min-height:36px;flex:0 0 auto;padding:0 12px;border:1px solid #ffffff55;border-radius:999px;font-family:inherit;font-size:12px;font-weight:800;line-height:1;color:#fff;background:#494071e8;white-space:nowrap;cursor:pointer;}
+.pong-help-label{display:inline;}
+.paddle-sideways .pong-arrow{left:43px;right:auto;}
+.paddle-sideways .pong-arrow-negative{top:12px;bottom:auto;}
+.paddle-sideways .pong-arrow-positive{bottom:12px;}
+.paddle-sideways .pong-arrow img{transform:rotate(90deg);}
+.paddle-sideways .pong-extra-tools{bottom:8px;}
+.pong-extra-toast{position:absolute;bottom:104px;left:50%;transform:translateX(-50%);z-index:12;max-width:85%;width:max-content;padding:8px 14px;border:1px solid #fce5a9;border-radius:15px;background:#fffbecf5;color:#4c3a12;font-size:14px;font-weight:800;text-align:center;pointer-events:none;}
+.pong-extra-toast[hidden]{display:none !important;}
+.pong-setup-help{position:static;display:inline-flex;align-items:center;justify-content:center;width:auto;min-width:160px;height:var(--pong-setup-start-height,40px);min-height:40px;padding:6px 14px;border:1px solid #ffffff66;border-radius:999px;background:#494071;color:#fff;font-family:inherit;font-size:.88rem;font-weight:800;line-height:1.2;white-space:nowrap;cursor:pointer;}
+.pong-setup-help-label{display:inline;}
+.pong-setup-actions{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;}
+body.pong-waiting.pong-landscape-active .pong-extra-controls{display:none;}
+/* Train art remains sharp; the separate pale labels sit on its writing panels. */
+.pong-train-layer{position:absolute;inset:0;overflow:hidden;border-radius:inherit;pointer-events:none;z-index:8;direction:ltr;}
+.question-train{position:absolute;display:flex;align-items:flex-end;gap:2px;direction:ltr;will-change:transform;pointer-events:none;}
+.train-unit{position:relative;flex-shrink:0;height:100%;box-sizing:border-box;padding:0;border:0;background:none;box-shadow:none;min-height:0;border-radius:0;}
+.train-unit .train-sprite{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none;}
+.train-wagon{pointer-events:auto;cursor:pointer;touch-action:manipulation;}
+.train-unit .train-label{position:absolute;top:50%;left:8%;width:84%;box-sizing:border-box;padding:1px 2px;border:1px solid #ffe3a5;border-radius:5px;background:#fff4d9f5;color:#3a290e;font-family:system-ui,sans-serif;font-weight:900;line-height:1.15;white-space:nowrap;text-align:center;pointer-events:none;unicode-bidi:isolate;box-shadow:0 1px 3px #663c1233;}
+.train-engine .train-label{top:34%;}
+.train-wagon:disabled{opacity:1;cursor:default;}
+.train-correct .train-label{background:#d3ffe3;color:#0a6031;border:2px solid #48e396;box-shadow:0 0 10px #54ffa0;}
+.train-wrong .train-label{background:#ffe4e5;color:#a62b38;border:2px solid #ff7a88;}
+.train-smoke{position:absolute;top:-17%;left:7%;width:36%;height:40%;object-fit:contain;opacity:0;pointer-events:none;animation:train-puff 2.1s ease-out infinite;}
+.question-train[data-direction="1"] .train-smoke{left:auto;right:7%;}
+@keyframes train-puff{0%{opacity:0;transform:translateY(9px) scale(.5)}22%{opacity:.65}100%{opacity:0;transform:translateY(-17px) scale(1.15)}}
+@media(max-width:650px){
+ .pong-guide-columns{grid-template-columns:1fr;gap:12px;}
+ .pong-guide-overlay{padding:8px;}
+ .pong-guide{max-height:calc(100dvh - 16px);border-radius:21px;}
+ .pong-guide-heading{padding:11px 12px;gap:9px;}
+ .pong-guide-heading>img{width:46px;height:46px;}
+ .pong-guide-heading h2{font-size:20px;}
+ .pong-guide-heading p{font-size:12px;}
+ .pong-guide-scroll{padding:12px;}
+ .pong-skin-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;}
+ .pong-skin{padding:7px 3px;}.pong-skin.skin-current{padding:6px 2px;}
+ .skin-pair{height:35px;}.skin-pair img{height:35px;}
+ .pong-skin>strong{font-size:11px;min-height:2.5em;}
+ .pong-skin>span{font-size:11px;}.pong-skin>small{font-size:9px;}
+ .pong-total small{display:none;}
+ .pong-arrow{width:56px;height:46px;bottom:38px;}
+ .pong-extra-tools{bottom:42px;}
+ .pong-extra-toast{font-size:12px;bottom:92px;}
+}
+@media(max-height:450px) and (orientation:landscape){
+ .pong-guide-overlay{padding:6px;}
+ .pong-guide{max-height:calc(100dvh - 12px);border-radius:18px;}
+ .pong-guide-heading{padding:7px 12px;gap:8px;}
+ .pong-guide-heading>img{width:36px;height:36px;}
+ .pong-guide-heading h2{font-size:18px;margin:0;}
+ .pong-guide-heading p{display:none;}
+ .pong-guide-close{width:30px;height:30px;min-width:30px;font-size:24px;}
+ .pong-guide-footer{padding:7px 12px;}
+ .pong-guide .pong-guide-continue{min-height:32px;padding:6px 20px;font-size:14px;}
+ .pong-guide-scroll{padding:10px 12px;}
+ .pong-guide-columns{grid-template-columns:1fr 1fr;gap:10px;}
+ .pong-guide-card{padding:12px;}
+ .pong-skin-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+ .pong-total small{display:none;}
+ .pong-arrow{width:58px;height:44px;bottom:39px;}
+ .pong-extra-tools{bottom:43px;}
+ .pong-extra-toast{bottom:92px;padding:5px 11px;font-size:12px;}
+}
+@media(max-width:420px){
+ .pong-guide-columns{grid-template-columns:1fr;}
+ .pong-skin-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+ .pong-skin>strong{min-height:1.25em;}
+ .pong-arrow{width:52px;height:44px;}
+ .pong-arrow-negative{left:7px;}.pong-arrow-positive{right:7px;}
+}
+@media(prefers-reduced-motion:reduce){.train-smoke{animation:none;}.pong-arrow{transition:none;}}
+/* Anchor overlays to the arena, not the surrounding white panel on desktop. */
+body[data-view="pong"] .pong-panel .canvas-card{position:relative !important;isolation:isolate;}
+.pong-guide select{font-weight:700;}
+@media(max-width:650px),(max-height:450px){
+ .pong-extra-tools .pong-total small{display:inline;font-size:9px;}
+ .pong-extra-tools{gap:5px;}
+}
+.train-wagon{touch-action:none;}
+
+/* v41: cumulative points live beside the match score, never inside the court. */
+body[data-view="pong"] .pong-header-center,
+body.pong-landscape-active .pong-landscape-center{gap:8px;}
+body[data-view="pong"] .pong-status-slot{order:1;flex-basis:158px;width:158px;}
+body[data-view="pong"] .pong-total{
+ order:2;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:1px;
+ flex:0 0 auto;min-width:68px;min-height:40px;max-width:112px;padding:3px 9px;
+ background:linear-gradient(125deg,#fff7d9,#fff0c0);border:1px solid #e9ce83;
+ color:#72501a;box-shadow:0 3px 12px #ae7b1812;border-radius:16px;pointer-events:auto;
+ font-variant-numeric:tabular-nums;line-height:1.1;
+}
+.pong-total-number{display:flex;align-items:center;justify-content:center;gap:4px;font-weight:900;}
+.pong-total-number>b{font-size:17px;line-height:1.05;}
+body[data-view="pong"] .pong-total small{display:block;font-size:10px;font-weight:700;color:#786032;margin:0;}
+body[data-view="pong"] [data-pong-madness-toggle]{order:3;}
+body[data-view="pong"] .pong-help-button{order:4;pointer-events:auto;flex:0 0 auto;}
+.pong-guide #extrasTrainFields{border:0;padding:0;margin:0;min-width:0;}
+.pong-guide #extrasTrainFields.train-disabled{opacity:.5;}
+.pong-guide #extrasTrainHint{min-height:3em;color:#474069;}
+/* Explicit feedback on the engine and answer panels, not the whole sprite. */
+.train-unit.train-correct .train-label{background:#69d8a8;color:#083e2c;border:2px solid #69d8a8;box-shadow:0 0 12px #69d8a866;}
+.train-unit.train-wrong .train-label{background:#e91e63;color:#fff;border:2px solid #e91e63;box-shadow:0 0 12px #e91e6355;}
+/* A sized playfield, with separate arrow lanes. Canvas and train share exactly
+   the same origin/scale so collision geometry matches the displayed targets. */
+body[data-view="pong"] .pong-panel .canvas-card{--pong-control-rail:64px;--pong-control-rail-block:48px;}
+body[data-view="pong"] .pong-playfield{position:absolute;inset:0;min-width:0;min-height:0;overflow:hidden;border-radius:16px;isolation:isolate;}
+body[data-view="pong"] .pong-playfield > #pongCanvas{position:absolute !important;inset:0 !important;display:block !important;width:100% !important;height:100% !important;min-height:0 !important;aspect-ratio:auto !important;border-radius:16px !important;}
+body.pong-controls-arrows.pong-controls-vertical .pong-playfield{left:var(--pong-control-rail);right:var(--pong-control-rail);}
+body.pong-controls-arrows:not(.pong-controls-vertical) .pong-playfield{top:var(--pong-control-rail-block);bottom:var(--pong-control-rail-block);}
+body.pong-waiting.pong-landscape-active .pong-playfield{inset:0 !important;}
+/* 16 px inset + half the 18 px paddle thickness = its 25 px centre line. */
+body.pong-controls-vertical .pong-extra-controls .pong-arrow{
+ top:calc(100% - 25px);bottom:auto;transform:translateY(-50%);
+ width:calc(var(--pong-control-rail) - 8px);height:44px;padding:2px;
+}
+body.pong-controls-vertical .pong-extra-controls .pong-arrow-negative{left:4px;right:auto;}
+body.pong-controls-vertical .pong-extra-controls .pong-arrow-positive{right:4px;left:auto;}
+body:not(.pong-controls-vertical) .pong-extra-controls .pong-arrow{left:3px;right:auto;width:44px;height:44px;transform:none;}
+body:not(.pong-controls-vertical) .pong-extra-controls .pong-arrow-negative{top:2px;bottom:auto;}
+body:not(.pong-controls-vertical) .pong-extra-controls .pong-arrow-positive{bottom:2px;top:auto;}
+/* The mobile landscape HUD is a separate flex row ABOVE the canvas. It cannot
+   obscure a paddle, irrespective of language, score length, or match outcome. */
+body.pong-landscape-active[data-view="pong"] .pong-panel{
+ display:flex !important;flex-direction:column;gap:6px !important;
+}
+body.pong-landscape-active[data-view="pong"] .pong-wrap{
+ flex:1 1 0 !important;height:0 !important;min-height:0 !important;
+}
+body.pong-landscape-active[data-view="pong"]:not(.pong-waiting) .pong-landscape-hud{
+ position:relative !important;inset:auto !important;z-index:9;flex:0 0 auto;
+ width:100%;min-height:42px;grid-template-columns:72px minmax(0,1fr) 72px;
+ padding:0 3px;column-gap:6px;align-items:center;
+}
+body.pong-landscape-active .pong-landscape-center{
+ width:auto !important;max-width:100%;min-width:0;gap:8px;
+}
+body.pong-landscape-active .pong-landscape-center > .pong-status-slot{flex:0 1 142px;width:142px;}
+body.pong-landscape-active .pong-landscape-center > [data-pong-madness-toggle]{flex:0 1 auto;}
+body.pong-landscape-active .pong-total{min-width:66px;padding-inline:6px;}
+body.pong-landscape-active .pong-landscape-hud > .back-btn{justify-self:start;}
+html[lang="he"] body.pong-landscape-active .pong-landscape-hud > .back-btn{justify-self:end;}
+html[lang="he"] body.pong-landscape-active .pong-landscape-hud > .pong-landscape-new{justify-self:start;}
+@media(max-width:760px),(pointer:coarse){
+ body[data-view="pong"] .pong-panel .canvas-card{--pong-control-rail:52px;}
+}
+@media(max-width:1000px){
+ body.pong-desktop-active[data-view="pong"] .pong-header-center{gap:6px;}
+ body.pong-desktop-active[data-view="pong"] .pong-status-slot{width:140px;flex-basis:140px;}
+ body.pong-desktop-active[data-view="pong"] .pong-header-center>[data-pong-madness-toggle]{padding-inline:8px;font-size:.78rem;}
+ body.pong-desktop-active[data-view="pong"] .pong-total{min-width:64px;padding-inline:6px;}
+}
+@media(max-width:680px){
+ body.pong-landscape-active .pong-landscape-center{gap:6px;}
+ body.pong-landscape-active .pong-landscape-center > [data-pong-madness-toggle]{font-size:.74rem;padding:4px 6px;white-space:normal;line-height:1.1;}
+ body.pong-landscape-active .pong-landscape-center > .pong-status-slot{flex:1 1 115px;width:115px;}
+ body.pong-landscape-active .pong-total{min-width:56px;padding-inline:4px;}
+ body.pong-landscape-active .pong-live-score{gap:6px;padding-inline:6px;}
+}
+/* Narrow viewports get a second toolbar row for Madness/Help, not an overlap.
+   Match score and cumulative score always share the FIRST row. */
+@media(max-width:480px){
+ body[data-view="pong"]:not(.pong-desktop-active) .pong-header-center,
+ body.pong-landscape-active .pong-landscape-center{
+  display:grid !important;grid-template-columns:minmax(0,1fr) max-content;
+  grid-template-areas:"match total" "madness help";gap:5px 8px;
+  width:100% !important;max-width:292px;justify-self:center;
+ }
+ body[data-view="pong"]:not(.pong-desktop-active) .pong-status-slot{grid-area:match;width:100% !important;max-width:100%;grid-template-rows:36px;}
+ body[data-view="pong"]:not(.pong-desktop-active) .pong-total{grid-area:total;min-height:36px;min-width:60px;padding:2px 5px;}
+ body[data-view="pong"]:not(.pong-desktop-active) [data-pong-madness-toggle]{grid-area:madness;min-height:32px;max-width:100%;padding:4px 8px;font-size:.76rem;}
+ body[data-view="pong"]:not(.pong-desktop-active) .pong-header-center > .pong-help-button,
+ body.pong-landscape-active .pong-landscape-center > .pong-help-button{grid-area:help;justify-self:center;}
+ body.pong-landscape-active[data-view="pong"]:not(.pong-waiting) .pong-landscape-hud{grid-template-columns:42px minmax(0,1fr) 54px;column-gap:5px;align-items:start;}
+ body.pong-landscape-active .pong-landscape-hud .back-btn{width:36px;height:36px;}
+ body.pong-landscape-active .pong-landscape-hud .pong-landscape-new{min-width:52px;min-height:36px;padding:5px 6px;font-size:13px;}
+ body.pong-landscape-active .pong-total small{font-size:9px;}
+ body.pong-landscape-active .pong-live-player small{font-size:10px;}
+ body.pong-landscape-active .pong-live-player strong{font-size:16px;}
+}
+/* Even a 360–480 px landscape window has enough width for one compact line.
+   Recover vertical playing space; only the very narrowest windows need two rows. */
+@media(min-width:360px) and (max-width:480px){
+ body.pong-landscape-active .pong-landscape-center{
+  display:flex !important;width:100% !important;max-width:none;gap:5px;
+ }
+ body.pong-landscape-active .pong-landscape-center > .pong-status-slot{
+  width:105px !important;flex:1 1 105px;min-width:64px;grid-template-rows:36px;
+ }
+ body.pong-landscape-active .pong-landscape-center > .pong-total{min-width:50px;max-width:72px;}
+ body.pong-landscape-active .pong-landscape-center > [data-pong-madness-toggle]{
+  flex:0 1 88px;min-width:65px;min-height:34px;font-size:.7rem;padding:3px 5px;
+ }
+ body.pong-landscape-active .pong-landscape-center > .pong-help-button{
+  width:28px;height:30px;min-width:28px;min-height:30px;flex:0 0 28px;
+ }
+ body.pong-landscape-active .pong-landscape-center > .pong-help-button .pong-help-label{display:none;}
+ body.pong-landscape-active .pong-landscape-center > .pong-help-button::before{content:"⚙";font-size:17px;}
+ body.pong-landscape-active .pong-live-score{gap:4px;padding-inline:4px;}
+}
+@media(max-width:480px){
+ body.pong-landscape-active .pong-setup-help{width:38px;min-width:38px;flex:0 0 38px;padding:0;}
+ body.pong-landscape-active .pong-setup-help-label{display:none;}
+ body.pong-landscape-active .pong-setup-help::before{content:"⚙";font-size:18px;}
+}

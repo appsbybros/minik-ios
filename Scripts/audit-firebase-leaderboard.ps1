@@ -144,7 +144,7 @@ foreach ($target in @('MinikPlus', 'MinikPlusEnglish')) {
     Require $body 'product: FirebaseAppCheck' "$target does not link FirebaseAppCheck."
     Require $body 'CODE_SIGN_ENTITLEMENTS: Resources/Entitlements/MinikLanguage\.entitlements' "$target lacks the App Attest entitlement route."
 }
-foreach ($target in @('MinikMath', 'MinikPingPong')) {
+foreach ($target in @('MinikMathPlus', 'MinikMath', 'MinikPingPong')) {
     $body = [regex]::Match($project, "(?ms)^  ${target}:(?<body>[\s\S]*?)(?=^  [A-Za-z][A-Za-z0-9]+:|\z)").Groups['body'].Value
     if ($body -match 'FirebaseAppCheck|CODE_SIGN_ENTITLEMENTS') { $errors.Add("$target must remain outside Firebase App Check.") }
 }

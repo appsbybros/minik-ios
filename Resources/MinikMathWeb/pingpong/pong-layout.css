@@ -1,0 +1,812 @@
+/* MINIK v42: approved Pong HUD, help tabs and compact landscape layout. Scoped to Pong. */
+/* Consistent reading order: beginner, medium, hard, starting at the language's start edge. */
+html[dir="rtl"] body[data-view="pong"] .pong-difficulty-buttons{direction:rtl !important;flex-direction:row !important;}
+html[dir="ltr"] body[data-view="pong"] .pong-difficulty-buttons{direction:ltr !important;flex-direction:row !important;}
+body[data-view="pong"] .pong-side .pong-target-inline{display:grid !important;gap:7px !important;margin-top:18px !important;padding-top:0 !important;border-top:0;}
+body[data-view="pong"] .pong-side .pong-target-label{margin:0 !important;line-height:1.25;}
+.pong-infield-hud,.pong-infield-help{display:none;}
+body[data-view="pong"] .pong-header-center .pong-help-button{background:#f0ebff;color:#5c4b91;border:1px solid #e6ddff;width:34px;height:34px;min-width:34px;flex:none;}
+body[data-view="pong"] .pong-total-number b{font-size:17px;}
+/* The normal court has an external arrow/message dock. */
+body[data-view="pong"] .pong-panel .pong-playfield{inset:0 !important;}
+body[data-view="pong"] .pong-control-dock{position:relative;min-height:44px;height:44px;direction:ltr;isolation:isolate;}
+body[data-view="pong"] #pongExtraControls{position:absolute;inset:0;pointer-events:none;}
+body[data-view="pong"] .pong-control-dock .pong-arrow{
+  top:0 !important;bottom:auto !important;left:auto !important;right:auto !important;transform:none !important;
+  width:58px !important;height:44px !important;min-height:0;padding:3px;border-radius:16px;background:transparent;
+}
+body[data-view="pong"] .pong-control-dock .pong-arrow-negative{left:0 !important;}
+body[data-view="pong"] .pong-control-dock .pong-arrow-positive{right:0 !important;}
+body[data-view="pong"] .pong-control-dock .pong-extra-toast{
+  position:absolute;left:50%;top:50%;bottom:auto;transform:translate(-50%,-50%);
+  max-width:calc(100% - 132px);width:max-content;margin:0;padding:6px 13px;font-size:13px;line-height:1.25;
+}
+body[data-view="pong"] .pong-control-dock .pong-arrow img{filter:drop-shadow(0 2px 2px #52372338);}
+body[data-view="pong"] .pong-control-dock .pong-arrow.is-held{background:#eee8ff;}
+/* Desktop two-column geometry. Header centres are tied to the same column as the canvas. */
+body.pong-desktop-active[data-view="pong"]{padding:4px 0 !important;row-gap:12px !important;}
+body.pong-desktop-active[data-view="pong"] .site-header{height:50px !important;min-height:50px !important;}
+body.pong-desktop-active[data-view="pong"] .site-header .brand{height:50px !important;min-height:50px !important;width:60px !important;padding:3px 8px !important;}
+body.pong-desktop-active[data-view="pong"] .site-header .brand img{height:44px !important;width:auto !important;max-width:100%;object-fit:contain;}
+body.pong-desktop-active[data-view="pong"] .site-header .header-actions{align-self:center;}
+body.pong-desktop-active[data-view="pong"] .site-header #langBtn{height:40px !important;min-height:40px !important;}
+body.pong-desktop-active[data-view="pong"] .pong-panel{--side-width:clamp(225px,26vw,300px);padding:10px !important;gap:8px !important;}
+body.pong-desktop-active[data-view="pong"] .pong-header-row{
+  display:grid !important;direction:ltr !important;grid-template-columns:var(--side-width) minmax(0,1fr) !important;
+  grid-template-areas:"title tools" !important;gap:18px !important;min-height:42px;height:42px;
+}
+body.pong-desktop-active[data-view="pong"] .pong-header-row .pong-badge{grid-area:title !important;justify-self:center !important;display:flex !important;text-align:center;max-width:100%;margin:0;}
+body.pong-desktop-active[data-view="pong"] .pong-desktop-toolbar{grid-area:tools;position:relative;height:42px;min-width:0;}
+body.pong-desktop-active[data-view="pong"] .pong-header-center{display:contents !important;}
+body.pong-desktop-active[data-view="pong"] .pong-desktop-toolbar{
+  /* Absolute centres, not space-between on unequal-width buttons. */
+  --left-centre:34px;--right-centre:calc(100% - 23px);--step:calc((100% - 57px) / 4);
+}
+body.pong-desktop-active[data-view="pong"] .pong-desktop-toolbar .pong-total,
+body.pong-desktop-active[data-view="pong"] .pong-desktop-toolbar .pong-help-button,
+body.pong-desktop-active[data-view="pong"] .pong-desktop-toolbar .pong-status-slot,
+body.pong-desktop-active[data-view="pong"] .pong-desktop-toolbar [data-pong-madness-toggle],
+body.pong-desktop-active[data-view="pong"] .pong-desktop-toolbar > .back-btn{
+  position:absolute !important;top:50% !important;transform:translate(-50%,-50%) !important;
+  right:auto !important;margin:0 !important;grid-area:auto !important;justify-self:auto !important;
+}
+body.pong-desktop-active[data-view="pong"] .pong-desktop-toolbar .pong-total{left:var(--left-centre) !important;min-width:60px;min-height:38px;}
+body.pong-desktop-active[data-view="pong"] .pong-desktop-toolbar .pong-help-button{left:calc(var(--left-centre) + var(--step)) !important;}
+body.pong-desktop-active[data-view="pong"] .pong-desktop-toolbar .pong-status-slot{left:calc(var(--left-centre) + 2 * var(--step)) !important;width:150px !important;grid-template-rows:40px;}
+body.pong-desktop-active[data-view="pong"] .pong-desktop-toolbar [data-pong-madness-toggle]{left:calc(var(--left-centre) + 3 * var(--step)) !important;width:120px;min-height:38px;max-width:none;line-height:1.1;font-size:13px;padding:4px 8px;}
+body.pong-desktop-active[data-view="pong"] .pong-desktop-toolbar > .back-btn{left:var(--right-centre) !important;width:42px;height:42px;}
+/* LTR navigation mirrors the anchors, preserving all midpoint equations. */
+html[dir="ltr"] body.pong-desktop-active[data-view="pong"] .pong-desktop-toolbar .pong-total{left:var(--right-centre) !important;}
+html[dir="ltr"] body.pong-desktop-active[data-view="pong"] .pong-desktop-toolbar .pong-help-button{left:calc(var(--left-centre) + 3 * var(--step)) !important;}
+html[dir="ltr"] body.pong-desktop-active[data-view="pong"] .pong-desktop-toolbar [data-pong-madness-toggle]{left:calc(var(--left-centre) + var(--step)) !important;}
+html[dir="ltr"] body.pong-desktop-active[data-view="pong"] .pong-desktop-toolbar > .back-btn{left:var(--left-centre) !important;}
+html[dir="ltr"] body.pong-desktop-active[data-view="pong"] .pong-desktop-toolbar{--left-centre:23px;--right-centre:calc(100% - 34px);--step:calc((100% - 57px) / 4);}
+body.pong-desktop-active[data-view="pong"] .pong-wrap{
+  direction:ltr !important;grid-template-columns:var(--side-width) minmax(0,1fr) !important;
+  grid-template-rows:minmax(0,1fr) 44px !important;grid-template-areas:"side court" "side dock" !important;
+  gap:4px 18px !important;
+}
+body.pong-desktop-active[data-view="pong"] .pong-side{grid-area:side !important;}
+html[dir="rtl"] body.pong-desktop-active[data-view="pong"] .pong-side{direction:rtl !important;}
+body.pong-desktop-active[data-view="pong"] .canvas-card{grid-area:court !important;}
+body.pong-desktop-active[data-view="pong"] .pong-control-dock{grid-area:dock !important;}
+body.pong-desktop-active[data-view="pong"] .site-footer{font-size:12px;line-height:1.5;}
+@media(max-width:1000px){
+ body.pong-desktop-active[data-view="pong"] .pong-desktop-toolbar{--left-centre:27px;--right-centre:calc(100% - 19px);--step:calc((100% - 46px) / 4);}
+ html[dir="ltr"] body.pong-desktop-active[data-view="pong"] .pong-desktop-toolbar{--left-centre:19px;--right-centre:calc(100% - 27px);--step:calc((100% - 46px) / 4);}
+ body.pong-desktop-active[data-view="pong"] .pong-desktop-toolbar .pong-total{min-width:52px;padding-inline:5px;}
+ body.pong-desktop-active[data-view="pong"] .pong-desktop-toolbar .pong-status-slot{width:108px !important;}
+ body.pong-desktop-active[data-view="pong"] .pong-desktop-toolbar [data-pong-madness-toggle]{width:86px;font-size:11px;white-space:normal;}
+ body.pong-desktop-active[data-view="pong"] .pong-desktop-toolbar > .back-btn{width:36px;height:36px;}
+ body.pong-desktop-active[data-view="pong"] .pong-live-score{gap:4px;padding:3px 4px;}
+}
+/* Portrait fallback stays functional when the OS/browser cannot rotate. */
+body[data-view="pong"]:not(.pong-desktop-active):not(.pong-landscape-active) .pong-desktop-toolbar,
+body[data-view="pong"]:not(.pong-desktop-active):not(.pong-landscape-active) .pong-header-center{display:contents !important;}
+body[data-view="pong"]:not(.pong-desktop-active):not(.pong-landscape-active) .pong-header-row{
+ grid-template-columns:58px 36px minmax(80px,1fr) 44px !important;
+ grid-template-rows:40px 36px !important;grid-template-areas:"total help score back" "new new madness madness" !important;
+ gap:8px !important;padding:6px !important;min-width:0;
+}
+body[data-view="pong"]:not(.pong-desktop-active):not(.pong-landscape-active) .pong-desktop-toolbar > .back-btn{grid-area:back !important;width:40px;height:40px;justify-self:center;}
+body[data-view="pong"]:not(.pong-desktop-active):not(.pong-landscape-active) .pong-total{grid-area:total !important;min-width:54px;min-height:38px;}
+body[data-view="pong"]:not(.pong-desktop-active):not(.pong-landscape-active) .pong-help-button{grid-area:help !important;justify-self:center;}
+body[data-view="pong"]:not(.pong-desktop-active):not(.pong-landscape-active) .pong-status-slot{grid-area:score !important;min-width:0;width:100% !important;grid-template-rows:40px;}
+body[data-view="pong"]:not(.pong-desktop-active):not(.pong-landscape-active) [data-pong-madness-toggle]{grid-area:madness !important;min-height:34px;justify-self:center;width:auto;}
+body[data-view="pong"]:not(.pong-desktop-active):not(.pong-landscape-active) .pong-mobile-new{grid-area:new !important;position:static !important;transform:none !important;justify-self:center;}
+body[data-view="pong"]:not(.pong-desktop-active):not(.pong-landscape-active) .pong-control-dock{width:100%;margin-top:4px;order:2;}
+body[data-view="pong"]:not(.pong-desktop-active):not(.pong-landscape-active) .pong-side{order:3;}
+/* Landscape has an external dock while spacious, but a full arena when compact. */
+body.pong-landscape-active[data-view="pong"] .pong-wrap{display:flex !important;flex-direction:column;gap:4px !important;position:relative;}
+body.pong-landscape-active[data-view="pong"] .canvas-card{flex:1 1 0 !important;min-height:0 !important;height:0 !important;}
+body.pong-landscape-active[data-view="pong"] .pong-control-dock{flex:0 0 44px;}
+body.pong-landscape-active.pong-waiting[data-view="pong"] .pong-control-dock{display:none;}
+body.pong-landscape-active[data-view="pong"] .pong-landscape-hud{flex-shrink:0;}
+body.pong-compact-landscape[data-view="pong"] .pong-control-dock{position:absolute;bottom:0;left:0;right:0;z-index:12;pointer-events:none;background:none;}
+body.pong-compact-landscape[data-view="pong"] .pong-control-dock .pong-arrow{pointer-events:auto;}
+body.pong-compact-landscape[data-view="pong"] .pong-control-dock .pong-extra-toast{max-width:calc(100% - 128px);font-size:12px;padding:5px 10px;}
+body.pong-compact-landscape.pong-controls-arrows[data-view="pong"] .pong-playfield{left:54px !important;right:54px !important;}
+body.pong-immersive-playing[data-view="pong"] .pong-landscape-hud,
+body.pong-immersive-playing[data-view="pong"] .pong-header-row,
+body.pong-immersive-playing[data-view="pong"] .site-header,
+body.pong-immersive-playing[data-view="pong"] .site-footer{display:none !important;}
+body.pong-immersive-playing[data-view="pong"] .pong-panel{gap:0 !important;padding:0 !important;}
+body.pong-immersive-playing[data-view="pong"] .app-shell{padding:0 !important;}
+body.pong-immersive-playing[data-view="pong"] .pong-wrap{height:100% !important;flex:1 1 auto !important;gap:0 !important;}
+body.pong-immersive-playing[data-view="pong"] .canvas-card{height:100% !important;flex:1 1 auto !important;}
+body.pong-immersive-playing[data-view="pong"] .pong-playfield{top:32px !important;}
+body.pong-immersive-playing[data-view="pong"] .pong-infield-hud{
+ display:flex;position:absolute;left:9px;top:6px;align-items:center;gap:10px;z-index:13;pointer-events:none;
+ color:#fff;background:transparent;font-size:12px;direction:ltr;line-height:1;
+}
+.pong-mini-score{display:flex;align-items:center;gap:7px;}
+.pong-mini-score>span:not(:nth-child(2)),.pong-mini-total{display:flex;align-items:center;gap:4px;}
+.pong-mini-score b,.pong-mini-total b{font-size:15px;font-weight:900;font-variant-numeric:tabular-nums;}
+.pong-mini-score small,.pong-mini-total small{font-size:10px;}
+.pong-mini-total{border-inline-start:1px solid #ffffff55;padding-inline-start:9px;color:#f6dfa0;}
+body.pong-immersive-playing[data-view="pong"] .pong-infield-help{display:grid;position:absolute;right:7px;top:5px;z-index:14;background:#fff1;color:#fff;width:28px;height:28px;min-width:28px;font-size:17px;}
+body.pong-immersive-playing[data-view="pong"] .pong-control-dock .pong-arrow img{filter:drop-shadow(0 2px 3px #04041980);}
+/* Compact end-state toolbar appears only once the match has ended. */
+body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-center{display:grid !important;direction:ltr;grid-template-columns:56px 30px minmax(90px,1fr) minmax(90px,1fr) !important;grid-template-areas:"total help match madness" !important;width:100% !important;gap:6px;max-width:none;}
+body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-center .pong-total{grid-area:total;min-width:0;max-width:100%;}
+body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-center .pong-help-button{grid-area:help;width:30px;min-width:30px;}
+body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-center .pong-status-slot{grid-area:match;width:100% !important;min-width:0;}
+body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-center [data-pong-madness-toggle]{grid-area:madness;width:100%;min-width:0;font-size:11px;}
+@media(max-width:480px){
+ body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-center{grid-template-columns:50px minmax(90px,1fr) 30px !important;grid-template-areas:"total match help" "madness madness madness" !important;gap:4px;}
+ body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-center [data-pong-madness-toggle]{min-height:26px;}
+}
+/* Clear, accessible help navigation. Each tab has its own scroll position. */
+.pong-guide-heading{display:grid !important;direction:ltr;grid-template-columns:66px minmax(0,1fr) 66px;column-gap:14px;}
+.pong-guide-heading>img{grid-column:1;grid-row:1;justify-self:center;}
+.pong-guide-heading>div{grid-column:2;grid-row:1;text-align:center;}
+.pong-guide-heading>.pong-guide-close{grid-column:3;grid-row:1;justify-self:center;}
+.pong-guide[dir="rtl"] .pong-guide-heading>img{grid-column:3;}
+.pong-guide[dir="rtl"] .pong-guide-heading>.pong-guide-close{grid-column:1;}
+.pong-guide-heading h2,.pong-guide-heading p{text-align:center !important;}
+.pong-guide-tabs{flex-shrink:0;display:flex;justify-content:center;gap:8px;padding:10px 18px 6px;border-bottom:1px solid #e9e2f6;}
+.pong-guide-tabs button{min-width:150px;padding:8px 20px;border:1px solid #ded6f7;border-radius:15px;font:800 16px/1.2 inherit;font-family:inherit;font-size:16px;font-weight:800;color:#625581;background:#fff;cursor:pointer;}
+.pong-guide-tabs button[aria-selected="true"]{background:#7664ee;color:white;border-color:#7664ee;box-shadow:0 3px 10px #7564ee22;}
+.pong-guide [hidden]{display:none !important;}
+.pong-guide-scroll{scrollbar-width:auto;scrollbar-color:#8b79ee #f1edf8;}
+.pong-guide-scroll::-webkit-scrollbar{width:10px;}
+.pong-guide-scroll::-webkit-scrollbar-thumb{background:#8b79ee;border-radius:8px;border:2px solid #f1edf8;}
+.pong-guide-scroll::-webkit-scrollbar-track{background:#f1edf8;border-radius:8px;}
+.pong-guide-more{flex-shrink:0;align-self:center;display:flex;align-items:center;gap:8px;padding:3px 14px;margin:0;border:0;border-radius:12px;color:#625292;background:#f0eaff;font:700 12px/1.3 inherit;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;}
+.pong-guide-more span:last-child{font-size:19px;line-height:1;}
+.pong-object-row{display:flex;align-items:center;gap:16px;border-top:1px solid #eae4f7;padding:13px 0;}
+.pong-object-row:first-of-type{border-top:0;}
+.pong-object-row p{flex:1;margin:0;font-size:14px;line-height:1.5;}
+.pong-object-row .object-pictures{flex:0 0 90px;display:flex;justify-content:center;align-items:center;gap:0;}
+.object-pictures img{width:50%;max-width:72px;height:54px;object-fit:contain;}
+.object-pictures img:only-child{width:76px;}
+.pong-guide-how-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;margin-top:14px;}
+.guide-engine{display:block;width:108px;height:72px;object-fit:contain;margin:6px auto;}
+.pong-guide-card .guide-subtitle{margin-top:22px;}
+.pong-guide-footer{padding:9px 20px;}
+@media(max-width:650px){
+ .pong-guide-heading{grid-template-columns:46px minmax(0,1fr) 46px;column-gap:8px;}
+ .pong-guide-tabs button{min-width:0;flex:1;max-width:190px;}
+ .pong-guide-how-columns{grid-template-columns:1fr;}
+ .pong-object-row{gap:9px;}
+ .pong-object-row .object-pictures{flex-basis:65px;}
+ .pong-object-row p{font-size:13px;}
+}
+@media(max-height:450px){
+ .pong-guide-overlay{padding:6px;}
+ .pong-guide{max-height:calc(100dvh - 12px);}
+ .pong-guide-heading{grid-template-columns:36px minmax(0,1fr) 36px;padding:7px 12px;gap:8px;}
+ .pong-guide-heading>img{width:34px;height:34px;}
+ .pong-guide-heading h2{font-size:19px;}
+ .pong-guide-tabs{padding:4px 12px 5px;gap:8px;}
+ .pong-guide-tabs button{padding:6px 15px;font-size:13px;min-width:120px;max-width:200px;}
+ .pong-guide-footer{padding:5px 12px;}
+ .pong-guide-footer .pong-guide-continue{min-height:32px;font-size:14px;}
+ .pong-guide-more{font-size:11px;padding:1px 12px;}
+ .pong-guide-how-columns{grid-template-columns:1fr 1fr;}
+ .pong-object-row{padding:9px 0;}
+ .pong-object-row p{font-size:12px;}
+ .object-pictures img{height:42px;}
+}
+@media(max-width:370px){
+ .pong-guide-columns,.pong-guide-how-columns{grid-template-columns:1fr !important;}
+ .pong-guide-heading h2{font-size:18px;}
+ body[data-view="pong"]:not(.pong-desktop-active):not(.pong-landscape-active) .pong-header-row{grid-template-columns:50px 30px minmax(70px,1fr) 36px !important;gap:4px !important;}
+}
+/* Override the older Hebrew-specific grid-area rule, not only its LTR base. */
+html body.pong-desktop-active[data-view="pong"] .pong-header-row{grid-template-columns:var(--side-width) minmax(0,1fr) !important;grid-template-areas:"title tools" !important;grid-template-rows:42px !important;}
+html body.pong-desktop-active[data-view="pong"] .pong-header-row > .pong-mobile-new{display:none !important;}
+body.pong-desktop-active[data-view="pong"]{row-gap:14px !important;}
+body.pong-desktop-active[data-view="pong"] .site-header{height:48px !important;min-height:48px !important;}
+body.pong-desktop-active[data-view="pong"] .site-header .brand{height:48px !important;min-height:48px !important;}
+body.pong-desktop-active[data-view="pong"] .site-header .brand img{height:42px !important;}
+body.pong-desktop-active[data-view="pong"] .pong-panel{padding:8px !important;gap:6px !important;}
+html[lang] body.pong-desktop-active[data-view="pong"] .pong-header-row{grid-template-columns:var(--side-width) minmax(0,1fr) !important;grid-template-areas:"title tools" !important;grid-template-rows:42px !important;}
+.pong-guide-more{min-height:26px;height:26px;}
+.pong-guide[dir="rtl"] .pong-guide-heading>div{direction:rtl;}
+.pong-guide[dir="ltr"] .pong-guide-heading>div{direction:ltr;}
+@media(max-height:450px){.pong-guide-more{min-height:22px;height:22px;}}
+body.pong-landscape-active.pong-immersive-playing[data-view="pong"]:not(.pong-waiting) .pong-landscape-hud{display:none !important;}
+body.pong-immersive-playing[data-view="pong"] .pong-infield-help{width:30px !important;height:30px !important;min-height:30px !important;min-width:30px !important;}
+html[lang] body.pong-desktop-active[data-view="pong"] .pong-desktop-toolbar > .back-btn{min-height:42px !important;height:42px !important;}
+body[data-view="pong"] .pong-header-center .pong-help-button,
+body[data-view="pong"] .pong-landscape-center .pong-help-button{min-height:34px !important;height:34px !important;width:auto !important;min-width:0 !important;padding-inline:10px !important;}
+body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-center .pong-help-button{width:30px !important;min-width:30px !important;height:30px !important;min-height:30px !important;padding:0 !important;}
+body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-center .pong-help-label{display:none;}
+body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-center .pong-help-button::before{content:"⚙";font-size:17px;}
+body.pong-immersive-playing[data-view="pong"] .pong-infield-help .pong-help-label{display:none;}
+html[lang] body[data-view="pong"]:not(.pong-desktop-active):not(.pong-landscape-active) .pong-header-row{
+ grid-template-columns:58px max-content minmax(80px,1fr) 44px !important;
+ grid-template-rows:40px 36px !important;grid-template-areas:"total help score back" "new new madness madness" !important;
+}
+@media(max-width:370px){
+ html[lang] body[data-view="pong"]:not(.pong-desktop-active):not(.pong-landscape-active) .pong-header-row{grid-template-columns:50px 30px minmax(70px,1fr) 36px !important;}
+ html[lang] body[data-view="pong"]:not(.pong-desktop-active):not(.pong-landscape-active) .pong-help-label{display:none;}
+ html[lang] body[data-view="pong"]:not(.pong-desktop-active):not(.pong-landscape-active) .pong-help-button::before{content:"⚙";font-size:17px;}
+}
+/* Respect cutouts without putting native OS bars back into the web layout. */
+body.pong-immersive-playing[data-view="pong"] .pong-infield-hud{left:max(9px,env(safe-area-inset-left));top:max(6px,env(safe-area-inset-top));}
+body.pong-immersive-playing[data-view="pong"] .pong-infield-help{right:max(7px,env(safe-area-inset-right));top:max(5px,env(safe-area-inset-top));}
+body.pong-immersive-playing[data-view="pong"] .pong-playfield{top:calc(32px + env(safe-area-inset-top)) !important;bottom:env(safe-area-inset-bottom) !important;}
+body.pong-immersive-playing.pong-controls-arrows[data-view="pong"] .pong-playfield{left:calc(54px + env(safe-area-inset-left)) !important;right:calc(54px + env(safe-area-inset-right)) !important;}
+body.pong-immersive-playing[data-view="pong"] .pong-control-dock{left:env(safe-area-inset-left);right:env(safe-area-inset-right);bottom:env(safe-area-inset-bottom);}
+body.pong-compact-landscape[data-view="pong"] .pong-control-dock{bottom:3px;}
+body.pong-compact-landscape[data-view="pong"] .pong-control-dock .pong-arrow{width:52px !important;}
+body.pong-immersive-playing[data-view="pong"] .pong-control-dock{bottom:calc(3px + env(safe-area-inset-bottom));}
+/* On the compact overlay only, the transient message sits just above the paddle
+   lane. Its horizontal centre remains exactly between the two arrow centres. */
+body.pong-compact-landscape[data-view="pong"] .pong-control-dock .pong-extra-toast{top:-4px;transform:translate(-50%,-100%);}
+body.pong-landscape-active[data-view="pong"] .pong-setup-help{width:auto;height:40px;min-width:160px;min-height:40px;}
+.pong-guide-close{width:38px;height:38px;min-height:38px;}
+@media(max-height:450px){.pong-guide-close{width:32px;height:32px;min-width:32px;min-height:32px;}}
+
+
+/* v45: setup-edge spacing, inset arrow hit targets, and visible select indicators.
+   These rules affect Pong only; neither Math practice nor game tuning changes. */
+body.pong-landscape-active[data-view="pong"].pong-waiting .pong-landscape-setup{
+  inset-block:4px;
+  grid-template-rows:auto minmax(min-content,1fr) auto;
+  align-content:stretch;
+  padding-block:6px !important;
+}
+body.pong-landscape-active[data-view="pong"].pong-waiting .pong-setup-header{align-self:start;}
+body.pong-landscape-active[data-view="pong"].pong-waiting .pong-setup-body{align-self:center;}
+body.pong-landscape-active[data-view="pong"].pong-waiting .pong-setup-actions{align-self:end;}
+@media(max-height:245px){
+  body.pong-landscape-active[data-view="pong"].pong-waiting .pong-landscape-setup{padding-block:4px !important;}
+}
+/* Keep the full existing button hit target, adding air around the arrow artwork. */
+body[data-view="pong"] .pong-control-dock .pong-arrow{padding:5px;}
+body[data-view="pong"] .pong-control-dock .pong-arrow-negative{left:12px !important;}
+body[data-view="pong"] .pong-control-dock .pong-arrow-positive{right:12px !important;}
+body[data-view="pong"] .pong-control-dock .pong-extra-toast{max-width:calc(100% - 156px);}
+/* The short-landscape overlay stays inside the dark panel. Move the court edge
+   with its input lanes so no paddle can ever slide underneath an inset arrow. */
+body.pong-compact-landscape[data-view="pong"] .pong-control-dock{bottom:10px;}
+body.pong-immersive-playing[data-view="pong"] .pong-control-dock{bottom:calc(10px + env(safe-area-inset-bottom));}
+body.pong-compact-landscape.pong-controls-arrows[data-view="pong"] .pong-playfield{
+  left:66px !important;right:66px !important;bottom:8px !important;
+}
+body.pong-immersive-playing.pong-controls-arrows[data-view="pong"] .pong-playfield{
+  left:calc(66px + env(safe-area-inset-left)) !important;
+  right:calc(66px + env(safe-area-inset-right)) !important;
+  bottom:calc(8px + env(safe-area-inset-bottom)) !important;
+}
+/* Native <select> behaviour is retained, with a larger visible chevron and
+   reserved text space instead of a second fake clickable dropdown. */
+body[data-view="pong"] .pong-target-select,
+body[data-view="pong"] .pong-guide select{
+  appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Cpath d='m5 7 5 5 5-5' fill='none' stroke='%235e5281' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-size:20px 20px;background-position:right 9px center;
+  padding-inline-start:9px !important;padding-inline-end:34px !important;
+}
+html[dir="rtl"] body[data-view="pong"] .pong-target-select,
+html[dir="rtl"] body[data-view="pong"] .pong-guide select{background-position:left 9px center;}
+@media(forced-colors:active){
+  body[data-view="pong"] .pong-target-select,
+  body[data-view="pong"] .pong-guide select{appearance:auto;-webkit-appearance:auto;background-image:none;}
+}
+
+/* Shared, centered back artwork; logical direction follows the device locale. */
+.back-btn { display:flex; align-items:center; justify-content:center; padding:7px !important; min-width:48px; min-height:48px; background:linear-gradient(145deg,#35516a,#182b46) !important; border:1px solid #d8b96b !important; border-radius:15px !important; }
+.back-btn img.app-back-art { display:block; width:34px !important; height:34px !important; object-fit:contain; margin:0 !important; }
+html[dir="rtl"] .app-back-art { transform:scaleX(-1); }
+
+.pong-guide-close { display:flex !important; align-items:center; justify-content:center; background:linear-gradient(145deg,#35516a,#182b46) !important; border-color:#d8b96b !important; padding:6px !important; border-radius:13px !important; }
+.pong-guide-heading .pong-guide-close img { width:28px !important; height:28px !important; object-fit:contain; display:block; margin:0; }
+
+/* Shared navigation convention: Back at logical start, logo at logical end. */
+.pong-guide .pong-guide-heading {
+  grid-template-columns:72px minmax(0,1fr) 72px !important;
+  column-gap:12px !important; padding:18px 24px 12px !important;
+  align-items:center !important;
+}
+.pong-guide .pong-guide-heading>img { grid-column:3 !important; width:68px !important; height:68px !important; object-fit:contain; }
+.pong-guide .pong-guide-heading>.pong-guide-close { grid-column:1 !important; width:56px !important; height:56px !important; min-width:56px !important; min-height:56px !important; }
+.pong-guide[dir="rtl"] .pong-guide-heading>img { grid-column:1 !important; }
+.pong-guide[dir="rtl"] .pong-guide-heading>.pong-guide-close { grid-column:3 !important; }
+.pong-guide .pong-guide-heading .pong-guide-close img { width:40px !important; height:40px !important; }
+.pong-guide .pong-guide-footer { padding:10px 24px 20px !important; }
+.pong-guide .pong-guide-footer .pong-guide-continue { min-height:40px !important; }
+@media(max-height:360px) {
+  .pong-guide .pong-guide-heading { padding-top:12px !important; padding-bottom:8px !important; }
+  .pong-guide .pong-guide-heading>img { width:56px !important; height:56px !important; }
+  .pong-guide .pong-guide-footer { padding-bottom:14px !important; }
+}
+@media(max-width:480px){
+  body.pong-landscape-active[data-view="pong"] .pong-setup-help{width:38px;min-width:38px;height:34px;min-height:34px;padding:0;}
+  body.pong-landscape-active[data-view="pong"] .pong-setup-help-label{display:none;}
+  body.pong-landscape-active[data-view="pong"] .pong-setup-help::before{content:"⚙";font-size:18px;}
+}
+@media(min-width:360px) and (max-width:480px){
+  body.pong-landscape-active[data-view="pong"] .pong-landscape-center > .pong-help-button{width:28px !important;min-width:28px !important;height:30px !important;min-height:30px !important;flex:0 0 28px !important;padding:0 !important;}
+  body.pong-landscape-active[data-view="pong"] .pong-landscape-center > .pong-help-button .pong-help-label{display:none;}
+  body.pong-landscape-active[data-view="pong"] .pong-landscape-center > .pong-help-button::before{content:"⚙";font-size:17px;}
+}
+
+
+/* Android landscape polish: preserve breathable setup spacing where the viewport permits. */
+@media (min-height:320px) {
+  html.minik-android-inset-host body.pong-landscape-active[data-view="pong"].pong-waiting .pong-landscape-setup {
+    --pong-setup-section-gap:26px;
+    --pong-setup-row-gap:15px;
+  }
+  html.minik-android-inset-host body.pong-landscape-active[data-view="pong"].pong-waiting .pong-landscape-setup {
+    padding-block:10px !important;
+  }
+  html.minik-android-inset-host body.pong-landscape-active[data-view="pong"].pong-waiting .pong-setup-header {
+    margin-top:3px;
+  }
+}
+@media (min-height:246px) and (max-height:319px) {
+  html.minik-android-inset-host body.pong-landscape-active[data-view="pong"].pong-waiting .pong-landscape-setup {
+    --pong-setup-section-gap:10px;
+    --pong-setup-row-gap:7px;
+  }
+}
+@media (max-height:245px) {
+  html.minik-android-inset-host body.pong-landscape-active[data-view="pong"].pong-waiting .pong-landscape-setup {
+    --pong-setup-section-gap:8px;
+    --pong-setup-row-gap:5px;
+  }
+}
+@media (max-height:225px) {
+  html.minik-android-inset-host body.pong-landscape-active[data-view="pong"].pong-waiting .pong-landscape-setup {
+    --pong-setup-section-gap:6px;
+    --pong-setup-row-gap:4px;
+  }
+}
+/* Keep the WebView corners dark while immersive landscape gameplay is active. */
+html.minik-android-inset-host:has(body.pong-immersive-playing[data-view="pong"]),
+html.minik-android-inset-host body.pong-immersive-playing[data-view="pong"] {
+  background:#12121f !important;
+}
+html.minik-android-inset-host body.pong-immersive-playing[data-view="pong"] .app-shell,
+html.minik-android-inset-host body.pong-immersive-playing[data-view="pong"] .pong-panel,
+html.minik-android-inset-host body.pong-immersive-playing[data-view="pong"] .canvas-card,
+html.minik-android-inset-host body.pong-immersive-playing[data-view="pong"] .pong-playfield {
+  background-color:#12121f !important;
+}
+
+@media(max-height:450px) {
+  html.minik-android-inset-host body.pong-landscape-active[data-view="pong"] .pong-landscape-center > .pong-help-button { width:30px !important; min-width:30px !important; height:30px !important; min-height:30px !important; flex:0 0 30px !important; padding:0 !important; font-size:0; }
+  html.minik-android-inset-host body.pong-landscape-active[data-view="pong"] .pong-landscape-center > .pong-help-button .pong-help-label { display:none; }
+  html.minik-android-inset-host body.pong-landscape-active[data-view="pong"] .pong-landscape-center > .pong-help-button::before { content:"\2699"; font-size:18px; }
+}
+
+/* Android landscape: fill the display, with reachable controls inside its safe edges. */
+html.minik-android-inset-host body.pong-immersive-playing[data-view="pong"] .pong-infield-hud{
+  left:calc(18px + env(safe-area-inset-left));top:14px;
+}
+html.minik-android-inset-host body.pong-immersive-playing[data-view="pong"] .pong-infield-help{
+  right:calc(18px + env(safe-area-inset-right));top:12px;
+  width:42px !important;min-width:42px !important;height:42px !important;min-height:42px !important;
+  font-size:27px;
+}
+html.minik-android-inset-host body.pong-immersive-playing[data-view="pong"] .pong-playfield{
+  top:64px !important;left:0 !important;right:0 !important;
+}
+html.minik-android-inset-host body.pong-immersive-playing.pong-controls-arrows[data-view="pong"] .pong-playfield{
+  left:calc(100px + env(safe-area-inset-left)) !important;
+  right:calc(100px + env(safe-area-inset-right)) !important;
+}
+html.minik-android-inset-host body.pong-compact-landscape[data-view="pong"] .pong-control-dock{
+  left:env(safe-area-inset-left);right:env(safe-area-inset-right);
+  bottom:calc(16px + env(safe-area-inset-bottom));
+  height:64px;min-height:64px;
+}
+html.minik-android-inset-host body.pong-compact-landscape[data-view="pong"] .pong-control-dock .pong-arrow{
+  width:78px !important;height:62px !important;padding:2px;
+}
+html.minik-android-inset-host body.pong-compact-landscape[data-view="pong"] .pong-control-dock .pong-arrow-negative{left:20px !important;}
+html.minik-android-inset-host body.pong-compact-landscape[data-view="pong"] .pong-control-dock .pong-arrow-positive{right:20px !important;}
+html.minik-android-inset-host body.pong-landscape-active[data-view="pong"] .pong-setup-nav .back-btn{
+  width:56px;height:56px;min-width:56px;min-height:56px;
+}
+html.minik-android-inset-host body.pong-landscape-active[data-view="pong"] .pong-setup-nav .back-btn img{
+  width:42px !important;height:42px !important;
+}
+html.minik-android-inset-host body.pong-landscape-active[data-view="pong"].pong-waiting .pong-landscape-setup{
+  padding:14px 22px 20px !important;
+}
+html.minik-android-inset-host body.pong-landscape-active[data-view="pong"].pong-waiting .pong-setup-body{
+  align-self:start;margin-top:-18px;
+}
+html.minik-android-inset-host body.pong-landscape-active[data-view="pong"].pong-waiting .pong-setup-actions{
+  gap:18px;margin-bottom:4px;
+}
+@media(min-height:360px){
+  html.minik-android-inset-host body.pong-landscape-active[data-view="pong"].pong-waiting .pong-landscape-setup{
+    --pong-setup-row-gap:18px;--pong-setup-section-gap:24px;
+  }
+}
+@media(max-height:359px){
+  html.minik-android-inset-host body.pong-landscape-active[data-view="pong"].pong-waiting .pong-landscape-setup{
+    padding:6px 14px 10px !important;
+  }
+  html.minik-android-inset-host body.pong-landscape-active[data-view="pong"].pong-waiting .pong-setup-actions{
+    gap:10px;margin-bottom:0;
+  }
+  html.minik-android-inset-host body.pong-landscape-active[data-view="pong"].pong-waiting .pong-setup-body{
+    margin-top:0;
+  }
+}
+
+/* Android New Game: size the mascot and three control rows as one group.
+   The original caption gap was about 19px: now ~37px above, 47px below.
+   Shorter windows retain the compact layout above. */
+@media(min-width:700px) and (min-height:360px){
+  html.minik-android-inset-host body.pong-landscape-active[data-view="pong"].pong-waiting .pong-landscape-setup{
+    --pong-setup-control-height:clamp(36px,calc(25dvh - 54px),44px);
+    --pong-setup-row-gap:clamp(12px,calc(18.75dvh - 55.5px),18px);
+    --pong-setup-start-height:44px;
+    grid-template-rows:auto auto auto;
+    align-content:start;
+    row-gap:0 !important;
+    padding-bottom:16px !important;
+  }
+  html.minik-android-inset-host body.pong-landscape-active[data-view="pong"].pong-waiting .pong-setup-body{
+    margin-top:25px;
+    gap:32px;
+  }
+  html.minik-android-inset-host body.pong-landscape-active[data-view="pong"] .pong-setup-body .pong-landscape-art{
+    width:clamp(132px,calc(87.5dvh - 183px),160px) !important;
+    height:clamp(132px,calc(87.5dvh - 183px),160px) !important;
+    max-height:none !important;
+  }
+  html.minik-android-inset-host body.pong-landscape-active[data-view="pong"] .pong-landscape-setup-controls{
+    column-gap:22px !important;
+  }
+  html.minik-android-inset-host body.pong-landscape-active[data-view="pong"] .pong-landscape-setup-controls .pong-difficulty-buttons{
+    gap:8px !important;
+  }
+  html.minik-android-inset-host body.pong-landscape-active[data-view="pong"] .pong-landscape-setup-controls .pong-difficulty-buttons button{
+    font-size:.94rem;
+    padding-inline:14px;
+  }
+  html.minik-android-inset-host body.pong-landscape-active[data-view="pong"] .pong-landscape-setup-controls .pong-setup-label,
+  html.minik-android-inset-host body.pong-landscape-active[data-view="pong"] .pong-landscape-setup-controls .pong-target-label,
+  html.minik-android-inset-host body.pong-landscape-active[data-view="pong"] .pong-landscape-difficulty > span,
+  html.minik-android-inset-host body.pong-landscape-active[data-view="pong"] .pong-landscape-setup-controls .pong-target-select,
+  html.minik-android-inset-host body.pong-landscape-active[data-view="pong"] .pong-madness-options button{
+    font-size:1rem;
+  }
+  html.minik-android-inset-host body.pong-landscape-active[data-view="pong"].pong-waiting .pong-setup-actions{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,228px));
+    gap:45px;
+    margin:47px 0 0;
+    align-self:start;
+  }
+  html.minik-android-inset-host body.pong-landscape-active[data-view="pong"] .pong-setup-actions > button{
+    width:100% !important;
+    min-width:0 !important;
+    height:44px !important;
+    min-height:44px !important;
+    box-sizing:border-box;
+    font-size:.94rem;
+    padding:6px 14px !important;
+  }
+}
+
+/* Help navigation shares the highest row on Android landscape. */
+@media(orientation:landscape) {
+  html.minik-android-inset-host .pong-guide-overlay { padding:14px max(24px,env(safe-area-inset-left)) 14px max(24px,env(safe-area-inset-right)); }
+  html.minik-android-inset-host .pong-guide { width:min(1060px,100%);max-height:calc(100dvh - 28px); }
+  html.minik-android-inset-host .pong-guide .pong-guide-heading { padding:10px 24px !important;grid-template-columns:56px minmax(0,1fr) 56px !important; }
+  html.minik-android-inset-host .pong-guide .pong-guide-heading>img { width:52px !important;height:52px !important; }
+  html.minik-android-inset-host .pong-guide-heading>div:not(.pong-guide-tabs) { position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%); }
+  html.minik-android-inset-host .pong-guide-heading>.pong-guide-tabs { grid-column:2;grid-row:1;position:static;display:flex;justify-content:center;gap:16px;padding:0 12px;border:0; }
+  html.minik-android-inset-host .pong-guide-tabs button { flex:1;min-width:0;max-width:210px;min-height:44px;font-size:16px;padding:8px 14px; }
+  html.minik-android-inset-host .pong-guide-scroll { padding:16px 24px; }
+  html.minik-android-inset-host .pong-guide-how-columns { margin-top:0;gap:18px; }
+  html.minik-android-inset-host .pong-guide-columns { grid-template-columns:minmax(0,.85fr) minmax(0,1fr) minmax(0,1.15fr);gap:16px; }
+  html.minik-android-inset-host .pong-guide-settings { display:contents; }
+  html.minik-android-inset-host .pong-guide-card { padding:14px; }
+  html.minik-android-inset-host .pong-guide-card p { line-height:1.5; }
+  html.minik-android-inset-host .pong-guide .pong-guide-footer { padding:8px 24px 12px !important; }
+}
+/* Score, settings and total share one centre line, with readable point totals. */
+html.minik-android-inset-host body.pong-immersive-playing[data-view="pong"] .pong-infield-hud {
+  right:calc(24px + env(safe-area-inset-right));left:calc(24px + env(safe-area-inset-left));
+  top:12px;height:44px;justify-content:space-between;gap:60px;
+}
+html.minik-android-inset-host body.pong-immersive-playing[data-view="pong"] .pong-infield-help {
+  left:50%;right:auto;top:13px;transform:translateX(-50%);
+}
+html.minik-android-inset-host .pong-mini-total { border:0;padding:0;gap:8px; }
+html.minik-android-inset-host .pong-mini-total b { font-size:27px; }
+html.minik-android-inset-host .pong-mini-total small { font-size:14px;font-weight:700; }
+html.minik-android-inset-host .pong-mini-score b { font-size:22px; }
+html.minik-android-inset-host .pong-mini-score small { font-size:12px; }
+html.minik-android-inset-host .pong-total strong { font-size:23px; }
+
+/* Match-end controls share one comfortably inset row on Android landscape. */
+html.minik-android-inset-host body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-hud{
+  top:auto !important;
+  left:auto !important;
+  right:auto !important;
+  width:auto !important;
+  margin:12px 14px 0 !important;
+  grid-template-columns:60px minmax(0,1fr) 76px !important;
+  min-height:52px;
+}
+html.minik-android-inset-host body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-hud .back-btn{
+  width:52px !important;height:52px !important;min-width:52px !important;min-height:52px !important;
+}
+html.minik-android-inset-host body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-hud .back-btn img{
+  width:40px !important;height:40px !important;
+}
+html.minik-android-inset-host body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-new{
+  min-height:46px;
+}
+html.minik-android-inset-host body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-center{
+  grid-template-columns:56px 42px minmax(90px,1fr) minmax(90px,1fr) !important;
+  align-items:center;
+  gap:8px;
+}
+html.minik-android-inset-host body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-center > .pong-help-button{
+  width:42px !important;height:42px !important;min-width:42px !important;min-height:42px !important;
+  flex:0 0 42px !important;
+}
+html.minik-android-inset-host body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-center > .pong-help-button::before{
+  font-size:24px !important;
+}
+
+/* Android refinement: one rank, direct replay, balanced toolbars and one court surface. */
+html.minik-android-inset-host[dir] .pong-guide .pong-guide-footer{
+  display:flex;align-items:center;justify-content:center;
+  min-height:68px;box-sizing:border-box;padding:12px 24px !important;
+}
+html.minik-android-inset-host[dir] .pong-guide .pong-guide-footer .pong-guide-continue{
+  display:flex;align-items:center;justify-content:center;height:44px;min-height:44px !important;
+  margin:0;padding:8px 22px;line-height:1.2;
+}
+html.minik-android-inset-host[dir] .pong-guide-columns{
+  grid-template-columns:minmax(0,1fr) minmax(0,1.15fr) !important;
+}
+html.minik-android-inset-host[dir="ltr"] .pong-setup-actions .pong-landscape-start{order:2;}
+html.minik-android-inset-host[dir="ltr"] .pong-setup-actions .pong-setup-help{order:1;}
+html.minik-android-inset-host[dir] body[data-view="pong"] .pong-landscape-countdown:not([hidden]){
+  position:absolute !important;inset:0 !important;display:grid !important;place-items:center;
+  padding:0;margin:0;line-height:1;width:auto;height:auto;z-index:20;
+}
+html.minik-android-inset-host[dir] body.pong-landscape-active[data-view="pong"]:not(.pong-waiting) .canvas-card,
+html.minik-android-inset-host[dir] body.pong-landscape-active[data-view="pong"]:not(.pong-waiting) .pong-playfield,
+html.minik-android-inset-host[dir] body.pong-landscape-active[data-view="pong"]:not(.pong-waiting) #pongCanvas{
+  background:#12121f !important;background-image:none !important;
+  border:0 !important;border-radius:0 !important;box-shadow:none !important;
+}
+html.minik-android-inset-host[dir] body.pong-immersive-playing[data-view="pong"] .pong-infield-hud{
+  display:grid;grid-template-columns:48px minmax(112px,1fr) 44px minmax(142px,1fr) 64px;
+  align-items:center;justify-items:center;direction:inherit;gap:12px;
+  left:18px;right:18px;top:10px;height:48px;pointer-events:auto;
+}
+html.minik-android-inset-host[dir] body.pong-immersive-playing[data-view="pong"] .pong-infield-help{
+  position:static !important;inset:auto !important;transform:none !important;margin:0;
+  display:grid;place-items:center;width:44px !important;min-width:44px !important;
+  height:44px !important;min-height:44px !important;padding:0 !important;line-height:1;
+}
+html.minik-android-inset-host[dir] body[data-view="pong"] .pong-infield-back{
+  display:flex;align-items:center;justify-content:center;
+}
+html.minik-android-inset-host[dir] body[data-view="pong"] .pong-infield-back .back-btn{
+  display:grid;place-items:center;width:44px;height:44px;min-width:44px;min-height:44px;
+  padding:5px;margin:0;background:#ffffff14;box-shadow:none;
+}
+html.minik-android-inset-host[dir] body[data-view="pong"] .pong-infield-back img{width:34px;height:34px;object-fit:contain;}
+html.minik-android-inset-host[dir] body[data-view="pong"] .pong-infield-new{
+  display:flex;align-items:center;justify-content:center;width:64px;min-width:64px;
+  height:44px;min-height:44px;padding:6px 10px;margin:0;border:1px solid #ffffff33;
+  border-radius:14px;background:#ffffff14;color:white;font-size:16px;font-weight:800;
+}
+html.minik-android-inset-host[dir] body[data-view="pong"] .pong-mini-total{
+  display:inline-flex;flex-direction:row;direction:ltr;align-items:center;justify-content:center;
+  min-width:142px;box-sizing:border-box;gap:10px;height:44px;padding:0 16px;border:0;
+}
+html.minik-android-inset-host[dir] body[data-view="pong"] .pong-mini-total small{
+  font-size:18px;line-height:1.2;font-weight:800;
+}
+html.minik-android-inset-host[dir] body[data-view="pong"] .pong-mini-total b{
+  font-size:27px;line-height:1.2;font-variant-numeric:tabular-nums;
+}
+html.minik-android-inset-host[dir] body.pong-landscape-active[data-view="pong"] .pong-total{
+  display:inline-flex;flex-direction:row;direction:ltr;align-items:center;justify-content:center;
+  min-width:140px !important;max-width:none !important;gap:10px;height:44px !important;
+  min-height:44px !important;padding:0 16px !important;box-sizing:border-box;
+}
+html.minik-android-inset-host[dir] body.pong-landscape-active[data-view="pong"] .pong-total small{
+  font-size:18px;line-height:1.2;font-weight:800;
+}
+html.minik-android-inset-host[dir] body.pong-landscape-active[data-view="pong"] .pong-total-number b{
+  font-size:24px;line-height:1.2;
+}
+html.minik-android-inset-host[dir] body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-hud{
+  display:grid !important;position:relative !important;inset:auto !important;margin:0 !important;
+  grid-template-columns:48px minmax(0,1fr) 64px !important;grid-template-rows:44px !important;
+  align-items:center;column-gap:12px;padding:10px 18px !important;min-height:64px !important;
+  height:64px;box-sizing:border-box;direction:inherit;
+}
+html.minik-android-inset-host[dir] body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-center{
+  display:flex !important;align-items:center;justify-content:space-evenly;direction:inherit;
+  gap:12px;height:44px !important;margin:0;padding:0;min-height:44px;
+}
+html.minik-android-inset-host[dir] body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-center > *{
+  position:static !important;transform:none !important;align-self:center;margin:0;
+}
+html.minik-android-inset-host[dir] body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-hud > .back-btn,
+html.minik-android-inset-host[dir] body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-new,
+html.minik-android-inset-host[dir] body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-center > .pong-help-button,
+html.minik-android-inset-host[dir] body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-center > [data-pong-madness-toggle]{
+  height:44px !important;min-height:44px !important;box-sizing:border-box;
+  display:flex;align-items:center;justify-content:center;padding-block:6px !important;margin:0;
+}
+html.minik-android-inset-host[dir] body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-hud > .back-btn{
+  width:44px !important;min-width:44px !important;justify-self:center !important;
+}
+html.minik-android-inset-host[dir] body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-hud > .back-btn img{width:34px !important;height:34px !important;}
+html.minik-android-inset-host[dir] body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-new{width:64px;min-width:64px;justify-self:center !important;}
+html.minik-android-inset-host[dir] body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-status-slot{
+  display:flex !important;align-items:center;justify-content:center;height:44px !important;min-height:44px;flex:1 1 120px;
+}
+html.minik-android-inset-host[dir] body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-message{
+  position:static !important;transform:none !important;margin:0;line-height:1.2;
+}
+@media(max-width:700px){
+  html.minik-android-inset-host[dir] body.pong-immersive-playing[data-view="pong"] .pong-infield-hud{
+    left:12px;right:12px;gap:8px;grid-template-columns:44px minmax(104px,1fr) 44px minmax(126px,1fr) 60px;
+  }
+  html.minik-android-inset-host[dir] body[data-view="pong"] .pong-mini-total{min-width:126px;padding-inline:10px;}
+  html.minik-android-inset-host[dir] body.pong-landscape-active[data-view="pong"] .pong-total{min-width:126px !important;padding-inline:10px !important;}
+}
+
+
+/* Reset legacy Help ordering inside the complete gameplay toolbar. */
+html.minik-android-inset-host[dir] body.pong-immersive-playing[data-view="pong"] .pong-infield-hud{
+  grid-template-columns:64px minmax(112px,1fr) 44px minmax(142px,1fr) 64px;
+}
+html.minik-android-inset-host[dir] body.pong-immersive-playing[data-view="pong"] .pong-infield-hud > *{order:0 !important;}
+@media(max-width:700px){
+  html.minik-android-inset-host[dir] body.pong-immersive-playing[data-view="pong"] .pong-infield-hud{
+    grid-template-columns:60px minmax(104px,1fr) 44px minmax(126px,1fr) 60px;
+  }
+}
+
+/* Finished-match toolbar: give the win/lose caption room instead of clipping it above the screen. */
+html.minik-android-inset-host[dir] body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-center > .pong-status-slot{min-width:136px;}
+
+/* Native HUD reading order: total labels follow the language direction (Hebrew on the right).
+   English player labels also precede their values; Hebrew player order stays as-is. */
+html.minik-android-inset-host[dir] body[data-view="pong"] .pong-mini-total,
+html.minik-android-inset-host[dir] body.pong-landscape-active[data-view="pong"] .pong-total{
+  direction:ltr !important;flex-direction:row !important;
+}
+html.minik-android-inset-host[dir="rtl"] body[data-view="pong"] .pong-mini-total,
+html.minik-android-inset-host[dir="rtl"] body.pong-landscape-active[data-view="pong"] .pong-total{
+  direction:rtl !important;
+}
+html.minik-android-inset-host[dir] .pong-mini-total > *,
+html.minik-android-inset-host[dir] .pong-total > *{unicode-bidi:isolate;}
+html.minik-android-inset-host[dir="ltr"] .pong-mini-score > span:not(:nth-child(2)){
+  direction:ltr;flex-direction:row-reverse;
+}
+html.minik-android-inset-host[dir="ltr"] body.pong-immersive-playing[data-view="pong"] .pong-infield-hud{
+  grid-template-columns:64px minmax(142px,1fr) 44px minmax(112px,1fr) 64px;
+  grid-template-areas:"back total help score new";
+}
+html.minik-android-inset-host[dir="ltr"] .pong-infield-back{grid-area:back;}
+html.minik-android-inset-host[dir="ltr"] .pong-mini-total{grid-area:total;}
+html.minik-android-inset-host[dir="ltr"] .pong-infield-help{grid-area:help;}
+html.minik-android-inset-host[dir="ltr"] .pong-mini-score{grid-area:score;}
+html.minik-android-inset-host[dir="ltr"] .pong-infield-new{grid-area:new;}
+@media(max-width:700px){
+  html.minik-android-inset-host[dir="ltr"] body.pong-immersive-playing[data-view="pong"] .pong-infield-hud{
+    grid-template-columns:60px minmax(126px,1fr) 44px minmax(104px,1fr) 60px;
+  }
+}
+/* The 34px arrow must fit inside the 44px frame. Legacy 7px padding plus
+   borders made a 50px child footprint, displacing it below the button centre. */
+html.minik-android-inset-host[dir] body[data-view="pong"] .back-btn{
+  display:grid !important;place-items:center;padding:0 !important;line-height:1;box-sizing:border-box;
+}
+
+/* Equal label/value typography keeps scores readable in either language. */
+html.minik-android-inset-host[dir] body[data-view="pong"] .pong-mini-total small,
+html.minik-android-inset-host[dir] body[data-view="pong"] .pong-mini-total b{
+  font-size:clamp(21px,2.82vw,27px);font-weight:900;line-height:1.2;
+  display:block;margin:0;padding:0;white-space:nowrap;
+}
+html.minik-android-inset-host[dir] body[data-view="pong"] .pong-mini-score small,
+html.minik-android-inset-host[dir] body[data-view="pong"] .pong-mini-score b{
+  font-size:clamp(18px,2.30vw,22px);font-weight:900;line-height:1.2;
+  display:block;margin:0;padding:0;white-space:nowrap;
+}
+html.minik-android-inset-host[dir] body.pong-landscape-active[data-view="pong"] .pong-total small,
+html.minik-android-inset-host[dir] body.pong-landscape-active[data-view="pong"] .pong-total-number b{
+  font-size:clamp(20px,2.5vw,24px);font-weight:900;line-height:1.2;
+  display:block;margin:0;padding:0;white-space:nowrap;
+}
+html.minik-android-inset-host[dir] body[data-view="pong"] .pong-total-number{
+  display:flex;align-items:center;line-height:1.2;
+}
+html.minik-android-inset-host[dir] body[data-view="pong"] .pong-live-player{
+  flex-direction:row;align-items:center;gap:4px;
+}
+html.minik-android-inset-host[dir="ltr"] body[data-view="pong"] .pong-live-player{flex-direction:row-reverse;}
+html.minik-android-inset-host[dir] body[data-view="pong"] .pong-live-player strong,
+html.minik-android-inset-host[dir] body[data-view="pong"] .pong-live-player small{
+  font-size:clamp(16px,2vw,18px);font-weight:900;line-height:1.2;color:inherit;
+}
+/* The launcher retains its paddle-and-ball mark; in-app headers use Minik. */
+html.minik-android-inset-host[dir] .pong-setup-logo,
+html.minik-android-inset-host[dir] .pong-guide-heading > img,
+html.minik-android-inset-host[dir] #brandLogo{
+  object-fit:contain;border-radius:0 !important;background:transparent !important;
+  border:0 !important;box-shadow:none !important;padding:0 !important;
+}
+
+/* Help uses the same readable size for total-points text and number. */
+html.minik-android-inset-host[dir] .extras-points,
+html.minik-android-inset-host[dir] .extras-points strong{font-size:20px;font-weight:800;line-height:1.2;}
+
+/* Explicit result-toolbar cells keep the settings button fully exposed. */
+html.minik-android-inset-host[dir] body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-center{
+  display:grid !important;grid-template-columns:minmax(136px,1fr) max-content minmax(70px,1.6fr) 44px !important;
+  grid-template-areas:"match total madness help" !important;direction:ltr !important;
+  gap:8px !important;width:100% !important;min-width:0;justify-items:stretch;
+}
+html.minik-android-inset-host[dir] body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-center > .pong-status-slot{
+  grid-area:match;min-width:0;width:100% !important;
+}
+html.minik-android-inset-host[dir] body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-center > [data-pong-madness-toggle]{
+  grid-area:madness;min-width:0;width:100%;white-space:normal;line-height:1.2;
+}
+html.minik-android-inset-host[dir] body.pong-compact-landscape[data-view="pong"]:not(.pong-waiting):not(.pong-immersive-playing) .pong-landscape-center > .pong-help-button{
+  grid-area:help;position:relative !important;isolation:isolate;justify-self:center;
+}
+
+/* Full-width artwork; actual arrow rectangles define the playable court in JS. */
+html.minik-android-inset-host[dir] body.pong-landscape-active[data-view="pong"]:not(.pong-waiting) .pong-playfield{
+  left:0 !important;right:0 !important;
+}
+
+/* Android navigation polish: optical centering independent of font glyph metrics. */
+html.minik-android-inset-host[dir] body[data-view="pong"] .pong-infield-help,
+html.minik-android-inset-host[dir] body.pong-landscape-active[data-view="pong"] .pong-landscape-center > .pong-help-button{
+  font-size:0 !important;line-height:0 !important;display:grid !important;place-items:center;
+  background-image:url("assets/settings-gear.svg") !important;
+  background-position:center !important;background-size:26px 26px !important;background-repeat:no-repeat !important;
+}
+html.minik-android-inset-host[dir] body[data-view="pong"] .pong-infield-help::before,
+html.minik-android-inset-host[dir] body.pong-landscape-active[data-view="pong"] .pong-landscape-center > .pong-help-button::before{
+  content:none !important;display:none !important;
+}
+html.minik-android-inset-host[dir] body[data-view="pong"] .back-btn,
+html.minik-android-inset-host[dir] body[data-view="pong"] .pong-guide-close{
+  display:grid !important;place-items:center;box-sizing:border-box;
+  width:56px !important;min-width:56px !important;height:44px !important;min-height:44px !important;
+  padding:0 !important;border-radius:15px !important;border:1px solid #ffc3d9 !important;
+  background:
+    radial-gradient(ellipse at 23% 12%,#fff8efda 0%,#fff0 36%),
+    radial-gradient(ellipse at 86% 88%,#74244a99 0%,#74244a00 58%),
+    linear-gradient(145deg,#ffabd3 0%,#e94689 36%,#b92f69 66%,#f383ac 100%) !important;
+  box-shadow:inset 0 1px 2px #fff9,inset 0 -2px 4px #7b204f66,0 2px 5px #1c102d35 !important;
+}
+html.minik-android-inset-host[dir] body[data-view="pong"] .back-btn img,
+html.minik-android-inset-host[dir] body[data-view="pong"] .pong-guide-close img{
+  width:34px !important;height:34px !important;max-width:34px;object-fit:contain;margin:0;
+}
+
+/* Large Android windows with a mouse/trackpad use the desktop court layout.
+   Keep its cumulative score as readable and correctly ordered as the touch HUD. */
+html.minik-android-inset-host[dir] body.pong-desktop-active[data-view="pong"] .pong-total{
+  display:flex;flex-direction:row;direction:ltr;align-items:center;justify-content:center;
+  min-width:104px;gap:6px;padding:8px 12px;
+}
+html.minik-android-inset-host[dir="rtl"] body.pong-desktop-active[data-view="pong"] .pong-total{flex-direction:row-reverse;}
+html.minik-android-inset-host[dir] body.pong-desktop-active[data-view="pong"] .pong-total small,
+html.minik-android-inset-host[dir] body.pong-desktop-active[data-view="pong"] .pong-total-number b{
+  display:block;font-size:17px;line-height:1.15;font-weight:800;margin:0;
+}
+html.minik-android-inset-host .site-footer{display:none;}

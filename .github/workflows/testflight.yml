@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       products:
-        description: Schemes to archive and upload, separated by spaces
+        description: Schemes to upload, separated by spaces. MinikMath is Minik Math (com.appsbybros.minik.math); MinikMathPlus is Minik Math Plus and needs its own App Store Connect record first
         required: true
         default: MinikPlus MinikPlusEnglish MinikMath MinikPingPong MinikRetroPingPong
 

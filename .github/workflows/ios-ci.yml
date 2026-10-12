@@ -55,6 +55,16 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             build
 
+      - name: Build Minik Math Plus
+        run: |
+          xcodebuild \
+            -project Minik.xcodeproj \
+            -scheme MinikMathPlus \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
       - name: Build Minik Math
         run: |
           xcodebuild \

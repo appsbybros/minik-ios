@@ -1,0 +1,3 @@
+# Android Minik Math's web app (Resources/MinikMathWeb) is kept byte-identical to Android's
+# app/src/main/assets/www: no line-ending conversion (one Android file uses CRLF).
+Resources/MinikMathWeb/** -text
