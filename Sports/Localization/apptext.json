@@ -1,0 +1,6288 @@
+[
+[
+"Online, everyone shares the same slow motion. This setting controls your turns; other players choose for theirs. Bots never trigger the camera.",
+"En línea, todos comparten la misma cámara lenta. Este ajuste controla tus turnos; los demás eligen para los suyos. Los bots nunca activan el zoom.",
+"في اللعب عبر الإنترنت يشترك الجميع في الإبطاء نفسه. يتحكم هذا الإعداد في أدوارك؛ ويختار الآخرون لأدوارهم. لا تُقرّب الكاميرا للبوتات.",
+"ऑनलाइन सभी को एक जैसी धीमी गति दिखती है। यह सेटिंग आपकी बारी के लिए है; बाकी खिलाड़ी अपनी बारी के लिए चुनते हैं। बॉट कैमरा ज़ूम शुरू नहीं करते।",
+"Online deelt iedereen dezelfde vertraging. Deze instelling geldt voor jouw beurten; andere spelers kiezen voor hun eigen beurten. Bots activeren de camera nooit."
+],
+[
+"Ball assistance ▾",
+"Ayuda con la pelota ▾",
+"مساعدة استقبال الكرة ▾",
+"गेंद लेने में सहायता ▾",
+"Hulp bij de bal ▾"
+],
+[
+"Zoom in for my return",
+"Acercar al devolver la pelota",
+"تقريب الصورة عند إعادتي للكرة",
+"मेरे शॉट पर पास दिखाएँ",
+"Inzoomen bij mijn terugslag"
+],
+[
+"Gentle slow motion for my return",
+"Cámara lenta suave al devolver",
+"إبطاء تدريجي عند إعادتي للكرة",
+"मेरे शॉट पर धीरे करें",
+"Rustige vertraging bij mijn terugslag"
+],
+[
+"Follow another human's return",
+"Seguir la devolución de otra persona",
+"متابعة إعادة لاعب آخر للكرة",
+"दूसरे खिलाड़ी का शॉट पास दिखाएँ",
+"De terugslag van een andere speler volgen"
+],
+[
+"Online players share the same game speed. Each player chooses slow motion for their own return. Camera choices affect only your screen; bots do not trigger zoom.",
+"En línea, todos juegan a la misma velocidad. Cada persona elige la cámara lenta para su propia devolución. La cámara solo cambia tu pantalla; no se acerca para los bots.",
+"في اللعب عبر الإنترنت تكون السرعة واحدة للجميع. يختار كل لاعب الإبطاء عند إعادته للكرة. تؤثر إعدادات الكاميرا في شاشتك فقط؛ ولا تُقرّب الصورة للبوتات.",
+"ऑनलाइन सभी के खेल की गति समान रहती है। हर खिलाड़ी अपने शॉट के लिए धीमी गति चुनता है। कैमरे की पसंद केवल आपकी स्क्रीन बदलती है; बॉट के लिए ज़ूम नहीं होता।",
+"Online speelt iedereen op dezelfde snelheid. Iedere speler kiest vertraging voor de eigen terugslag. De camera verandert alleen jouw beeld; bij bots wordt niet ingezoomd."
+],
+[
+"Ball reception assistance ▾",
+"Ayuda al recibir la pelota ▾",
+"مساعدة استقبال الكرة ▾",
+"गेंद लेने में सहायता ▾",
+"Hulp bij het ontvangen ▾"
+],
+[
+"Zoom as the ball approaches me",
+"Acercar cuando viene la pelota",
+"تقريب الصورة عندما تقترب الكرة مني",
+"गेंद पास आए तो ज़ूम करें",
+"Inzoomen als de bal nadert"
+],
+[
+"Slow motion for my reception",
+"Cámara lenta al recibir",
+"إبطاء عند استقبالي للكرة",
+"मेरी ओर आती गेंद पर धीमी गति",
+"Vertragen wanneer ik de bal ontvang"
+],
+[
+"Follow another human's reception",
+"Seguir la recepción de otra persona",
+"متابعة استقبال لاعب آخر للكرة",
+"दूसरे खिलाड़ी का रिसीव पास दिखाएँ",
+"Ontvangst door een andere speler volgen"
+],
+[
+" · You",
+" · Tú",
+" · أنت",
+" · आप",
+" · Jij"
+],
+[
+" · Your avatar",
+" · Tu avatar",
+" · صورتك",
+" · आपका अवतार",
+" · Jouw avatar"
+],
+[
+" · Not ready",
+" · Sin preparar",
+" · غير جاهز",
+" · तैयार नहीं",
+" · Niet klaar"
+],
+[
+"Choose a player",
+"Elige un jugador",
+"اختر لاعبًا",
+"एक खिलाड़ी चुनें",
+"Kies een speler"
+],
+[
+"Choose player",
+"Elegir jugador",
+"اختيار لاعب",
+"खिलाड़ी चुनें",
+"Kies speler"
+],
+[
+"Action view · switch",
+"Vista de acción · cambiar",
+"منظور الحدث · تبديل",
+"खेल का दृश्य · बदलें",
+"Actiebeeld · wisselen"
+],
+[
+"Your view · switch",
+"Tu vista · cambiar",
+"منظورك · تبديل",
+"आपका दृश्य · बदलें",
+"Jouw beeld · wisselen"
+],
+[
+"Your close-up · live",
+"Tu primer plano · en directo",
+"لقطتك القريبة · مباشر",
+"आपका पास का दृश्य · लाइव",
+"Jouw close-up · live"
+],
+[
+"↔ Rotate view",
+"↔ Girar vista",
+"↔ تدوير العرض",
+"↔ दृश्य घुमाएँ",
+"↔ Beeld draaien"
+],
+[
+"Game orientation",
+"Orientación del juego",
+"اتجاه الشاشة",
+"खेल की दिशा",
+"Schermrichting"
+],
+[
+"Automatic rotation",
+"Giro automático",
+"تدوير تلقائي",
+"अपने आप घुमाएँ",
+"Automatisch draaien"
+],
+[
+"Landscape",
+"Horizontal",
+"أفقي",
+"आड़ा",
+"Liggend"
+],
+[
+"Portrait",
+"Vertical",
+"عمودي",
+"खड़ा",
+"Staand"
+],
+[
+"Your question",
+"Tu pregunta",
+"سؤالك",
+"आपका सवाल",
+"Jouw vraag"
+],
+[
+"Your colour ranks",
+"Tus rangos de color",
+"رتب ألوانك",
+"आपके रंग स्तर",
+"Jouw kleurrangen"
+],
+[
+"Learn to play with Minik",
+"Aprende a jugar con Minik",
+"تعلّم اللعب مع مينيك",
+"Minik के साथ खेलना सीखें",
+"Leer spelen met Minik"
+],
+[
+"Learn to play with Mia",
+"Aprende a jugar con Mia",
+"تعلّم اللعب مع ميا",
+"Mia के साथ खेलना सीखें",
+"Leer spelen met Mia"
+],
+[
+"Standard · tap anywhere to throw",
+"Estándar · toca donde quieras lanzar",
+"عادي · المس مكان الرمية",
+"सामान्य · जहाँ फेंकना है वहाँ टैप करें",
+"Standaard · tik waar je wilt gooien"
+],
+[
+"Hard · aim the arc; swipe for power",
+"Difícil · apunta con el arco y desliza",
+"صعب · وجّه القوس واسحب للقوة",
+"कठिन · चाप से निशाना, स्वाइप से ताकत",
+"Moeilijk · richt de boog en veeg voor kracht"
+],
+[
+"Try Hard",
+"Prueba Difícil",
+"جرّب الصعب",
+"कठिन आज़माएँ",
+"Probeer Moeilijk"
+],
+[
+"Single battle",
+"Una batalla",
+"معركة واحدة",
+"एक मुकाबला",
+"Eén gevecht"
+],
+[
+"5 battles cup",
+"Copa de 5 batallas",
+"كأس من 5 معارك",
+"5 मुकाबलों का कप",
+"Beker met 5 gevechten"
+],
+[
+"Game mode",
+"Modo de juego",
+"نمط اللعب",
+"खेल का प्रकार",
+"Spelmodus"
+],
+[
+"For this game only · your saved settings stay the same",
+"Solo para esta partida · tus ajustes guardados no cambian",
+"لهذه اللعبة فقط · تبقى إعداداتك المحفوظة كما هي",
+"केवल इस खेल के लिए · सहेजी सेटिंग नहीं बदलेंगी",
+"Alleen dit spel · je opgeslagen instellingen blijven gelijk"
+],
+[
+"Parking plaza",
+"Plaza de aparcamiento",
+"ساحة المواقف",
+"पार्किंग मैदान",
+"Parkeerplein"
+],
+[
+"Five-floor tower",
+"Torre de cinco plantas",
+"برج من خمسة طوابق",
+"पाँच मंज़िला टावर",
+"Toren met vijf verdiepingen"
+],
+[
+"Battle rules",
+"Reglas de la batalla",
+"قواعد المعركة",
+"मुकाबले के नियम",
+"Gevechtsregels"
+],
+[
+"Public rooms & championships",
+"Salas públicas y campeonatos",
+"غرف عامة وبطولات",
+"सार्वजनिक कमरे और चैंपियनशिप",
+"Openbare kamers en kampioenschappen"
+],
+[
+"Waiting for all assigned players.",
+"Esperando a todos los jugadores asignados.",
+"بانتظار جميع اللاعبين المحددين.",
+"सभी तय खिलाड़ियों का इंतज़ार है।",
+"Wachten op alle ingedeelde spelers."
+],
+[
+"All assigned players must join and be Ready.",
+"Todos los jugadores asignados deben unirse y estar preparados.",
+"يجب أن ينضم جميع اللاعبين المحددين ويكونوا جاهزين.",
+"सभी तय खिलाड़ियों को जुड़कर तैयार होना होगा।",
+"Alle ingedeelde spelers moeten meedoen en klaarstaan."
+],
+[
+"Waiting for the fixture host to open the room.",
+"Esperando a que el anfitrión abra la sala.",
+"بانتظار أن يفتح مضيف المباراة الغرفة.",
+"मैच के मेज़बान के कमरा खोलने का इंतज़ार है।",
+"Wachten tot de wedstrijdhost de kamer opent."
+],
+[
+"You are not assigned to this fixture.",
+"No estás asignado a este encuentro.",
+"أنت غير مسجل في هذه المباراة.",
+"आप इस मैच में शामिल नहीं हैं।",
+"Je bent niet ingedeeld voor deze wedstrijd."
+],
+[
+"Amudu code",
+"Código de Amudu",
+"رمز الغرفة",
+"कमरे का कोड",
+"Amudu-code"
+],
+[
+"Balloon ready. Tap any ground point or player to throw there.",
+"Globo listo. Toca el suelo o un jugador para lanzar hacia allí.",
+"البالون جاهز. المس نقطة على الأرض أو لاعبًا للرمي نحوها.",
+"गुब्बारा तैयार है। ज़मीन या किसी खिलाड़ी पर टैप करके वहाँ फेंकें।",
+"Ballon klaar. Tik op de grond of een speler om daarheen te gooien."
+],
+[
+"Balloon ready. Drag the arc to aim. A faster swipe throws harder; tap to use your saved aim.",
+"Globo listo. Arrastra el arco para apuntar. Desliza más rápido para lanzar más fuerte; toca para usar la dirección guardada.",
+"البالون جاهز. اسحب القوس للتصويب. السحب الأسرع يرمي بقوة أكبر؛ المس للرمي بالاتجاه المحفوظ.",
+"गुब्बारा तैयार है। चाप खींचकर निशाना लगाएँ। तेज़ स्वाइप से तेज़ फेंकें; तय दिशा में फेंकने के लिए टैप करें।",
+"Ballon klaar. Sleep de boog om te richten. Sneller vegen gooit harder; tik om je bewaarde richting te gebruiken."
+],
+[
+"Earn 2 points for a correct answer and 5 for a hit. Your colour stays with you between games.",
+"Gana 2 puntos por una respuesta correcta y 5 por un impacto. Tu color se conserva entre partidas.",
+"اكسب نقطتين للإجابة الصحيحة و5 للإصابة. يبقى لونك بين الألعاب.",
+"सही जवाब पर 2 अंक और निशाना लगने पर 5 अंक पाएँ। आपका रंग अगले खेल में भी रहता है।",
+"Verdien 2 punten voor een goed antwoord en 5 voor een treffer. Je kleur blijft tussen spellen bewaard."
+],
+[
+"Choose how to throw. Standard: tap any ground point or player. Hard: aim with the arc and swipe faster for more power. Try both.",
+"Elige cómo lanzar. Estándar: toca el suelo o un jugador. Difícil: apunta con el arco y desliza más rápido para dar más fuerza. Prueba ambos.",
+"اختر طريقة الرمي. العادي: المس الأرض أو لاعبًا. الصعب: صوّب بالقوس واسحب أسرع لقوة أكبر. جرّب الاثنين.",
+"फेंकने का तरीका चुनें। सामान्य: ज़मीन या खिलाड़ी पर टैप करें। कठिन: चाप से निशाना लगाएँ और ताकत के लिए तेज़ स्वाइप करें। दोनों आज़माएँ।",
+"Kies hoe je gooit. Standaard: tik op de grond of een speler. Moeilijk: richt met de boog en veeg sneller voor meer kracht. Probeer beide."
+],
+[
+"Try Hard throwing: collect a correct balloon. Swipe the arc toward your target and release to throw. Faster means stronger. You can also tap to throw with the saved aim.",
+"Prueba el lanzamiento difícil: recoge el globo correcto. Desliza el arco hacia tu objetivo y suelta. Más rápido significa más fuerte. También puedes tocar para usar la dirección guardada.",
+"جرّب الرمي الصعب: التقط بالون الإجابة الصحيحة. اسحب القوس نحو الهدف وأفلت للرمي. الأسرع أقوى. يمكنك أيضًا اللمس للرمي بالاتجاه المحفوظ.",
+"कठिन फेंक आज़माएँ: सही गुब्बारा उठाएँ। चाप को लक्ष्य की ओर स्वाइप करके छोड़ें। तेज़ का मतलब ताकतवर। तय दिशा में फेंकने के लिए टैप भी कर सकते हैं।",
+"Probeer moeilijk gooien: pak de juiste ballon. Veeg de boog naar je doel en laat los. Sneller is harder. Je kunt ook tikken om in de bewaarde richting te gooien."
+],
+[
+"Try Standard throwing: collect the correct balloon, then tap your teacher or a ground point. The balloon flies towards him; he can still dodge.",
+"Prueba el lanzamiento estándar: recoge el globo correcto y toca a tu guía o el suelo. El globo irá allí, pero tu guía puede esquivarlo.",
+"جرّب الرمي العادي: التقط البالون الصحيح ثم المس معلّمك أو الأرض. يتجه البالون نحوه، ويمكنه تفاديه.",
+"सामान्य फेंक आज़माएँ: सही गुब्बारा उठाकर अपने शिक्षक या ज़मीन पर टैप करें। गुब्बारा वहाँ जाएगा; शिक्षक बच भी सकते हैं।",
+"Probeer standaard gooien: pak de juiste ballon en tik op je leraar of de grond. De ballon vliegt daarheen; je leraar kan nog ontwijken."
+],
+[
+"Use solid cover. Cars and planters block low balloons; duck behind them or move around for a clear shot.",
+"Usa cobertura sólida. Los coches y las jardineras bloquean globos bajos; agáchate detrás o rodéalos para tener un tiro libre.",
+"استخدم الغطاء. السيارات وأحواض الزرع توقف البالونات المنخفضة؛ انحنِ خلفها أو التف حولها لرمية واضحة.",
+"आड़ लें। गाड़ियाँ और गमले नीचे के गुब्बारे रोकते हैं; पीछे झुकें या साफ़ निशाने के लिए घूमकर जाएँ।",
+"Zoek dekking. Auto’s en plantenbakken blokkeren lage ballonnen; buk erachter of loop eromheen voor een vrij schot."
+],
+[
+"A battle supports at most twelve players. Remove a house player or a connected friend.",
+"Una batalla admite hasta doce jugadores. Quita un personaje o un amigo conectado.",
+"تدعم المعركة اثني عشر لاعبًا كحد أقصى. أزل لاعبًا آليًا أو صديقًا متصلًا.",
+"एक मुकाबले में अधिकतम बारह खिलाड़ी हो सकते हैं। कोई गेम खिलाड़ी या जुड़े दोस्त को हटाएँ।",
+"Er kunnen maximaal twaalf spelers meedoen. Verwijder een huisgenoot of verbonden vriend."
+],
+[
+"Team battles need two equal teams of two to six players. Adjust the roster before starting.",
+"Las batallas por equipos necesitan dos equipos iguales de dos a seis jugadores. Ajusta la lista antes de empezar.",
+"تحتاج المعارك إلى فريقين متساويين من لاعبين إلى ستة لكل فريق. عدّل القائمة قبل البدء.",
+"टीम मुकाबले में दो बराबर टीमें चाहिए, हर टीम में दो से छह खिलाड़ी। शुरू करने से पहले सूची बदलें।",
+"Teamgevechten hebben twee gelijke teams van twee tot zes spelers nodig. Pas de spelerslijst aan voor je begint."
+],
+[
+"Five-battle online cups need a service update. Choose one or three battles, or play five with house players.",
+"Las copas en línea de cinco batallas necesitan una actualización. Elige una o tres batallas, o juega cinco con personajes.",
+"تحتاج كؤوس الخمس معارك عبر الإنترنت إلى تحديث الخدمة. اختر معركة أو ثلاثًا، أو العب خمسًا مع لاعبي اللعبة.",
+"पाँच ऑनलाइन मुकाबलों के कप के लिए सेवा अपडेट चाहिए। एक या तीन चुनें, या गेम खिलाड़ियों के साथ पाँच खेलें।",
+"Online bekers met vijf gevechten vereisen een service-update. Kies één of drie gevechten, of speel vijf met huisgenoten."
+],
+[
+"Turn your phone to play in landscape, or tap ↻ during a game. Your chosen orientation is remembered for the next game.",
+"Gira el teléfono para jugar en horizontal, o toca ↻ durante una partida. La orientación se guarda para la siguiente.",
+"أدر الهاتف للعب أفقيًا أو المس ↻ أثناء اللعب. يُحفظ الاتجاه للعبة التالية.",
+"आड़ा खेलने के लिए फ़ोन घुमाएँ या खेल में ↻ टैप करें। अगला खेल आपकी चुनी दिशा याद रखेगा।",
+"Draai je telefoon om liggend te spelen, of tik tijdens het spel op ↻. Je keuze blijft bewaard voor het volgende spel."
+],
+[
+"Drag to run · Tap / hold to catch\nDouble-tap to duck",
+"Arrastra para correr · Toca / mantén para atrapar\nToca dos veces para agacharte",
+"اسحب للجري · المس أو اضغط باستمرار للإمساك\nالمس مرتين للانحناء",
+"दौड़ने के लिए खींचें · पकड़ने के लिए टैप / दबाए रखें\nझुकने के लिए दो बार टैप करें",
+"Sleep om te rennen · Tik / houd vast om te vangen\nDubbeltik om te bukken"
+],
+[
+"1 · Choose and toss",
+"1 · Elige y lanza",
+"1 · اختر وارمِ",
+"1 · चुनें और उछालें",
+"1 · Kies en gooi"
+],
+[
+"Start in a circle. Tap a player, then swipe upward from your held ball. Faster means higher; the ball travels toward the circle center. Names are spoken aloud. After a successful catch, everyone stays where they are: call someone even far away.",
+"Empieza en círculo. Toca un jugador y desliza hacia arriba desde tu pelota. Más rápido significa más alto; siempre va hacia el centro. Se dice el nombre en voz alta. Tras una buena recepción, todos conservan su posición, aunque estén lejos.",
+"ابدأ في دائرة. المس لاعبًا واسحب لأعلى من الكرة؛ السحب الأسرع يرفعها أكثر باتجاه المركز. يُنطق الاسم بصوت. بعد الإمساك الناجح يبقى الجميع في أماكنهم، ويمكن نداء البعيد أيضًا.",
+"गोले से शुरू करें। खिलाड़ी चुनें और गेंद से ऊपर स्वाइप करें। तेज़ स्वाइप ऊँचा उछालेगा, गेंद केंद्र की ओर जाएगी। नाम बोला जाएगा। कैच होने पर सब अपनी जगह रहेंगे; दूर खड़े खिलाड़ी को भी पुकार सकते हैं।",
+"Begin in een kring. Tik op een speler en veeg omhoog vanaf je bal. Sneller is hoger; de bal gaat naar het midden. De naam wordt uitgesproken. Na een geslaagde vangst blijft iedereen staan waar die is, ook ver weg."
+],
+[
+"2 · Run and catch",
+"2 · Corre y atrapa",
+"2 · اركض وأمسك",
+"2 · दौड़ें और पकड़ें",
+"2 · Ren en vang"
+],
+[
+"Drag and hold to run; lift to stop. Tap or briefly hold to prepare a catch for 0.7 seconds. Your character raises their hands and stops moving. Be close to the descending ball. After the attempt ends you can move again. Double-tap to duck.",
+"Arrastra y mantén para correr; suelta para parar. Toca o mantén un instante para intentar atrapar durante 0,7 segundos. El personaje alza las manos y se detiene. Acércate a la pelota mientras baja. Después podrás moverte de nuevo. Dos toques para agacharte.",
+"اسحب واضغط للركض، وارفع إصبعك للتوقف. المس أو اضغط قليلًا لمحاولة الإمساك لمدة 0.7 ثانية. ترفع الشخصية يديها وتتوقف. اقترب من الكرة النازلة. يمكنك الحركة بعد انتهاء المحاولة. لمستان للانحناء.",
+"दौड़ने के लिए खींचकर पकड़े रहें; छोड़ने पर रुकेंगे। टैप या थोड़ी देर दबाने पर 0.7 सेकंड का कैच प्रयास होगा। किरदार हाथ उठाकर रुकेगा। उतरती गेंद के पास रहें। उसके बाद फिर चल सकते हैं। झुकने के लिए दो बार टैप करें।",
+"Sleep en houd vast om te rennen; laat los om te stoppen. Tik of houd kort vast voor een vangpoging van 0,7 seconden. Je personage heft de handen en staat stil. Blijf bij de dalende bal. Daarna kun je weer bewegen. Dubbeltik om te bukken."
+],
+[
+"3 · Pick up, then choose",
+"3 · Recoge y decide",
+"3 · التقط ثم اختر",
+"3 · उठाएँ, फिर चुनें",
+"3 · Pak op en kies"
+],
+[
+"After missing the airborne catch, get close and tap to pick up the ball. Your feet stay planted there. You may aim and throw immediately, or tap SPUD to stop the runners first. SPUD is only spoken when chosen.",
+"Si no atrapaste la pelota, acércate y toca para recogerla. Desde ahí ya no puedes moverte. Puedes apuntar y lanzar directamente, o tocar SPUD para detener primero a los demás. Solo se grita cuando pulsas el botón.",
+"إذا فاتتك الكرة، اقترب والمس لالتقاطها. تثبت قدماك هناك. يمكنك التصويب والرمي مباشرة أو لمس «توقّفوا» لإيقاف الآخرين أولًا. لا يُنطق النداء إلا عند الضغط.",
+"कैच छूटे तो पास जाकर टैप से गेंद उठाएँ। अब वहीं खड़े रहें। सीधे निशाना लगाकर फेंक सकते हैं, या पहले SPUD दबाकर सबको रोकें। पुकार सिर्फ बटन दबाने पर होगी।",
+"Miste je de vangst? Ga dichterbij en tik om de bal te pakken. Vanaf die plek blijven je voeten staan. Je kunt meteen richten en gooien, of eerst op SPUD tikken. De kreet klinkt alleen als je op de knop tikt."
+],
+[
+"4 · Control the throw",
+"4 · Controla el lanzamiento",
+"4 · تحكّم بالرمية",
+"4 · फेंकने पर नियंत्रण",
+"4 · Beheers je worp"
+],
+[
+"Tap a player to aim, then swipe from your ball. Standard: too slow drops short; too fast can fly over their head. The ball must not touch the ground first. Easy: lower throws and ground bounces are allowed. Wind changes the flight.",
+"Toca un jugador y desliza desde la pelota. En estándar, un gesto lento cae corto; demasiado rápido puede pasar por encima. No puede tocar antes el suelo. En fácil, los tiros son más bajos y pueden botar. El viento desvía la trayectoria.",
+"المس لاعبًا واسحب من الكرة. في الوضع العادي: البطيء يسقط قريبًا والسريع جدًا قد يعلو الرأس. لا يجوز لمس الأرض أولًا. في السهل تكون الرميات منخفضة والارتداد مسموحًا. الرياح تغيّر المسار.",
+"खिलाड़ी पर टैप करके गेंद से स्वाइप करें। सामान्य में धीमा फेंकना पास गिरेगा, बहुत तेज़ सिर के ऊपर जा सकता है। पहले ज़मीन छूना मना है। आसान में नीची गेंद और उछाल मान्य हैं। हवा रास्ता बदलती है।",
+"Tik op een speler en veeg vanaf de bal. Standaard: te zacht valt te kort, te hard kan over het hoofd gaan. Eerst de grond raken mag niet. Makkelijk: lagere worpen en stuiteren mag. Wind buigt de baan af."
+],
+[
+"5 · Catch or be tagged",
+"5 · Atrapa o recibe el golpe",
+"5 · أمسك أو تُصب",
+"5 · कैच या हिट",
+"5 · Vangen of geraakt worden"
+],
+[
+"A timed catch gives the thrower a penalty. A hit gives the target a penalty and the ball rebounds; touching a player never becomes an automatic catch. A miss penalizes the thrower. Runners have a harder catch. Only a penalty returns everyone to the circle.",
+"Una recepción a tiempo penaliza al lanzador. Un golpe penaliza al objetivo y la pelota rebota: tocar al personaje no es atrapar. Un fallo penaliza al lanzador. Es más difícil atrapar mientras corres. Solo una penalización devuelve a todos al círculo.",
+"الإمساك في الوقت الصحيح يعطي الرامي جزاءً. الإصابة تعطي الهدف جزاءً وترتد الكرة؛ الملامسة ليست إمساكًا تلقائيًا. الإخفاق يعاقب الرامي. الإمساك أثناء الركض أصعب. يعود الجميع إلى الدائرة بعد نقطة جزاء فقط.",
+"समय पर कैच से फेंकने वाले को पेनल्टी मिलती है। लगने पर खिलाड़ी को पेनल्टी और गेंद वापस उछलती है; छूना कैच नहीं है। निशाना चूके तो फेंकने वाले को पेनल्टी। दौड़ते समय कैच कठिन है। पेनल्टी के बाद ही सब गोले में लौटेंगे।",
+"Een goede vangst geeft de werper een strafpunt. Raak betekent een strafpunt voor het doelwit en de bal ketst terug; aanraken is geen vangst. Mis betekent een strafpunt voor de werper. Rennen maakt vangen moeilijker. Alleen na een strafpunt keert iedereen terug naar de kring."
+],
+[
+"6 · Remember the new name",
+"6 · Recuerda el apodo",
+"6 · تذكّر اللقب",
+"6 · उपनाम याद रखें",
+"6 · Onthoud de bijnaam"
+],
+[
+"Every three penalties the other players privately choose one funny word. The first replaces the original name; later words are added. Write your own word or use a suggestion. When you are the only human, your proposal wins. Type the nickname to call that player; a wrong nickname earns a penalty. No one is eliminated.",
+"Cada tres penalizaciones, los demás eligen en secreto una palabra divertida. La primera sustituye al nombre; las siguientes se añaden. Escribe tu propia palabra o usa una sugerencia. Si eres el único humano, gana tu propuesta. Un apodo incorrecto al llamar suma una penalización. Nadie queda eliminado.",
+"كل ثلاث نقاط جزاء يختار الآخرون سرًا كلمة مضحكة. الأولى تستبدل الاسم ثم تُضاف الكلمات التالية. اكتب كلمة أو اختر اقتراحًا. إذا كنت الإنسان الوحيد تفوز كلمتك. كتابة لقب خاطئ عند النداء تضيف جزاءً. لا يُقصى أحد.",
+"हर तीन पेनल्टी पर बाकी लोग चुपके से एक मज़ेदार शब्द चुनेंगे। पहला नाम बदलेगा, बाद के जुड़ेंगे। अपना शब्द लिखें या सुझाव चुनें। अकेले इंसान हैं तो आपका सुझाव जीतेगा। पुकारते समय गलत उपनाम पर पेनल्टी मिलेगी। कोई बाहर नहीं होगा।",
+"Elke drie strafpunten kiezen de anderen stiekem één grappig woord. Het eerste vervangt de naam; latere woorden komen erbij. Schrijf zelf iets of kies een suggestie. Als enige menselijke speler wint jouw voorstel. Een verkeerde bijnaam bij het roepen geeft een strafpunt. Niemand valt af."
+],
+[
+"No turn limit is the default. You can finish from the pause menu; in a private room its host can finish. A chosen 10, 20, 35 or 50-turn limit ends automatically. Fewest penalties wins. No ads interrupt a turn.",
+"Por defecto no hay límite de turnos. Puedes terminar desde pausa; en una sala privada lo hace el anfitrión. Si eliges 10, 20, 35 o 50 turnos, termina automáticamente. Gana quien tenga menos penalizaciones. No hay anuncios durante un turno.",
+"الأصل بلا حد للأدوار. يمكنك الإنهاء من قائمة الاستراحة؛ وفي الغرفة الخاصة ينهي المضيف. إذا اخترت 10 أو 20 أو 35 أو 50 دورًا تنتهي تلقائيًا. يفوز الأقل جزاءً. لا إعلانات أثناء الدور.",
+"डिफ़ॉल्ट में बारी की सीमा नहीं है। विराम मेन्यू से समाप्त करें; निजी कमरे में मेज़बान करेगा। 10, 20, 35 या 50 बारी चुनें तो अपने आप समाप्त होगा। कम पेनल्टी वाला जीतेगा। बारी के बीच विज्ञापन नहीं आएँगे।",
+"Standaard is er geen beurtlimiet. Stop via het pauzemenu; in een privékamer doet de host dat. Bij 10, 20, 35 of 50 beurten eindigt het vanzelf. De minste strafpunten wint. Geen advertenties midden in een beurt."
+],
+[
+"Call. Catch. Freeze. Laugh.",
+"Llama. Atrapa. Para. Ríe.",
+"نادِ. أمسك. توقّف. اضحك.",
+"पुकारो। पकड़ो। रुको। हँसो।",
+"Roep. Vang. Sta stil. Lach."
+],
+[
+"Used only when you play with friends in a private room.",
+"Solo se usa al jugar con amigos en una sala privada.",
+"يُستخدم فقط عند اللعب مع الأصدقاء في غرفة خاصة.",
+"इसका उपयोग सिर्फ दोस्तों के साथ निजी कमरे में खेलते समय होगा।",
+"Alleen gebruikt als je met vrienden in een privékamer speelt."
+],
+[
+"Write one word using letters and optional numbers, up to 24 characters.",
+"Escribe una sola palabra con letras y, si quieres, números. Máximo 24 caracteres.",
+"اكتب كلمة واحدة بالحروف، ويمكن إضافة أرقام، بحد أقصى 24 حرفًا.",
+"अक्षरों और चाहें तो अंकों से एक शब्द लिखें। अधिकतम 24 अक्षर।",
+"Schrijf één woord met letters en eventueel cijfers, maximaal 24 tekens."
+],
+[
+"Enter a name with letters, spaces or numbers (up to 22 characters).",
+"Escribe un nombre con letras, espacios o números (máximo 22 caracteres).",
+"اكتب اسمًا بحروف أو مسافات أو أرقام، حتى 22 حرفًا.",
+"अक्षरों, खाली जगह या अंकों से नाम लिखें (अधिकतम 22 अक्षर)।",
+"Vul een naam in met letters, spaties of cijfers (maximaal 22 tekens)."
+],
+[
+"House players · choose your team of friends",
+"Personajes · elige con quién jugar",
+"شخصيات اللعبة · اختر أصدقاء اللعب",
+"गेम के खिलाड़ी · साथ खेलने वाले चुनें",
+"Huisgenoten · kies met wie je speelt"
+],
+[
+"Choose one word, then vote. At three penalties it replaces the name; later words are added.",
+"Propón una palabra y vota. A las tres penalizaciones sustituye el nombre; después se añaden palabras.",
+"اقترح كلمة ثم صوّت. عند ثلاث نقاط جزاء تحل محل الاسم، ثم تُضاف الكلمات التالية إليه.",
+"एक शब्द सुझाएँ और वोट दें। तीन पेनल्टी पर नाम बदलेगा; बाद के शब्द जुड़ते जाएँगे।",
+"Stel één woord voor en stem. Bij drie strafpunten vervangt het de naam; latere woorden komen erbij."
+],
+[
+"Choose one funny word privately.",
+"Elegid una palabra divertida en secreto.",
+"اختاروا كلمة مضحكة سرًا.",
+"चुपके से एक मज़ेदार शब्द चुनें।",
+"Kies samen in het geheim een grappig woord."
+],
+[
+"{0} seconds left",
+"Quedan {0} segundos",
+"باقي {0} ثانية",
+"{0} सेकंड बाकी",
+"Nog {0} seconden"
+],
+[
+"Return to room ({0})",
+"Volver a la sala ({0})",
+"العودة للغرفة ({0})",
+"कमरे में लौटें ({0})",
+"Terug naar kamer ({0})"
+],
+[
+"Turn {0} / {1}",
+"Turno {0} / {1}",
+"الدور {0} / {1}",
+"बारी {0} / {1}",
+"Beurt {0} / {1}"
+],
+[
+"Turn {0} · ∞",
+"Turno {0} · ∞",
+"الدور {0} · ∞",
+"बारी {0} · ∞",
+"Beurt {0} · ∞"
+],
+[
+"{0} is choosing who to call.",
+"{0} está eligiendo a quién llamar.",
+"{0} يختار من ينادي.",
+"{0} चुन रहे हैं कि किसे पुकारें।",
+"{0} kiest wie er wordt geroepen."
+],
+[
+"{0} caught the ball! Their turn to call.",
+"¡{0} atrapó la pelota! Ahora le toca llamar.",
+"أمسك {0} بالكرة! الآن دوره في النداء.",
+"{0} ने गेंद पकड़ ली! अब नाम पुकारने की उनकी बारी।",
+"{0} heeft de bal gevangen! Nu mag die iemand roepen."
+],
+[
+"{0} caught the ball! The thrower gets a penalty.",
+"¡{0} atrapó la pelota! Penalización para quien lanzó.",
+"أمسك {0} بالكرة! نقطة جزاء للرامي.",
+"{0} ने गेंद पकड़ ली! फेंकने वाले को एक पेनल्टी।",
+"{0} heeft de bal gevangen! De werper krijgt een strafpunt."
+],
+[
+"{0} missed. One penalty.",
+"{0} falló. Una penalización.",
+"أخطأ {0}. نقطة جزاء واحدة.",
+"{0} का निशाना चूका। एक पेनल्टी।",
+"{0} miste. Eén strafpunt."
+],
+[
+"{0} needs to pick up the ball.",
+"{0} tiene que recoger la pelota.",
+"على {0} التقاط الكرة.",
+"{0} को गेंद उठानी है।",
+"{0} moet de bal ophalen."
+],
+[
+"{0} used the wrong nickname. One penalty.",
+"{0} usó un apodo incorrecto. Una penalización.",
+"استخدم {0} لقبًا خاطئًا. نقطة جزاء واحدة.",
+"{0} ने गलत उपनाम लिखा। एक पेनल्टी।",
+"{0} gebruikte de verkeerde bijnaam. Eén strafpunt."
+],
+[
+"You caught the ball! Your turn to call.",
+"¡Atrapaste la pelota! Te toca llamar.",
+"أمسكت الكرة! دورك في النداء.",
+"आपने गेंद पकड़ ली! अब नाम पुकारें।",
+"Je hebt de bal gevangen! Nu mag jij roepen."
+],
+[
+"You caught the ball! The thrower gets a penalty.",
+"¡Atrapaste la pelota! Penalización para quien lanzó.",
+"أمسكت الكرة! نقطة جزاء للرامي.",
+"आपने गेंद पकड़ ली! फेंकने वाले को एक पेनल्टी।",
+"Je hebt de bal gevangen! De werper krijgt een strafpunt."
+],
+[
+"The ball hit {0}. One penalty.",
+"La pelota golpeó a {0}. Una penalización.",
+"أصابت الكرة {0}. نقطة جزاء واحدة.",
+"गेंद {0} को लगी। एक पेनल्टी।",
+"De bal raakte {0}. Eén strafpunt."
+],
+[
+"The ball hit you. One penalty.",
+"La pelota te golpeó. Una penalización.",
+"أصابتك الكرة. نقطة جزاء واحدة.",
+"गेंद आपको लगी। एक पेनल्टी।",
+"De bal raakte je. Eén strafpunt."
+],
+[
+"The ball touched {0}. They need to pick it up.",
+"La pelota tocó a {0}. Tiene que recogerla.",
+"لمست الكرة {0}. عليه التقاطها.",
+"गेंद {0} को छू गई। उन्हें उसे उठाना होगा।",
+"De bal raakte {0}. Die moet hem ophalen."
+],
+[
+"The ball touched you. Get close and tap to pick it up.",
+"La pelota te tocó. Acércate y toca para recogerla.",
+"لمستك الكرة. اقترب والمس لالتقاطها.",
+"गेंद आपको छू गई। पास जाकर टैप करके उठाएँ।",
+"De bal raakte je. Ga dichterbij en tik om hem op te pakken."
+],
+[
+"Your throw missed. One penalty.",
+"Tu lanzamiento falló. Una penalización.",
+"أخطأت رميتك. نقطة جزاء واحدة.",
+"आपकी फेंकी गेंद चूक गई। एक पेनल्टी।",
+"Je worp miste. Eén strafpunt."
+],
+[
+"Choose a player.\nThen swipe your ball upward!",
+"Elige un jugador.\n¡Luego desliza tu pelota hacia arriba!",
+"اختر لاعبًا.\nثم اسحب كرتك إلى الأعلى!",
+"खिलाड़ी चुनें।\nफिर गेंद को ऊपर स्वाइप करें!",
+"Kies een speler.\nVeeg daarna je bal omhoog!"
+],
+[
+"Swipe up from your ball.\nFaster swipe → higher throw!",
+"Desliza hacia arriba desde la pelota.\n¡Más rápido → más alto!",
+"اسحب لأعلى من الكرة.\nسحب أسرع ← رمية أعلى!",
+"गेंद से ऊपर स्वाइप करें।\nतेज़ स्वाइप → ऊँची उछाल!",
+"Veeg omhoog vanaf de bal.\nSneller vegen → hoger gooien!"
+],
+[
+"Your ball! Run to the landing ring.\nTap or hold briefly as it comes down.",
+"¡Es para ti! Corre al círculo de caída.\nToca o mantén pulsado un instante cuando baje.",
+"إنها لك! اركض إلى دائرة الهبوط.\nالمس أو اضغط قليلًا أثناء نزولها.",
+"आपकी गेंद! उतरने वाले घेरे तक दौड़ें।\nगेंद नीचे आए तो टैप करें या थोड़ा दबाए रखें।",
+"Jouw bal! Ren naar de landingsring.\nTik of houd kort vast terwijl de bal daalt."
+],
+[
+"Run! {0} is trying to catch.",
+"¡Corre! {0} intenta atraparla.",
+"اركض! {0} يحاول الإمساك.",
+"दौड़ें! {0} पकड़ने की कोशिश कर रहे हैं।",
+"Rennen! {0} probeert te vangen."
+],
+[
+"Pick up the ball: get close and tap.",
+"Recoge la pelota: acércate y toca.",
+"التقط الكرة: اقترب والمس.",
+"गेंद उठाएँ: पास जाएँ और टैप करें।",
+"Pak de bal op: ga dichterbij en tik."
+],
+[
+"Get close and tap to pick up the ball.",
+"Acércate y toca para recoger la pelota.",
+"اقترب والمس لالتقاط الكرة.",
+"गेंद के पास जाकर टैप करें।",
+"Ga dichterbij en tik om de bal op te pakken."
+],
+[
+"Keep running until SPUD!",
+"¡Sigue corriendo hasta que griten SPUD!",
+"واصل الركض حتى تسمع «توقّفوا»!",
+"SPUD पुकारे जाने तक दौड़ते रहें!",
+"Blijf rennen tot er SPUD wordt geroepen!"
+],
+[
+"Keep running, or stop and prepare to catch.",
+"Sigue corriendo o párate y prepárate para atrapar.",
+"واصل الركض، أو توقّف واستعد للإمساك.",
+"दौड़ते रहें या रुककर कैच के लिए तैयार हों।",
+"Blijf rennen of stop en maak je klaar om te vangen."
+],
+[
+"Your feet stay here. Aim and swipe to throw, or tap SPUD to stop the runners.",
+"Quédate aquí. Apunta y desliza para lanzar, o toca SPUD para detener a los demás.",
+"ابقَ في مكانك. صوّب واسحب للرمي، أو المس «توقّفوا» لإيقاف الركض.",
+"यहीं खड़े रहें। निशाना लगाकर स्वाइप करें, या सबको रोकने के लिए SPUD दबाएँ।",
+"Je blijft hier staan. Richt en veeg om te gooien, of tik op SPUD om de renners te stoppen."
+],
+[
+"Aim by tapping a player.\nFlick from your ball to throw.",
+"Toca un jugador para apuntar.\nDesliza desde la pelota para lanzar.",
+"المس لاعبًا للتصويب.\nاسحب من الكرة للرمي.",
+"खिलाड़ी पर टैप करके निशाना लगाएँ।\nगेंद से स्वाइप करके फेंकें।",
+"Tik op een speler om te richten.\nVeeg vanaf de bal om te gooien."
+],
+[
+"SPUD!",
+"¡SPUD!",
+"توقّفوا!",
+"SPUD!",
+"SPUD!"
+],
+[
+"SPUD! Stay still.\nTap to catch · Double-tap to duck",
+"¡SPUD! No te muevas.\nToca para atrapar · Dos toques para agacharte",
+"توقّفوا! اثبت مكانك.\nلمسة للإمساك · لمستان للانحناء",
+"SPUD! स्थिर रहें।\nकैच के लिए टैप · झुकने के लिए दो बार टैप",
+"SPUD! Blijf staan.\nTik om te vangen · Dubbeltik om te bukken"
+],
+[
+"Catch it or duck!",
+"¡Atrápala o agáchate!",
+"أمسكها أو انحنِ!",
+"पकड़ें या झुकें!",
+"Vangen of bukken!"
+],
+[
+"Drag to run · Tap / hold to catch · 0.7 sec\nDouble-tap to duck",
+"Arrastra para correr · Toca o mantén para atrapar · 0,7 s\nDos toques para agacharte",
+"اسحب للركض · المس أو اضغط للإمساك · 0.7 ثانية\nلمستان للانحناء",
+"दौड़ने के लिए खींचें · कैच के लिए टैप / दबाएँ · 0.7 सेकंड\nझुकने के लिए दो बार टैप",
+"Sleep om te rennen · Tik/houd vast om te vangen · 0,7 sec\nDubbeltik om te bukken"
+],
+[
+"Take a break.\nThe next round is on its way.",
+"Descansa un momento.\nLa siguiente ronda está a punto de empezar.",
+"خذ استراحة.\nالجولة التالية قادمة.",
+"थोड़ा विराम लें।\nअगला दौर आने वाला है।",
+"Neem even pauze.\nDe volgende ronde komt eraan."
+],
+[
+"When SPUD is called",
+"Cuando se grita SPUD",
+"عند النداء «توقّفوا»",
+"SPUD पुकारने पर",
+"Als SPUD wordt geroepen"
+],
+[
+"Freeze in place",
+"Quedarse quietos",
+"الثبات في المكان",
+"जगह पर रुकें",
+"Stilstaan op je plek"
+],
+[
+"Honor rule · moving adds a penalty",
+"Regla de honor · moverse suma una penalización",
+"قاعدة الالتزام · الحركة تضيف جزاءً",
+"ईमानदारी का नियम · हिलने पर पेनल्टी",
+"Eerlijkheidsregel · bewegen geeft een strafpunt"
+],
+[
+"Friends join by code. At least two players are needed; empty places can stay empty.",
+"Tus amigos entran con el código. Se necesitan al menos dos jugadores; las demás plazas pueden quedar libres.",
+"ينضم الأصدقاء بالرمز. تحتاج إلى لاعبين على الأقل؛ ويمكن ترك الأماكن الأخرى فارغة.",
+"दोस्त कोड से जुड़ेंगे। कम से कम दो खिलाड़ी चाहिए; बाकी जगहें खाली रह सकती हैं।",
+"Vrienden doen mee met de code. Minimaal twee spelers; overige plekken mogen leeg blijven."
+],
+[
+"Leave a place for yourself.",
+"Deja una plaza para ti.",
+"اترك مكانًا لنفسك.",
+"अपने लिए जगह छोड़ें।",
+"Houd een plek voor jezelf vrij."
+],
+[
+"Only the room host can finish the game for everyone.",
+"Solo el anfitrión puede terminar la partida para todos.",
+"يمكن لمضيف الغرفة فقط إنهاء اللعبة للجميع.",
+"सिर्फ मेज़बान सबके लिए खेल समाप्त कर सकता है।",
+"Alleen de host kan het spel voor iedereen beëindigen."
+],
+[
+"Updating the house players. Tap Start in a moment.",
+"Actualizando personajes. Toca Empezar en un momento.",
+"جارٍ تحديث شخصيات اللعبة. المس «ابدأ» بعد لحظة.",
+"गेम के खिलाड़ी अपडेट हो रहे हैं। थोड़ी देर में शुरू करें।",
+"Huisgenoten worden bijgewerkt. Tik zo op Starten."
+],
+[
+"Enter the six-character room code.",
+"Introduce el código de sala de seis caracteres.",
+"أدخل رمز الغرفة المكوّن من ستة أحرف.",
+"रूम का छह अक्षरों वाला कोड डालें।",
+"Voer de kamercode van zes tekens in."
+],
+[
+"Test ads only after completed games.",
+"Anuncios de prueba solo al terminar las partidas.",
+"إعلانات تجريبية بعد انتهاء الألعاب فقط.",
+"परीक्षण विज्ञापन सिर्फ पूरे हुए खेलों के बाद।",
+"Testadvertenties alleen na afgeronde spellen."
+],
+[
+"Purchases and codes need store activation.",
+"Las compras y los códigos requieren activación en la tienda.",
+"المشتريات والرموز تتطلب التفعيل في المتجر.",
+"खरीदारी और कोड के लिए स्टोर सक्रिय होना ज़रूरी है।",
+"Aankopen en codes moeten nog in de winkel worden geactiveerd."
+],
+[
+"Your Amudu code",
+"Tu código de Amudu",
+"رمز Amudu الخاص بك",
+"आपका Amudu कोड",
+"Je Amudu-code"
+],
+[
+"Next avatar",
+"Avatar siguiente",
+"الصورة التالية",
+"अगला अवतार",
+"Volgende avatar"
+],
+[
+"Previous avatar",
+"Avatar anterior",
+"الصورة السابقة",
+"पिछला अवतार",
+"Vorige avatar"
+],
+[
+"Foam ball",
+"Pelota de espuma",
+"كرة إسفنجية",
+"फोम की गेंद",
+"Schuimbal"
+],
+[
+"Beach ball",
+"Pelota de playa",
+"كرة شاطئ",
+"बीच बॉल",
+"Strandbal"
+],
+[
+"Neon party ball",
+"Pelota neón de fiesta",
+"كرة حفلة نيون",
+"निऑन पार्टी बॉल",
+"Neonfeestbal"
+],
+[
+"Easy · low throws, ground bounces allowed",
+"Fácil · lanzamientos bajos, se permite botar",
+"سهل · رميات منخفضة وارتداد مسموح",
+"आसान · नीची गेंदें, ज़मीन पर उछलना मान्य",
+"Makkelijk · lage worpen, stuiteren mag"
+],
+[
+"Standard · no ground contact before a hit",
+"Estándar · sin tocar el suelo antes del impacto",
+"عادي · دون لمس الأرض قبل الإصابة",
+"सामान्य · लगने से पहले ज़मीन छूना मना",
+"Standaard · eerst een speler raken, niet de grond"
+],
+[
+"Back",
+"Volver",
+"رجوع",
+"वापस",
+"Terug"
+],
+[
+"Start",
+"Empezar",
+"ابدأ",
+"शुरू करें",
+"Starten"
+],
+[
+"Continue",
+"Continuar",
+"متابعة",
+"जारी रखें",
+"Doorgaan"
+],
+[
+"Cancel",
+"Cancelar",
+"إلغاء",
+"रद्द करें",
+"Annuleren"
+],
+[
+"Main menu",
+"Menú principal",
+"القائمة الرئيسية",
+"मुख्य मेन्यू",
+"Hoofdmenu"
+],
+[
+"Next",
+"Siguiente",
+"التالي",
+"अगला",
+"Volgende"
+],
+[
+"Previous",
+"Anterior",
+"السابق",
+"पिछला",
+"Vorige"
+],
+[
+"Play",
+"Jugar",
+"العب",
+"खेलें",
+"Spelen"
+],
+[
+"Play again",
+"Jugar otra vez",
+"العب مجددًا",
+"फिर से खेलें",
+"Opnieuw spelen"
+],
+[
+"You",
+"Tú",
+"أنت",
+"आप",
+"Jij"
+],
+[
+"YOU",
+"TÚ",
+"أنت",
+"आप",
+"JIJ"
+],
+[
+"Your name",
+"Tu nombre",
+"اسمك",
+"आपका नाम",
+"Je naam"
+],
+[
+"Your avatar",
+"Tu avatar",
+"صورتك",
+"आपका अवतार",
+"Je avatar"
+],
+[
+"Your private game",
+"Tu partida privada",
+"لعبتك الخاصة",
+"आपका निजी खेल",
+"Je privéspel"
+],
+[
+"Create game",
+"Crear partida",
+"إنشاء لعبة",
+"खेल बनाएँ",
+"Spel maken"
+],
+[
+"Create your game",
+"Crea tu partida",
+"أنشئ لعبتك",
+"अपना खेल बनाएँ",
+"Maak je spel"
+],
+[
+"Join by code",
+"Unirse con código",
+"الانضمام برمز",
+"कोड से जुड़ें",
+"Meedoen met code"
+],
+[
+"Join",
+"Unirse",
+"انضم",
+"जुड़ें",
+"Meedoen"
+],
+[
+"Join room",
+"Unirse a una sala",
+"انضم إلى غرفة",
+"कमरे से जुड़ें",
+"Kamer binnengaan"
+],
+[
+"Create room",
+"Crear sala",
+"إنشاء غرفة",
+"कमरा बनाएँ",
+"Kamer maken"
+],
+[
+"Open private room",
+"Abrir sala privada",
+"فتح غرفة خاصة",
+"निजी कमरा खोलें",
+"Privékamer openen"
+],
+[
+"Join a private room",
+"Unirse a una sala privada",
+"انضم إلى غرفة خاصة",
+"निजी कमरे से जुड़ें",
+"Meedoen in een privékamer"
+],
+[
+"Room code",
+"Código de sala",
+"رمز الغرفة",
+"कमरे का कोड",
+"Kamercode"
+],
+[
+"Six-character code",
+"Código de seis caracteres",
+"رمز من ستة أحرف",
+"छह अक्षरों का कोड",
+"Code van zes tekens"
+],
+[
+"6-character code",
+"Código de 6 caracteres",
+"رمز من 6 أحرف",
+"छह अक्षरों का कोड",
+"Code van zes tekens"
+],
+[
+"Copy code",
+"Copiar código",
+"نسخ الرمز",
+"कोड कॉपी करें",
+"Code kopiëren"
+],
+[
+"Code copied.",
+"Código copiado.",
+"تم نسخ الرمز.",
+"कोड कॉपी हो गया।",
+"Code gekopieerd."
+],
+[
+"Code copied",
+"Código copiado",
+"تم نسخ الرمز",
+"कोड कॉपी हो गया",
+"Code gekopieerd"
+],
+[
+"Ready",
+"Listo",
+"جاهز",
+"तैयार",
+"Klaar"
+],
+[
+"I'm Ready",
+"Estoy listo",
+"أنا جاهز",
+"मैं तैयार हूँ",
+"Ik ben klaar"
+],
+[
+"Cancel Ready",
+"Ya no estoy listo",
+"إلغاء الجاهزية",
+"अभी तैयार नहीं",
+"Niet meer klaar"
+],
+[
+"Not ready",
+"Sin preparar",
+"غير جاهز",
+"तैयार नहीं",
+"Nog niet klaar"
+],
+[
+"Connecting…",
+"Conectando…",
+"جارٍ الاتصال…",
+"कनेक्ट हो रहा है…",
+"Verbinden…"
+],
+[
+"Connecting to your private room.",
+"Conectando con tu sala privada.",
+"جارٍ الاتصال بغرفتك الخاصة.",
+"आपके निजी कमरे से जुड़ रहे हैं।",
+"Verbinding maken met je privékamer."
+],
+[
+"Connection failed.",
+"No se pudo conectar.",
+"تعذّر الاتصال.",
+"कनेक्शन नहीं हो पाया।",
+"Verbinden mislukt."
+],
+[
+"Room not found.",
+"No se encontró la sala.",
+"الغرفة غير موجودة.",
+"कमरा नहीं मिला।",
+"Kamer niet gevonden."
+],
+[
+"This room is full.",
+"La sala está llena.",
+"الغرفة ممتلئة.",
+"यह कमरा भरा हुआ है।",
+"Deze kamer is vol."
+],
+[
+"This game has already started.",
+"La partida ya ha empezado.",
+"بدأت هذه اللعبة بالفعل.",
+"यह खेल शुरू हो चुका है।",
+"Dit spel is al begonnen."
+],
+[
+"This battle has already started.",
+"La batalla ya ha empezado.",
+"بدأت هذه المعركة بالفعل.",
+"यह मुकाबला शुरू हो चुका है।",
+"Dit gevecht is al begonnen."
+],
+[
+"Everyone must be Ready.",
+"Todos deben estar listos.",
+"يجب أن يكون الجميع جاهزين.",
+"सबका तैयार होना ज़रूरी है।",
+"Iedereen moet klaar zijn."
+],
+[
+"All human players must be ready.",
+"Todos los jugadores deben estar listos.",
+"يجب أن يكون كل اللاعبين الحقيقيين جاهزين.",
+"सभी इंसानी खिलाड़ियों को तैयार होना होगा।",
+"Alle menselijke spelers moeten klaar zijn."
+],
+[
+"Online activation is pending.",
+"El juego en línea aún no está activado.",
+"اللعب عبر الإنترنت لم يُفعّل بعد.",
+"ऑनलाइन खेल अभी सक्रिय नहीं है।",
+"Online spelen is nog niet geactiveerd."
+],
+[
+"Settings",
+"Ajustes",
+"الإعدادات",
+"सेटिंग्स",
+"Instellingen"
+],
+[
+"How to play",
+"Cómo jugar",
+"طريقة اللعب",
+"कैसे खेलें",
+"Zo speel je"
+],
+[
+"Arena",
+"Escenario",
+"الساحة",
+"मैदान",
+"Speelveld"
+],
+[
+"Ball",
+"Pelota",
+"الكرة",
+"गेंद",
+"Bal"
+],
+[
+"Time of day",
+"Hora del día",
+"وقت اليوم",
+"दिन का समय",
+"Tijdstip"
+],
+[
+"Morning",
+"Mañana",
+"الصباح",
+"सुबह",
+"Ochtend"
+],
+[
+"Noon",
+"Mediodía",
+"الظهيرة",
+"दोपहर",
+"Middag"
+],
+[
+"Evening",
+"Atardecer",
+"المساء",
+"शाम",
+"Avond"
+],
+[
+"Night",
+"Noche",
+"الليل",
+"रात",
+"Nacht"
+],
+[
+"Park",
+"Parque",
+"الحديقة",
+"पार्क",
+"Park"
+],
+[
+"Beach",
+"Playa",
+"الشاطئ",
+"समुद्र तट",
+"Strand"
+],
+[
+"Andromeda",
+"Andrómeda",
+"أندروميدا",
+"एंड्रोमेडा",
+"Andromeda"
+],
+[
+"Number of players",
+"Número de jugadores",
+"عدد اللاعبين",
+"खिलाड़ियों की संख्या",
+"Aantal spelers"
+],
+[
+"Players",
+"Jugadores",
+"اللاعبون",
+"खिलाड़ी",
+"Spelers"
+],
+[
+"Player",
+"Jugador",
+"لاعب",
+"खिलाड़ी",
+"Speler"
+],
+[
+"Opponent",
+"Rival",
+"المنافس",
+"प्रतिद्वंद्वी",
+"Tegenstander"
+],
+[
+"House players",
+"Jugadores de la casa",
+"شخصيات اللعبة",
+"गेम के खिलाड़ी",
+"Huisgenoten"
+],
+[
+"Accuracy",
+"Precisión",
+"الدقة",
+"सटीकता",
+"Nauwkeurigheid"
+],
+[
+"Power",
+"Potencia",
+"القوة",
+"ताकत",
+"Kracht"
+],
+[
+"Speed",
+"Velocidad",
+"السرعة",
+"रफ़्तार",
+"Snelheid"
+],
+[
+"Catch",
+"Recepción",
+"الإمساك",
+"कैच",
+"Vangen"
+],
+[
+"Throw mode",
+"Modo de lanzamiento",
+"طريقة الرمي",
+"फेंकने का तरीका",
+"Werpmodus"
+],
+[
+"Wind",
+"Viento",
+"الرياح",
+"हवा",
+"Wind"
+],
+[
+"No wind",
+"Sin viento",
+"بلا رياح",
+"हवा नहीं",
+"Geen wind"
+],
+[
+"Slow wind",
+"Viento suave",
+"رياح خفيفة",
+"हल्की हवा",
+"Zachte wind"
+],
+[
+"Fast wind",
+"Viento fuerte",
+"رياح قوية",
+"तेज़ हवा",
+"Harde wind"
+],
+[
+"Turn limit",
+"Límite de turnos",
+"حد الأدوار",
+"बारी की सीमा",
+"Beurtlimiet"
+],
+[
+"No limit",
+"Sin límite",
+"بلا حد",
+"कोई सीमा नहीं",
+"Geen limiet"
+],
+[
+"Finish game",
+"Terminar partida",
+"إنهاء اللعبة",
+"खेल समाप्त करें",
+"Spel beëindigen"
+],
+[
+"Finish",
+"Terminar",
+"إنهاء",
+"समाप्त करें",
+"Beëindigen"
+],
+[
+"Take a break",
+"Descansa un momento",
+"خذ استراحة",
+"थोड़ा विराम लें",
+"Neem even pauze"
+],
+[
+"Your game is paused.",
+"La partida está en pausa.",
+"اللعبة متوقفة مؤقتًا.",
+"आपका खेल रुका हुआ है।",
+"Je spel is gepauzeerd."
+],
+[
+"The game continues for the others.",
+"Los demás siguen jugando.",
+"تستمر اللعبة لدى الآخرين.",
+"बाकी खिलाड़ी खेल रहे हैं।",
+"De anderen spelen verder."
+],
+[
+"Continue saved game",
+"Continuar partida guardada",
+"متابعة اللعبة المحفوظة",
+"सहेजा गया खेल जारी रखें",
+"Opgeslagen spel hervatten"
+],
+[
+"Saved game could not be restored.",
+"No se pudo recuperar la partida.",
+"تعذّر استعادة اللعبة المحفوظة.",
+"सहेजा गया खेल नहीं खोला जा सका।",
+"Het opgeslagen spel kon niet worden hervat."
+],
+[
+"Fewest penalties wins",
+"Gana quien tenga menos penalizaciones",
+"يفوز صاحب أقل نقاط جزاء",
+"सबसे कम पेनल्टी वाला जीतेगा",
+"De minste strafpunten wint"
+],
+[
+"What a game!",
+"¡Qué partidazo!",
+"يا لها من لعبة!",
+"क्या शानदार खेल था!",
+"Wat een spel!"
+],
+[
+"Call",
+"Llamar",
+"نادِ",
+"नाम पुकारें",
+"Roepen"
+],
+[
+"Type the nickname",
+"Escribe el apodo",
+"اكتب اللقب",
+"उपनाम लिखें",
+"Typ de bijnaam"
+],
+[
+"Choose a funny nickname",
+"Elige un apodo divertido",
+"اختر لقبًا مضحكًا",
+"मज़ेदार उपनाम चुनें",
+"Kies een grappige bijnaam"
+],
+[
+"Suggest this nickname",
+"Proponer este apodo",
+"اقترح هذا اللقب",
+"यह उपनाम सुझाएँ",
+"Stel deze bijnaam voor"
+],
+[
+"Funny-word list",
+"Ideas de palabras divertidas",
+"أفكار لكلمات مضحكة",
+"मज़ेदार शब्दों की सूची",
+"Grappige woorden"
+],
+[
+"Say something",
+"Di algo",
+"قل شيئًا",
+"कुछ कहें",
+"Zeg iets"
+],
+[
+"That player",
+"Ese jugador",
+"ذلك اللاعب",
+"वह खिलाड़ी",
+"Die speler"
+],
+[
+"An incorrect nickname adds one penalty.",
+"Un apodo incorrecto suma una penalización.",
+"اللقب الخاطئ يضيف نقطة جزاء.",
+"गलत उपनाम पर एक पेनल्टी मिलेगी।",
+"Een verkeerde bijnaam geeft één strafpunt."
+],
+[
+"Incorrect nickname: one penalty.",
+"Apodo incorrecto: una penalización.",
+"لقب خاطئ: نقطة جزاء واحدة.",
+"गलत उपनाम: एक पेनल्टी।",
+"Verkeerde bijnaam: één strafpunt."
+],
+[
+"Ads & purchases",
+"Anuncios y compras",
+"الإعلانات والمشتريات",
+"विज्ञापन और खरीदारी",
+"Advertenties en aankopen"
+],
+[
+"Remove ads",
+"Quitar anuncios",
+"إزالة الإعلانات",
+"विज्ञापन हटाएँ",
+"Advertenties verwijderen"
+],
+[
+"Remove ads · ",
+"Quitar anuncios · ",
+"إزالة الإعلانات · ",
+"विज्ञापन हटाएँ · ",
+"Advertenties verwijderen · "
+],
+[
+"Ads removed.",
+"Anuncios eliminados.",
+"تمت إزالة الإعلانات.",
+"विज्ञापन हटा दिए गए।",
+"Advertenties verwijderd."
+],
+[
+"Ads are removed.",
+"Los anuncios están desactivados.",
+"الإعلانات معطّلة.",
+"विज्ञापन हटे हुए हैं।",
+"Advertenties zijn verwijderd."
+],
+[
+"Ads removed. Thank you!",
+"¡Anuncios eliminados! ¡Gracias!",
+"تمت إزالة الإعلانات. شكرًا!",
+"विज्ञापन हट गए। धन्यवाद!",
+"Advertenties verwijderd. Bedankt!"
+],
+[
+"Restore purchase",
+"Restaurar compra",
+"استعادة الشراء",
+"खरीदारी बहाल करें",
+"Aankoop herstellen"
+],
+[
+"Enter code",
+"Introducir código",
+"أدخل الرمز",
+"कोड डालें",
+"Code invoeren"
+],
+[
+"Apply",
+"Aplicar",
+"تطبيق",
+"लागू करें",
+"Toepassen"
+],
+[
+"For a grown-up",
+"Para una persona adulta",
+"لشخص بالغ",
+"बड़ों के लिए",
+"Voor een volwassene"
+],
+[
+"Try again.",
+"Inténtalo de nuevo.",
+"حاول مجددًا.",
+"फिर कोशिश करें।",
+"Probeer het opnieuw."
+],
+[
+"Try again",
+"Intentar de nuevo",
+"حاول مجددًا",
+"फिर कोशिश करें",
+"Opnieuw proberen"
+],
+[
+"Please try again.",
+"Vuelve a intentarlo.",
+"يرجى المحاولة مجددًا.",
+"कृपया फिर कोशिश करें।",
+"Probeer het opnieuw."
+],
+[
+"Parent zone",
+"Zona para familias",
+"منطقة الأهل",
+"अभिभावक क्षेत्र",
+"Ouderhoek"
+],
+[
+"My learning progress",
+"Mi progreso",
+"تقدّمي في التعلم",
+"सीखने में मेरी प्रगति",
+"Mijn leervoortgang"
+],
+[
+"Learn with Minik",
+"Aprende con Minik",
+"تعلّم مع Minik",
+"Minik के साथ सीखें",
+"Leren met Minik"
+],
+[
+"Learning and purchases, in one place.",
+"Aprendizaje y compras en un solo lugar.",
+"التعلّم والمشتريات في مكان واحد.",
+"सीखना और खरीदारी, एक ही जगह।",
+"Leren en aankopen op één plek."
+],
+[
+"Walking",
+"Movimiento",
+"المشي",
+"चलना",
+"Lopen"
+],
+[
+"Throwing",
+"Lanzamiento",
+"الرمي",
+"फेंकना",
+"Gooien"
+],
+[
+"Battle format",
+"Tipo de batalla",
+"نوع المعركة",
+"मुकाबले का प्रकार",
+"Spelvorm"
+],
+[
+"Everyone for themselves",
+"Todos contra todos",
+"كل لاعب لنفسه",
+"हर कोई अपने लिए",
+"Ieder voor zich"
+],
+[
+"Players in a solo battle",
+"Jugadores en todos contra todos",
+"اللاعبون في المعركة الفردية",
+"व्यक्तिगत मुकाबले में खिलाड़ी",
+"Spelers bij ieder voor zich"
+],
+[
+"Court",
+"Zona de juego",
+"الملعب",
+"कोर्ट",
+"Speelveld"
+],
+[
+"With court",
+"Con límites",
+"بحدود الملعب",
+"कोर्ट के साथ",
+"Met veldranden"
+],
+[
+"Open space · no walls",
+"Espacio abierto · sin paredes",
+"مساحة مفتوحة · بلا جدران",
+"खुली जगह · कोई दीवार नहीं",
+"Open ruimte · zonder muren"
+],
+[
+"Answer balloons",
+"Globos de respuestas",
+"بالونات الإجابات",
+"जवाब वाले गुब्बारे",
+"Antwoordballonnen"
+],
+[
+"One place",
+"En un lugar",
+"في مكان واحد",
+"एक जगह",
+"Op één plek"
+],
+[
+"All over",
+"Por todo el escenario",
+"في أنحاء الساحة",
+"हर जगह",
+"Overal"
+],
+[
+"Subjects ▾",
+"Materias ▾",
+"المواضيع ▾",
+"विषय ▾",
+"Onderwerpen ▾"
+],
+[
+"Chosen subjects",
+"Materias elegidas",
+"المواضيع المختارة",
+"चुने हुए विषय",
+"Gekozen onderwerpen"
+],
+[
+"Available subjects",
+"Materias disponibles",
+"المواضيع المتاحة",
+"उपलब्ध विषय",
+"Beschikbare onderwerpen"
+],
+[
+"Math",
+"Matemáticas",
+"الحساب",
+"गणित",
+"Rekenen"
+],
+[
+"English",
+"Inglés",
+"الإنجليزية",
+"अंग्रेज़ी",
+"Engels"
+],
+[
+"World knowledge",
+"Cultura general",
+"معلومات عامة",
+"सामान्य ज्ञान",
+"Algemene kennis"
+],
+[
+"World",
+"Cultura general",
+"معلومات عامة",
+"सामान्य ज्ञान",
+"Algemene kennis"
+],
+[
+"Addition",
+"Suma",
+"الجمع",
+"जोड़",
+"Optellen"
+],
+[
+"Subtraction",
+"Resta",
+"الطرح",
+"घटाना",
+"Aftrekken"
+],
+[
+"Multiplication",
+"Multiplicación",
+"الضرب",
+"गुणा",
+"Vermenigvuldigen"
+],
+[
+"Division",
+"División",
+"القسمة",
+"भाग",
+"Delen"
+],
+[
+"Order of operations",
+"Orden de operaciones",
+"ترتيب العمليات",
+"संक्रियाओं का क्रम",
+"Volgorde van bewerkingen"
+],
+[
+"Fractions",
+"Fracciones",
+"الكسर",
+"भिन्न",
+"Breuken"
+],
+[
+"YOUR QUESTION",
+"TU PREGUNTA",
+"سؤالك",
+"आपका सवाल",
+"JOUW VRAAG"
+],
+[
+"TAP",
+"TOCA",
+"المس",
+"टैप करें",
+"TIK"
+],
+[
+"Battle complete",
+"Batalla terminada",
+"انتهت المعركة",
+"मुकाबला पूरा",
+"Gevecht afgelopen"
+],
+[
+"Battle paused",
+"Batalla en pausa",
+"المعركة متوقفة مؤقتًا",
+"मुकाबला रुका हुआ है",
+"Gevecht gepauzeerd"
+],
+[
+"Draw",
+"Empate",
+"تعادل",
+"बराबरी",
+"Gelijkspel"
+],
+[
+"A colorful draw!",
+"¡Un empate lleno de color!",
+"تعادل مليء بالألوان!",
+"रंगों से भरी बराबरी!",
+"Een kleurrijk gelijkspel!"
+],
+[
+"Winners!",
+"¡Ganadores!",
+"الفائزون!",
+"विजेता!",
+"Winnaars!"
+],
+[
+"Team score: ",
+"Puntos del equipo: ",
+"نقاط الفريق: ",
+"टीम के अंक: ",
+"Teamscore: "
+],
+[
+"Great teamwork",
+"¡Gran trabajo en equipo!",
+"عمل جماعي رائع",
+"शानदार तालमेल",
+"Geweldig samenspel"
+],
+[
+"Growing skills",
+"Habilidades en progreso",
+"مهارات تتطور",
+"बढ़ते कौशल",
+"Groeiende vaardigheden"
+],
+[
+"Practice",
+"Práctica",
+"تدريب",
+"अभ्यास",
+"Oefenen"
+],
+[
+"Return to menu",
+"Volver al menú",
+"العودة للقائمة",
+"मेन्यू पर लौटें",
+"Terug naar het menu"
+],
+[
+"Leave",
+"Salir",
+"مغادرة",
+"बाहर जाएँ",
+"Verlaten"
+],
+[
+"Next battle",
+"Siguiente batalla",
+"المعركة التالية",
+"अगला मुकाबला",
+"Volgend gevecht"
+],
+[
+"Next round",
+"Siguiente ronda",
+"الجولة التالية",
+"अगला दौर",
+"Volgende ronde"
+],
+[
+"Try Easy",
+"Probar fácil",
+"جرّب السهل",
+"आसान आज़माएँ",
+"Makkelijk proberen"
+],
+[
+"Try Standard",
+"Probar estándar",
+"جرّب العادي",
+"सामान्य आज़माएँ",
+"Standaard proberen"
+],
+[
+"Use this mode",
+"Usar este modo",
+"استخدم هذا الوضع",
+"यही तरीका चुनें",
+"Deze modus gebruiken"
+],
+[
+"Try other mode",
+"Probar el otro modo",
+"جرّب الوضع الآخر",
+"दूसरा तरीका आज़माएँ",
+"Andere modus proberen"
+],
+[
+"Play with friends",
+"Jugar con amigos",
+"العب مع الأصدقاء",
+"दोस्तों के साथ खेलें",
+"Met vrienden spelen"
+],
+[
+"Start with house players",
+"Jugar con personajes",
+"ابدأ مع شخصيات اللعبة",
+"गेम के खिलाड़ियों के साथ शुरू करें",
+"Met huisgenoten starten"
+],
+[
+"Settings saved",
+"Ajustes guardados",
+"تم حفظ الإعدادات",
+"सेटिंग्स सहेजी गईं",
+"Instellingen opgeslagen"
+],
+[
+"Beginner",
+"Principiante",
+"مبتدئ",
+"शुरुआती",
+"Beginner"
+],
+[
+"Standard",
+"Estándar",
+"عادي",
+"सामान्य",
+"Standaard"
+],
+[
+"Pro",
+"Pro",
+"محترف",
+"पेशेवर",
+"Pro"
+],
+[
+"Control difficulty",
+"Dificultad de control",
+"صعوبة التحكم",
+"कंट्रोल की कठिनाई",
+"Moeilijkheid bediening"
+],
+[
+"Control level",
+"Nivel de control",
+"مستوى التحكم",
+"कंट्रोल का स्तर",
+"Bedieningsniveau"
+],
+[
+"Friendly game",
+"Partida amistosa",
+"مباراة ودية",
+"मैत्री मैच",
+"Vriendschappelijk spel"
+],
+[
+"New friendly game",
+"Nueva partida amistosa",
+"مباراة ودية جديدة",
+"नया मैत्री मैच",
+"Nieuw vriendschappelijk spel"
+],
+[
+"New tournament",
+"Nuevo torneo",
+"بطولة جديدة",
+"नया टूर्नामेंट",
+"Nieuw toernooi"
+],
+[
+"Create tournament",
+"Crear torneo",
+"إنشاء بطولة",
+"टूर्नामेंट बनाएँ",
+"Toernooi maken"
+],
+[
+"Tournament",
+"Torneo",
+"بطولة",
+"टूर्नामेंट",
+"Toernooi"
+],
+[
+"Your games",
+"Tus partidas",
+"ألعابك",
+"आपके खेल",
+"Je spellen"
+],
+[
+"Your tournaments",
+"Tus torneos",
+"بطولاتك",
+"आपके टूर्नामेंट",
+"Je toernooien"
+],
+[
+"Choose your nickname & avatar",
+"Elige tu apodo y avatar",
+"اختر لقبك وصورتك",
+"अपना उपनाम और अवतार चुनें",
+"Kies je bijnaam en avatar"
+],
+[
+"Choose your nickname and avatar",
+"Elige tu apodo y avatar",
+"اختر لقبك وصورتك",
+"अपना उपनाम और अवतार चुनें",
+"Kies je bijnaam en avatar"
+],
+[
+"Choose a nickname",
+"Elige un apodo",
+"اختر لقبًا",
+"उपनाम चुनें",
+"Kies een bijnaam"
+],
+[
+"Choose your avatar",
+"Elige tu avatar",
+"اختر صورتك",
+"अवतार चुनें",
+"Kies je avatar"
+],
+[
+"Save nickname & avatar",
+"Guardar apodo y avatar",
+"حفظ اللقب والصورة",
+"उपनाम और अवतार सहेजें",
+"Bijnaam en avatar opslaan"
+],
+[
+"Nickname and avatar saved",
+"Apodo y avatar guardados",
+"تم حفظ اللقب والصورة",
+"उपनाम और अवतार सहेजे गए",
+"Bijnaam en avatar opgeslagen"
+],
+[
+"Or choose an icon",
+"O elige un icono",
+"أو اختر رمزًا",
+"या कोई आइकन चुनें",
+"Of kies een pictogram"
+],
+[
+"Or join with a code",
+"O únete con un código",
+"أو انضم باستخدام رمز",
+"या कोड से जुड़ें",
+"Of doe mee met een code"
+],
+[
+"Use this character",
+"Usar este personaje",
+"استخدم هذه الشخصية",
+"यह किरदार चुनें",
+"Dit personage gebruiken"
+],
+[
+"Select",
+"Elegir",
+"اختيار",
+"चुनें",
+"Kiezen"
+],
+[
+"Selected: ",
+"Elegido: ",
+"المختار: ",
+"चुना गया: ",
+"Gekozen: "
+],
+[
+"Expand",
+"Expandir",
+"توسيع",
+"खोलें",
+"Uitklappen"
+],
+[
+"Collapse",
+"Contraer",
+"طيّ",
+"समेटें",
+"Inklappen"
+],
+[
+"Close",
+"Cerrar",
+"إغلاق",
+"बंद करें",
+"Sluiten"
+],
+[
+"Done",
+"Hecho",
+"تم",
+"हो गया",
+"Klaar"
+],
+[
+"Delete",
+"Eliminar",
+"حذف",
+"हटाएँ",
+"Verwijderen"
+],
+[
+"Remove",
+"Quitar",
+"إزالة",
+"हटाएँ",
+"Verwijderen"
+],
+[
+"Remove ",
+"Quitar ",
+"إزالة ",
+"हटाएँ: ",
+"Verwijder "
+],
+[
+"Points",
+"Puntos",
+"النقاط",
+"अंक",
+"Punten"
+],
+[
+"Wins",
+"Victorias",
+"انتصارات",
+"जीत",
+"Gewonnen"
+],
+[
+"Losses",
+"Derrotas",
+"هزائم",
+"हार",
+"Verloren"
+],
+[
+"Started",
+"Iniciado",
+"بدأت",
+"शुरू हुआ",
+"Gestart"
+],
+[
+"Finished",
+"Terminado",
+"انتهت",
+"पूरा हुआ",
+"Afgelopen"
+],
+[
+"Not started",
+"Sin empezar",
+"لم تبدأ",
+"शुरू नहीं हुआ",
+"Niet gestart"
+],
+[
+"In progress",
+"En curso",
+"قيد اللعب",
+"जारी है",
+"Bezig"
+],
+[
+"Offline",
+"Sin conexión",
+"غير متصل",
+"ऑफ़लाइन",
+"Offline"
+],
+[
+"Remaining",
+"Pendientes",
+"المتبقي",
+"बाकी",
+"Resterend"
+],
+[
+"All matches",
+"Todos los partidos",
+"كل المباريات",
+"सभी मैच",
+"Alle wedstrijden"
+],
+[
+"Next / playable games",
+"Próximas partidas disponibles",
+"المباريات التالية المتاحة",
+"अगले / उपलब्ध मैच",
+"Volgende speelbare wedstrijden"
+],
+[
+"News for you",
+"Tus novedades",
+"مستجداتك",
+"आपके लिए खबरें",
+"Nieuws voor jou"
+],
+[
+"Save for later",
+"Guardar para más tarde",
+"حفظ لوقت لاحق",
+"बाद के लिए सहेजें",
+"Bewaren voor later"
+],
+[
+"Resume game",
+"Continuar partida",
+"متابعة اللعبة",
+"खेल जारी रखें",
+"Spel hervatten"
+],
+[
+"New match",
+"Nueva partida",
+"مباراة جديدة",
+"नया मैच",
+"Nieuwe wedstrijd"
+],
+[
+"Menu",
+"Menú",
+"القائمة",
+"मेन्यू",
+"Menu"
+],
+[
+"Serve",
+"Saque",
+"إرسال",
+"सर्व",
+"Serveren"
+],
+[
+"Return the ball",
+"Devuelve la pelota",
+"أعد الكرة",
+"गेंद वापस मारें",
+"Sla de bal terug"
+],
+[
+"Rally",
+"Intercambio",
+"تبادل ضربات",
+"रैली",
+"Rally"
+],
+[
+"Well done!",
+"¡Muy bien!",
+"أحسنت!",
+"बहुत बढ़िया!",
+"Goed gedaan!"
+],
+[
+"Let's try again!",
+"¡Otra vez!",
+"لنحاول مجددًا!",
+"फिर कोशिश करें!",
+"Nog eens proberen!"
+],
+[
+"Watch how it's done",
+"Mira cómo se hace",
+"شاهد الطريقة",
+"देखें कैसे करते हैं",
+"Bekijk hoe het moet"
+],
+[
+"Final duel",
+"Duelo final",
+"المواجهة النهائية",
+"अंतिम मुकाबला",
+"Finaleduel"
+],
+[
+"Tie-break",
+"Desempate",
+"جولة فاصلة",
+"टाई-ब्रेकर",
+"Beslissende ronde"
+],
+[
+"Once",
+"Una vez",
+"مرة واحدة",
+"एक बार",
+"Eén keer"
+],
+[
+"Twice",
+"Dos veces",
+"مرتين",
+"दो बार",
+"Twee keer"
+],
+[
+"Free seat",
+"Plaza libre",
+"مكان شاغر",
+"खाली जगह",
+"Vrije plek"
+],
+[
+"Sit here",
+"Sentarse aquí",
+"اجلس هنا",
+"यहाँ बैठें",
+"Hier plaatsnemen"
+],
+[
+"Add player",
+"Añadir jugador",
+"إضافة لاعب",
+"खिलाड़ी जोड़ें",
+"Speler toevoegen"
+],
+[
+"Add house player",
+"Añadir personaje",
+"إضافة شخصية",
+"गेम का खिलाड़ी जोड़ें",
+"Huisgenoot toevoegen"
+],
+[
+"Start tournament",
+"Empezar torneo",
+"ابدأ البطولة",
+"टूर्नामेंट शुरू करें",
+"Toernooi starten"
+],
+[
+"Delete tournament",
+"Eliminar torneo",
+"حذف البطولة",
+"टूर्नामेंट हटाएँ",
+"Toernooi verwijderen"
+],
+[
+"Delete tournament?",
+"¿Eliminar el torneo?",
+"حذف البطولة؟",
+"टूर्नामेंट हटाएँ?",
+"Toernooi verwijderen?"
+],
+[
+"Leave tournament",
+"Salir del torneo",
+"مغادرة البطولة",
+"टूर्नामेंट छोड़ें",
+"Toernooi verlaten"
+],
+[
+"Leave tournament?",
+"¿Salir del torneo?",
+"مغادرة البطولة؟",
+"टूर्नामेंट छोड़ें?",
+"Toernooi verlaten?"
+],
+[
+"Tournament cancelled",
+"Torneo cancelado",
+"أُلغيت البطولة",
+"टूर्नामेंट रद्द",
+"Toernooi geannuleerd"
+],
+[
+"Tournament format",
+"Formato del torneo",
+"نظام البطولة",
+"टूर्नामेंट का प्रारूप",
+"Toernooivorm"
+],
+[
+"Tournament bracket",
+"Cuadro del torneo",
+"شجرة البطولة",
+"टूर्नामेंट ब्रैकेट",
+"Toernooischema"
+],
+[
+"Tournament table",
+"Tabla del torneo",
+"جدول البطولة",
+"टूर्नामेंट तालिका",
+"Toernooitabel"
+],
+[
+"Tournament tables",
+"Mesas del torneo",
+"طاولات البطولة",
+"टूर्नामेंट की टेबलें",
+"Toernooitafels"
+],
+[
+"View bracket",
+"Ver cuadro",
+"عرض شجرة البطولة",
+"ब्रैकेट देखें",
+"Schema bekijken"
+],
+[
+"Game type",
+"Tipo de partida",
+"نوع اللعبة",
+"खेल का प्रकार",
+"Speltype"
+],
+[
+"Game type: ",
+"Tipo de partida: ",
+"نوع اللعبة: ",
+"खेल का प्रकार: ",
+"Speltype: "
+],
+[
+"Players at the table",
+"Jugadores en la mesa",
+"اللاعبون حول الطاولة",
+"टेबल पर खिलाड़ी",
+"Spelers aan tafel"
+],
+[
+"Players per table",
+"Jugadores por mesa",
+"لاعبون لكل طاولة",
+"हर टेबल पर खिलाड़ी",
+"Spelers per tafel"
+],
+[
+"Your table",
+"Tu mesa",
+"طاولتك",
+"आपकी टेबल",
+"Jouw tafel"
+],
+[
+"Controls: ",
+"Controles: ",
+"التحكم: ",
+"कंट्रोल: ",
+"Bediening: "
+],
+[
+"Ready: ",
+"Listos: ",
+"جاهزون: ",
+"तैयार: ",
+"Klaar: "
+],
+[
+"Winner: ",
+"Ganador: ",
+"الفائز: ",
+"विजेता: ",
+"Winnaar: "
+],
+[
+"Going through: ",
+"Se clasifican: ",
+"المتأهلون: ",
+"आगे जाएँगे: ",
+"Door naar de volgende ronde: "
+],
+[
+"Going through from each table",
+"Clasificados de cada mesa",
+"المتأهلون من كل طاولة",
+"हर टेबल से आगे जाने वाले",
+"Door per tafel"
+],
+[
+"How points work",
+"Cómo se puntúa",
+"طريقة احتساب النقاط",
+"अंक कैसे मिलते हैं",
+"Zo werken de punten"
+],
+[
+"Full screen / whole table",
+"Pantalla completa / mesa entera",
+"ملء الشاشة / الطاولة كاملة",
+"पूरी स्क्रीन / पूरी टेबल",
+"Volledig scherm / hele tafel"
+],
+[
+"Learn how to play with Minik",
+"Aprende a jugar con Minik",
+"تعلّم اللعب مع Minik",
+"Minik के साथ खेलना सीखें",
+"Leer spelen met Minik"
+],
+[
+"Parents / adults · Remove ads",
+"Familias / adultos · Quitar anuncios",
+"للأهل والبالغين · إزالة الإعلانات",
+"अभिभावक / वयस्क · विज्ञापन हटाएँ",
+"Ouders / volwassenen · Advertenties verwijderen"
+],
+[
+"Open-game limit reached",
+"Límite de partidas abiertas alcanzado",
+"بلغت الحد الأقصى للألعاب المفتوحة",
+"खुले खेलों की सीमा पूरी हो गई",
+"Maximum open spellen bereikt"
+],
+[
+"Opening…",
+"Abriendo…",
+"جارٍ الفتح…",
+"खोल रहे हैं…",
+"Openen…"
+],
+[
+"Connecting to match…",
+"Conectando a la partida…",
+"جارٍ الاتصال بالمباراة…",
+"मैच से जुड़ रहे हैं…",
+"Verbinden met wedstrijd…"
+],
+[
+"Saving result…",
+"Guardando resultado…",
+"جارٍ حفظ النتيجة…",
+"नतीजा सहेज रहे हैं…",
+"Resultaat opslaan…"
+],
+[
+"Please try again",
+"Vuelve a intentarlo",
+"حاول مجددًا",
+"कृपया फिर कोशिश करें",
+"Probeer opnieuw"
+],
+[
+"Not yet",
+"Todavía no",
+"ليس بعد",
+"अभी नहीं",
+"Nog niet"
+],
+[
+"Remember: ",
+"Recuerda: ",
+"تذكّر: ",
+"याद रखें: ",
+"Onthoud: "
+],
+[
+"{0} is serving",
+"Saca {0}",
+"الإرسال مع {0}",
+"{0} सर्व कर रहे हैं",
+"{0} serveert"
+],
+[
+"{0} wins",
+"Gana {0}",
+"فاز {0}",
+"{0} जीते",
+"{0} wint"
+],
+[
+"{0} wins the match",
+"{0} gana la partida",
+"فاز {0} بالمباراة",
+"{0} मैच जीत गए",
+"{0} wint de wedstrijd"
+],
+[
+"You win! 🎉",
+"¡Has ganado! 🎉",
+"فزت! 🎉",
+"आप जीते! 🎉",
+"Je wint! 🎉"
+],
+[
+"You are out!",
+"¡Has quedado fuera!",
+"خرجت من اللعبة!",
+"आप बाहर हो गए!",
+"Je ligt eruit!"
+],
+[
+"{0} is out!",
+"¡{0} queda fuera!",
+"{0} خارج اللعبة!",
+"{0} बाहर हो गए!",
+"{0} ligt eruit!"
+],
+[
+"You are out. Watching the rest of the match.",
+"Has quedado fuera. Puedes ver el resto de la partida.",
+"خرجت من اللعبة. يمكنك مشاهدة بقية المباراة.",
+"आप बाहर हैं। बाकी मैच देख सकते हैं।",
+"Je ligt eruit. Je kijkt nu naar de rest van de wedstrijd."
+],
+[
+"Final duel next: first to {0} wins.",
+"Duelo final: gana quien llegue primero a {0}.",
+"المواجهة النهائية: أول من يصل إلى {0} يفوز.",
+"अंतिम मुकाबला: पहले {0} तक पहुँचने वाला जीतेगा।",
+"Nu de finale: wie het eerst {0} haalt, wint."
+],
+[
+"Next: a table of {0}, everyone from 0.",
+"Siguiente mesa: {0} jugadores, todos desde 0.",
+"التالي: طاولة من {0}، الجميع يبدأ من صفر.",
+"अगली टेबल: {0} खिलाड़ी, सभी शून्य से।",
+"Volgende tafel: {0} spelers, iedereen begint op 0."
+],
+[
+"Next: a table of {0}, scores stay.",
+"Siguiente mesa: {0} jugadores, se conservan los puntos.",
+"التالي: طاولة من {0}، مع بقاء النقاط.",
+"अगली टेबल: {0} खिलाड़ी, अंक बने रहेंगे।",
+"Volgende tafel: {0} spelers, scores blijven staan."
+],
+[
+"Now {0} players.",
+"Ahora quedan {0} jugadores.",
+"الآن {0} لاعبين.",
+"अब {0} खिलाड़ी।",
+"Nu nog {0} spelers."
+],
+[
+"Tie for the fewest points: play on!",
+"¡Empate con menos puntos: seguimos!",
+"تعادل في أقل النقاط: نواصل اللعب!",
+"सबसे कम अंकों पर बराबरी: खेल जारी!",
+"Gelijkstand onderaan: doorspelen!"
+],
+[
+"Paused — tap ▶ to continue",
+"En pausa: toca ▶ para seguir",
+"متوقف مؤقتًا — المس ▶ للمتابعة",
+"रुका हुआ — जारी रखने को ▶ दबाएँ",
+"Gepauzeerd — tik op ▶ om door te gaan"
+],
+[
+"Your serve · playing {0}",
+"Tu saque · contra {0}",
+"إرسالك · مع {0}",
+"आपका सर्व · {0} के साथ",
+"Jouw service · tegen {0}"
+],
+[
+"Your serve: swipe up through the ball toward a player",
+"Tu saque: desliza hacia arriba a través de la pelota hacia un jugador",
+"إرسالك: اسحب لأعلى عبر الكرة باتجاه لاعب",
+"आपका सर्व: गेंद से ऊपर किसी खिलाड़ी की ओर स्वाइप करें",
+"Jouw service: veeg omhoog door de bal naar een speler"
+],
+[
+"Your serve: tap your side. Drag sideways to choose who gets it",
+"Tu saque: toca tu lado y arrastra a los lados para elegir a quién enviarla",
+"إرسالك: المس جانبك واسحب جانبيًا لاختيار المستلم",
+"आपका सर्व: अपने हिस्से पर टैप करें। खिलाड़ी चुनने के लिए बगल में खींचें",
+"Jouw service: tik op jouw kant. Sleep opzij om de ontvanger te kiezen"
+],
+[
+"The ball is coming to you!",
+"¡La pelota viene hacia ti!",
+"الكرة قادمة إليك!",
+"गेंद आपकी ओर आ रही है!",
+"De bal komt naar jou!"
+],
+[
+"Ball to {0}",
+"Pelota para {0}",
+"الكرة إلى {0}",
+"गेंद {0} की ओर",
+"Bal naar {0}"
+],
+[
+"Move the paddle to the ball · automatic hit",
+"Acerca la pala a la pelota · golpe automático",
+"حرّك المضرب نحو الكرة · ضربة تلقائية",
+"रैकेट गेंद तक लाएँ · अपने आप हिट",
+"Beweeg het batje naar de bal · automatisch slaan"
+],
+[
+"Move your paddle to the ball — it hits by itself. Swipe a little left or right to choose who gets it (🎯)",
+"Acerca la pala a la pelota: golpea sola. Desliza un poco a izquierda o derecha para elegir a quién enviarla (🎯).",
+"قرّب المضرب من الكرة ليضرب تلقائيًا. اسحب قليلًا يمينًا أو يسارًا لاختيار المستلم (🎯).",
+"रैकेट गेंद तक लाएँ, हिट अपने आप होगा। खिलाड़ी चुनने को थोड़ा बाएँ या दाएँ स्वाइप करें (🎯)।",
+"Beweeg je batje naar de bal: het slaat vanzelf. Veeg iets naar links of rechts om de ontvanger te kiezen (🎯)."
+],
+[
+"Tap as the ball reaches your paddle; drag sideways to aim",
+"Toca cuando la pelota llegue a tu pala; arrastra a los lados para apuntar",
+"المس عند وصول الكرة إلى مضربك؛ اسحب جانبيًا للتصويب",
+"गेंद रैकेट तक आए तो टैप करें; निशाने के लिए बगल में खींचें",
+"Tik als de bal je batje bereikt; sleep opzij om te richten"
+],
+[
+"Swipe through the ball toward a player",
+"Desliza a través de la pelota hacia un jugador",
+"اسحب عبر الكرة باتجاه لاعب",
+"गेंद से किसी खिलाड़ी की ओर स्वाइप करें",
+"Veeg door de bal naar een speler"
+],
+[
+"Swipe upward through the ball to serve.",
+"Desliza hacia arriba a través de la pelota para sacar.",
+"اسحب لأعلى عبر الكرة للإرسال.",
+"सर्व करने के लिए गेंद से ऊपर स्वाइप करें।",
+"Veeg omhoog door de bal om te serveren."
+],
+[
+"Tap when the ball reaches your paddle. Drag sideways to choose the player; a faster drag hits harder.",
+"Toca cuando la pelota llegue a la pala. Arrastra a los lados para elegir el jugador; cuanto más rápido, más fuerte.",
+"المس عندما تصل الكرة إلى المضرب. اسحب جانبيًا لاختيار اللاعب؛ السحب الأسرع يعطي ضربة أقوى.",
+"गेंद रैकेट तक आए तो टैप करें। खिलाड़ी चुनने को बगल में खींचें; तेज़ खींचने पर तेज़ हिट होगा।",
+"Tik als de bal je batje bereikt. Sleep opzij om een speler te kiezen; sneller slepen slaat harder."
+],
+[
+"Swipe through the ball. The swipe's angle picks the player, its speed sets the power — too wide or too hard goes out.",
+"Desliza a través de la pelota. El ángulo elige jugador y la velocidad da potencia; demasiado lateral o fuerte puede salir fuera.",
+"اسحب عبر الكرة. الزاوية تختار اللاعب والسرعة تحدد القوة؛ الضربة العريضة أو القوية جدًا قد تخرج.",
+"गेंद से स्वाइप करें। कोण से खिलाड़ी और रफ़्तार से ताकत तय होती है। बहुत तिरछा या तेज़ हिट बाहर जा सकता है।",
+"Veeg door de bal. De hoek kiest de speler, de snelheid bepaalt de kracht. Te schuin of te hard gaat uit."
+],
+[
+"Keep your paddle in the ball's path: it hits by itself. To choose the player, swipe a little LEFT or RIGHT any time before the ball reaches you; the 🎯 shows who will get it. No swipe sends it straight ahead.",
+"Mantén la pala en el camino de la pelota: golpea sola. Antes de que llegue, desliza un poco a IZQUIERDA o DERECHA para elegir jugador. El 🎯 señala quién. Sin deslizar, va recta.",
+"ضع المضرب في مسار الكرة ليضرب تلقائيًا. قبل وصولها اسحب قليلًا يمينًا أو يسارًا لاختيار اللاعب؛ 🎯 يوضّحه. دون سحب تذهب للأمام.",
+"रैकेट गेंद के रास्ते में रखें, हिट अपने आप होगा। गेंद आने से पहले थोड़ा बाएँ या दाएँ स्वाइप करें; 🎯 खिलाड़ी दिखाता है। बिना स्वाइप गेंद सीधी जाएगी।",
+"Houd je batje in de baan van de bal: het slaat vanzelf. Veeg vóór de bal aankomt iets LINKS of RECHTS om een speler te kiezen. Het 🎯 wijst die aan. Zonder veeg gaat de bal rechtdoor."
+],
+[
+"Beginner: move into place for an automatic hit; swipe a little left or right before the ball arrives to choose who gets it (the 🎯 shows who). Standard: tap or swipe; faster swipes add power. Pro: precise timing and power. Opponent skill comes from your chosen house player.",
+"Principiante: colócate para golpear automáticamente; desliza a los lados antes de que llegue la pelota para elegir rival (🎯). Estándar: toca o desliza; más velocidad, más potencia. Pro: exige precisión. La habilidad del rival depende del personaje.",
+"مبتدئ: تمركز للضربة التلقائية واسحب جانبيًا لاختيار المستلم (🎯). عادي: المس أو اسحب؛ السرعة تزيد القوة. محترف: توقيت وقوة دقيقان. مهارة المنافس حسب الشخصية المختارة.",
+"शुरुआती: सही जगह आएँ, हिट अपने आप; बाएँ-दाएँ स्वाइप से खिलाड़ी चुनें (🎯)। सामान्य: टैप या स्वाइप, तेज़ स्वाइप में अधिक ताकत। पेशेवर: सटीक समय और ताकत। प्रतिद्वंद्वी की कुशलता चुने किरदार पर निर्भर है।",
+"Beginner: ga goed staan voor automatisch slaan; veeg opzij om de ontvanger te kiezen (🎯). Standaard: tik of veeg; sneller geeft meer kracht. Pro: nauwkeurige timing en kracht. De gekozen huisgenoot bepaalt de tegenstand."
+],
+[
+"Beginner: keep your paddle in the ball's path for an automatic hit; swipe a little left or right before the ball arrives to choose who gets it (the 🎯 shows who). Standard: tap as the ball arrives, drag sideways to aim, a faster drag hits harder. Pro: swipe through the ball toward a player.",
+"Principiante: coloca la pala en el camino de la pelota y desliza a los lados para elegir jugador (🎯). Estándar: toca al llegar y arrastra para apuntar; más rápido es más fuerte. Pro: desliza a través de la pelota hacia un jugador.",
+"مبتدئ: ضع المضرب في مسار الكرة واسحب جانبيًا لاختيار المستلم (🎯). عادي: المس عند وصولها واسحب للتصويب؛ الأسرع أقوى. محترف: اسحب عبر الكرة نحو لاعب.",
+"शुरुआती: रैकेट रास्ते में रखें, बगल में स्वाइप से खिलाड़ी चुनें (🎯)। सामान्य: गेंद आने पर टैप करें, निशाने के लिए खींचें; तेज़ खींचना अधिक ताकत देता है। पेशेवर: गेंद से खिलाड़ी की ओर स्वाइप करें।",
+"Beginner: houd je batje in de balbaan en veeg opzij om de ontvanger te kiezen (🎯). Standaard: tik als de bal aankomt en sleep om te richten; sneller is harder. Pro: veeg door de bal naar een speler."
+],
+[
+"That hit the net. Hit a little later or gentler.",
+"Tocó la red. Golpea algo más tarde o más suave.",
+"اصطدمت بالشبكة. اضرب بعد قليل أو بلطف أكثر.",
+"जाल में लगी। थोड़ा देर से या हल्का हिट करें।",
+"Dat raakte het net. Sla iets later of zachter."
+],
+[
+"That landed out. Use a smaller sideways drag.",
+"Cayó fuera. Arrastra menos hacia los lados.",
+"هبطت خارج الطاولة. قلّل السحب الجانبي.",
+"बाहर गिरी। बगल में थोड़ा कम खींचें।",
+"Die ging uit. Sleep minder ver opzij."
+],
+[
+"The ball got past you. {0}",
+"La pelota te pasó. {0}",
+"تجاوزتك الكرة. {0}",
+"गेंद आपसे निकल गई। {0}",
+"De bal kwam voorbij je. {0}"
+],
+[
+"The ball reached {0}.",
+"La pelota llegó a {0}.",
+"وصلت الكرة إلى {0}.",
+"गेंद {0} तक पहुँची।",
+"De bal bereikte {0}."
+],
+[
+"Your turn! Send it to {0}",
+"¡Tu turno! Envíala a {0}",
+"دورك! أرسلها إلى {0}",
+"आपकी बारी! {0} की ओर मारें",
+"Jouw beurt! Speel naar {0}"
+],
+[
+"Return the ball to {0}",
+"Devuélvela a {0}",
+"أعدها إلى {0}",
+"{0} को लौटाएँ",
+"Sla terug naar {0}"
+],
+[
+"Practice never costs points.",
+"Practicar nunca resta puntos.",
+"التدريب لا يخصم نقاطًا.",
+"अभ्यास में अंक नहीं कटते।",
+"Oefenen kost nooit punten."
+],
+[
+"on your left",
+"a tu izquierda",
+"على يسارك",
+"आपके बाएँ",
+"links van je"
+],
+[
+"on your right",
+"a tu derecha",
+"على يمينك",
+"आपके दाएँ",
+"rechts van je"
+],
+[
+"straight ahead",
+"justo enfrente",
+"أمامك مباشرة",
+"सीधे सामने",
+"recht voor je"
+],
+[
+"Controls: {0} (change it in Settings ⚙)\n\n",
+"Controles: {0} (cámbialos en Ajustes ⚙)\n\n",
+"التحكم: {0} (غيّره في الإعدادات ⚙)\n\n",
+"कंट्रोल: {0} (सेटिंग्स ⚙ में बदलें)\n\n",
+"Bediening: {0} (wijzig bij Instellingen ⚙)\n\n"
+],
+[
+"{0} players share one table and one ball. You are always at the bottom. Send the ball to ANY other player — everybody plays until someone reaches the target score.",
+"{0} jugadores comparten mesa y pelota. Siempre estás abajo. Envía la pelota a CUALQUIER rival hasta que alguien alcance la puntuación objetivo.",
+"يتشارك {0} لاعبين طاولة وكرة. أنت دائمًا في الأسفل. أرسل الكرة لأي لاعب حتى يصل أحدكم إلى النقاط المطلوبة.",
+"{0} खिलाड़ी एक टेबल और गेंद साझा करते हैं। आप हमेशा नीचे हैं। किसी भी खिलाड़ी को गेंद मारें; लक्ष्य अंक तक खेल जारी रहेगा।",
+"{0} spelers delen één tafel en bal. Jij staat altijd onderaan. Speel naar ELKE andere speler totdat iemand de doelscore bereikt."
+],
+[
+"If someone misses your good shot: you +1, they −1.\nIf your shot hits the net, lands out or on your own side: you −1, nobody else changes.\nScores never go below 0 — at 0 a mistake just ends the rally.\nThe serve moves to the next player after every rally. First to the target wins!",
+"Si no devuelven tu tiro válido: tú +1, rival −1.\nSi das en la red, fuera o en tu lado: tú −1; los demás igual.\nNadie baja de 0: un error en 0 solo acaba el intercambio.\nEl saque cambia tras cada intercambio. ¡Gana quien llegue al objetivo!",
+"إذا أخفق منافس في رد ضربتك الصحيحة: لك +1 وله −1.\nإذا ضربت الشبكة أو خرجت الكرة أو نزلت في جانبك: لك −1 فقط.\nلا تنخفض النقاط عن صفر؛ الخطأ عند صفر ينهي التبادل فقط.\nينتقل الإرسال بعد كل تبادل. أول من يبلغ الهدف يفوز!",
+"आपकी सही शॉट चूके: आपको +1, उन्हें −1।\nआपकी गेंद जाल, बाहर या अपने हिस्से में गिरे: सिर्फ आपके −1।\nअंक शून्य से नीचे नहीं जाते; शून्य पर गलती बस रैली खत्म करती है।\nहर रैली के बाद अगला खिलाड़ी सर्व करेगा। लक्ष्य तक पहले पहुँचें!",
+"Mist iemand jouw goede bal: jij +1, die speler −1.\nRaak jij het net, uit of je eigen kant: jij −1, de rest blijft gelijk.\nScores gaan niet onder 0; een fout bij 0 beëindigt alleen de rally.\nNa elke rally serveert de volgende speler. Wie het doel haalt, wint!"
+],
+[
+"Any number of players: every round is split into tables of 4 and 3 (a table of 2 only when there is no other way, like 5 = 3 + 2). The players going through play the next round, until one champion is left.",
+"Cada ronda reparte jugadores en mesas de 4 y 3; de 2 solo si es necesario, como 5 = 3 + 2. Los clasificados siguen hasta que queda un campeón.",
+"توزّع كل جولة اللاعبين على طاولات من 4 و3، ومن 2 عند الضرورة مثل 5 = 3 + 2. يواصل المتأهلون حتى يبقى بطل واحد.",
+"हर दौर में 4 और 3 की टेबलें बनेंगी; 2 की सिर्फ ज़रूरत पर, जैसे 5 = 3 + 2। आगे जाने वाले खेलते रहेंगे, जब तक एक विजेता बचे।",
+"Elke ronde wordt verdeeld over tafels van 4 en 3. Alleen als het moet komt er een tafel van 2, zoals 5 = 3 + 2. De beste spelers gaan door tot één kampioen overblijft."
+],
+[
+"Tables of 3 or 4: every two players share at least one table and everyone plays about the same number of tables. Places earn points: 1st 3, 2nd 2, 3rd 1, 4th 0.",
+"Mesas de 3 o 4: cada pareja coincide al menos una vez y todos juegan un número parecido de mesas. Puntos por puesto: 1.º 3, 2.º 2, 3.º 1, 4.º 0.",
+"طاولات من 3 أو 4: يلتقي كل لاعبين مرة على الأقل، ويلعب الجميع عددًا متقاربًا من الطاولات. نقاط المراكز: الأول 3، الثاني 2، الثالث 1، الرابع 0.",
+"3 या 4 की टेबलें: हर दो खिलाड़ी कम से कम एक बार साथ खेलेंगे। सब लगभग बराबर टेबलें खेलेंगे। स्थान के अंक: पहला 3, दूसरा 2, तीसरा 1, चौथा 0।",
+"Tafels van 3 of 4: elk tweetal speelt minstens één keer samen en iedereen speelt ongeveer evenveel tafels. Punten per plaats: 1e 3, 2e 2, 3e 1, 4e 0."
+],
+[
+"Let's play Multi Ping Pong!",
+"¡Juguemos a Multi Ping Pong!",
+"لنلعب Multi Ping Pong!",
+"आइए Multi Ping Pong खेलें!",
+"Tijd voor Multi Ping Pong!"
+],
+[
+"Choose your house players on the next screen.",
+"Elige a los personajes en la siguiente pantalla.",
+"اختر شخصيات اللعبة في الشاشة التالية.",
+"अगली स्क्रीन पर गेम के खिलाड़ी चुनें।",
+"Kies je huisgenoten op het volgende scherm."
+],
+[
+"Choose a playful name. Character names match your avatar. A number is added only if the name is already taken.",
+"Elige un nombre divertido. Los nombres de personaje coinciden con tu avatar. Solo añadimos un número si el nombre ya está ocupado.",
+"اختر اسمًا مرحًا يتناسب مع صورتك. يُضاف رقم فقط إذا كان الاسم مستخدمًا.",
+"मज़ेदार नाम चुनें। किरदार का नाम आपके अवतार से मेल खाएगा। नाम पहले से लिया हो तभी अंक जोड़ा जाएगा।",
+"Kies een speelse naam die bij je avatar past. Alleen als de naam al bezet is, komt er een nummer bij."
+],
+[
+"Create a game, then share its code with a friend or choose a house player.",
+"Crea una partida y comparte el código con un amigo, o elige un personaje.",
+"أنشئ لعبة وشارك رمزها مع صديق، أو اختر شخصية من اللعبة.",
+"खेल बनाएँ, फिर दोस्त को कोड दें या गेम का खिलाड़ी चुनें।",
+"Maak een spel en deel de code met een vriend, of kies een huisgenoot."
+],
+[
+"Share the code with a friend and wait for them to join, or choose a house player below. Once your friend has joined or you have chosen a house player, tap Start.",
+"Comparte el código y espera a tu amigo, o elige un personaje abajo. Cuando esté listo, toca Empezar.",
+"شارك الرمز مع صديق وانتظر انضمامه، أو اختر شخصية أدناه. بعد انضمام الصديق أو اختيار الشخصية، المس «ابدأ».",
+"दोस्त को कोड दें और जुड़ने का इंतज़ार करें, या नीचे गेम का खिलाड़ी चुनें। फिर शुरू करें दबाएँ।",
+"Deel de code met een vriend en wacht tot die meedoet, of kies hieronder een huisgenoot. Tik daarna op Starten."
+],
+[
+"Share the code so friends can take free seats, or fill them with house players. The game starts as soon as every seat is taken.",
+"Comparte el código para que tus amigos ocupen plazas, o añade personajes. La partida empieza cuando se llenan todas.",
+"شارك الرمز ليأخذ الأصدقاء الأماكن الشاغرة، أو املأها بشخصيات اللعبة. تبدأ اللعبة عند اكتمال الأماكن.",
+"दोस्तों को खाली जगहों के लिए कोड दें, या गेम के खिलाड़ी भरें। सब जगहें भरते ही खेल शुरू होगा।",
+"Deel de code zodat vrienden meedoen, of vul plekken met huisgenoten. Het spel begint zodra elke plek bezet is."
+],
+[
+"Fill the free seats with house players. The game starts as soon as every seat is taken.",
+"Llena las plazas con personajes. La partida empieza al completarlas.",
+"املأ الأماكن الشاغرة بشخصيات اللعبة. تبدأ اللعبة عند اكتمالها.",
+"खाली जगहें गेम के खिलाड़ियों से भरें। सब भरते ही खेल शुरू होगा।",
+"Vul vrije plekken met huisgenoten. Het spel start zodra alle plekken bezet zijn."
+],
+[
+"Fill a free seat with a house player",
+"Ocupar una plaza con un personaje",
+"ملء مكان شاغر بشخصية",
+"खाली जगह पर गेम का खिलाड़ी जोड़ें",
+"Vrije plek vullen met een huisgenoot"
+],
+[
+"Fill the empty places with house players",
+"Llenar plazas con personajes",
+"ملء الأماكن بشخصيات اللعبة",
+"खाली जगहें गेम के खिलाड़ियों से भरें",
+"Lege plekken vullen met huisgenoten"
+],
+[
+"Remove all house players",
+"Quitar todos los personajes",
+"إزالة كل شخصيات اللعبة",
+"सभी गेम खिलाड़ी हटाएँ",
+"Alle huisgenoten verwijderen"
+],
+[
+"Completed games are not saved.",
+"Las partidas terminadas no se guardan.",
+"لا تُحفظ الألعاب المكتملة.",
+"पूरे हुए खेल सहेजे नहीं जाते।",
+"Afgeronde spellen worden niet bewaard."
+],
+[
+"Nothing here yet. Start one above!",
+"Aún no hay nada. ¡Crea una partida arriba!",
+"لا شيء هنا بعد. ابدأ لعبة من الأعلى!",
+"अभी कुछ नहीं। ऊपर से नया खेल शुरू करें!",
+"Nog niets hier. Start hierboven een spel!"
+],
+[
+"You can have up to three open games and three open tournaments. Finish an existing one before adding another.",
+"Puedes tener hasta tres partidas y tres torneos abiertos. Termina uno antes de añadir otro.",
+"يمكنك الاحتفاظ بثلاث ألعاب وثلاث بطولات مفتوحة. أنهِ واحدة قبل إضافة أخرى.",
+"अधिकतम तीन खेल और तीन टूर्नामेंट खुले रख सकते हैं। नया बनाने से पहले एक पूरा करें।",
+"Je kunt drie open spellen en drie open toernooien hebben. Rond er één af voordat je een nieuwe maakt."
+],
+[
+"You can keep up to three open friendly games and three open tournaments. To create another game, open Your games and choose Finish on one of them. You can also resume a saved game.",
+"Puedes tener tres partidas amistosas y tres torneos abiertos. Para crear otra, abre Tus partidas y termina una. También puedes continuar una guardada.",
+"يمكنك حفظ ثلاث مباريات ودية وثلاث بطولات مفتوحة. لإنشاء لعبة أخرى، افتح «ألعابك» وأنهِ واحدة، أو تابع لعبة محفوظة.",
+"तीन मैत्री खेल और तीन टूर्नामेंट खुले रख सकते हैं। नया बनाने के लिए आपके खेल खोलकर एक समाप्त करें, या सहेजा खेल जारी रखें।",
+"Je kunt drie vriendschappelijke spellen en drie toernooien openhouden. Open Je spellen en beëindig er één voor een nieuw spel, of hervat een opgeslagen spel."
+],
+[
+"You have three open games. Choose Finish in one of Your games to make room for a new one.",
+"Tienes tres partidas abiertas. Termina una en Tus partidas para crear otra.",
+"لديك ثلاث ألعاب مفتوحة. أنهِ واحدة في «ألعابك» لإفساح مكان.",
+"आपके तीन खेल खुले हैं। नया बनाने के लिए आपके खेल में से एक समाप्त करें।",
+"Je hebt drie open spellen. Beëindig er één bij Je spellen om plaats te maken."
+],
+[
+"You have three open tournaments. Finish or leave one before creating another.",
+"Tienes tres torneos abiertos. Termina uno o sal de él antes de crear otro.",
+"لديك ثلاث بطولات مفتوحة. أنهِ واحدة أو غادرها قبل إنشاء أخرى.",
+"तीन टूर्नामेंट खुले हैं। नया बनाने से पहले एक पूरा करें या छोड़ें।",
+"Je hebt drie open toernooien. Rond er één af of verlaat er één voordat je een nieuw maakt."
+],
+[
+"A player has another unfinished match. Resume and finish it first.",
+"Un jugador tiene otra partida pendiente. Debe continuarla y terminarla primero.",
+"لدى أحد اللاعبين مباراة غير مكتملة. عليه متابعتها وإنهاؤها أولًا.",
+"एक खिलाड़ी का दूसरा मैच अधूरा है। पहले उसे जारी रखकर समाप्त करें।",
+"Een speler heeft nog een onvoltooide wedstrijd. Hervat en voltooi die eerst."
+],
+[
+"Online rooms are not available in this version yet.",
+"Las salas en línea aún no están disponibles en esta versión.",
+"الغرف عبر الإنترنت غير متاحة في هذه النسخة بعد.",
+"इस संस्करण में ऑनलाइन कमरे अभी उपलब्ध नहीं हैं।",
+"Online kamers zijn in deze versie nog niet beschikbaar."
+],
+[
+"Online rooms are not set up in this version yet, so this game is created on this phone with house players.",
+"Las salas en línea aún no están configuradas. Esta partida se creará en este móvil con personajes.",
+"الغرف عبر الإنترنت غير مُعدّة بعد، لذا تُنشأ هذه اللعبة على هذا الهاتف مع شخصيات اللعبة.",
+"ऑनलाइन कमरे अभी तैयार नहीं हैं, इसलिए यह खेल इसी फ़ोन पर गेम के खिलाड़ियों के साथ बनेगा।",
+"Online kamers zijn nog niet ingesteld. Dit spel wordt daarom op deze telefoon met huisgenoten gemaakt."
+],
+[
+"Online play is temporarily unavailable. Please try again later.",
+"El juego en línea no está disponible temporalmente. Inténtalo más tarde.",
+"اللعب عبر الإنترنت غير متاح مؤقتًا. حاول لاحقًا.",
+"ऑनलाइन खेल अभी उपलब्ध नहीं है। बाद में कोशिश करें।",
+"Online spelen is tijdelijk niet beschikbaar. Probeer het later opnieuw."
+],
+[
+"No online game or tournament exists with this code. Check the code with its creator.",
+"No hay partida ni torneo en línea con ese código. Consúltalo con quien lo creó.",
+"لا توجد لعبة أو بطولة بهذا الرمز. تحقّق منه مع المنشئ.",
+"इस कोड का ऑनलाइन खेल या टूर्नामेंट नहीं है। बनाने वाले से कोड जाँचें।",
+"Er bestaat geen online spel of toernooi met deze code. Controleer hem bij de maker."
+],
+[
+"This action could not be completed. Check the code or connection and try again.",
+"No se pudo completar la acción. Revisa el código o la conexión e inténtalo de nuevo.",
+"تعذّر إكمال الإجراء. تحقّق من الرمز والاتصال ثم حاول مجددًا.",
+"यह काम पूरा नहीं हुआ। कोड या कनेक्शन जाँचकर फिर कोशिश करें।",
+"Deze actie is mislukt. Controleer de code of verbinding en probeer opnieuw."
+],
+[
+"Invite friends with the code and add house players to the same tournament.",
+"Invita amigos con el código y añade personajes al mismo torneo.",
+"ادعُ أصدقاءك بالرمز وأضف شخصيات اللعبة إلى البطولة نفسها.",
+"कोड से दोस्तों को बुलाएँ और उसी टूर्नामेंट में गेम के खिलाड़ी जोड़ें।",
+"Nodig vrienden uit met de code en voeg huisgenoten toe aan hetzelfde toernooi."
+],
+[
+"Another player is now connected. Leave the tournament instead of deleting it.",
+"Ya se ha conectado otro jugador. Sal del torneo en lugar de eliminarlo.",
+"انضم لاعب آخر الآن. غادر البطولة بدل حذفها.",
+"अब दूसरा खिलाड़ी जुड़ गया है। टूर्नामेंट हटाने के बजाय उसे छोड़ें।",
+"Er is nu een andere speler verbonden. Verlaat het toernooi in plaats van het te verwijderen."
+],
+[
+"The tournament and its matches will be deleted for everyone.",
+"El torneo y sus partidas se eliminarán para todos.",
+"ستُحذف البطولة ومبارياتها لدى الجميع.",
+"टूर्नामेंट और उसके मैच सबके लिए हट जाएँगे।",
+"Het toernooi en de wedstrijden worden voor iedereen verwijderd."
+],
+[
+"Your completed results stay. Your unfinished matches are cancelled. If you manage the tournament, management passes to a connected player.",
+"Los resultados terminados se conservan. Tus partidas pendientes se cancelan. Si organizas el torneo, otro jugador conectado se encargará.",
+"تبقى نتائجك المكتملة وتُلغى مبارياتك غير المكتملة. إذا كنت تدير البطولة، تنتقل الإدارة إلى لاعب متصل.",
+"पूरे नतीजे रहेंगे, अधूरे मैच रद्द होंगे। आप आयोजक हैं तो ज़िम्मेदारी जुड़े हुए खिलाड़ी को मिलेगी।",
+"Je afgeronde resultaten blijven staan. Onvoltooide wedstrijden vervallen. Als jij de host bent, neemt een verbonden speler het over."
+],
+[
+"You have left this tournament.",
+"Has salido del torneo.",
+"غادرت هذه البطولة.",
+"आपने यह टूर्नामेंट छोड़ दिया।",
+"Je hebt dit toernooi verlaten."
+],
+[
+"You left the tournament",
+"Has salido del torneo",
+"غادرت البطولة",
+"आपने टूर्नामेंट छोड़ दिया",
+"Je hebt het toernooi verlaten"
+],
+[
+"Cancelled — player left",
+"Cancelado: un jugador salió",
+"أُلغيت — غادر لاعب",
+"रद्द — खिलाड़ी चला गया",
+"Geannuleerd — speler vertrokken"
+],
+[
+"Everyone is Ready. Starting…",
+"Todos listos. Empezando…",
+"الجميع جاهز. نبدأ…",
+"सब तैयार हैं। शुरू हो रहा है…",
+"Iedereen is klaar. Starten…"
+],
+[
+"Both are Ready. Starting…",
+"Ambos listos. Empezando…",
+"اللاعبان جاهزان. نبدأ…",
+"दोनों तैयार हैं। शुरू हो रहा है…",
+"Beiden klaar. Starten…"
+],
+[
+"Everyone is Ready. Waiting for ",
+"Todos listos. Esperando a ",
+"الجميع جاهز. بانتظار ",
+"सब तैयार हैं। इंतज़ार है: ",
+"Iedereen klaar. Wachten op "
+],
+[
+"Both are Ready. Waiting for ",
+"Ambos listos. Esperando a ",
+"اللاعبان جاهزان. بانتظار ",
+"दोनों तैयार हैं। इंतज़ार है: ",
+"Beiden klaar. Wachten op "
+],
+[
+"Waiting for every player to connect. Everyone must keep the match open.",
+"Esperando a todos. Cada jugador debe mantener la partida abierta.",
+"ننتظر اتصال الجميع. يجب إبقاء المباراة مفتوحة لدى كل لاعب.",
+"सभी के जुड़ने का इंतज़ार है। सबको मैच खुला रखना होगा।",
+"Wachten tot iedereen verbonden is. Houd allemaal de wedstrijd open."
+],
+[
+"Waiting for connection. Both players must keep the match open.",
+"Esperando conexión. Ambos deben mantener la partida abierta.",
+"بانتظار الاتصال. يجب إبقاء المباراة مفتوحة لدى اللاعبين.",
+"कनेक्शन का इंतज़ार है। दोनों को मैच खुला रखना होगा।",
+"Wachten op verbinding. Beide spelers moeten de wedstrijd openhouden."
+],
+[
+"The host will start when everyone has joined.",
+"El anfitrión empezará cuando estén todos.",
+"يبدأ المضيف بعد انضمام الجميع.",
+"सबके जुड़ने पर मेज़बान शुरू करेगा।",
+"De host start zodra iedereen meedoet."
+],
+[
+"You are not playing in this one. The result appears here.",
+"No juegas esta partida. El resultado aparecerá aquí.",
+"أنت لا تلعب هذه المباراة. ستظهر نتيجتها هنا.",
+"इस मैच में आप नहीं खेल रहे। नतीजा यहाँ दिखेगा।",
+"Je speelt deze wedstrijd niet. Het resultaat verschijnt hier."
+],
+[
+"Your matches are complete. Waiting for the other players to finish the tournament.",
+"Has terminado tus partidas. Esperando a que los demás terminen el torneo.",
+"اكتملت مبارياتك. ننتظر انتهاء الآخرين من البطولة.",
+"आपके मैच पूरे हैं। बाकी खिलाड़ियों के खत्म करने का इंतज़ार है।",
+"Jouw wedstrijden zijn klaar. Wacht tot de anderen het toernooi afronden."
+],
+[
+"Swipe sideways to see every column",
+"Desliza a los lados para ver todas las columnas",
+"اسحب جانبيًا لرؤية كل الأعمدة",
+"सारे कॉलम देखने के लिए बगल में स्वाइप करें",
+"Veeg opzij om alle kolommen te zien"
+],
+[
+"Swipe sideways to follow the bracket. Pairs are drawn again each round.",
+"Desliza a los lados para seguir el cuadro. Las parejas se sortean de nuevo cada ronda.",
+"اسحب جانبيًا لمتابعة البطولة. تُسحب القرعة من جديد في كل جولة.",
+"ब्रैकेट देखने के लिए बगल में स्वाइप करें। हर दौर में जोड़ियाँ फिर बनेंगी।",
+"Veeg opzij om het schema te volgen. Elke ronde worden nieuwe paren geloot."
+],
+[
+"Pairs (classic table)",
+"Parejas (mesa clásica)",
+"ثنائيات (طاولة تقليدية)",
+"जोड़ियाँ (क्लासिक टेबल)",
+"Tweetallen (klassieke tafel)"
+],
+[
+"Tables of 3 (Y table)",
+"Mesas de 3 (mesa en Y)",
+"طاولات لثلاثة (شكل Y)",
+"3 की टेबलें (Y आकार)",
+"Tafels voor 3 (Y-tafel)"
+],
+[
+"Tables of 4 (cross table)",
+"Mesas de 4 (mesa en cruz)",
+"طاولات لأربعة (شكل صليب)",
+"4 की टेबलें (क्रॉस आकार)",
+"Tafels voor 4 (kruistafel)"
+],
+[
+"2 players · classic table",
+"2 jugadores · mesa clásica",
+"لاعبان · طاولة تقليدية",
+"2 खिलाड़ी · क्लासिक टेबल",
+"2 spelers · klassieke tafel"
+],
+[
+"3 players · Y table",
+"3 jugadores · mesa en Y",
+"3 لاعبين · طاولة Y",
+"3 खिलाड़ी · Y टेबल",
+"3 spelers · Y-tafel"
+],
+[
+"4 players · cross table",
+"4 jugadores · mesa en cruz",
+"4 لاعبين · طاولة متقاطعة",
+"4 खिलाड़ी · क्रॉस टेबल",
+"4 spelers · kruistafel"
+],
+[
+"3 players (Y table)",
+"3 jugadores (mesa en Y)",
+"3 لاعبين (طاولة Y)",
+"3 खिलाड़ी (Y टेबल)",
+"3 spelers (Y-tafel)"
+],
+[
+"4 players (cross table)",
+"4 jugadores (mesa en cruz)",
+"4 لاعبين (طاولة متقاطعة)",
+"4 खिलाड़ी (क्रॉस टेबल)",
+"4 spelers (kruistafel)"
+],
+[
+"Cross table · 4 seats",
+"Mesa en cruz · 4 plazas",
+"طاولة متقاطعة · 4 أماكن",
+"क्रॉस टेबल · 4 जगहें",
+"Kruistafel · 4 plekken"
+],
+[
+"Y table · 3 seats",
+"Mesa en Y · 3 plazas",
+"طاولة Y · 3 أماكن",
+"Y टेबल · 3 जगहें",
+"Y-tafel · 3 plekken"
+],
+[
+"1 · the winner",
+"1 · el ganador",
+"1 · الفائز",
+"1 · विजेता",
+"1 · de winnaar"
+],
+[
+"2 · the top two",
+"2 · los dos primeros",
+"2 · أفضل لاعبين",
+"2 · पहले दो",
+"2 · de beste twee"
+],
+[
+"Only the table's winner goes through.",
+"Solo se clasifica el ganador de la mesa.",
+"يتأهل فائز الطاولة فقط.",
+"सिर्फ टेबल का विजेता आगे जाएगा।",
+"Alleen de tafelwinnaar gaat door."
+],
+[
+"The winner of every table goes through.",
+"Se clasifica el ganador de cada mesa.",
+"يتأهل فائز كل طاولة.",
+"हर टेबल का विजेता आगे जाएगा।",
+"De winnaar van elke tafel gaat door."
+],
+[
+"The top two of every table go through.",
+"Se clasifican los dos primeros de cada mesa.",
+"يتأهل أفضل لاعبين من كل طاولة.",
+"हर टेबल के पहले दो आगे जाएँगे।",
+"De beste twee van elke tafel gaan door."
+],
+[
+"the winner of each table goes through",
+"se clasifica el ganador de cada mesa",
+"يتأهل فائز كل طاولة",
+"हर टेबल का विजेता आगे जाएगा",
+"de winnaar van elke tafel gaat door"
+],
+[
+"the top two of each table go through",
+"se clasifican los dos primeros de cada mesa",
+"يتأهل أفضل لاعبين من كل طاولة",
+"हर टेबल के पहले दो आगे जाएँगे",
+"de beste twee van elke tafel gaan door"
+],
+[
+"The table plays until two players are left; both go through.",
+"Se juega hasta que quedan dos jugadores; ambos se clasifican.",
+"يستمر اللعب حتى يبقى لاعبان؛ يتأهل كلاهما.",
+"दो खिलाड़ी बचने तक खेलें; दोनों आगे जाएँगे।",
+"Speel totdat twee spelers over zijn; allebei gaan door."
+],
+[
+"The winner and the runner-up go through. A tie for second place is settled by a one-point tie-break.",
+"Se clasifican primero y segundo. Un empate por el segundo puesto se decide con un punto.",
+"يتأهل الأول والثاني. يُحسم التعادل على المركز الثاني بنقطة فاصلة.",
+"पहला और दूसरा आगे जाएँगे। दूसरे स्थान का बराबर अंक एक निर्णायक पॉइंट से तय होगा।",
+"De winnaar en nummer twee gaan door. Bij gelijkstand voor de tweede plek beslist één punt."
+],
+[
+"Pairs are drawn each round (a random bye when the number is odd); winners go through.",
+"Cada ronda sortea parejas (uno pasa sin jugar si son impares); avanzan los ganadores.",
+"تُسحب ثنائيات كل جولة؛ عند العدد الفردي يتأهل لاعب بالقرعة. الفائزون يتقدمون.",
+"हर दौर में जोड़ियाँ बनेंगी; विषम संख्या पर एक खिलाड़ी को बाई मिलेगी। विजेता आगे जाएँगे।",
+"Elke ronde worden paren geloot; bij een oneven aantal krijgt iemand een vrije ronde. Winnaars gaan door."
+],
+[
+"Standings points per win (pairs)",
+"Puntos por victoria (parejas)",
+"نقاط الترتيب لكل فوز (ثنائيات)",
+"हर जीत के अंक (जोड़ियाँ)",
+"Klassementspunten per winst (tweetallen)"
+],
+[
+"Play the whole schedule",
+"Jugar todo el calendario",
+"لعب الجدول كاملًا",
+"पूरा कार्यक्रम खेलें",
+"Het hele schema spelen"
+],
+[
+"Final duel · the last two",
+"Duelo final · los dos últimos",
+"المواجهة النهائية · آخر لاعبين",
+"अंतिम मुकाबला · बचे हुए दो",
+"Finaleduel · de laatste twee"
+],
+[
+"Tie-break · the first point decides",
+"Desempate · decide el primer punto",
+"جولة فاصلة · أول نقطة تحسم",
+"टाई-ब्रेकर · पहला पॉइंट निर्णायक",
+"Beslissende ronde · het eerste punt beslist"
+],
+[
+"Tie-break for 2nd place: ",
+"Desempate por el 2.º puesto: ",
+"فاصل للمركز الثاني: ",
+"दूसरे स्थान का टाई-ब्रेकर: ",
+"Beslissing voor plek 2: "
+],
+[
+"Tournament / game code",
+"Código del torneo o partida",
+"رمز البطولة أو اللعبة",
+"टूर्नामेंट / खेल का कोड",
+"Toernooi- of spelcode"
+],
+[
+"Bye: ",
+"Pasa sin jugar: ",
+"تأهل مباشر: ",
+"बाई: ",
+"Vrije ronde: "
+],
+[
+"Final duel: ",
+"Duelo final: ",
+"المواجهة النهائية: ",
+"अंतिम मुकाबला: ",
+"Finaleduel: "
+],
+[
+"{0} players",
+"{0} jugadores",
+"{0} لاعبين",
+"{0} खिलाड़ी",
+"{0} spelers"
+],
+[
+"Table {0}: ",
+"Mesa {0}: ",
+"الطاولة {0}: ",
+"टेबल {0}: ",
+"Tafel {0}: "
+],
+[
+"Playing {0}",
+"Jugando contra {0}",
+"تلعب مع {0}",
+"{0} के साथ खेल रहे हैं",
+"Spelen tegen {0}"
+],
+[
+"Finished: {0}  •  Remaining: {1}",
+"Terminadas: {0} • Pendientes: {1}",
+"انتهت: {0} • المتبقي: {1}",
+"पूरे: {0} • बाकी: {1}",
+"Afgelopen: {0} • Resterend: {1}"
+],
+[
+"Matches remaining this round: {0}",
+"Partidas pendientes esta ronda: {0}",
+"المباريات المتبقية في هذه الجولة: {0}",
+"इस दौर में बाकी मैच: {0}",
+"Resterende wedstrijden deze ronde: {0}"
+],
+[
+"Sunshine park",
+"Parque soleado",
+"حديقة مشمسة",
+"धूप वाला पार्क",
+"Zonnig park"
+],
+[
+"Tropical beach",
+"Playa tropical",
+"شاطئ استوائي",
+"उष्णकटिबंधीय समुद्र तट",
+"Tropisch strand"
+],
+[
+"Soft foam",
+"Espuma suave",
+"إسفنج ناعم",
+"नरम फोम",
+"Zacht schuim"
+],
+[
+"Neon party",
+"Fiesta neón",
+"حفلة نيون",
+"निऑन पार्टी",
+"Neonfeest"
+],
+[
+"Light wind",
+"Brisa suave",
+"رياح خفيفة",
+"हल्की हवा",
+"Zachte wind"
+],
+[
+"Strong wind",
+"Viento fuerte",
+"رياح قوية",
+"तेज़ हवा",
+"Harde wind"
+],
+[
+"Easy · low throws and ground bounces allowed",
+"Fácil · tiros bajos y botes permitidos",
+"سهل · رميات منخفضة وارتداد مسموح",
+"आसान · नीची गेंद और उछाल मान्य",
+"Makkelijk · lage worpen, stuiteren mag"
+],
+[
+"Standard · control height; no ground bounce",
+"Estándar · controla la altura; sin bote previo",
+"عادي · تحكّم بالارتفاع؛ لا ارتداد أرضي",
+"सामान्य · ऊँचाई सँभालें; उछाल मना",
+"Standaard · beheers de hoogte; geen stuiter"
+],
+[
+"(cancelled)",
+"(cancelado)",
+"(أُلغيت)",
+"(रद्द)",
+"(geannuleerd)"
+],
+[
+"(not started)",
+"(sin empezar)",
+"(لم تبدأ)",
+"(शुरू नहीं हुआ)",
+"(niet gestart)"
+],
+[
+"(playing)",
+"(en juego)",
+"(قيد اللعب)",
+"(खेल जारी)",
+"(bezig)"
+],
+[
+"✓ = through.",
+"✓ = clasificado.",
+"✓ = متأهل.",
+"✓ = अगले दौर में।",
+"✓ = door."
+],
+[
+"{0} sends you the ball. Return it to {1} {2}. {3}",
+"{0} te envía la pelota. Devuélvela a {1} {2}. {3}",
+"يرسل {0} الكرة إليك. أعدها إلى {1} {2}. {3}",
+"{0} गेंद भेज रहे हैं। {1} को {2} लौटाएँ। {3}",
+"{0} speelt de bal naar je. Sla terug naar {1} {2}. {3}"
+],
+[
+"It went to {0}. Aim {1} for {2}.",
+"Fue hacia {0}. Apunta {1} para enviarla a {2}.",
+"ذهبت إلى {0}. صوّب {1} نحو {2}.",
+"गेंद {0} को गई। {2} के लिए {1} निशाना लगाएँ।",
+"De bal ging naar {0}. Richt {1} naar {2}."
+],
+[
+"Swipe up through the ball. Serve to {0} {1}: the ball bounces once on your side, then on theirs.",
+"Desliza hacia arriba a través de la pelota. Saca hacia {0} {1}: bota una vez en tu lado y luego en el suyo.",
+"اسحب لأعلى عبر الكرة. أرسل إلى {0} {1}: ترتد مرة في جانبك ثم في جانبه.",
+"गेंद से ऊपर स्वाइप करें। {0} को {1} सर्व करें: पहले आपके हिस्से में उछले, फिर उनके।",
+"Veeg omhoog door de bal. Serveer naar {0} {1}: de bal stuitert eerst op jouw kant en dan op die van de ander."
+],
+[
+"Tap your side of the table, then drag sideways toward {0} {1} before lifting your finger. The ball bounces once on your side, then on theirs.",
+"Toca tu lado y arrastra hacia {0} {1} antes de soltar. La pelota bota una vez en tu lado y luego en el suyo.",
+"المس جانبك ثم اسحب جانبيًا نحو {0} {1} قبل رفع إصبعك. ترتد الكرة في جانبك ثم في جانبه.",
+"अपने हिस्से पर टैप करें, फिर उँगली उठाने से पहले {0} की ओर {1} खींचें। गेंद पहले आपके हिस्से, फिर उनके हिस्से में उछलेगी।",
+"Tik op jouw kant en sleep opzij naar {0} {1} voordat je loslaat. De bal stuitert op jouw kant en daarna op die van de ander."
+],
+[
+"Each player owns one colored arm of the {0} table. The nets run between the arms. A shot must clear the net and land on ANOTHER player's color. The yellow outline shows who the ball is going to.",
+"Cada jugador tiene un brazo de color de la mesa {0}. Las redes separan los brazos. Supera la red y cae en el color de OTRO jugador. El contorno amarillo señala al destinatario.",
+"لكل لاعب ذراع ملوّنة في طاولة {0}. تفصل الشبكات بين الأذرع. يجب تجاوز الشبكة والهبوط في لون لاعب آخر. الإطار الأصفر يوضّح وجهة الكرة.",
+"{0} टेबल का हर रंगीन हिस्सा एक खिलाड़ी का है। बीच में जाल हैं। गेंद जाल पार करके दूसरे खिलाड़ी के रंग में गिरे। पीली रेखा अगला खिलाड़ी दिखाती है।",
+"Elke speler heeft een gekleurde arm van de {0}-tafel. De netten staan ertussen. De bal moet over het net op de kleur van een ANDERE speler landen. De gele rand toont de ontvanger."
+],
+[
+"Final duel: {0}. First to {1}!",
+"Duelo final: {0}. ¡Primero en llegar a {1}!",
+"المواجهة النهائية: {0}. الأول إلى {1}!",
+"अंतिम मुकाबला: {0}। पहले {1} तक पहुँचें!",
+"Finaleduel: {0}. Als eerste naar {1}!"
+],
+[
+"Nice catch!",
+"¡Buena recepción!",
+"إمساك رائع!",
+"शानदार कैच!",
+"Mooi gevangen!"
+],
+[
+"You almost got me!",
+"¡Casi me pillas!",
+"كدت تصيبني!",
+"बस मुझे लगने ही वाली थी!",
+"Je had me bijna!"
+],
+[
+"Ready for takeoff!",
+"¡Listos para despegar!",
+"جاهزون للإقلاع!",
+"उड़ान के लिए तैयार!",
+"Klaar voor vertrek!"
+],
+[
+"Oops, slippery fingers!",
+"¡Uy, se me resbaló!",
+"أوبس، انزلقت من يدي!",
+"अरे, हाथ से फिसल गई!",
+"Oeps, gladde vingers!"
+],
+[
+"That was cosmic!",
+"¡Eso fue cósmico!",
+"كان ذلك كونيًا!",
+"वह तो कमाल था!",
+"Dat was buitenaards!"
+],
+[
+"Here comes the bouncy ball!",
+"¡Allá va la pelota saltarina!",
+"ها هي الكرة القافزة!",
+"आ रही है उछलती गेंद!",
+"Daar komt de stuiterbal!"
+],
+[
+"Next round…",
+"Siguiente ronda…",
+"الجولة التالية…",
+"अगला दौर…",
+"Volgende ronde…"
+],
+[
+"Show me",
+"Muéstrame",
+"أرني",
+"करके दिखाएँ",
+"Laat zien"
+],
+[
+"Try it yourself",
+"Pruébalo",
+"جرّب بنفسك",
+"खुद आज़माएँ",
+"Probeer zelf"
+],
+[
+"To the game",
+"A jugar",
+"إلى اللعبة",
+"खेल पर जाएँ",
+"Naar het spel"
+],
+[
+"Don't show this tour again",
+"No volver a mostrar la guía",
+"لا تعرض هذا الدليل مجددًا",
+"यह गाइड दोबारा न दिखाएँ",
+"Deze uitleg niet meer tonen"
+],
+[
+"Don’t show this tour again",
+"No volver a mostrar la guía",
+"لا تعرض هذا الدليل مجددًا",
+"यह गाइड दोबारा न दिखाएँ",
+"Deze uitleg niet meer tonen"
+],
+[
+"Pause",
+"Pausa",
+"إيقاف مؤقت",
+"विराम",
+"Pauzeren"
+],
+[
+"Resume",
+"Continuar",
+"متابعة",
+"जारी रखें",
+"Hervatten"
+],
+[
+"Points to win",
+"Puntos para ganar",
+"النقاط للفوز",
+"जीतने के लिए अंक",
+"Punten om te winnen"
+],
+[
+"Difficulty",
+"Dificultad",
+"الصعوبة",
+"कठिनाई",
+"Moeilijkheid"
+],
+[
+"Easy",
+"Fácil",
+"سهل",
+"आसान",
+"Makkelijk"
+],
+[
+"Medium",
+"Medio",
+"متوسط",
+"मध्यम",
+"Gemiddeld"
+],
+[
+"Hard",
+"Difícil",
+"صعب",
+"कठिन",
+"Moeilijk"
+],
+[
+"Super hard",
+"Súper difícil",
+"صعب جدًا",
+"बहुत कठिन",
+"Supermoeilijk"
+],
+[
+"Return",
+"Devolver",
+"إعادة",
+"वापस मारें",
+"Terugslaan"
+],
+[
+"Your turn!",
+"¡Tu turno!",
+"دورك!",
+"आपकी बारी!",
+"Jouw beurt!"
+],
+[
+"Get your paddle ready",
+"Prepara la pala",
+"جهّز مضربك",
+"रैकेट तैयार करें",
+"Houd je batje klaar"
+],
+[
+"Table tennis for three or four players.",
+"Tenis de mesa para tres o cuatro jugadores.",
+"تنس طاولة لثلاثة أو أربعة لاعبين.",
+"तीन या चार खिलाड़ियों का टेबल टेनिस।",
+"Tafeltennis voor drie of vier spelers."
+],
+[
+"Which word names an animal?",
+"¿Qué palabra nombra un animal?",
+"أي كلمة تعني حيوانًا؟",
+"कौन-सा शब्द किसी जानवर का नाम है?",
+"Welk woord is een dier?"
+],
+[
+"Which animal barks?",
+"¿Qué animal ladra?",
+"أي حيوان ينبح؟",
+"कौन-सा जानवर भौंकता है?",
+"Welk dier blaft?"
+],
+[
+"Which word is a color?",
+"¿Qué palabra es un color?",
+"أي كلمة تعني لونًا؟",
+"कौन-सा शब्द रंग का नाम है?",
+"Welk woord is een kleur?"
+],
+[
+"Choose the opposite of hot.",
+"Elige lo contrario de hot.",
+"اختر عكس hot.",
+"hot का उल्टा चुनें।",
+"Kies het tegenovergestelde van hot."
+],
+[
+"One child, two ...",
+"Un child, dos...",
+"واحد child، واثنان...",
+"एक child, दो ...",
+"Eén child, twee ..."
+],
+[
+"Choose: {0}",
+"Completa: {0}",
+"أكمل: {0}",
+"चुनें: {0}",
+"Vul aan: {0}"
+],
+[
+"Which word means the same as quick?",
+"¿Qué palabra significa lo mismo que quick?",
+"أي كلمة تعني مثل quick؟",
+"किस शब्द का मतलब quick जैसा है?",
+"Welk woord betekent hetzelfde als quick?"
+],
+[
+"Choose the past tense of go.",
+"Elige el pasado de go.",
+"اختر الماضي من go.",
+"go का भूतकाल चुनें।",
+"Kies de verleden tijd van go."
+],
+[
+"Which word names a fruit?",
+"¿Qué palabra nombra una fruta?",
+"أي كلمة تعني فاكهة؟",
+"कौन-सा शब्द फल का नाम है?",
+"Welk woord is een fruitsoort?"
+],
+[
+"Which word names a body part?",
+"¿Qué palabra nombra una parte del cuerpo?",
+"أي كلمة تعني جزءًا من الجسم؟",
+"कौन-सा शब्द शरीर का अंग है?",
+"Welk woord is een lichaamsdeel?"
+],
+[
+"Which word names a number?",
+"¿Qué palabra nombra un número?",
+"أي كلمة تعني عددًا؟",
+"कौन-सा शब्द संख्या है?",
+"Welk woord is een getal?"
+],
+[
+"Choose the opposite of up.",
+"Elige lo contrario de up.",
+"اختر عكس up.",
+"up का उल्टा चुनें।",
+"Kies het tegenovergestelde van up."
+],
+[
+"Choose the opposite of empty.",
+"Elige lo contrario de empty.",
+"اختر عكس empty.",
+"empty का उल्टा चुनें।",
+"Kies het tegenovergestelde van empty."
+],
+[
+"Which word names a place to read books?",
+"¿Qué palabra nombra un lugar para leer libros?",
+"أي كلمة تعني مكانًا لقراءة الكتب؟",
+"कौन-सा शब्द किताबें पढ़ने की जगह का नाम है?",
+"Welk woord is een plek om boeken te lezen?"
+],
+[
+"One mouse, two ...",
+"Un mouse, dos...",
+"واحد mouse، واثنان...",
+"एक mouse, दो ...",
+"Eén mouse, twee ..."
+],
+[
+"Which word tells how someone runs?",
+"¿Qué palabra describe cómo corre alguien?",
+"أي كلمة تصف كيف يركض شخص؟",
+"कौन-सा शब्द बताता है कि कोई कैसे दौड़ता है?",
+"Welk woord vertelt hoe iemand rent?"
+],
+[
+"Which word means to look at something carefully?",
+"¿Qué palabra significa mirar con atención?",
+"أي كلمة تعني النظر بعناية؟",
+"किस शब्द का मतलब ध्यान से देखना है?",
+"Welk woord betekent iets aandachtig bekijken?"
+],
+[
+"Which word means unwilling to give up?",
+"¿Qué palabra significa que no se rinde fácilmente?",
+"أي كلمة تصف من لا يستسلم بسهولة؟",
+"कौन-सा शब्द आसानी से हार न मानने को कहता है?",
+"Welk woord betekent niet willen opgeven?"
+],
+[
+"A cat is an animal.",
+"Cat significa gato, un animal.",
+"cat تعني قطة، وهي حيوان.",
+"cat यानी बिल्ली, एक जानवर है।",
+"Cat betekent kat, een dier."
+],
+[
+"A dog barks.",
+"Dog significa perro. Los perros ladran.",
+"dog تعني كلبًا، والكلب ينبح.",
+"dog यानी कुत्ता भौंकता है।",
+"Dog betekent hond. Een hond blaft."
+],
+[
+"Blue is a color.",
+"Blue significa azul, un color.",
+"blue تعني اللون الأزرق.",
+"blue यानी नीला, एक रंग है।",
+"Blue betekent blauw, een kleur."
+],
+[
+"Hot and cold are opposites.",
+"Hot es caliente y cold es frío: son opuestos.",
+"hot تعني حارًا وcold تعني باردًا، وهما ضدّان.",
+"hot यानी गर्म और cold यानी ठंडा, दोनों उल्टे हैं।",
+"Hot is heet en cold is koud: tegenstellingen."
+],
+[
+"The plural of child is children.",
+"El plural de child es children.",
+"جمع child هو children.",
+"child का बहुवचन children है।",
+"Het meervoud van child is children."
+],
+[
+"She reads a book.",
+"Con she, se usa reads: She reads a book.",
+"مع she نستخدم reads: She reads a book.",
+"she के साथ reads: She reads a book.",
+"Bij she hoort reads: She reads a book."
+],
+[
+"Quick and fast describe speed.",
+"Quick y fast significan rápido.",
+"quick وfast تصفان السرعة.",
+"quick और fast दोनों तेज़ होने को बताते हैं।",
+"Quick en fast betekenen snel."
+],
+[
+"The simple past of go is went.",
+"El pasado simple de go es went.",
+"الماضي البسيط من go هو went.",
+"go का साधारण भूतकाल went है।",
+"De verleden tijd van go is went."
+],
+[
+"An apple is a fruit.",
+"Apple significa manzana, una fruta.",
+"apple تعني تفاحة، وهي فاكهة.",
+"apple यानी सेब, एक फल है।",
+"Apple betekent appel, een fruitsoort."
+],
+[
+"A hand is part of your body.",
+"Hand significa mano, parte del cuerpo.",
+"hand تعني يدًا، وهي جزء من الجسم.",
+"hand यानी हाथ, शरीर का अंग है।",
+"Hand is een deel van je lichaam."
+],
+[
+"Five is the number 5.",
+"Five es el número 5.",
+"five تعني العدد 5.",
+"five का मतलब संख्या 5 है।",
+"Five is het getal 5."
+],
+[
+"Up and down are opposite directions.",
+"Up es arriba y down es abajo.",
+"up تعني فوق وdown تعني تحت.",
+"up यानी ऊपर, down यानी नीचे।",
+"Up is omhoog en down is omlaag."
+],
+[
+"Empty and full are opposites.",
+"Empty es vacío y full es lleno.",
+"empty تعني فارغًا وfull تعني ممتلئًا.",
+"empty यानी खाली, full यानी भरा हुआ।",
+"Empty is leeg en full is vol."
+],
+[
+"A library lends books to readers.",
+"Library es una biblioteca, donde se prestan libros.",
+"library تعني مكتبة تعير الكتب للقرّاء.",
+"library यानी पुस्तकालय, जहाँ किताबें उधार मिलती हैं।",
+"Library betekent bibliotheek, waar je boeken leent."
+],
+[
+"The plural of mouse is mice.",
+"El plural de mouse es mice.",
+"جمع mouse هو mice.",
+"mouse का बहुवचन mice है।",
+"Het meervoud van mouse is mice."
+],
+[
+"They are happy.",
+"Con they se usa are: They are happy.",
+"مع they نستخدم are: They are happy.",
+"they के साथ are: They are happy.",
+"Bij they hoort are: They are happy."
+],
+[
+"Saw is the simple past of see.",
+"Saw es el pasado simple de see.",
+"saw هي الماضي البسيط من see.",
+"see का साधारण भूतकाल saw है।",
+"Saw is de verleden tijd van see."
+],
+[
+"Taller compares the height of two things.",
+"Taller compara la altura de dos cosas.",
+"taller تقارن طول شيئين.",
+"taller दो चीज़ों की ऊँचाई की तुलना करता है।",
+"Taller vergelijkt de hoogte van twee dingen."
+],
+[
+"Quickly is an adverb describing how an action happens.",
+"Quickly es un adverbio: indica cómo ocurre una acción.",
+"quickly ظرف يصف كيف يحدث الفعل.",
+"quickly बताता है कि काम किस तरह होता है।",
+"Quickly is een bijwoord dat vertelt hoe iets gebeurt."
+],
+[
+"Have finished uses the past participle.",
+"Después de have, se usa el participio finished.",
+"بعد have نستخدم finished، وهي صيغة التصريف الثالث.",
+"have के बाद past participle finished आता है।",
+"Na have gebruik je het voltooid deelwoord finished."
+],
+[
+"To observe is to look at or notice carefully.",
+"Observe significa observar con atención.",
+"observe تعني الملاحظة بعناية.",
+"observe का मतलब ध्यान से देखना है।",
+"Observe betekent aandachtig bekijken of opmerken."
+],
+[
+"Will fits this possible future condition.",
+"Will expresa el resultado futuro de esta condición posible.",
+"will تناسب نتيجة هذا الشرط المستقبلي الممكن.",
+"इस संभव भविष्य की शर्त के लिए will सही है।",
+"Will past bij deze mogelijke toekomstige voorwaarde."
+],
+[
+"That can refer to the book in this sentence.",
+"That se refiere al libro en esta frase.",
+"that تشير إلى الكتاب في هذه الجملة.",
+"इस वाक्य में that किताब को संदर्भित करता है।",
+"That verwijst in deze zin naar het boek."
+],
+[
+"Persistent means continuing despite difficulty.",
+"Persistent significa seguir a pesar de las dificultades.",
+"persistent تعني المثابرة رغم الصعوبة.",
+"persistent यानी मुश्किल के बावजूद लगे रहना।",
+"Persistent betekent doorgaan ondanks moeilijkheden."
+],
+[
+"What kind of object is the Sun?",
+"¿Qué clase de astro es el Sol?",
+"ما نوع الجرم الذي تنتمي إليه الشمس؟",
+"सूर्य किस प्रकार का खगोलीय पिंड है?",
+"Wat voor hemellichaam is de zon?"
+],
+[
+"How many natural moons does Earth have?",
+"¿Cuántas lunas naturales tiene la Tierra?",
+"كم قمرًا طبيعيًا للأرض؟",
+"पृथ्वी के कितने प्राकृतिक चाँद हैं?",
+"Hoeveel natuurlijke manen heeft de aarde?"
+],
+[
+"Which ocean is the largest?",
+"¿Cuál es el océano más grande?",
+"ما أكبر محيط؟",
+"सबसे बड़ा महासागर कौन-सा है?",
+"Welke oceaan is het grootst?"
+],
+[
+"How many planets orbit our Sun?",
+"¿Cuántos planetas orbitan nuestro Sol?",
+"كم كوكبًا يدور حول شمسنا؟",
+"सूर्य की परिक्रमा कितने ग्रह करते हैं?",
+"Hoeveel planeten draaien om onze zon?"
+],
+[
+"Which ocean is second largest?",
+"¿Cuál es el segundo océano más grande?",
+"ما ثاني أكبر محيط؟",
+"दूसरा सबसे बड़ा महासागर कौन-सा है?",
+"Welke oceaan is de op één na grootste?"
+],
+[
+"What holds planets in orbit around the Sun?",
+"¿Qué mantiene a los planetas en órbita alrededor del Sol?",
+"ما الذي يُبقي الكواكب في مدارها حول الشمس؟",
+"ग्रहों को सूर्य की कक्षा में कौन रखता है?",
+"Wat houdt planeten in hun baan om de zon?"
+],
+[
+"Which is the largest planet in our solar system?",
+"¿Cuál es el planeta más grande del sistema solar?",
+"ما أكبر كوكب في مجموعتنا الشمسية؟",
+"सौर मंडल का सबसे बड़ा ग्रह कौन-सा है?",
+"Wat is de grootste planeet in ons zonnestelsel?"
+],
+[
+"Which is the hottest planet in our solar system?",
+"¿Cuál es el planeta más caliente del sistema solar?",
+"ما أشد كواكب مجموعتنا الشمسية حرارة؟",
+"सौर मंडल का सबसे गर्म ग्रह कौन-सा है?",
+"Wat is de heetste planeet in ons zonnestelsel?"
+],
+[
+"Which galaxy contains our solar system?",
+"¿En qué galaxia está nuestro sistema solar?",
+"في أي مجرة تقع مجموعتنا الشمسية؟",
+"हमारा सौर मंडल किस आकाशगंगा में है?",
+"In welk sterrenstelsel ligt ons zonnestelsel?"
+],
+[
+"Which planet spins once in about ten hours?",
+"¿Qué planeta gira sobre sí mismo en unas diez horas?",
+"أي كوكب يكمل دورة حول نفسه في نحو عشر ساعات؟",
+"कौन-सा ग्रह लगभग दस घंटे में घूमता है?",
+"Welke planeet draait in ongeveer tien uur om zijn as?"
+],
+[
+"Which moon is the largest in our solar system?",
+"¿Cuál es la luna más grande del sistema solar?",
+"ما أكبر قمر في مجموعتنا الشمسية؟",
+"सौर मंडल का सबसे बड़ा चाँद कौन-सा है?",
+"Welke maan is de grootste in ons zonnestelsel?"
+],
+[
+"Which gas makes up most of Venus's atmosphere?",
+"¿Qué gas predomina en la atmósfera de Venus?",
+"ما الغاز الذي يشكّل معظم غلاف الزهرة الجوي؟",
+"शुक्र के वायुमंडल में सबसे अधिक कौन-सी गैस है?",
+"Uit welk gas bestaat de atmosfeer van Venus vooral?"
+],
+[
+"The Sun is our nearest star.",
+"El Sol es nuestra estrella más cercana.",
+"الشمس هي أقرب نجم إلينا.",
+"सूर्य हमारा सबसे नज़दीकी तारा है।",
+"De zon is onze dichtstbijzijnde ster."
+],
+[
+"Earth has one natural moon.",
+"La Tierra tiene una luna natural.",
+"للأرض قمر طبيعي واحد.",
+"पृथ्वी का एक प्राकृतिक चाँद है।",
+"De aarde heeft één natuurlijke maan."
+],
+[
+"The Pacific is the largest ocean basin.",
+"El Pacífico es el océano más grande.",
+"المحيط الهادئ هو أكبر المحيطات.",
+"प्रशांत महासागर सबसे बड़ा है।",
+"De Stille Oceaan is de grootste oceaan."
+],
+[
+"Our solar system has eight planets.",
+"Nuestro sistema solar tiene ocho planetas.",
+"في مجموعتنا الشمسية ثمانية كواكب.",
+"हमारे सौर मंडल में आठ ग्रह हैं।",
+"Ons zonnestelsel heeft acht planeten."
+],
+[
+"The Atlantic is second after the Pacific.",
+"El Atlántico es el segundo, después del Pacífico.",
+"الأطلسي هو الثاني بعد الهادئ.",
+"अटलांटिक, प्रशांत के बाद दूसरा बड़ा है।",
+"De Atlantische Oceaan is de tweede, na de Stille Oceaan."
+],
+[
+"Gravity keeps planets in orbit.",
+"La gravedad mantiene a los planetas en órbita.",
+"الجاذبية تُبقي الكواكب في مداراتها.",
+"गुरुत्वाकर्षण ग्रहों को कक्षा में रखता है।",
+"Zwaartekracht houdt planeten in hun baan."
+],
+[
+"Jupiter is larger than the other planets.",
+"Júpiter es más grande que los demás planetas.",
+"المشتري أكبر من بقية الكواكب.",
+"बृहस्पति बाकी ग्रहों से बड़ा है।",
+"Jupiter is groter dan de andere planeten."
+],
+[
+"Venus has a thick heat-trapping atmosphere.",
+"Venus tiene una atmósfera densa que atrapa calor.",
+"للزهرة غلاف جوي كثيف يحتجز الحرارة.",
+"शुक्र का घना वायुमंडल गर्मी रोकता है।",
+"Venus heeft een dichte atmosfeer die warmte vasthoudt."
+],
+[
+"Our solar system is part of the Milky Way.",
+"Nuestro sistema solar forma parte de la Vía Láctea.",
+"مجموعتنا الشمسية جزء من درب التبانة.",
+"हमारा सौर मंडल आकाशगंगा (मिल्की वे) का हिस्सा है।",
+"Ons zonnestelsel ligt in de Melkweg."
+],
+[
+"Jupiter's rotation takes about 9.9 hours.",
+"Júpiter gira sobre sí mismo en unas 9,9 horas.",
+"يكمل المشتري دورته في نحو 9.9 ساعة.",
+"बृहस्पति लगभग 9.9 घंटे में घूमता है।",
+"Jupiter draait in ongeveer 9,9 uur om zijn as."
+],
+[
+"Ganymede is even larger than Mercury.",
+"Ganímedes es incluso más grande que Mercurio.",
+"غانيميد أكبر حتى من عطارد.",
+"गैनिमीड, बुध से भी बड़ा है।",
+"Ganymedes is zelfs groter dan Mercurius."
+],
+[
+"The atmosphere of Venus is mostly carbon dioxide.",
+"La atmósfera de Venus es principalmente dióxido de carbono.",
+"يتكوّن غلاف الزهرة الجوي أساسًا من ثاني أكسيد الكربون.",
+"शुक्र के वायुमंडल में अधिकतर कार्बन डाइऑक्साइड है।",
+"De atmosfeer van Venus bestaat vooral uit koolstofdioxide."
+],
+[
+"Star",
+"Estrella",
+"نجم",
+"तारा",
+"Ster"
+],
+[
+"Planet",
+"Planeta",
+"كوكب",
+"ग्रह",
+"Planeet"
+],
+[
+"Moon",
+"Luna",
+"قمر",
+"चाँद",
+"Maan"
+],
+[
+"Comet",
+"Cometa",
+"مذنب",
+"धूमकेतु",
+"Komeet"
+],
+[
+"Pacific",
+"Pacífico",
+"الهادئ",
+"प्रशांत",
+"Stille"
+],
+[
+"Atlantic",
+"Atlántico",
+"الأطلسي",
+"अटलांटिक",
+"Atlantische"
+],
+[
+"Indian",
+"Índico",
+"الهندي",
+"हिंद",
+"Indische"
+],
+[
+"Arctic",
+"Ártico",
+"المتجمد الشمالي",
+"आर्कटिक",
+"Arctische"
+],
+[
+"Southern",
+"Austral",
+"الجنوبي",
+"दक्षिणी",
+"Zuidelijke"
+],
+[
+"Gravity",
+"Gravedad",
+"جاذبية",
+"गुरुत्वाकर्षण",
+"Zwaartekracht"
+],
+[
+"Sound",
+"Sonido",
+"صوت",
+"ध्वनि",
+"Geluid"
+],
+[
+"Rain",
+"Lluvia",
+"مطر",
+"बारिश",
+"Regen"
+],
+[
+"Jupiter",
+"Júpiter",
+"المشتري",
+"बृहस्पति",
+"Jupiter"
+],
+[
+"Mars",
+"Marte",
+"المريخ",
+"मंगल",
+"Mars"
+],
+[
+"Earth",
+"Tierra",
+"الأرض",
+"पृथ्वी",
+"Aarde"
+],
+[
+"Venus",
+"Venus",
+"الزهرة",
+"शुक्र",
+"Venus"
+],
+[
+"Mercury",
+"Mercurio",
+"عطارد",
+"बुध",
+"Mercurius"
+],
+[
+"Neptune",
+"Neptuno",
+"نبتون",
+"वरुण",
+"Neptunus"
+],
+[
+"Milky Way",
+"Vía Láctea",
+"درب التبانة",
+"मिल्की वे",
+"Melkweg"
+],
+[
+"Whirlpool",
+"Remolino",
+"الدوامة",
+"व्हर्लपूल",
+"Draaikolk"
+],
+[
+"Sombrero",
+"Sombrero",
+"السومبريرو",
+"सोम्ब्रेरो",
+"Sombrero"
+],
+[
+"Ganymede",
+"Ganímedes",
+"غانيميد",
+"गैनिमीड",
+"Ganymedes"
+],
+[
+"Europa",
+"Europa",
+"أوروبا",
+"यूरोपा",
+"Europa"
+],
+[
+"Io",
+"Ío",
+"آيو",
+"आयो",
+"Io"
+],
+[
+"Luna",
+"Luna",
+"قمر الأرض",
+"पृथ्वी का चाँद",
+"Aardmaan"
+],
+[
+"Oxygen",
+"Oxígeno",
+"أكسجين",
+"ऑक्सीजन",
+"Zuurstof"
+],
+[
+"Hydrogen",
+"Hidrógeno",
+"هيدروجين",
+"हाइड्रोजन",
+"Waterstof"
+],
+[
+"Helium",
+"Helio",
+"هيليوم",
+"हीलियम",
+"Helium"
+],
+[
+"{0} + {1} over the common denominator {2} = {3}",
+"Suma {0} + {1} sobre el denominador común {2} = {3}",
+"اجمع {0} + {1} فوق المقام المشترك {2} = {3}",
+"समान हर {2} के ऊपर {0} + {1} = {3}",
+"Tel {0} + {1} op boven de gelijke noemer {2} = {3}"
+],
+[
+"Multiply first: {0}. {1}",
+"Primero multiplica: {0}. {1}",
+"اضرب أولًا: {0}. {1}",
+"पहले गुणा करें: {0}। {1}",
+"Vermenigvuldig eerst: {0}. {1}"
+],
+[
+"Ping Pong with Minik",
+"Ping pong con Minik",
+"تنس الطاولة مع مينيك",
+"मिनिक के साथ पिंग पोंग",
+"Pingpong met Minik"
+],
+[
+"Two ways to play. One colorful friend.\nChoose your court and join the fun!",
+"Dos formas de jugar con un amigo lleno de color.\n¡Elige tu pista y diviértete!",
+"طريقتان للعب مع صديق ملوّن.\nاختر ملعبك وانضم للمرح!",
+"खेलने के दो तरीके, एक रंगीन दोस्त।\nअपना मैदान चुनें और मज़ा लें!",
+"Twee manieren om te spelen met een kleurrijke vriend.\nKies je tafel en doe mee!"
+],
+[
+"MODERN",
+"MODERNO",
+"حديث",
+"आधुनिक",
+"MODERN"
+],
+[
+"80's STYLE",
+"ESTILO AÑOS 80",
+"أسلوب الثمانينيات",
+"80 के दशक का अंदाज़",
+"JAREN 80"
+],
+[
+"Choose a difficulty. Tap to return, or swipe diagonally to aim. Super hard uses precise swipes.",
+"Elige un nivel. Toca para devolver o desliza en diagonal para apuntar. Súper difícil exige deslizamientos precisos.",
+"اختر المستوى. المس لرد الكرة أو اسحب قطريًا للتوجيه. المستوى الصعب جدًا يتطلب سحبًا دقيقًا.",
+"स्तर चुनें। लौटाने के लिए टैप करें या निशाना लगाने के लिए तिरछा स्वाइप करें। बेहद कठिन में सटीक स्वाइप ज़रूरी है।",
+"Kies een niveau. Tik om terug te slaan of veeg schuin om te richten. Supermoeilijk vraagt om precieze veegbewegingen."
+],
+[
+"Neon rallies, colorful surprises and your classic arcade game.",
+"Peloteos de neón, sorpresas de colores y diversión arcade.",
+"تبادلات نيون ومفاجآت ملوّنة ولعب أركيد كلاسيكي.",
+"नियॉन रैलियाँ, रंगीन सरप्राइज़ और क्लासिक आर्केड खेल।",
+"Neonrally’s, kleurrijke verrassingen en klassiek arcadeplezier."
+],
+[
+"Let’s play",
+"¡A jugar!",
+"هيا نلعب",
+"चलो खेलें",
+"Spelen maar"
+],
+[
+"Starter",
+"Inicial",
+"مبتدئ",
+"शुरुआती",
+"Starter"
+],
+[
+"You  %1$d    ·    Minik  %2$d",
+"Tú  %1$d    ·    Minik  %2$d",
+"أنت  %1$d    ·    مينيك  %2$d",
+"आप  %1$d    ·    मिनिक  %2$d",
+"Jij  %1$d    ·    Minik  %2$d"
+],
+[
+"%1$s · First to %2$d · %3$s serves",
+"%1$s · Gana al llegar a %2$d · Saca %3$s",
+"%1$s · الفوز عند %2$d · الإرسال: %3$s",
+"%1$s · पहले %2$d अंक · सर्व: %3$s",
+"%1$s · Als eerste %2$d · %3$s serveert"
+],
+[
+"Paused — ready when you are",
+"En pausa. Sigue cuando quieras",
+"متوقف مؤقتًا — تابع عندما تكون جاهزًا",
+"रुका हुआ — जब चाहें जारी रखें",
+"Gepauzeerd — ga verder wanneer je wilt"
+],
+[
+"Apply & start new match",
+"Aplicar e iniciar partida",
+"تطبيق وبدء مباراة جديدة",
+"लागू करके नया मैच शुरू करें",
+"Toepassen en nieuw spel starten"
+],
+[
+"Left return",
+"Devolución a la izquierda",
+"رد إلى اليسار",
+"बाईं ओर वापसी",
+"Terugslag naar links"
+],
+[
+"Right return",
+"Devolución a la derecha",
+"رد إلى اليمين",
+"दाईं ओर वापसी",
+"Terugslag naar rechts"
+],
+[
+"Table tennis court. Your side is at the bottom. Beginner automatically hits when your paddle is in place. Other levels use taps or swipes.",
+"Mesa de ping pong. Tu lado está abajo. En Principiante, la pala golpea sola si está bien colocada. En otros niveles, toca o desliza.",
+"طاولة تنس. جانبك في الأسفل. في مستوى المبتدئ تضرب المضرب تلقائيًا عندما يكون في المكان الصحيح. المستويات الأخرى تستخدم اللمس أو السحب.",
+"पिंग पोंग की मेज़। आपका हिस्सा नीचे है। शुरुआती स्तर में पैडल सही जगह होने पर अपने-आप मारता है। दूसरे स्तरों में टैप या स्वाइप करें।",
+"Tafeltennistafel. Jouw kant is onderaan. Bij Beginner slaat je batje automatisch als het goed staat. Andere niveaus gebruiken tikken of vegen."
+],
+[
+"Tap anywhere on the table to serve",
+"Toca la mesa para sacar",
+"المس أي مكان على الطاولة للإرسال",
+"सर्व करने के लिए मेज़ पर कहीं भी टैप करें",
+"Tik ergens op de tafel om te serveren"
+],
+[
+"Swipe upward through the ball to serve",
+"Desliza hacia arriba por la pelota para sacar",
+"اسحب إلى أعلى عبر الكرة للإرسال",
+"सर्व के लिए गेंद से ऊपर की ओर स्वाइप करें",
+"Veeg omhoog door de bal om te serveren"
+],
+[
+"Minik is serving",
+"Minik saca",
+"مينيك يرسل",
+"मिनिक सर्व कर रहा है",
+"Minik serveert"
+],
+[
+"Serve in play",
+"Saque en juego",
+"الإرسال جارٍ",
+"सर्व खेल में है",
+"Service in het spel"
+],
+[
+"Move your paddle to the ball",
+"Acerca la pala a la pelota",
+"حرّك مضربك نحو الكرة",
+"पैडल को गेंद तक ले जाएँ",
+"Beweeg je batje naar de bal"
+],
+[
+"Return the ball on your side",
+"Devuelve la pelota desde tu lado",
+"رد الكرة من جانبك",
+"अपने हिस्से से गेंद लौटाएँ",
+"Sla de bal terug aan jouw kant"
+],
+[
+"Swing missed",
+"No alcanzaste la pelota",
+"لم تصل الضربة للكرة",
+"शॉट चूक गया",
+"Misgeslagen"
+],
+[
+"Nice return!",
+"¡Buena devolución!",
+"رد جميل!",
+"बहुत बढ़िया वापसी!",
+"Mooi teruggeslagen!"
+],
+[
+"Minik missed",
+"Minik falló",
+"أخفق مينيك",
+"मिनिक चूक गया",
+"Minik miste"
+],
+[
+"Minik returned",
+"Minik devolvió la pelota",
+"رد مينيك الكرة",
+"मिनिक ने गेंद लौटाई",
+"Minik sloeg terug"
+],
+[
+"You won the point!",
+"¡Ganaste el punto!",
+"فزت بالنقطة!",
+"आपने अंक जीता!",
+"Jij wint het punt!"
+],
+[
+"Minik won the point",
+"Minik ganó el punto",
+"فاز مينيك بالنقطة",
+"मिनिक ने अंक जीता",
+"Minik wint het punt"
+],
+[
+"You win! Play again?",
+"¡Ganaste! ¿Otra partida?",
+"فزت! هل تلعب مجددًا؟",
+"आप जीत गए! फिर खेलें?",
+"Jij wint! Nog een keer?"
+],
+[
+"Minik wins. Try again!",
+"Minik gana. ¡Inténtalo de nuevo!",
+"فاز مينيك. حاول مجددًا!",
+"मिनिक जीत गया। फिर कोशिश करें!",
+"Minik wint. Probeer het nog eens!"
+],
+[
+"The ball hit the net",
+"La pelota tocó la red",
+"اصطدمت الكرة بالشبكة",
+"गेंद जाल से टकराई",
+"De bal raakte het net"
+],
+[
+"The ball went out",
+"La pelota salió fuera",
+"خرجت الكرة",
+"गेंद बाहर गई",
+"De bal ging uit"
+],
+[
+"Second bounce — return missed",
+"Segundo bote: no se devolvió",
+"الارتداد الثاني — لم تُرَد الكرة",
+"दूसरा उछाल — वापसी छूटी",
+"Tweede stuit — niet teruggeslagen"
+],
+[
+"Serve missed — swipe upward through the ball",
+"Saque fallido: desliza hacia arriba por la pelota",
+"إرسال فائت — اسحب إلى أعلى عبر الكرة",
+"सर्व छूटा — गेंद से ऊपर की ओर स्वाइप करें",
+"Service gemist — veeg omhoog door de bal"
+],
+[
+"Rally: %1$d hits",
+"Peloteo: %1$d golpes",
+"التبادل: %1$d ضربات",
+"रैली: %1$d शॉट",
+"Rally: %1$d slagen"
+],
+[
+"Ball was in — no return",
+"La pelota entró: sin devolución",
+"الكرة داخل الطاولة — لم تُرَد",
+"गेंद अंदर थी — वापसी नहीं हुई",
+"Bal was in — niet teruggeslagen"
+],
+[
+"Tap anywhere except a button to play again",
+"Toca fuera de los botones para volver a jugar",
+"المس خارج الأزرار للعب مجددًا",
+"फिर खेलने के लिए किसी बटन के बाहर टैप करें",
+"Tik buiten de knoppen om opnieuw te spelen"
+],
+[
+"Let’s play Ping Pong!",
+"¡Juguemos al ping pong!",
+"هيا نلعب تنس الطاولة!",
+"चलो पिंग पोंग खेलें!",
+"We gaan pingpongen!"
+],
+[
+"First to %1$d points wins!\n\nBeginner is the default: position your paddle and it hits at the right time. We also teach tapping and diagonal swipes for more control. Change your level in Settings (%2$s).\n\nPractice serving, automatic returns and aimed shots.",
+"¡Gana quien llegue primero a %1$d puntos!\n\nPrincipiante es el nivel inicial: coloca la pala y golpeará en el momento justo. También aprenderás a tocar y deslizar en diagonal para controlar el tiro. Cambia el nivel en Ajustes (%2$s).\n\nPractica saques, devoluciones automáticas y tiros dirigidos.",
+"الفائز أول من يصل إلى %1$d نقطة!\n\nالمبتدئ هو الافتراضي: ضع المضرب في المكان الصحيح ليضرب في الوقت المناسب. ستتعلم اللمس والسحب القطري للتحكم أكثر. غيّر المستوى في الإعدادات (%2$s).\n\nتدرّب على الإرسال والرد التلقائي والتصويب.",
+"पहले %1$d अंक पाने वाला जीतेगा!\n\nशुरुआती स्तर पहले से चुना है: पैडल सही जगह रखें, वह सही समय पर मारेगा। बेहतर नियंत्रण के लिए टैप और तिरछा स्वाइप भी सीखें। सेटिंग्स (%2$s) में स्तर बदलें।\n\nसर्व, अपने-आप वापसी और निशाने वाले शॉट का अभ्यास करें।",
+"Wie als eerste %1$d punten haalt, wint!\n\nBeginner staat standaard aan: zet je batje goed neer en het slaat op het juiste moment. Je leert ook tikken en schuin vegen voor meer controle. Verander het niveau bij Instellingen (%2$s).\n\nOefen serveren, automatisch terugslaan en richten."
+],
+[
+"On Medium and Hard, win by two points.",
+"En Medio y Difícil, gana con dos puntos de ventaja.",
+"في المتوسط والصعب، يلزم فارق نقطتين للفوز.",
+"मध्यम और कठिन में दो अंकों की बढ़त से जीतें।",
+"Op Gemiddeld en Moeilijk win je met twee punten verschil."
+],
+[
+"Watch how it’s done",
+"Mira cómo se hace",
+"شاهد الطريقة",
+"देखें कैसे करते हैं",
+"Kijk hoe het werkt"
+],
+[
+"Tap a point on your side of the table to send the serve toward that place on Minik's side",
+"Toca un punto de tu lado para sacar hacia ese lugar del lado de Minik",
+"المس نقطة في جانبك لإرسال الكرة نحو الموضع المقابل عند مينيك",
+"अपने हिस्से पर टैप करें ताकि सर्व मिनिक के हिस्से में उसी जगह जाए",
+"Tik op een plek aan jouw kant om naar die plek aan Miniks kant te serveren"
+],
+[
+"Tap when the ball reaches your paddle",
+"Toca cuando la pelota llegue a tu pala",
+"المس عندما تصل الكرة إلى مضربك",
+"जब गेंद पैडल तक पहुँचे, टैप करें",
+"Tik wanneer de bal bij je batje komt"
+],
+[
+"Minik won’t hit it back. No points are lost during practice!",
+"Minik no devolverá la pelota. ¡No pierdes puntos al practicar!",
+"لن يرد مينيك الكرة. لا تخسر نقاطًا في التدريب!",
+"मिनिक गेंद वापस नहीं मारेगा। अभ्यास में अंक नहीं खोते!",
+"Minik slaat niet terug. Tijdens het oefenen verlies je geen punten!"
+],
+[
+"Let’s try again!",
+"¡Probemos otra vez!",
+"لنحاول مجددًا!",
+"फिर कोशिश करें!",
+"Probeer het nog eens!"
+],
+[
+"Great serve! It landed in the place you chose on Minik's side.",
+"¡Buen saque! Cayó donde elegiste en el lado de Minik.",
+"إرسال رائع! هبطت في المكان الذي اخترته عند مينيك.",
+"बढ़िया सर्व! गेंद मिनिक के हिस्से में आपकी चुनी जगह गिरी।",
+"Goede service! De bal landde op jouw gekozen plek aan Miniks kant."
+],
+[
+"Lovely return! It reached Minik's side in the direction you chose.",
+"¡Buena devolución! Llegó al lado de Minik en la dirección elegida.",
+"رد رائع! وصلت الكرة إلى جانب مينيك في الاتجاه الذي اخترته.",
+"बढ़िया वापसी! गेंद आपकी चुनी दिशा में मिनिक के हिस्से तक पहुँची।",
+"Mooi teruggeslagen! De bal ging in jouw gekozen richting naar Minik."
+],
+[
+"That hit the net. Tap at contact; for an aimed return, swipe diagonally through the ball.",
+"Tocó la red. Toca al contactar; para dirigirla, desliza en diagonal por la pelota.",
+"اصطدمت بالشبكة. المس وقت التلامس؛ وللتوجيه اسحب قطريًا عبر الكرة.",
+"गेंद जाल से लगी। संपर्क के समय टैप करें; दिशा देने के लिए गेंद पर तिरछा स्वाइप करें।",
+"Dat was het net. Tik bij contact; veeg schuin door de bal om te richten."
+],
+[
+"That went out. Keep the diagonal swipe gentle and aim away from the table edge.",
+"Salió fuera. Desliza suavemente en diagonal y apunta lejos del borde.",
+"خرجت الكرة. اسحب قطريًا بلطف وابتعد عن حافة الطاولة.",
+"गेंद बाहर गई। हल्का तिरछा स्वाइप करें और किनारे से दूर निशाना लगाएँ।",
+"Die ging uit. Veeg rustig schuin en richt weg van de tafelrand."
+],
+[
+"Watch the bounce, then tap when the ball reaches your paddle.",
+"Mira el bote y toca cuando la pelota llegue a la pala.",
+"راقب الارتداد ثم المس عندما تصل الكرة إلى مضربك.",
+"उछाल देखें, फिर गेंद पैडल तक पहुँचने पर टैप करें।",
+"Let op de stuit en tik wanneer de bal bij je batje komt."
+],
+[
+"Tap when the ball reaches your paddle, then swipe diagonally toward the arrow to aim",
+"Toca al llegar la pelota y desliza en diagonal hacia la flecha para apuntar",
+"المس عند وصول الكرة ثم اسحب قطريًا نحو السهم للتوجيه",
+"गेंद पैडल तक आने पर टैप करें, फिर तीर की ओर तिरछा स्वाइप करें",
+"Tik wanneer de bal bij je batje komt en veeg schuin naar de pijl om te richten"
+],
+[
+"Simple tap return",
+"Devolver con un toque",
+"الرد بلمسة بسيطة",
+"सिर्फ़ टैप से वापसी",
+"Terugslaan met een tik"
+],
+[
+"Aim a return with a diagonal swipe",
+"Dirige la devolución con un deslizamiento diagonal",
+"وجّه الرد بسحب قطري",
+"तिरछे स्वाइप से वापसी को दिशा दें",
+"Richt je terugslag met een schuine veeg"
+],
+[
+"Tap on your side of the table. Your serve bounces on your side first, then should land in the highlighted part of Minik's side.",
+"Toca tu lado de la mesa. El saque bota primero en tu lado y después debe caer en la zona marcada del lado de Minik.",
+"المس جانبك من الطاولة. يرتد الإرسال عندك أولًا، ثم يجب أن يهبط في الجزء المضيء عند مينيك.",
+"मेज़ के अपने हिस्से पर टैप करें। सर्व पहले आपके हिस्से में उछलता है, फिर मिनिक के हिस्से में चमकती जगह गिरना चाहिए।",
+"Tik op jouw tafelhelft. De service stuitert eerst bij jou en moet daarna op het gemarkeerde deel bij Minik landen."
+],
+[
+"Tap when the ball reaches your paddle. No precise swipe is needed; the return naturally keeps its incoming left or right direction.",
+"Toca cuando llegue a tu pala. No necesitas deslizar con precisión: mantiene su dirección natural a izquierda o derecha.",
+"المس عند وصول الكرة. لا تحتاج لسحب دقيق؛ تحتفظ الكرة باتجاهها الجانبي الطبيعي.",
+"गेंद पैडल तक आने पर टैप करें। सटीक स्वाइप ज़रूरी नहीं; गेंद की बाईं या दाईं दिशा बनी रहती है।",
+"Tik wanneer de bal bij je batje komt. Precies vegen hoeft niet; de bal behoudt vanzelf zijn zijwaartse richting."
+],
+[
+"Minik sends the ball toward your left. Tap as it reaches your paddle and swipe diagonally left to return it toward the same side.",
+"Minik envía a tu izquierda. Toca al llegar y desliza en diagonal a la izquierda para devolver al mismo lado.",
+"يرسل مينيك إلى يسارك. المس عند الوصول واسحب قطريًا لليسار لردها إلى الجانب نفسه.",
+"मिनिक गेंद बाईं ओर भेजता है। आने पर टैप करके बाएँ तिरछा स्वाइप करें, ताकि उसी ओर लौटे।",
+"Minik speelt naar links. Tik bij aankomst en veeg schuin naar links om naar dezelfde kant terug te slaan."
+],
+[
+"Minik again sends the ball toward your left. Tap as it reaches your paddle and swipe diagonally right to redirect it toward the opposite side.",
+"Minik vuelve a enviar a tu izquierda. Toca y desliza en diagonal a la derecha para cambiar al lado opuesto.",
+"يرسل مينيك إلى يسارك مجددًا. المس واسحب قطريًا لليمين لتغييرها إلى الجانب المقابل.",
+"मिनिक फिर बाईं ओर भेजता है। टैप करके दाएँ तिरछा स्वाइप करें, ताकि दूसरी ओर जाए।",
+"Minik speelt weer naar links. Tik en veeg schuin naar rechts om naar de overkant terug te slaan."
+],
+[
+"Minik sends the ball toward your right. Tap as it reaches your paddle and swipe diagonally right to return it toward the same side.",
+"Minik envía a tu derecha. Toca y desliza en diagonal a la derecha para devolver al mismo lado.",
+"يرسل مينيك إلى يمينك. المس واسحب قطريًا لليمين لردها إلى الجانب نفسه.",
+"मिनिक दाईं ओर भेजता है। टैप करके दाएँ तिरछा स्वाइप करें, ताकि उसी ओर लौटे।",
+"Minik speelt naar rechts. Tik en veeg schuin naar rechts om naar dezelfde kant terug te slaan."
+],
+[
+"Minik again sends the ball toward your right. Tap as it reaches your paddle and swipe diagonally left to redirect it toward the opposite side.",
+"Minik vuelve a enviar a tu derecha. Toca y desliza en diagonal a la izquierda para cambiar al lado opuesto.",
+"يرسل مينيك إلى يمينك مجددًا. المس واسحب قطريًا لليسار لردها للجانب المقابل.",
+"मिनिक फिर दाईं ओर भेजता है। टैप करके बाएँ तिरछा स्वाइप करें, ताकि दूसरी ओर जाए।",
+"Minik speelt weer naar rechts. Tik en veeg schuin naar links om naar de overkant terug te slaan."
+],
+[
+"Good contact. Follow the diagonal arrow to send the ball toward that side.",
+"Buen contacto. Sigue la flecha diagonal para enviar la pelota a ese lado.",
+"تلامس جيد. اتبع السهم القطري لتوجيه الكرة لذلك الجانب.",
+"सही संपर्क। गेंद उस ओर भेजने के लिए तिरछे तीर का अनुसरण करें।",
+"Goed geraakt. Volg de schuine pijl om de bal die kant op te sturen."
+],
+[
+"Tap the middle of your side of the table to serve toward the middle of Minik's side.",
+"Toca el centro de tu lado de la mesa para sacar al centro del lado de Minik.",
+"المس وسط جانبك من الطاولة للإرسال نحو وسط جانب مينيك.",
+"अपने हिस्से के बीच में टैप करें ताकि सर्व मिनिक के हिस्से के बीच जाए।",
+"Tik midden op jouw tafelhelft om naar het midden bij Minik te serveren."
+],
+[
+"Tap the left part of your side to send the serve to Minik's left part.",
+"Toca la parte izquierda de tu lado para sacar a la parte izquierda de Minik.",
+"المس يسار جانبك لإرسال الكرة إلى الجزء الأيسر عند مينيك.",
+"अपने हिस्से में बाईं ओर टैप करें ताकि सर्व मिनिक के बाएँ हिस्से में जाए।",
+"Tik links op jouw helft om naar links bij Minik te serveren."
+],
+[
+"Tap the right part of your side to send the serve to Minik's right part.",
+"Toca la parte derecha de tu lado para sacar a la parte derecha de Minik.",
+"المس يمين جانبك لإرسال الكرة إلى الجزء الأيمن عند مينيك.",
+"अपने हिस्से में दाईं ओर टैप करें ताकि सर्व मिनिक के दाएँ हिस्से में जाए।",
+"Tik rechts op jouw helft om naar rechts bij Minik te serveren."
+],
+[
+"Minik sends the ball toward the middle. Tap at contact for a simple return; it can go anywhere on Minik's side.",
+"Minik envía al centro. Toca al contactar para devolver a cualquier parte de su lado.",
+"يرسل مينيك نحو الوسط. المس عند التلامس لرد بسيط نحو أي مكان في جانبه.",
+"मिनिक बीच में भेजता है। संपर्क पर टैप करें; वापसी उसके हिस्से में कहीं भी जा सकती है।",
+"Minik speelt naar het midden. Tik bij contact om naar een plek aan zijn kant terug te slaan."
+],
+[
+"Minik sends the ball toward the middle. Tap and swipe diagonally right to aim for Minik's right side.",
+"Minik envía al centro. Toca y desliza en diagonal a la derecha para apuntar a su lado derecho.",
+"يرسل مينيك نحو الوسط. المس واسحب قطريًا لليمين لتصويب الكرة إلى يمين جانبه.",
+"मिनिक बीच में भेजता है। उसके दाएँ हिस्से की ओर टैप करके दाएँ तिरछा स्वाइप करें।",
+"Minik speelt naar het midden. Tik en veeg schuin naar rechts om naar zijn rechterkant te richten."
+],
+[
+"Minik sends the ball toward your left. Tap and swipe diagonally right to return toward the middle.",
+"Minik envía a tu izquierda. Toca y desliza en diagonal a la derecha para devolver al centro.",
+"يرسل مينيك إلى يسارك. المس واسحب قطريًا لليمين لردها إلى الوسط.",
+"मिनिक बाईं ओर भेजता है। बीच में लौटाने के लिए टैप करके दाएँ तिरछा स्वाइप करें।",
+"Minik speelt naar links. Tik en veeg schuin naar rechts om naar het midden terug te slaan."
+],
+[
+"Minik sends the ball toward your left. Swipe diagonally left to return to that same side.",
+"Minik envía a tu izquierda. Desliza en diagonal a la izquierda para devolver al mismo lado.",
+"يرسل مينيك إلى يسارك. اسحب قطريًا لليسار لردها إلى الجانب نفسه.",
+"मिनिक बाईं ओर भेजता है। उसी ओर लौटाने के लिए बाएँ तिरछा स्वाइप करें।",
+"Minik speelt naar links. Veeg schuin naar links om naar dezelfde kant terug te slaan."
+],
+[
+"Minik sends the ball toward your right. Swipe diagonally left to send it across to the opposite side.",
+"Minik envía a tu derecha. Desliza en diagonal a la izquierda para cruzar al lado opuesto.",
+"يرسل مينيك إلى يمينك. اسحب قطريًا لليسار لإرسالها إلى الجانب المقابل.",
+"मिनिक दाईं ओर भेजता है। दूसरी ओर भेजने के लिए बाएँ तिरछा स्वाइप करें।",
+"Minik speelt naar rechts. Veeg schuin naar links om naar de overkant te spelen."
+],
+[
+"Move into place. We time the hit!",
+"¡Colócate y golpeamos a tiempo!",
+"تحرّك للمكان الصحيح، وسنضرب في الوقت المناسب!",
+"सही जगह पहुँचें। शॉट का समय हम सँभालेंगे!",
+"Ga goed staan. Wij timen de slag!"
+],
+[
+"Move your paddle to the ball on your side. It hits automatically!",
+"Acerca tu pala a la pelota de tu lado. ¡Golpea sola!",
+"حرّك مضربك إلى الكرة في جانبك. يضرب تلقائيًا!",
+"अपने हिस्से में पैडल गेंद तक ले जाएँ। वह अपने-आप मारेगा!",
+"Zet je batje bij de bal aan jouw kant. Het slaat automatisch!"
+],
+[
+"Beginner is the default. Drag your paddle into the incoming ball’s path on your side. You can position it early and lift your finger: it stays there and hits at the right time. Move left to meet this ball.",
+"Principiante es el nivel inicial. Arrastra la pala al recorrido de la pelota en tu lado. Puedes colocarla antes y soltar: se queda ahí y golpea a tiempo. Muévela a la izquierda para esta pelota.",
+"المبتدئ هو الافتراضي. اسحب المضرب إلى مسار الكرة في جانبك. يمكنك وضعه مبكرًا ورفع إصبعك؛ يبقى مكانه ويضرب في الوقت المناسب. تحرّك يسارًا لهذه الكرة.",
+"शुरुआती स्तर पहले से चुना है। पैडल को अपने हिस्से में आती गेंद के रास्ते में खींचें। पहले रखकर उँगली उठा सकते हैं: वह वहीं रहकर सही समय पर मारेगा। इस गेंद के लिए बाईं ओर जाएँ।",
+"Beginner staat standaard aan. Sleep je batje in de baan van de bal aan jouw kant. Je mag het vroeg neerzetten en loslaten: het blijft staan en slaat op tijd. Beweeg naar links voor deze bal."
+],
+[
+"Move your paddle into the incoming ball’s path on your side. You can get there early and lift your finger; no tap timing is needed.",
+"Coloca la pala en el recorrido de la pelota. Puedes llegar antes y soltar; no hace falta tocar en el momento exacto.",
+"ضع مضربك في مسار الكرة عندك. يمكنك الوصول مبكرًا ورفع إصبعك؛ لا تحتاج لتوقيت اللمسة.",
+"पैडल को अपने हिस्से में गेंद के रास्ते में रखें। पहले पहुँचकर उँगली उठा सकते हैं; सही समय पर टैप ज़रूरी नहीं।",
+"Zet je batje in de baan van de bal. Je mag vroeg klaarstaan en loslaten; precies op tijd tikken hoeft niet."
+],
+[
+"Great positioning! Your paddle hit automatically and returned the ball to Minik.",
+"¡Bien colocado! La pala golpeó sola y devolvió la pelota a Minik.",
+"تموضع رائع! ضرب مضربك تلقائيًا وأعاد الكرة إلى مينيك.",
+"बहुत अच्छी जगह! पैडल ने अपने-आप गेंद मिनिक को लौटा दी।",
+"Goed neergezet! Je batje sloeg automatisch terug naar Minik."
+],
+[
+"Three or four player table tennis court. Your arm of the table is at the bottom. Send the ball to any other player.",
+"Mesa para tres o cuatro jugadores. Tu brazo de la mesa está abajo. Envía la pelota a cualquier rival.",
+"طاولة لثلاثة أو أربعة لاعبين. ذراعك في الأسفل. أرسل الكرة إلى أي لاعب آخر.",
+"तीन या चार खिलाड़ियों की मेज़। आपका हिस्सा नीचे है। गेंद किसी भी दूसरे खिलाड़ी को भेजें।",
+"Tafeltennistafel voor drie of vier spelers. Jouw arm van de tafel is onderaan. Speel naar een andere speler."
+],
+[
+"Previous player",
+"Jugador anterior",
+"اللاعب السابق",
+"पिछला खिलाड़ी",
+"Vorige speler"
+],
+[
+"Next player",
+"Siguiente jugador",
+"اللاعب التالي",
+"अगला खिलाड़ी",
+"Volgende speler"
+],
+[
+"Power {0}  ·  Forehand {1}  ·  Backhand {2}  ·  Serve {3}",
+"Potencia {0} · Derecha {1} · Revés {2} · Saque {3}",
+"القوة {0} · أمامية {1} · خلفية {2} · إرسال {3}",
+"ताकत {0} · फ़ोरहैंड {1} · बैकहैंड {2} · सर्व {3}",
+"Kracht {0} · Forehand {1} · Backhand {2} · Service {3}"
+],
+[
+"Opponent:",
+"Rival:",
+"المنافس:",
+"प्रतिद्वंद्वी:",
+"Tegenstander:"
+],
+[
+"For parents / adults",
+"Para padres y adultos",
+"للآباء والبالغين",
+"माता-पिता और बड़ों के लिए",
+"Voor ouders en volwassenen"
+],
+[
+"Ask an adult to continue. Enter the digits in this order:",
+"Pide ayuda a un adulto. Escribe las cifras en este orden:",
+"اطلب المساعدة من شخص بالغ. أدخل الأرقام بهذا الترتيب:",
+"आगे बढ़ने के लिए किसी बड़े से कहें। अंक इस क्रम में लिखें:",
+"Vraag een volwassene om verder te gaan. Vul de cijfers in deze volgorde in:"
+],
+[
+"Four digits",
+"Cuatro cifras",
+"أربعة أرقام",
+"चार अंक",
+"Vier cijfers"
+],
+[
+"Please ask an adult to try again.",
+"Pide a un adulto que lo intente de nuevo.",
+"اطلب من شخص بالغ المحاولة مجددًا.",
+"किसी बड़े से फिर कोशिश करने को कहें।",
+"Vraag een volwassene om het opnieuw te proberen."
+],
+[
+"One purchase removes ads throughout this app, including all its games.",
+"Una compra elimina los anuncios de toda la app, incluidos todos sus juegos.",
+"عملية شراء واحدة تزيل الإعلانات من التطبيق وكل ألعابه.",
+"एक खरीद से इस ऐप और इसके सभी खेलों के विज्ञापन हटते हैं।",
+"Eén aankoop verwijdert advertenties uit de hele app, inclusief alle spellen."
+],
+[
+"Remove ads · one-time purchase",
+"Quitar anuncios · compra única",
+"إزالة الإعلانات · شراء مرة واحدة",
+"विज्ञापन हटाएँ · एक बार की खरीद",
+"Advertenties verwijderen · eenmalige aankoop"
+],
+[
+"Already paid? Restore using the same Google Play account. You will not be charged again.",
+"¿Ya pagaste? Restaura con la misma cuenta de Google Play. No se te cobrará de nuevo.",
+"دفعت سابقًا؟ استعد الشراء بالحساب نفسه في Google Play. لن تُحاسب مرة أخرى.",
+"पहले खरीदा है? उसी Google Play खाते से बहाल करें। फिर भुगतान नहीं करना होगा।",
+"Al betaald? Herstel met hetzelfde Google Play-account. Je betaalt niet opnieuw."
+],
+[
+"Privacy choices",
+"Opciones de privacidad",
+"خيارات الخصوصية",
+"निजता के विकल्प",
+"Privacykeuzes"
+],
+[
+"Privacy policy",
+"Política de privacidad",
+"سياسة الخصوصية",
+"निजता नीति",
+"Privacybeleid"
+],
+[
+"Test build: any ads shown are Google test ads. Purchases and codes require the separate store/server setup.",
+"Versión de prueba: solo anuncios de prueba de Google. Las compras y los códigos requieren configurar la tienda y el servidor.",
+"نسخة اختبار: الإعلانات من Google للاختبار فقط. المشتريات والأكواد تتطلب إعداد المتجر والخادم.",
+"परीक्षण संस्करण: दिखने वाले विज्ञापन Google के परीक्षण विज्ञापन हैं। खरीद और कोड के लिए स्टोर और सर्वर सेटअप चाहिए।",
+"Testversie: alleen testadvertenties van Google. Aankopen en codes vereisen aparte winkel- en serverinstellingen."
+],
+[
+"Payment is pending. Ads will be removed after approval.",
+"Pago pendiente. Los anuncios se quitarán tras la aprobación.",
+"الدفع قيد الانتظار. ستُزال الإعلانات بعد الموافقة.",
+"भुगतान लंबित है। मंज़ूरी के बाद विज्ञापन हटेंगे।",
+"Betaling in behandeling. Na goedkeuring verdwijnen de advertenties."
+],
+[
+"Checking your purchase…",
+"Comprobando la compra…",
+"جارٍ التحقق من الشراء…",
+"आपकी खरीद जाँच रहे हैं…",
+"Je aankoop controleren…"
+],
+[
+"No previous purchase was found for this Google Play account.",
+"No se encontró una compra anterior en esta cuenta de Google Play.",
+"لم يُعثر على شراء سابق بهذا الحساب في Google Play.",
+"इस Google Play खाते में पुरानी खरीद नहीं मिली।",
+"Geen eerdere aankoop gevonden voor dit Google Play-account."
+],
+[
+"Purchases will be available when this app is set up in Google Play.",
+"Las compras estarán disponibles cuando la app esté configurada en Google Play.",
+"ستتوفر المشتريات بعد إعداد التطبيق في Google Play.",
+"Google Play में ऐप सेट होने पर खरीद उपलब्ध होगी।",
+"Aankopen worden beschikbaar zodra deze app in Google Play is ingesteld."
+],
+[
+"Could not check your purchase. Please try again when connected.",
+"No se pudo comprobar la compra. Inténtalo de nuevo con conexión.",
+"تعذر التحقق من الشراء. حاول مجددًا عند الاتصال.",
+"खरीद नहीं जाँची जा सकी। इंटरनेट मिलने पर फिर कोशिश करें।",
+"Je aankoop kon niet worden gecontroleerd. Probeer het opnieuw met internet."
+],
+[
+"Connecting to Google Play…",
+"Conectando con Google Play…",
+"جارٍ الاتصال بـ Google Play…",
+"Google Play से जुड़ रहे हैं…",
+"Verbinden met Google Play…"
+],
+[
+"Purchase cancelled. You can keep playing.",
+"Compra cancelada. Puedes seguir jugando.",
+"أُلغي الشراء. يمكنك مواصلة اللعب.",
+"खरीद रद्द हुई। खेल जारी रख सकते हैं।",
+"Aankoop geannuleerd. Je kunt blijven spelen."
+],
+[
+"Code",
+"Código",
+"الرمز",
+"कोड",
+"Code"
+],
+[
+"Code redemption is not available in this build yet.",
+"Los códigos aún no se pueden canjear en esta versión.",
+"استبدال الأكواد غير متاح في هذه النسخة بعد.",
+"इस संस्करण में अभी कोड इस्तेमाल नहीं हो सकते।",
+"Codes inwisselen is nog niet beschikbaar in deze versie."
+],
+[
+"This code is invalid, expired, or belongs to another app.",
+"El código no es válido, ha caducado o pertenece a otra app.",
+"الرمز غير صالح أو منتهي الصلاحية أو لتطبيق آخر.",
+"यह कोड गलत है, पुराना हो गया है या किसी दूसरे ऐप का है।",
+"Deze code is ongeldig, verlopen of voor een andere app."
+],
+[
+"Too many attempts. Please try later.",
+"Demasiados intentos. Prueba más tarde.",
+"محاولات كثيرة. حاول لاحقًا.",
+"बहुत प्रयास हुए। बाद में कोशिश करें।",
+"Te veel pogingen. Probeer het later opnieuw."
+],
+[
+"Could not connect. Please try again.",
+"No se ha podido conectar. Inténtalo de nuevo.",
+"تعذّر الاتصال. حاول مجددًا.",
+"कनेक्ट नहीं हो पाया। फिर कोशिश करें।",
+"Verbinden is niet gelukt. Probeer het opnieuw."
+],
+[
+"zero",
+"cero",
+"صفر",
+"शून्य",
+"nul"
+],
+[
+"one",
+"uno",
+"واحد",
+"एक",
+"één"
+],
+[
+"two",
+"dos",
+"اثنان",
+"दो",
+"twee"
+],
+[
+"three",
+"tres",
+"ثلاثة",
+"तीन",
+"drie"
+],
+[
+"four",
+"cuatro",
+"أربعة",
+"चार",
+"vier"
+],
+[
+"five",
+"cinco",
+"خمسة",
+"पाँच",
+"vijf"
+],
+[
+"six",
+"seis",
+"ستة",
+"छह",
+"zes"
+],
+[
+"seven",
+"siete",
+"سبعة",
+"सात",
+"zeven"
+],
+[
+"eight",
+"ocho",
+"ثمانية",
+"आठ",
+"acht"
+],
+[
+"nine",
+"nueve",
+"تسعة",
+"नौ",
+"negen"
+],
+[
+"Match finished",
+"Partida terminada",
+"انتهت المباراة",
+"मैच समाप्त",
+"Wedstrijd afgelopen"
+],
+[
+"You won the match!",
+"¡Ganaste la partida!",
+"فزت بالمباراة!",
+"आप मैच जीत गए!",
+"Je hebt de wedstrijd gewonnen!"
+],
+[
+"{0} won the match",
+"{0} ganó la partida",
+"فاز {0} بالمباراة",
+"{0} ने मैच जीता",
+"{0} heeft de wedstrijd gewonnen"
+],
+[
+"You won the tournament!",
+"¡Ganaste el torneo!",
+"فزت بالبطولة!",
+"आप टूर्नामेंट जीत गए!",
+"Je hebt het toernooi gewonnen!"
+],
+[
+"Tournament finished",
+"Torneo terminado",
+"انتهت البطولة",
+"टूर्नामेंट समाप्त",
+"Toernooi afgelopen"
+],
+[
+"You won the final duel!",
+"¡Ganaste el duelo final!",
+"فزت بالمواجهة النهائية!",
+"आप अंतिम मुकाबला जीत गए!",
+"Je hebt het eindduel gewonnen!"
+],
+[
+"You lost the final duel.",
+"Perdiste el duelo final.",
+"خسرت المواجهة النهائية.",
+"आप अंतिम मुकाबला हार गए।",
+"Je hebt het eindduel verloren."
+],
+[
+"You won this match!",
+"¡Ganaste esta partida!",
+"فزت بهذه المباراة!",
+"आप यह मैच जीत गए!",
+"Je hebt deze wedstrijd gewonnen!"
+],
+[
+"the winner takes the game",
+"quien gane se lleva la partida",
+"الفائز يحسم اللعبة",
+"विजेता खेल जीतेगा",
+"de winnaar wint het spel"
+],
+[
+"the winner takes first place at the table",
+"quien gane queda primero en la mesa",
+"الفائز يتصدر الطاولة",
+"विजेता मेज़ पर पहला स्थान पाएगा",
+"de winnaar eindigt als eerste aan de tafel"
+],
+[
+"the winner takes the tournament",
+"quien gane se lleva el torneo",
+"الفائز يحرز البطولة",
+"विजेता टूर्नामेंट जीतेगा",
+"de winnaar wint het toernooi"
+],
+[
+"the winner advances",
+"quien gane pasa de ronda",
+"الفائز يتأهل",
+"विजेता आगे बढ़ेगा",
+"de winnaar gaat door"
+],
+[
+"You are in the final duel:",
+"Estás en el duelo final:",
+"أنت في المواجهة النهائية:",
+"आप अंतिम मुकाबले में हैं:",
+"Je staat in het eindduel:"
+],
+[
+"Waiting for the final duel.",
+"Esperando el duelo final.",
+"بانتظار المواجهة النهائية.",
+"अंतिम मुकाबले का इंतज़ार।",
+"Wachten op het eindduel."
+],
+[
+"Tournament finished. You placed {0}.",
+"Torneo terminado. Quedaste en el puesto {0}.",
+"انتهت البطولة. ترتيبك {0}.",
+"टूर्नामेंट समाप्त। आपका स्थान {0} है।",
+"Toernooi afgelopen. Je eindigde op plaats {0}."
+],
+[
+"Final",
+"Final",
+"النهائي",
+"फ़ाइनल",
+"Finale"
+],
+[
+"Semifinal tables",
+"Mesas de semifinales",
+"طاولات نصف النهائي",
+"सेमीफ़ाइनल की मेज़ें",
+"Halvefinaletafels"
+],
+[
+"Round of {0}",
+"Ronda de {0}",
+"دور الـ {0}",
+"{0} का दौर",
+"Ronde van {0}"
+],
+[
+"Knockout",
+"Eliminación directa",
+"خروج المغلوب",
+"नॉकआउट",
+"Afvaltoernooi"
+],
+[
+"Round robin",
+"Todos contra todos",
+"دوري من دور واحد",
+"सबका सबसे मुकाबला",
+"Iedereen tegen iedereen"
+],
+[
+"Semifinals",
+"Semifinales",
+"نصف النهائي",
+"सेमीफ़ाइनल",
+"Halve finales"
+],
+[
+"Quarterfinals",
+"Cuartos de final",
+"ربع النهائي",
+"क्वार्टरफ़ाइनल",
+"Kwartfinales"
+],
+[
+"The winner of every match advances.",
+"Quien gana cada partida pasa de ronda.",
+"الفائز بكل مباراة يتأهل.",
+"हर मैच का विजेता आगे बढ़ता है।",
+"De winnaar van elke wedstrijd gaat door."
+],
+[
+"The last two left at the final table play the final duel for the tournament.",
+"Los dos últimos de la mesa final disputan el duelo por el torneo.",
+"آخر لاعبين في الطاولة النهائية يخوضان مواجهة حسم البطولة.",
+"अंतिम मेज़ पर बचे दो खिलाड़ी टूर्नामेंट का आख़िरी मुकाबला खेलते हैं।",
+"De laatste twee aan de finaletafel spelen het eindduel om het toernooi."
+],
+[
+"The winner of the final table takes the tournament.",
+"Quien gana la mesa final gana el torneo.",
+"الفائز بالطاولة النهائية يحرز البطولة.",
+"अंतिम मेज़ का विजेता टूर्नामेंट जीतता है।",
+"De winnaar van de finaletafel wint het toernooi."
+],
+[
+"The winner of the final takes the tournament.",
+"Quien gana la final gana el torneo.",
+"الفائز بالنهائي يحرز البطولة.",
+"फ़ाइनल का विजेता टूर्नामेंट जीतता है।",
+"De winnaar van de finale wint het toernooi."
+],
+[
+"At every table the last two left play a final duel; its winner advances.",
+"En cada mesa, los dos últimos disputan un duelo; quien gana avanza.",
+"آخر لاعبين في كل طاولة يتواجهان؛ والفائز يتأهل.",
+"हर मेज़ पर आख़िरी दो खिलाड़ी मुकाबला करते हैं; विजेता आगे बढ़ता है।",
+"Aan elke tafel spelen de laatste twee een eindduel; de winnaar gaat door."
+],
+[
+"The winner of every table advances.",
+"Quien gana cada mesa avanza.",
+"الفائز بكل طاولة يتأهل.",
+"हर मेज़ का विजेता आगे बढ़ता है।",
+"De winnaar van elke tafel gaat door."
+],
+[
+"The last two players left at every table advance.",
+"Los dos últimos de cada mesa avanzan.",
+"آخر لاعبين في كل طاولة يتأهلان.",
+"हर मेज़ पर बचे आख़िरी दो खिलाड़ी आगे बढ़ते हैं।",
+"De laatste twee spelers aan elke tafel gaan door."
+],
+[
+"The top two of every table advance; a tie for second place is settled by a one-point tie-break.",
+"Los dos primeros avanzan; un empate en el segundo puesto se decide a un punto.",
+"يتأهل أول لاعبين؛ والتعادل على المركز الثاني يُحسم بنقطة واحدة.",
+"हर मेज़ के शीर्ष दो आगे बढ़ते हैं; दूसरे स्थान की बराबरी एक अंक से तय होती है।",
+"De beste twee gaan door; een gedeelde tweede plaats wordt met één punt beslist."
+],
+[
+"the final duel's winner advances",
+"quien gana el duelo final avanza",
+"الفائز بالمواجهة النهائية يتأهل",
+"अंतिम मुकाबले का विजेता आगे बढ़ता है",
+"de winnaar van het eindduel gaat door"
+],
+[
+"the last two left advance",
+"los dos últimos avanzan",
+"آخر لاعبين يتأهلان",
+"आख़िरी दो आगे बढ़ते हैं",
+"de laatste twee gaan door"
+],
+[
+"the top two advance",
+"los dos primeros avanzan",
+"أول لاعبين يتأهلان",
+"शीर्ष दो आगे बढ़ते हैं",
+"de beste twee gaan door"
+],
+[
+"Tie-break for the last place",
+"Desempate por la última plaza",
+"كسر التعادل على آخر مقعد",
+"आख़िरी जगह के लिए टाई-ब्रेक",
+"Beslissing om de laatste plek"
+],
+[
+"Advance without playing",
+"Pasa sin jugar",
+"تأهل دون لعب",
+"बिना खेले आगे बढ़ें",
+"Door zonder te spelen"
+],
+[
+"{0}: the first point decides who advances.",
+"{0}: el primer punto decide quién avanza.",
+"{0}: أول نقطة تحسم التأهل.",
+"{0}: पहला अंक तय करेगा कौन आगे बढ़ेगा।",
+"{0}: het eerste punt bepaalt wie doorgaat."
+],
+[
+"You have been eliminated. You can follow the remaining rounds.",
+"Has quedado fuera. Puedes seguir las rondas restantes.",
+"خرجت من المنافسة. يمكنك متابعة الأدوار المتبقية.",
+"आप बाहर हो गए। बाक़ी दौर देख सकते हैं।",
+"Je bent uitgeschakeld. Je kunt de volgende rondes volgen."
+],
+[
+"Tournament finished. Winner: {0}",
+"Torneo terminado. Ganador: {0}",
+"انتهت البطولة. الفائز: {0}",
+"टूर्नामेंट समाप्त। विजेता: {0}",
+"Toernooi afgelopen. Winnaar: {0}"
+],
+[
+"Waiting for the other tables.",
+"Esperando a las otras mesas.",
+"بانتظار الطاولات الأخرى.",
+"दूसरी मेज़ों का इंतज़ार।",
+"Wachten op de andere tafels."
+],
+[
+"Waiting for the other matches.",
+"Esperando a las otras partidas.",
+"بانتظار المباريات الأخرى.",
+"दूसरे मैचों का इंतज़ार।",
+"Wachten op de andere wedstrijden."
+],
+[
+"Your table advances without playing.",
+"Tu mesa avanza sin jugar.",
+"طاولتك تتأهل دون لعب.",
+"आपकी मेज़ बिना खेले आगे बढ़ेगी।",
+"Jouw tafel gaat door zonder te spelen."
+],
+[
+"You have a bye to the next round.",
+"Pasas a la siguiente ronda sin jugar.",
+"تتأهل للدور التالي دون مباراة.",
+"आप बिना खेले अगले दौर में जाएँगे।",
+"Je gaat zonder wedstrijd door naar de volgende ronde."
+],
+[
+"Your match this round",
+"Tu partida de esta ronda",
+"مباراتك في هذا الدور",
+"इस दौर में आपका मैच",
+"Jouw wedstrijd in deze ronde"
+],
+[
+"Your table this round:",
+"Tu mesa de esta ronda:",
+"طاولتك في هذا الدور:",
+"इस दौर में आपकी मेज़:",
+"Jouw tafel in deze ronde:"
+],
+[
+"Awaiting the next draw",
+"Esperando el próximo sorteo",
+"بانتظار القرعة التالية",
+"अगले ड्रॉ का इंतज़ार",
+"Wachten op de volgende loting"
+],
+[
+"Bye — advances",
+"Pasa sin jugar",
+"يتأهل دون مباراة",
+"बिना खेले आगे",
+"Vrijgesteld — gaat door"
+],
+[
+"Walkover",
+"Victoria por ausencia",
+"فوز لغياب المنافس",
+"प्रतिद्वंद्वी की अनुपस्थिति से जीत",
+"Gewonnen zonder tegenstander"
+],
+[
+"Final duel: {0}",
+"Duelo final: {0}",
+"المواجهة النهائية: {0}",
+"अंतिम मुकाबला: {0}",
+"Eindduel: {0}"
+],
+[
+"🏆 Winner: {0}",
+"🏆 Ganador: {0}",
+"🏆 الفائز: {0}",
+"🏆 विजेता: {0}",
+"🏆 Winnaar: {0}"
+],
+[
+"missed at 0",
+"falló estando a 0",
+"أخفق عند صفر",
+"शून्य पर चूके",
+"gemist bij 0"
+],
+[
+"error at 0",
+"error estando a 0",
+"خطأ عند صفر",
+"शून्य पर गलती",
+"fout bij 0"
+],
+[
+"(already at 0 — no change)",
+"(ya estaba a 0: sin cambios)",
+"(عند صفر بالفعل — بلا تغيير)",
+"(पहले से शून्य — बदलाव नहीं)",
+"(al op 0 — geen verandering)"
+],
+[
+"stays 0",
+"sigue en 0",
+"يبقى صفرًا",
+"शून्य पर रहेंगे",
+"blijft 0"
+],
+[
+"{0} dropped below zero and is out! ({1})",
+"¡{0} bajó de cero y queda fuera! ({1})",
+"انخفض {0} تحت الصفر وخرج! ({1})",
+"{0} शून्य से नीचे गए और बाहर हो गए! ({1})",
+"{0} zakte onder nul en ligt eruit! ({1})"
+],
+[
+"{0} reached {1}! The player with the fewest points is out",
+"¡{0} llegó a {1}! Queda fuera quien tenga menos puntos",
+"وصل {0} إلى {1}! يخرج صاحب أقل النقاط",
+"{0} ने {1} पूरे किए! सबसे कम अंक वाला बाहर",
+"{0} haalde {1}! De speler met de minste punten valt af"
+],
+[
+"{0} hit the net",
+"{0} golpeó la red",
+"ضرب {0} الشبكة",
+"{0} की गेंद जाल में लगी",
+"{0} raakte het net"
+],
+[
+"{0}: the ball landed out",
+"{0}: la pelota cayó fuera",
+"{0}: الكرة خارج الطاولة",
+"{0}: गेंद बाहर गिरी",
+"{0}: de bal ging uit"
+],
+[
+"{0}: the ball landed on their own side",
+"{0}: la pelota cayó en su propio lado",
+"{0}: هبطت الكرة في جانبه",
+"{0}: गेंद अपने ही हिस्से में गिरी",
+"{0}: de bal landde op de eigen kant"
+],
+[
+"{0}: the serve was not legal",
+"{0}: saque no válido",
+"{0}: إرسال غير صحيح",
+"{0}: सर्व मान्य नहीं था",
+"{0}: ongeldige service"
+],
+[
+"{0} missed: {1} +1, {2} {3}",
+"{0} falló: {1} +1, {2} {3}",
+"أخفق {0}: {1} +1، {2} {3}",
+"{0} चूके: {1} +1, {2} {3}",
+"{0} miste: {1} +1, {2} {3}"
+],
+[
+"Cat",
+"Gato",
+"قطة",
+"बिल्ली",
+"Kat"
+],
+[
+"Fox",
+"Zorro",
+"ثعلب",
+"लोमड़ी",
+"Vos"
+],
+[
+"Panda",
+"Panda",
+"باندا",
+"पांडा",
+"Panda"
+],
+[
+"Frog",
+"Rana",
+"ضفدع",
+"मेंढक",
+"Kikker"
+],
+[
+"Tiger",
+"Tigre",
+"نمر",
+"बाघ",
+"Tijger"
+],
+[
+"Penguin",
+"Pingüino",
+"بطريق",
+"पेंगुइन",
+"Pinguïn"
+],
+[
+"house player",
+"personaje",
+"شخصية اللعبة",
+"गेम का खिलाड़ी",
+"huisgenoot"
+],
+[
+"offline",
+"sin conexión",
+"غير متصل",
+"ऑफ़लाइन",
+"offline"
+],
+[
+"Left",
+"Salió",
+"غادر",
+"छोड़ दिया",
+"Vertrokken"
+],
+[
+"you",
+"tú",
+"أنت",
+"आप",
+"jij"
+],
+[
+"Questions and answers were created with AI. AI can make mistakes.",
+"Las preguntas y respuestas se crearon con IA. La IA puede equivocarse.",
+"أُعدّت الأسئلة والإجابات بمساعدة الذكاء الاصطناعي، وقد يخطئ.",
+"सवाल और जवाब AI की मदद से बनाए गए हैं। AI से गलतियाँ हो सकती हैं।",
+"Vragen en antwoorden zijn met AI gemaakt. AI kan fouten maken."
+],
+[
+"Think. Move. Make a splash.",
+"Piensa. Muévete. ¡Salpica!",
+"فكّر. تحرّك. انثر الألوان!",
+"सोचो। चलो। रंग बरसाओ!",
+"Denk. Beweeg. Spetter erop los!"
+],
+[
+"Choose what feels right. Your choices are saved.",
+"Elige lo que te resulte cómodo. Tus preferencias se guardan.",
+"اختر ما يناسبك. تُحفظ اختياراتك.",
+"जो आसान लगे, वह चुनें। आपकी पसंद सहेजी जाएगी।",
+"Kies wat fijn speelt. Je keuzes worden opgeslagen."
+],
+[
+"Easy · tap a balloon to walk and collect",
+"Fácil · toca un globo para acercarte y recogerlo",
+"سهل · المس بالونًا للمشي إليه والتقاطه",
+"आसान · गुब्बारे पर टैप करें, चलकर उठाएँ",
+"Makkelijk · tik op een ballon om hem op te halen"
+],
+[
+"Standard · move, then tap to collect",
+"Estándar · acércate y toca para recoger",
+"عادي · اقترب ثم المس للالتقاط",
+"सामान्य · पास जाएँ, फिर टैप करके उठाएँ",
+"Standaard · loop erheen en tik om op te pakken"
+],
+[
+"Easy · tap an opponent to throw",
+"Fácil · toca un rival para lanzar",
+"سهل · المس منافسًا للرمي",
+"आसान · प्रतिद्वंद्वी पर टैप करके फेंकें",
+"Makkelijk · tik op een tegenstander om te gooien"
+],
+[
+"Standard · aim and tap the arc",
+"Estándar · apunta y toca el arco",
+"عادي · صوّب والمس القوس",
+"सामान्य · निशाना लगाकर चाप पर टैप करें",
+"Standaard · richt en tik op de boog"
+],
+[
+"Andromeda · low gravity",
+"Andrómeda · gravedad baja",
+"أندروميدا · جاذبية منخفضة",
+"एंड्रोमेडा · कम गुरुत्वाकर्षण",
+"Andromeda · lage zwaartekracht"
+],
+[
+"Andromeda: higher jumps, floating steps and rising throws.",
+"Andrómeda: saltos más altos, pasos flotantes y lanzamientos que se elevan.",
+"أندروميدا: قفزات أعلى، وخطوات عائمة، ورميات ترتفع أكثر.",
+"एंड्रोमेडा: ऊँची छलाँगें, तैरते कदम और ऊपर उठती गेंदें।",
+"Andromeda: hogere sprongen, zwevende stappen en stijgende worpen."
+],
+[
+"Tap a subject or drag it between lists. Keep at least one.",
+"Toca una materia o arrástrala entre listas. Deja al menos una elegida.",
+"المس موضوعًا أو اسحبه بين القائمتين. أبقِ موضوعًا واحدًا على الأقل.",
+"विषय पर टैप करें या सूचियों के बीच खींचें। कम से कम एक चुनें।",
+"Tik op een onderwerp of sleep het tussen de lijsten. Kies er minstens één."
+],
+[
+"Choose at least one subject.",
+"Elige al menos una materia.",
+"اختر موضوعًا واحدًا على الأقل.",
+"कम से कम एक विषय चुनें।",
+"Kies minstens één onderwerp."
+],
+[
+"Balloon ready. Drag the arc to aim; tap the arc to throw.",
+"Globo listo. Arrastra el arco para apuntar y tócalo para lanzar.",
+"البالون جاهز. اسحب القوس للتصويب ثم المسه للرمي.",
+"गुब्बारा तैयार है। चाप खींचकर निशाना लगाएँ, फिर उस पर टैप करके फेंकें।",
+"Ballon klaar. Sleep de boog om te richten en tik erop om te gooien."
+],
+[
+"Balloon ready. Tap an opponent to aim and throw.",
+"Globo listo. Toca un rival para apuntar y lanzar.",
+"البالون جاهز. المس منافسًا للتصويب والرمي.",
+"गुब्बारा तैयार है। प्रतिद्वंद्वी पर टैप करके निशाना लगाएँ और फेंकें।",
+"Ballon klaar. Tik op een tegenstander om te richten en te gooien."
+],
+[
+"Choose how to walk. Easy: tap an answer balloon to walk and collect it. Standard: walk first, then tap the nearby balloon. Both let you tap a place to walk there.",
+"Elige cómo moverte. Fácil: toca un globo para ir a recogerlo. Estándar: acércate primero y luego tócalo. En ambos puedes tocar un lugar para caminar hasta él.",
+"اختر طريقة المشي. السهل: المس بالون إجابة للمشي إليه والتقاطه. العادي: اقترب أولًا ثم المس البالون. في الحالتين يمكنك لمس مكان للمشي إليه.",
+"चलने का तरीका चुनें। आसान: गुब्बारे पर टैप करें, किरदार जाकर उठाएगा। सामान्य: पहले पास जाएँ, फिर टैप करें। दोनों में जगह पर टैप करके वहाँ जा सकते हैं।",
+"Kies hoe je loopt. Makkelijk: tik op een antwoordballon om hem op te halen. Standaard: loop eerst dichterbij en tik dan op de ballon. In beide modi kun je een plek aantikken om erheen te lopen."
+],
+[
+"Choose how to throw. Easy: tap an opponent while holding a balloon. Standard: drag the arc to aim, then tap the arc. You can try both.",
+"Elige cómo lanzar. Fácil: con un globo en la mano, toca un rival. Estándar: arrastra el arco para apuntar y luego tócalo. Puedes probar ambos.",
+"اختر طريقة الرمي. السهل: المس منافسًا وأنت تحمل بالونًا. العادي: اسحب القوس للتصويب ثم المسه. يمكنك تجربة الطريقتين.",
+"फेंकने का तरीका चुनें। आसान: गुब्बारा लेकर प्रतिद्वंद्वी पर टैप करें। सामान्य: चाप खींचकर निशाना लगाएँ, फिर टैप करें। दोनों आज़मा सकते हैं।",
+"Kies hoe je gooit. Makkelijk: houd een ballon vast en tik op een tegenstander. Standaard: sleep de boog om te richten en tik erop. Probeer ze allebei."
+],
+[
+"Try Easy walking: solve the question and tap its balloon. Your character walks there and picks it up.",
+"Prueba el movimiento fácil: resuelve la pregunta y toca su globo. Tu personaje irá a recogerlo.",
+"جرّب المشي السهل: حلّ السؤال والمس بالونه. تمشي الشخصية إليه وتلتقطه.",
+"आसान चलना आज़माएँ: सवाल हल करें और उसके गुब्बारे पर टैप करें। किरदार जाकर उसे उठाएगा।",
+"Probeer makkelijk lopen: los de vraag op en tik op de ballon. Je personage loopt erheen en pakt hem op."
+],
+[
+"Try Standard walking: drag from your character, or tap a place. When a balloon glows nearby, tap it to collect.",
+"Prueba el movimiento estándar: arrastra desde tu personaje o toca un lugar. Cuando un globo cercano brille, tócalo para recogerlo.",
+"جرّب المشي العادي: اسحب من شخصيتك أو المس مكانًا. عندما يضيء بالون قريب، المسه لالتقاطه.",
+"सामान्य चलना आज़माएँ: किरदार से खींचें या जगह पर टैप करें। पास का गुब्बारा चमके तो उसे उठाने के लिए टैप करें।",
+"Probeer standaard lopen: sleep vanaf je personage of tik op een plek. Tik op een nabije oplichtende ballon om hem op te pakken."
+],
+[
+"Try Easy throwing: collect the correct balloon, then tap Minik. The balloon flies towards him; he can still dodge.",
+"Prueba el lanzamiento fácil: recoge el globo correcto y toca a Minik. El globo irá hacia él, pero aún puede esquivarlo.",
+"جرّب الرمي السهل: التقط البالون الصحيح ثم المس Minik. يطير البالون نحوه، لكنه يستطيع تفاديه.",
+"आसान फेंकना आज़माएँ: सही गुब्बारा उठाएँ, फिर Minik पर टैप करें। गुब्बारा उनकी ओर जाएगा, पर वे बच सकते हैं।",
+"Probeer makkelijk gooien: pak de juiste ballon en tik op Minik. De ballon vliegt naar hem toe, maar hij kan nog ontwijken."
+],
+[
+"Try Standard throwing: collect a correct balloon. Drag the arc to aim; your aim stays when you let go. Tap any part of the arc to throw.",
+"Prueba el lanzamiento estándar: recoge un globo correcto. Arrastra el arco para apuntar; la dirección se mantiene al soltar. Toca cualquier parte del arco para lanzar.",
+"جرّب الرمي العادي: التقط البالون الصحيح. اسحب القوس للتصويب؛ يبقى الاتجاه بعد رفع إصبعك. المس أي جزء من القوس للرمي.",
+"सामान्य फेंकना आज़माएँ: सही गुब्बारा उठाएँ। चाप खींचकर निशाना लगाएँ; छोड़ने पर दिशा बनी रहेगी। चाप पर कहीं भी टैप करके फेंकें।",
+"Probeer standaard gooien: pak een juiste ballon. Sleep de boog om te richten; je richting blijft staan. Tik ergens op de boog om te gooien."
+],
+[
+"Try a wrong answer on purpose. Throw it: it bursts in your hand and adds paint. The correct answer appears, then you can try again.",
+"Prueba una respuesta incorrecta a propósito. Lanza el globo: explotará en tu mano y te manchará. Aparecerá la respuesta correcta y podrás volver a intentarlo.",
+"جرّب إجابة خاطئة عمدًا. ارمِ البالون: ينفجر في يدك ويضيف لونًا عليك. تظهر الإجابة الصحيحة ثم يمكنك المحاولة مجددًا.",
+"जानबूझकर गलत जवाब चुनें। फेंकें: वह हाथ में फूटकर रंग लगाएगा। सही जवाब दिखेगा, फिर दोबारा कोशिश करें।",
+"Probeer expres een fout antwoord. Gooi: de ballon knapt in je hand en geeft verf. Het goede antwoord verschijnt, daarna kun je opnieuw proberen."
+],
+[
+"Tap your character once to jump over a low balloon. You can jump while holding a balloon. In Andromeda you stay airborne longer.",
+"Toca una vez tu personaje para saltar sobre un globo bajo. Puedes saltar con un globo en la mano. En Andrómeda estarás más tiempo en el aire.",
+"المس شخصيتك مرة للقفز فوق بالون منخفض. يمكنك القفز وأنت تحمل بالونًا. في أندروميدا تبقى في الهواء مدة أطول.",
+"नीचे आते गुब्बारे के ऊपर कूदने के लिए किरदार पर एक बार टैप करें। हाथ में गुब्बारा हो तब भी कूद सकते हैं। एंड्रोमेडा में अधिक देर हवा में रहेंगे।",
+"Tik eenmaal op je personage om over een lage ballon te springen. Ook met een ballon in je hand kun je springen. In Andromeda blijf je langer in de lucht."
+],
+[
+"Double-tap the arena to duck under a high balloon. Your character really becomes lower. One tap and two taps are different actions.",
+"Toca dos veces el escenario para agacharte bajo un globo alto. Tu personaje realmente baja. Un toque y dos toques son acciones distintas.",
+"المس الساحة مرتين للانحناء تحت بالون مرتفع. تنخفض شخصيتك فعلًا. اللمسة الواحدة واللمستان حركتان مختلفتان.",
+"ऊँचे गुब्बारे के नीचे झुकने के लिए मैदान पर दो बार टैप करें। किरदार सच में नीचे झुकेगा। एक टैप और दो टैप अलग क्रियाएँ हैं।",
+"Dubbeltik in de arena om onder een hoge ballon te bukken. Je personage wordt echt lager. Een tik en een dubbeltik doen iets anders."
+],
+[
+"Warm up with four correct answers, at your own pace. You may continue practicing as long as you like. No timer and no ads here.",
+"Calienta con cuatro respuestas correctas, a tu ritmo. Puedes seguir practicando cuanto quieras. Aquí no hay cronómetro ni anuncios.",
+"تدرّب بأربع إجابات صحيحة على راحتك. يمكنك مواصلة التدريب كما تشاء. لا مؤقّت ولا إعلانات هنا.",
+"अपनी गति से चार सही जवाब देकर अभ्यास करें। जितना चाहें अभ्यास जारी रखें। यहाँ न टाइमर है, न विज्ञापन।",
+"Warm op met vier goede antwoorden, op je eigen tempo. Oefen zo lang je wilt. Hier zijn geen timer of advertenties."
+],
+[
+"Ready to splash! Your control choices are saved in Settings. Finish learning to return to the main menu.",
+"¡Listo para salpicar! Tus controles se guardan en Ajustes. Termina el aprendizaje para volver al menú.",
+"جاهز للألوان! حُفظت خيارات التحكم في الإعدادات. أنهِ التدريب للعودة إلى القائمة الرئيسية.",
+"रंग बरसाने को तैयार! कंट्रोल की पसंद सेटिंग्स में सहेज दी गई है। मेन्यू पर लौटने के लिए सीखना पूरा करें।",
+"Klaar om te spetteren! Je bediening is opgeslagen bij Instellingen. Rond het oefenen af om terug te gaan naar het menu."
+],
+[
+"You chose a wrong answer. Try throwing it to see why it bursts. Then choose the correct answer.",
+"Elegiste una respuesta incorrecta. Prueba a lanzar para ver cómo explota. Después elige la correcta.",
+"اخترت إجابة خاطئة. جرّب رميها لترى لماذا تنفجر، ثم اختر الإجابة الصحيحة.",
+"आपने गलत जवाब चुना। फेंककर देखें कि वह क्यों फूटता है। फिर सही जवाब चुनें।",
+"Je koos een fout antwoord. Probeer te gooien om te zien waarom hij knapt. Kies daarna het goede antwoord."
+],
+[
+"Great! You picked the balloon with the correct answer. Tap Minik to throw. A wrong answer would burst in your hand.",
+"¡Muy bien! Has recogido el globo correcto. Toca a Minik para lanzar. Uno incorrecto explotaría en tu mano.",
+"رائع! التقطت بالون الإجابة الصحيحة. المس Minik للرمي. بالون الإجابة الخاطئة ينفجر في يدك.",
+"बढ़िया! आपने सही जवाब वाला गुब्बारा उठाया। फेंकने के लिए Minik पर टैप करें। गलत वाला हाथ में फूटता।",
+"Goed zo! Je hebt de juiste ballon. Tik op Minik om te gooien. Een fout antwoord zou in je hand knappen."
+],
+[
+"Great! You picked the balloon with the correct answer. Drag the aiming arc, then tap it to throw. A wrong answer would burst in your hand.",
+"¡Muy bien! Has recogido el globo correcto. Arrastra el arco y tócalo para lanzar. Uno incorrecto explotaría en tu mano.",
+"رائع! التقطت بالون الإجابة الصحيحة. اسحب قوس التصويب ثم المسه للرمي. بالون الإجابة الخاطئة ينفجر في يدك.",
+"बढ़िया! आपने सही गुब्बारा उठाया। निशाने का चाप खींचें, फिर टैप करके फेंकें। गलत वाला हाथ में फूटता।",
+"Goed zo! Je hebt de juiste ballon. Sleep de richtboog en tik erop om te gooien. Een fout antwoord zou in je hand knappen."
+],
+[
+"Previous question: {0} That wrong-answer balloon burst in your hand. Choose the right balloon, then throw!",
+"Pregunta anterior: {0} El globo incorrecto explotó en tu mano. ¡Elige el correcto y lanza!",
+"السؤال السابق: {0} انفجر بالون الإجابة الخاطئة في يدك. اختر الصحيح ثم ارمِ!",
+"पिछला सवाल: {0} गलत जवाब वाला गुब्बारा हाथ में फूटा। सही गुब्बारा चुनें, फिर फेंकें!",
+"Vorige vraag: {0} De foute ballon knapte in je hand. Kies de juiste ballon en gooi!"
+],
+[
+"The previous answer was wrong, so that balloon burst in your hand. {0} Choose a correct answer and your balloon will fly where you throw it.",
+"La respuesta anterior era incorrecta, por eso el globo explotó en tu mano. {0} Elige una correcta y el globo volará hacia donde lo lances.",
+"كانت الإجابة السابقة خاطئة، لذا انفجر البالون في يدك. {0} اختر إجابة صحيحة ليطير البالون حيث ترميه.",
+"पिछला जवाब गलत था, इसलिए गुब्बारा हाथ में फूटा। {0} सही जवाब चुनें तो गुब्बारा फेंकी हुई दिशा में जाएगा।",
+"Het vorige antwoord was fout, daarom knapte de ballon in je hand. {0} Kies een goed antwoord en de ballon vliegt waar je hem gooit."
+],
+[
+"Incoming balloon! Double-tap to duck, or move away.",
+"¡Viene un globo! Toca dos veces para agacharte o apártate.",
+"بالون قادم! المس مرتين للانحناء أو ابتعد.",
+"गुब्बारा आ रहा है! दो बार टैप करके झुकें या हट जाएँ।",
+"Een ballon komt eraan! Dubbeltik om te bukken of ga opzij."
+],
+[
+"Low balloon! Tap your character to jump, or dodge.",
+"¡Globo bajo! Toca tu personaje para saltar o esquívalo.",
+"بالون منخفض! المس شخصيتك للقفز أو تفادَه.",
+"नीचा गुब्बारा! कूदने के लिए किरदार पर टैप करें या बचें।",
+"Lage ballon! Tik op je personage om te springen of ontwijk."
+],
+[
+"Nice jump! You can still aim and throw in the air.",
+"¡Buen salto! También puedes apuntar y lanzar en el aire.",
+"قفزة جميلة! يمكنك التصويب والرمي في الهواء أيضًا.",
+"अच्छी छलाँग! हवा में भी निशाना लगाकर फेंक सकते हैं।",
+"Mooie sprong! In de lucht kun je nog steeds richten en gooien."
+],
+[
+"On your way! Watch for incoming balloons.",
+"¡En marcha! Vigila los globos que vienen.",
+"في الطريق! انتبه للبالونات القادمة.",
+"चल पड़े! आते हुए गुब्बारों पर नज़र रखें।",
+"Daar ga je! Let op aankomende ballonnen."
+],
+[
+"Solve your question. Tap a balloon to walk over and collect it.",
+"Resuelve tu pregunta. Toca un globo para ir a recogerlo.",
+"حلّ سؤالك. المس بالونًا للمشي إليه والتقاطه.",
+"सवाल हल करें। गुब्बारे पर टैप करके चलकर उठाएँ।",
+"Los je vraag op. Tik op een ballon om hem op te halen."
+],
+[
+"Tap a place or drag your character. Tap a nearby glowing balloon.",
+"Toca un lugar o arrastra tu personaje. Toca un globo cercano que brille.",
+"المس مكانًا أو اسحب شخصيتك. المس بالونًا مضيئًا قريبًا.",
+"जगह पर टैप करें या किरदार खींचें। पास के चमकते गुब्बारे पर टैप करें।",
+"Tik op een plek of sleep je personage. Tik op een nabije oplichtende ballon."
+],
+[
+"Your answer still counts when a throw misses.",
+"Tu respuesta cuenta aunque el lanzamiento falle.",
+"تُحتسب إجابتك حتى لو أخطأت الرمية.",
+"निशाना चूकने पर भी आपका जवाब गिना जाता है।",
+"Je antwoord telt ook als je worp mist."
+],
+[
+"Team scores count hits. Individual scores also include wrong-answer penalties.",
+"El equipo suma por impactos. La puntuación individual también incluye penalizaciones por respuestas incorrectas.",
+"نقاط الفريق تحتسب الإصابات. النقاط الفردية تشمل أيضًا جزاء الإجابات الخاطئة.",
+"टीम के अंक सफल निशानों से बनते हैं। व्यक्तिगत अंकों में गलत जवाब की पेनल्टी भी शामिल है।",
+"Teamscores tellen treffers. Persoonlijke scores bevatten ook strafpunten voor foute antwoorden."
+],
+[
+"How to walk",
+"Cómo moverte",
+"طريقة المشي",
+"कैसे चलें",
+"Zo loop je"
+],
+[
+"Easy walking",
+"Movimiento fácil",
+"المشي السهل",
+"आसान चलना",
+"Makkelijk lopen"
+],
+[
+"Standard walking",
+"Movimiento estándar",
+"المشي العادي",
+"सामान्य चलना",
+"Standaard lopen"
+],
+[
+"How to throw",
+"Cómo lanzar",
+"طريقة الرمي",
+"कैसे फेंकें",
+"Zo gooi je"
+],
+[
+"Easy throwing",
+"Lanzamiento fácil",
+"الرمي السهل",
+"आसान फेंकना",
+"Makkelijk gooien"
+],
+[
+"Standard throwing",
+"Lanzamiento estándar",
+"الرمي العادي",
+"सामान्य फेंकना",
+"Standaard gooien"
+],
+[
+"Learning from mistakes",
+"Aprender de los errores",
+"نتعلّم من الأخطاء",
+"गलतियों से सीखना",
+"Leren van fouten"
+],
+[
+"Jump",
+"Saltar",
+"اقفز",
+"कूदें",
+"Springen"
+],
+[
+"Duck",
+"Agacharse",
+"انحنِ",
+"झुकें",
+"Bukken"
+],
+[
+"Free practice",
+"Práctica libre",
+"تدريب حر",
+"खुला अभ्यास",
+"Vrij oefenen"
+],
+[
+"Blue Wizards",
+"Magos azules",
+"السحرة الزرق",
+"नीले जादूगर",
+"Blauwe tovenaars"
+],
+[
+"Yellow Rabbits",
+"Conejos amarillos",
+"الأرانب الصفر",
+"पीले खरगोश",
+"Gele konijnen"
+],
+[
+"What a splash!",
+"¡Menudo chapuzón!",
+"يا لها من ألوان!",
+"क्या खूब रंग बरसे!",
+"Wat een gespetter!"
+],
+[
+"Continue your battle",
+"Continuar tu batalla",
+"تابع معركتك",
+"अपना मुकाबला जारी रखें",
+"Je gevecht hervatten"
+],
+[
+"Continue your cup",
+"Continuar tu copa",
+"تابع منافسة الكأس",
+"अपना कप जारी रखें",
+"Je bekercompetitie hervatten"
+],
+[
+"Create a three-round cup",
+"Crear una copa de tres rondas",
+"إنشاء كأس من ثلاث جولات",
+"तीन दौर का कप बनाएँ",
+"Bekercompetitie van drie rondes maken"
+],
+[
+"Local cup · 3 battles",
+"Copa local · 3 batallas",
+"كأس محلي · 3 معارك",
+"स्थानीय कप · 3 मुकाबले",
+"Lokale beker · 3 gevechten"
+],
+[
+"Cup · {0} / {1}",
+"Copa · {0} / {1}",
+"الكأس · {0} / {1}",
+"कप · {0} / {1}",
+"Beker · {0} / {1}"
+],
+[
+"Cup · round {0} / 3",
+"Copa · ronda {0} / 3",
+"الكأس · الجولة {0} / 3",
+"कप · दौर {0} / 3",
+"Beker · ronde {0} / 3"
+],
+[
+"Correct answers: {0} · Hits: {1}",
+"Aciertos: {0} · Impactos: {1}",
+"إجابات صحيحة: {0} · إصابات: {1}",
+"सही जवाब: {0} · सफल निशाने: {1}",
+"Goede antwoorden: {0} · Treffers: {1}"
+],
+[
+"Independent: {0} · With help: {1}",
+"Sin ayuda: {0} · Con ayuda: {1}",
+"بمفردك: {0} · بمساعدة: {1}",
+"खुद से: {0} · मदद से: {1}",
+"Zelfstandig: {0} · Met hulp: {1}"
+],
+[
+"Private room {0}",
+"Sala privada {0}",
+"غرفة خاصة {0}",
+"निजी कमरा {0}",
+"Privékamer {0}"
+],
+[
+"Private room · up to six players\nHouse players can fill empty places.",
+"Sala privada · hasta seis jugadores\nLos personajes pueden ocupar las plazas libres.",
+"غرفة خاصة · حتى ستة لاعبين\nيمكن لشخصيات اللعبة ملء الأماكن الشاغرة.",
+"निजी कमरा · अधिकतम छह खिलाड़ी\nखाली जगहें गेम के खिलाड़ी भर सकते हैं।",
+"Privékamer · maximaal zes spelers\nHuisgenoten kunnen lege plekken vullen."
+],
+[
+"The room creator starts the battle.",
+"Quien creó la sala inicia la batalla.",
+"من أنشأ الغرفة يبدأ المعركة.",
+"कमरा बनाने वाला मुकाबला शुरू करेगा।",
+"De maker van de kamer start het gevecht."
+],
+[
+"The host opens the next round.",
+"El anfitrión abre la siguiente ronda.",
+"المضيف يفتح الجولة التالية.",
+"मेज़बान अगला दौर खोलेगा।",
+"De host opent de volgende ronde."
+],
+[
+"This cup could not be restored.",
+"No se pudo recuperar esta copa.",
+"تعذّر استعادة هذه المنافسة.",
+"यह कप बहाल नहीं हो सका।",
+"Deze bekercompetitie kon niet worden hervat."
+],
+[
+"This development build connects only to a local Firebase test server. Production is not activated.",
+"Esta versión de desarrollo solo se conecta a un servidor local de prueba de Firebase. El servicio público no está activado.",
+"تتصل نسخة التطوير هذه بخادم Firebase محلي للاختبار فقط. الخدمة العامة غير مفعّلة.",
+"यह विकास संस्करण सिर्फ स्थानीय Firebase परीक्षण सर्वर से जुड़ता है। लाइव सेवा सक्रिय नहीं है।",
+"Deze ontwikkelversie gebruikt alleen een lokale Firebase-testserver. De live dienst is niet geactiveerd."
+],
+[
+"Test ads appear only between completed battles.",
+"Los anuncios de prueba solo aparecen entre batallas terminadas.",
+"تظهر الإعلانات التجريبية فقط بين المعارك المكتملة.",
+"परीक्षण विज्ञापन सिर्फ पूरे हुए मुकाबलों के बीच दिखते हैं।",
+"Testadvertenties verschijnen alleen tussen afgeronde gevechten."
+],
+[
+"No purchase found for this Google Play account.",
+"No se encontró ninguna compra en esta cuenta de Google Play.",
+"لم يتم العثور على شراء في حساب Google Play هذا.",
+"इस Google Play खाते में खरीदारी नहीं मिली।",
+"Geen aankoop gevonden voor dit Google Play-account."
+],
+[
+"Restore finds a previous remove-ads purchase on the same Google Play account.",
+"Restaurar busca una compra anterior de eliminación de anuncios en la misma cuenta de Google Play.",
+"تبحث الاستعادة عن شراء سابق لإزالة الإعلانات في حساب Google Play نفسه.",
+"बहाल करने से इसी Google Play खाते की पुरानी विज्ञापन हटाने वाली खरीदारी मिलती है।",
+"Herstellen zoekt een eerdere aankoop voor advertentievrij spelen op hetzelfde Google Play-account."
+],
+[
+"Purchases and codes are not activated in this development build.",
+"Las compras y los códigos no están activados en esta versión de desarrollo.",
+"المشتريات والرموز غير مفعّلة في نسخة التطوير هذه.",
+"इस विकास संस्करण में खरीदारी और कोड सक्रिय नहीं हैं।",
+"Aankopen en codes zijn in deze ontwikkelversie niet geactiveerd."
+],
+[
+"Purchase status: ",
+"Estado de compra: ",
+"حالة الشراء: ",
+"खरीदारी की स्थिति: ",
+"Aankoopstatus: "
+],
+[
+"Waiting for payment approval.",
+"Esperando la aprobación del pago.",
+"بانتظار الموافقة على الدفع.",
+"भुगतान की मंज़ूरी का इंतज़ार है।",
+"Wachten op goedkeuring van de betaling."
+],
+[
+"Your app-specific code",
+"Tu código para esta app",
+"رمزك الخاص بهذا التطبيق",
+"इस ऐप का आपका कोड",
+"Je code voor deze app"
+],
+[
+"Return to {0}",
+"Volver a {0}",
+"العودة إلى {0}",
+"{0} पर लौटें",
+"Terug naar {0}"
+],
+[
+"Splash room",
+"Sala Splash",
+"غرفة Splash",
+"Splash कमरा",
+"Splash-kamer"
+],
+[
+"Paused · tap to continue",
+"En pausa · toca para continuar",
+"متوقف مؤقتًا · المس للمتابعة",
+"रुका हुआ · जारी रखने के लिए टैप करें",
+"Gepauzeerd · tik om door te gaan"
+],
+[
+"Precision",
+"Precisión",
+"الدقة",
+"सटीकता",
+"Precisie"
+],
+[
+"Single game",
+"Partida individual",
+"مباراة واحدة",
+"एक मैच",
+"Eén spel"
+],
+[
+"3 battles cup",
+"Copa de 3 batallas",
+"كأس من 3 معارك",
+"3 मुकाबलों का कप",
+"Beker met 3 gevechten"
+],
+[
+"House players only",
+"Solo personajes del juego",
+"شخصيات اللعبة فقط",
+"सिर्फ़ खेल के पात्र",
+"Alleen huisgenoten"
+],
+[
+"Reflexes",
+"Reflejos",
+"سرعة الاستجابة",
+"प्रतिक्रिया",
+"Reactievermogen"
+],
+[
+"Players: {0} / {1}",
+"Jugadores: {0} / {1}",
+"اللاعبون: {0} / {1}",
+"खिलाड़ी: {0} / {1}",
+"Spelers: {0} / {1}"
+],
+[
+"Maximum players selected",
+"Has elegido el máximo de jugadores",
+"تم اختيار الحد الأقصى من اللاعبين",
+"अधिकतम खिलाड़ी चुन लिए गए हैं",
+"Maximumaantal spelers gekozen"
+],
+[
+"A battle supports at most six players. Remove a house player or a connected friend.",
+"En cada batalla pueden jugar hasta seis. Quita un personaje del juego o un amigo conectado.",
+"تضم المعركة ستة لاعبين كحد أقصى. أزِل شخصية من اللعبة أو صديقًا متصلًا.",
+"एक मुकाबले में अधिकतम छह खिलाड़ी हो सकते हैं। कोई पात्र या जुड़ा हुआ दोस्त हटाएँ।",
+"Er kunnen maximaal zes spelers meedoen. Verwijder een huisgenoot of een verbonden vriend."
+],
+[
+"Choose at least one opponent.",
+"Elige al menos un rival.",
+"اختر منافسًا واحدًا على الأقل.",
+"कम से कम एक प्रतिद्वंद्वी चुनें।",
+"Kies minstens één tegenstander."
+],
+[
+"Team battles need four or six players. Adjust the roster before starting.",
+"Las batallas por equipos necesitan cuatro o seis jugadores. Ajusta el grupo antes de empezar.",
+"تحتاج معارك الفرق إلى أربعة أو ستة لاعبين. عدّل المجموعة قبل البدء.",
+"टीम मुकाबले में चार या छह खिलाड़ी चाहिए। शुरू करने से पहले समूह बदलें।",
+"Teamgevechten hebben vier of zes spelers nodig. Pas de groep aan voordat je begint."
+],
+[
+"More players joined",
+"Se han unido más jugadores",
+"انضم لاعبون إضافيون",
+"और खिलाड़ी जुड़ गए",
+"Er zijn meer spelers bijgekomen"
+],
+[
+"There are more players than you chose in Settings. Remove a house player or a friend, or start with this larger group.",
+"Hay más jugadores de los que elegiste en Ajustes. Quita un personaje o un amigo, o empieza con este grupo más grande.",
+"عدد اللاعبين أكبر مما اخترته في الإعدادات. أزِل شخصية أو صديقًا، أو ابدأ بهذه المجموعة الأكبر.",
+"सेटिंग्स में चुनी संख्या से ज़्यादा खिलाड़ी हैं। कोई पात्र या दोस्त हटाएँ, या बड़े समूह के साथ शुरू करें।",
+"Er zijn meer spelers dan je bij Instellingen koos. Verwijder een huisgenoot of vriend, of begin met deze grotere groep."
+],
+[
+"Start with this group",
+"Empezar con este grupo",
+"ابدأ بهذه المجموعة",
+"इस समूह के साथ शुरू करें",
+"Begin met deze groep"
+],
+[
+"Change players",
+"Cambiar jugadores",
+"تغيير اللاعبين",
+"खिलाड़ी बदलें",
+"Spelers aanpassen"
+],
+[
+"Online play is not available yet. You can play with house players.",
+"El juego en línea aún no está disponible. Puedes jugar con los personajes del juego.",
+"اللعب عبر الإنترنت غير متاح بعد. يمكنك اللعب مع شخصيات اللعبة.",
+"ऑनलाइन खेल अभी उपलब्ध नहीं है। आप खेल के पात्रों के साथ खेल सकते हैं।",
+"Online spelen is nog niet beschikbaar. Je kunt met huisgenoten spelen."
+],
+[
+"Waiting for friends to join. Share the code, and add house players while you wait.",
+"Esperando a tus amigos. Comparte el código y añade personajes del juego mientras esperas.",
+"بانتظار انضمام الأصدقاء. شارك الرمز وأضف شخصيات اللعبة أثناء الانتظار.",
+"दोस्तों के जुड़ने का इंतज़ार है। कोड साझा करें और इंतज़ार करते हुए खेल के पात्र जोड़ें।",
+"Wachten tot vrienden meedoen. Deel de code en voeg ondertussen huisgenoten toe."
+],
+[
+"Ready ✓",
+"Listo ✓",
+"جاهز ✓",
+"तैयार ✓",
+"Klaar ✓"
+],
+[
+"The room changed. Please try again.",
+"La sala ha cambiado. Inténtalo de nuevo.",
+"تغيّرت الغرفة. حاول مجددًا.",
+"रूम बदल गया है। फिर कोशिश करें।",
+"De kamer is gewijzigd. Probeer het opnieuw."
+],
+[
+"The player list changed. Adjust the group before starting.",
+"La lista de jugadores ha cambiado. Ajusta el grupo antes de empezar.",
+"تغيّرت قائمة اللاعبين. عدّل المجموعة قبل البدء.",
+"खिलाड़ियों की सूची बदल गई है। शुरू करने से पहले समूह बदलें।",
+"De spelerslijst is gewijzigd. Pas de groep aan voordat je begint."
+],
+[
+"Could not start. Please try again.",
+"No se ha podido empezar. Inténtalo de nuevo.",
+"تعذّر البدء. حاول مجددًا.",
+"शुरू नहीं हो पाया। फिर कोशिश करें।",
+"Starten is niet gelukt. Probeer het opnieuw."
+],
+[
+"You left this room.",
+"Has salido de esta sala.",
+"لقد غادرت هذه الغرفة.",
+"आप इस रूम से बाहर आ गए हैं।",
+"Je hebt deze kamer verlaten."
+],
+[
+"Ads appear only between completed battles.",
+"Los anuncios solo aparecen entre batallas terminadas.",
+"تظهر الإعلانات فقط بين المعارك المكتملة.",
+"विज्ञापन केवल मुकाबले पूरे होने के बाद दिखते हैं।",
+"Advertenties verschijnen alleen tussen afgeronde gevechten."
+],
+[
+"Purchases are currently unavailable. Please try again later.",
+"Las compras no están disponibles ahora. Inténtalo más tarde.",
+"المشتريات غير متاحة حاليًا. حاول لاحقًا.",
+"खरीदारी अभी उपलब्ध नहीं है। बाद में कोशिश करें।",
+"Aankopen zijn momenteel niet beschikbaar. Probeer het later opnieuw."
+]
+]

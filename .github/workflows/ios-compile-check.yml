@@ -47,7 +47,7 @@ jobs:
           # minutes) a failing app stops the run; in a public one (free minutes) every app is
           # compiled, so one run lists all errors. A test failure never stops the apps.
           STOP_AT_FIRST_FAILURE="${{ github.event.repository.private }}"
-          # Minik Math's unit tests also run, on the newest available iPhone simulator.
+          # Minik Math's and the sports (Android parity) unit tests also run, on the newest available iPhone simulator.
           SIMULATOR_UDID="$(xcrun simctl list devices available -j | python3 -c '
           import json
           import re
@@ -66,7 +66,7 @@ jobs:
                           best = key
           print(best[2] if best else "")
           ')"
-          for SCHEME in MinikPlus MinikPingPong MinikRetroPingPong MinikMathPlus MinikMath MinikPlusEnglish MinikMultiPingPong MinikAmudu MinikSplash; do
+          for SCHEME in MinikPlus MinikPingPong MinikRetroPingPong MinikMathPlus MinikMath MinikPlusEnglish MinikMultiPingPong MinikAmudu MinikSplash MinikSquash MinikBeachVolley; do
             echo "Compiling $SCHEME"
             xcodebuild build -scheme "$SCHEME" "${COMMON[@]}" > "build/logs/$SCHEME.log" 2>&1
             scheme_status=$?
@@ -86,6 +86,7 @@ jobs:
               MinikMultiPingPong) TESTS=MultiPongTests ;;
               MinikAmudu) TESTS=AmuduTests ;;
               MinikSplash) TESTS=SplashTests ;;
+              MinikSquash) TESTS=SportsTests ;;
             esac
             if [ -n "$TESTS" ]; then
               echo "Compiling $TESTS"
@@ -94,7 +95,7 @@ jobs:
               if (( test_status != 0 )); then
                 echo "::error::Compile failed for $TESTS"
                 status=$test_status
-              elif [ "$SCHEME" = "MinikMath" ]; then
+              elif [ "$SCHEME" = "MinikMath" ] || [ "$SCHEME" = "MinikSquash" ]; then
                 if [ -n "$SIMULATOR_UDID" ]; then
                   echo "Running $TESTS"
                   xcodebuild test-without-building -project Minik.xcodeproj -scheme "$SCHEME" -configuration Debug \

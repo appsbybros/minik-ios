@@ -198,8 +198,8 @@ foreach ($target in $portraitOnlyTargets) {
     Require-Pattern $targetBodies[$target] '(?m)^\s+UISupportedInterfaceOrientations~ipad:REPLACE:\s*\r?\n\s+- UIInterfaceOrientationPortrait\s*\r?\n\s+- UIInterfaceOrientationPortraitUpsideDown\s*\r?\n(?!\s*- )' "$target must replace the template's iPad orientations with the two portrait ones."
 }
 
-if ($iconSets.Count -ne 9) {
-    $errors.Add("Expected exactly nine app icon sets (two Language, Math, Math Plus, Modern, Retro and Multi Ping Pong, Amudu, Splash); found $($iconSets.Count).")
+if ($iconSets.Count -ne 11) {
+    $errors.Add("Expected exactly eleven app icon sets (two Language, Math, Math Plus, Modern, Retro and Multi Ping Pong, Amudu, Splash, Squash, Beach Volley); found $($iconSets.Count).")
 }
 foreach ($iconName in @('MinikPlusAppIcon', 'MinikPlusEnglishAppIcon', 'MinikMathAppIcon', 'MinikMathPlusAppIcon')) {
     $iconPath = Join-Path $RepositoryRoot "Resources\MinikVisuals.xcassets\$iconName.appiconset\$iconName-1024.png"

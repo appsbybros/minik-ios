@@ -30,6 +30,8 @@ APPS = [
     ("com.appsbybros.minik.crosspong", "Multi Ping Pong", False),
     ("com.appsbybros.minik.spud", "Minik Spud", False),
     ("com.appsbybros.minik.splash", "Minik Splash", False),
+    ("com.appsbybros.minik.squash", "Minik Squash", False),
+    ("com.appsbybros.minik.beachvolley", "Minik Beach Volley", False),
 ]
 # The App Store Connect API has no App Attest capability type: it can neither read
 # nor set it, so it is ticked by hand on the App ID.
@@ -142,6 +144,8 @@ SCHEME_BUNDLES = {
     "MinikMultiPingPong": "com.appsbybros.minik.crosspong",
     "MinikAmudu": "com.appsbybros.minik.spud",
     "MinikSplash": "com.appsbybros.minik.splash",
+    "MinikSquash": "com.appsbybros.minik.squash",
+    "MinikBeachVolley": "com.appsbybros.minik.beachvolley",
 }
 
 

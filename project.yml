@@ -675,6 +675,113 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.appsbybros.minik.splash.tests
         GENERATE_INFOPLIST_FILE: YES
 
+  MinikSquash:
+    # Standalone port of the Android Minik Squash game (C:/Projects/MinikSports, shared with the other
+    # sports app); it shares no code with the Minik apps. Ads and purchases are not part of this port.
+    type: application
+    platform: iOS
+    sources:
+      - path: Sports
+      - path: Resources/Privacy/Sports/PrivacyInfo.xcprivacy
+        buildPhase: resources
+    info:
+      path: GeneratedInfoPlists/MinikSquash-Info.plist
+      properties:
+        CFBundleDisplayName: Minik Squash
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleLocalizations: [en, he, ar, es, hi, nl]
+        ITSAppUsesNonExemptEncryption: false
+        UILaunchScreen: {}
+        # Android manifest `sports.game`: the same sources play Squash or Beach Volley.
+        SportsGame: SQUASH
+        # As on Android (fullSensor): every page and the court follow the device orientation.
+        UIRequiresFullScreen: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.appsbybros.minik.squash
+        PRODUCT_NAME: MinikSquash
+        ASSETCATALOG_COMPILER_APPICON_NAME: SquashIcon
+        MINIK_MARKETING_VERSION: "1.0"
+        MINIK_BUILD_NUMBER: "1"
+        OTHER_LDFLAGS: "$(inherited) -ObjC"
+    dependencies:
+      - package: FirebaseApple
+        product: FirebaseCore
+      - package: FirebaseApple
+        product: FirebaseAuth
+      - package: FirebaseApple
+        product: FirebaseDatabase
+
+  MinikBeachVolley:
+    # Standalone port of the Android Minik Beach Volley game (C:/Projects/MinikSports, shared with the other
+    # sports app); it shares no code with the Minik apps. Ads and purchases are not part of this port.
+    type: application
+    platform: iOS
+    sources:
+      - path: Sports
+      - path: Resources/Privacy/Sports/PrivacyInfo.xcprivacy
+        buildPhase: resources
+    info:
+      path: GeneratedInfoPlists/MinikBeachVolley-Info.plist
+      properties:
+        CFBundleDisplayName: Minik Beach Volley
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleLocalizations: [en, he, ar, es, hi, nl]
+        ITSAppUsesNonExemptEncryption: false
+        UILaunchScreen: {}
+        # Android manifest `sports.game`: the same sources play Squash or Beach Volley.
+        SportsGame: VOLLEY
+        # As on Android (fullSensor): every page and the court follow the device orientation.
+        UIRequiresFullScreen: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.appsbybros.minik.beachvolley
+        PRODUCT_NAME: MinikBeachVolley
+        ASSETCATALOG_COMPILER_APPICON_NAME: VolleyIcon
+        MINIK_MARKETING_VERSION: "1.0"
+        MINIK_BUILD_NUMBER: "1"
+        OTHER_LDFLAGS: "$(inherited) -ObjC"
+    dependencies:
+      - package: FirebaseApple
+        product: FirebaseCore
+      - package: FirebaseApple
+        product: FirebaseAuth
+      - package: FirebaseApple
+        product: FirebaseDatabase
+
+  SportsTests:
+    # Android parity tests (golden vectors from the Kotlin engine) for both sports apps.
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests/SportsTests
+    dependencies:
+      - target: MinikSquash
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.appsbybros.minik.squash.tests
+        GENERATE_INFOPLIST_FILE: YES
+
   ProductConfigurationTests:
     type: bundle.unit-test
     platform: iOS
@@ -753,3 +860,17 @@ schemes:
     test:
       targets:
         - SplashTests
+
+  MinikSquash:
+    build:
+      targets:
+        MinikSquash: all
+        SportsTests: [test]
+    test:
+      targets:
+        - SportsTests
+
+  MinikBeachVolley:
+    build:
+      targets:
+        MinikBeachVolley: all
