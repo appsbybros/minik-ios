@@ -30,6 +30,7 @@ struct PlayerSettings: Equatable {
     var balloons: BalloonMode = .onePlace
     /// Never empty and never MIXED (Android `require`); codecs fall back to MATH.
     var subjects: Set<Topic> = [.math]
+    var difficulty: Difficulty = .easy
 
     var jumpGravity: Double { return arena == .andromeda ? 4.6 : 9.5 }
     var projectileGravityFactor: Double { return arena == .andromeda ? 0.55 : 1.0 }
@@ -51,8 +52,14 @@ struct PlayerSettings: Equatable {
         var subjects = Set<Topic>()
         for human in humans { subjects.formUnion(human.subjects) }
         if subjects.isEmpty { subjects = [.math] }
+        // Kotlin `minByOrNull { difficulty.ordinal }`: the easiest human choice (the first one on a tie).
+        var difficulty = Difficulty.easy
+        if var easiest = humans.first?.difficulty {
+            for human in humans.dropFirst() where human.difficulty.ordinal < easiest.ordinal { easiest = human.difficulty }
+            difficulty = easiest
+        }
         return PlayerSettings(walk: .standard, throwing: .standard, arena: arena,
-                              court: humans.allSatisfy { $0.court }, balloons: balloons, subjects: subjects)
+                              court: humans.allSatisfy { $0.court }, balloons: balloons, subjects: subjects, difficulty: difficulty)
     }
 }
 

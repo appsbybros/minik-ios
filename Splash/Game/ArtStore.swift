@@ -1,7 +1,8 @@
 import UIKit
 
-/// Port of Android ArtStore.kt: atlases, directional atlases, balloons, tinted splashes,
-/// scenery and the timed pose selection. Art is the Android WebP converted losslessly to PNG.
+/// Port of Android ArtStore.kt: atlases, directional atlases, four-frame locomotion atlases,
+/// balloons, tinted splashes, opaque-body anchors, portraits and the timed pose selection. Art is
+/// the Android WebP converted losslessly to PNG.
 struct SpriteFrame {
     let rect: CGRect
     let handX: CGFloat
@@ -9,13 +10,16 @@ struct SpriteFrame {
     let image: UIImage?
 }
 
+/// Android `SpriteVisual(bitmap, frame, mirrored, key)`; `atlas` names the bitmap the frame is cut from.
 struct SpriteVisual {
     let frame: SpriteFrame
     let mirrored: Bool
     let key: String
+    let atlas: String
 }
 
-/// Android `ArtStore.frame(actor, time)`: the timed pose index (pure, testable).
+/// Android `ArtStore.frame(actor, time)`: the timed pose index (pure, testable). 100-107 are the
+/// locomotion frames (100-103 walking, 104-107 running), driven by the travelled distance.
 enum SplashPose {
     static func frame(_ a: SplashActor, _ time: Double) -> Int {
         if time < a.cleanUntil { return 11 }
@@ -26,12 +30,12 @@ enum SplashPose {
         if time - a.throwAt < 0.30 { return 7 }
         if time - a.pickupAt < 0.18 { return 3 }
         if a.held != nil && time - a.windupAt < 0.25 { return 5 }
-        if a.move.length() > 0.12 { return 12 + KotlinNumber.int(a.gait) % 4 }
+        if a.velocity.length() > 0.18 { return 100 + (a.runBlend > 0.45 ? 4 : 0) + KotlinNumber.int(a.gait) % 4 }
         if a.held != nil { return 4 }
         return 0
     }
 
-    /// Android `ArtStore.visual` pose mapping for side/back atlases.
+    /// Android `ArtStore.visual` pose mapping for side/back atlases (after the locomotion fallback).
     static func directionalPose(_ index: Int) -> Int {
         switch index {
         case 3, 9, 10: return 7
@@ -39,10 +43,31 @@ enum SplashPose {
         case 5: return 4
         case 6, 7: return 5
         case 8: return 6
-        case 12: return 1
-        case 14: return 2
+        case 12, 13: return 1
+        case 14, 15: return 2
         default: return 0
         }
+    }
+
+    /// Android: without a locomotion atlas, 100+ falls back to the front walking frames 12-15.
+    static func safeIndex(_ index: Int) -> Int {
+        return index >= 100 ? 12 + (index - 100) % 4 : index
+    }
+
+    /// The facing as seen through a camera turned by `yaw`.
+    static func facing(_ facing: V, _ yaw: Double) -> Facing {
+        return Facing.of(V(cos(yaw) * facing.x - sin(yaw) * facing.y, sin(yaw) * facing.x + cos(yaw) * facing.y))
+    }
+
+    /// Android `anchor` cache key for a visual key: "front", "motion-<row>", "back" or "side".
+    static func anchorKey(_ visualKey: String) -> String {
+        if visualKey.hasPrefix("front") { return "front" }
+        if visualKey.hasPrefix("motion") {
+            let parts: [Substring] = visualKey.split(separator: "-", omittingEmptySubsequences: false)
+            return "motion-" + (parts.count > 1 ? String(parts[1]) : "0")
+        }
+        let frame = Int(visualKey.replacingOccurrences(of: "direction-", with: "")) ?? 0
+        return frame >= 8 ? "back" : "side"
     }
 }
 
@@ -61,7 +86,11 @@ final class ArtStore {
     private var directionMeta: [String: [FrameMeta]] = [:]
     private var frontFrames: [String: [SpriteFrame]] = [:]
     private var directionFrames: [String: [SpriteFrame]] = [:]
+    private var motion: [String: CGImage] = [:]
+    private var motionCells: [String: SpriteFrame] = [:]
+    private var anchors: [String: SpriteAnchor] = [:]
     private var portraits: [String: UIImage] = [:]
+    private var readyCells: [String: UIImage] = [:]
     private var images: [String: UIImage] = [:]
     private var wordBalloons: [Int: UIImage] = [:]
     private var paintedCache: [String: UIImage] = [:]
@@ -93,14 +122,25 @@ final class ArtStore {
         return result
     }
 
-    /// Releases decoded art after a memory warning; everything reloads on demand.
+    /// Releases decoded art after a memory warning; everything reloads on demand (the
+    /// locomotion atlases of the current roster stay, as Android keeps them until the next battle).
     func purge() {
         frontFrames.removeAll()
         directionFrames.removeAll()
+        motionCells.removeAll()
         images.removeAll()
         wordBalloons.removeAll()
         paintedCache.removeAll()
         paintedOrder.removeAll()
+    }
+
+    /// Android `close()`: drops every decoded bitmap.
+    func close() {
+        purge()
+        motion.removeAll()
+        portraits.removeAll()
+        readyCells.removeAll()
+        anchors.removeAll()
     }
 
     func image(_ name: String) -> UIImage? {
@@ -146,27 +186,99 @@ final class ArtStore {
         return made
     }
 
-    /// The first 256 x 320 cell (ready pose) used on the home screen and in results.
-    func portrait(_ character: String) -> UIImage? {
-        if let cached = portraits[character] { return cached }
-        guard let atlas = UIImage(named: character)?.cgImage,
-              let cropped = atlas.cropping(to: CGRect(x: 0, y: 0, width: 256, height: 320)) else { return nil }
-        let cell = UIImage(cgImage: cropped, scale: 1, orientation: .up)
-        portraits[character] = cell
-        return cell
+    /// Android `Bitmap.createBitmap(actors[id], 0, 0, 256, 320)`: the raw first cell of the front
+    /// atlas, shown on the house-player cards.
+    func readyCell(_ character: String) -> UIImage? {
+        if let cached = readyCells[character] { return cached }
+        guard let atlas = image(character)?.cgImage, let cropped = atlas.cropping(to: CGRect(x: 0, y: 0, width: 256, height: 320)) else { return nil }
+        let made = UIImage(cgImage: cropped, scale: 1, orientation: .up)
+        readyCells[character] = made
+        return made
     }
 
-    func visual(_ a: SplashActor, _ index: Int) -> SpriteVisual? {
-        let facing = Facing.of(a.facing)
-        if facing == .front {
-            let list = frames(a.member.character)
-            guard index >= 0 && index < list.count else { return nil }
-            return SpriteVisual(frame: list[index], mirrored: false, key: "front-\(index)")
+    /// Android `prepareMotion(ids)`: keeps exactly the locomotion atlases of this roster.
+    func prepareMotion(_ ids: [String]) {
+        for id in Array(motion.keys) where !ids.contains(id) {
+            motion.removeValue(forKey: id)
         }
-        let frame = SplashPose.directionalPose(index) + (facing == .back ? 8 : 0)
-        let list = directional(a.member.character)
+        motionCells = motionCells.filter { entry in ids.contains(where: { entry.key.hasPrefix($0 + "/") }) }
+        var seen = Set<String>()
+        for id in ids where !seen.contains(id) {
+            seen.insert(id)
+            if motion[id] == nil, let atlas = decoded(id + "_locomotion") { motion[id] = atlas }
+        }
+    }
+
+    private func motionFrame(_ character: String, _ row: Int, _ phase: Int, front: Bool) -> SpriteFrame {
+        let key = character + "/\(row)/\(phase)"
+        if let cached = motionCells[key] { return cached }
+        let rect = CGRect(x: phase * 192, y: row * 240, width: 192, height: 240)
+        var cell: UIImage? = nil
+        if let atlas = motion[character], let cropped = atlas.cropping(to: rect) {
+            cell = UIImage(cgImage: cropped, scale: 1, orientation: .up)
+        }
+        let made = SpriteFrame(rect: rect, handX: front ? 136 : 168, handY: 174, image: cell)
+        motionCells[key] = made
+        return made
+    }
+
+    /// Android `anchor(id, visual)`: the opaque body bounds of the visual's pose family.
+    func anchor(_ character: String, _ visual: SpriteVisual) -> SpriteAnchor {
+        let key = SplashPose.anchorKey(visual.key)
+        let cacheKey = character + "/" + key
+        if let cached = anchors[cacheKey] { return cached }
+        let rect: CGRect
+        let source: CGImage?
+        if key == "front" {
+            rect = frontMeta[character]?.first?.rect ?? CGRect(x: 0, y: 0, width: 256, height: 320)
+            source = image(character)?.cgImage
+        } else if key.hasPrefix("motion") {
+            rect = CGRect(x: 0, y: visual.frame.rect.minY, width: visual.frame.rect.width, height: visual.frame.rect.height)
+            source = motion[character]
+        } else {
+            let list = directionMeta[character] ?? []
+            let index = key == "back" ? 8 : 0
+            rect = index < list.count ? list[index].rect : CGRect(x: 0, y: 0, width: 256, height: 320)
+            source = image(character + "_directions")?.cgImage
+        }
+        guard let atlas = source else {
+            return SpriteAnchor(left: 0, top: 0, right: Float(rect.width), bottom: Float(rect.height))
+        }
+        let made = SpriteSizing.anchor(atlas, rect)
+        anchors[cacheKey] = made
+        return made
+    }
+
+    /// Android `portrait(id)`: the ready pose normalised to its visible body (home, house players,
+    /// results and the battle loading screen).
+    func portrait(_ character: String) -> UIImage? {
+        if let cached = portraits[character] { return cached }
+        guard let atlas = image(character)?.cgImage, let rect = frontMeta[character]?.first?.rect else { return nil }
+        let anchor = SpriteSizing.anchor(atlas, rect)
+        guard let made = SpriteSizing.portrait(atlas, rect, anchor) else { return nil }
+        portraits[character] = made
+        return made
+    }
+
+    func visual(_ a: SplashActor, _ index: Int, _ yaw: Double = 0.0) -> SpriteVisual? {
+        let facing = SplashPose.facing(a.facing, yaw)
+        let character = a.member.character
+        if index >= 100 && motion[character] != nil {
+            let row = (facing == .front ? 0 : (facing == .back ? 4 : 2)) + (index >= 104 ? 1 : 0)
+            let phase = (index - 100) % 4
+            let frame = motionFrame(character, row, phase, front: facing == .front)
+            return SpriteVisual(frame: frame, mirrored: facing == .left, key: "motion-\(row)-\(phase)", atlas: character + "_locomotion")
+        }
+        let safeIndex = SplashPose.safeIndex(index)
+        if facing == .front {
+            let list = frames(character)
+            guard safeIndex >= 0 && safeIndex < list.count else { return nil }
+            return SpriteVisual(frame: list[safeIndex], mirrored: false, key: "front-\(safeIndex)", atlas: character)
+        }
+        let frame = SplashPose.directionalPose(safeIndex) + (facing == .back ? 8 : 0)
+        let list = directional(character)
         guard frame < list.count else { return nil }
-        return SpriteVisual(frame: list[frame], mirrored: facing == .left, key: "direction-\(frame)")
+        return SpriteVisual(frame: list[frame], mirrored: facing == .left, key: "direction-\(frame)", atlas: character + "_directions")
     }
 
     func scene(_ arena: Arena) -> UIImage? { return image("arena_" + arena.rawValue.lowercased()) }
@@ -194,9 +306,9 @@ final class ArtStore {
     }
 
     /// Precomposes stable paint/pose combinations once (Android caches 48, oldest first out).
-    func painted(_ a: SplashActor, _ index: Int) -> UIImage? {
+    func painted(_ a: SplashActor, _ index: Int, _ yaw: Double = 0.0) -> UIImage? {
         if a.paint.isEmpty { return nil }
-        guard let pose = visual(a, index), let base = pose.frame.image else { return nil }
+        guard let pose = visual(a, index, yaw), let base = pose.frame.image else { return nil }
         let stains = a.paint.map { "\($0.color),\($0.u),\($0.v)" }.joined(separator: ";")
         let key = a.member.character + ":" + pose.key + ":" + stains
         if let cached = paintedCache[key] { return cached }
@@ -210,9 +322,9 @@ final class ArtStore {
             for stain in marks {
                 let x = 256 * CGFloat(stain.u)
                 let y = 320 * CGFloat(stain.v)
-                let w: CGFloat = 256 * 0.43
+                let w: CGFloat = 256 * 0.62
                 splash(1, stain.color)?.draw(in: CGRect(x: x - w / 2, y: y - w / 2, width: w, height: w),
-                                             blendMode: .sourceAtop, alpha: 220.0 / 255.0)
+                                             blendMode: .sourceAtop, alpha: 250.0 / 255.0)
             }
         }
         if paintedOrder.count >= 48 {

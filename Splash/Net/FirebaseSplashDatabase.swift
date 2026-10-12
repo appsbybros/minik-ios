@@ -20,12 +20,9 @@ final class FirebaseSplashDatabase: SplashDatabase {
         self.root = database.reference()
     }
 
-    static func connect(host: String) throws -> FirebaseSplashDatabase {
-        #if DEBUG
-        let emulator = true
-        #else
-        let emulator = false
-        #endif
+    /// Android OnlineSession.open: the registered app on ordinary launches; the local emulators
+    /// only for an explicit debug QA launch (and then only on 127.0.0.1 or 10.0.2.2).
+    static func connect(host: String, emulator: Bool) throws -> FirebaseSplashDatabase {
         guard let path = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist"),
               let options = FirebaseOptions(contentsOfFile: path) else {
             throw SplashOnlineError.message("Production online registration is not activated.")
@@ -148,7 +145,7 @@ final class FirebaseSplashDatabase: SplashDatabase {
         for (ref, handle) in entries { ref.removeObserver(withHandle: handle) }
     }
 
-    func transaction(_ path: String, _ update: @escaping @Sendable (Any?) -> TransactionDecision, _ completion: @escaping @MainActor (Error?, Bool) -> Void) {
+    func transaction(_ path: String, _ update: @escaping @Sendable (Any?) -> TransactionDecision, _ completion: @escaping @MainActor (Error?, Bool, Any?) -> Void) {
         root.child(path).runTransactionBlock({ data in
             let current: Any? = data.value is NSNull ? nil : data.value
             switch update(current) {
@@ -158,8 +155,9 @@ final class FirebaseSplashDatabase: SplashDatabase {
                 data.value = NodeValue.sanitized(value)
                 return TransactionResult.success(withValue: data)
             }
-        }, andCompletionBlock: { error, committed, _ in
-            Task { @MainActor in completion(error, committed) }
+        }, andCompletionBlock: { error, committed, snapshot in
+            let value = snapshot?.value
+            Task { @MainActor in completion(error, committed, value) }
         }, withLocalEvents: true)
     }
 

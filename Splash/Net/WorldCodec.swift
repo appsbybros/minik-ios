@@ -3,6 +3,31 @@ import Foundation
 /// Port of Android WorldCodec.kt: the exact Realtime Database / persistence field names.
 /// Kotlin nulls are omitted keys (Firebase and JSON treat both as absent).
 enum WorldCodec {
+    /// Arena size, duration, difficulty and the wall-battle / challenge setup travel with rooms and saved battles;
+    /// older ones without them are 12 x 12 standard battles.
+    static func config(_ c: SplashConfig) -> Node {
+        var n: Node = ["width": c.width, "depth": c.depth, "duration": c.duration, "difficulty": c.difficulty.name,
+                       "wallBattle": c.wallBattle, "hitEffect": c.hitEffect.name, "chapter": c.chapter,
+                       "challengeStep": c.challengeStep, "target": c.target]
+        if let challenge = c.challenge { n["challenge"] = challenge.name }
+        return n
+    }
+
+    static func config(_ n: Node) -> SplashConfig {
+        var c = SplashConfig()
+        c.width = min(max(n.num("width", 12.0), 8.0), 28.0)
+        c.depth = min(max(n.num("depth", 12.0), 8.0), 28.0)
+        c.duration = min(max(n.num("duration", 180.0), 30.0), 3600.0)
+        c.difficulty = Difficulty(rawValue: n.str("difficulty")) ?? .standard
+        c.wallBattle = n.flag("wallBattle")
+        c.hitEffect = HitEffect(rawValue: n.str("hitEffect")) ?? .cosmetic
+        c.challenge = ChallengeKind(rawValue: n.str("challenge"))
+        c.chapter = max(KotlinNumber.int(n.num("chapter")), 0)
+        c.challengeStep = max(KotlinNumber.int(n.num("challengeStep")), 0)
+        c.target = max(KotlinNumber.int(n.num("target", 10.0)), 1)
+        return c
+    }
+
     private static func v(_ p: V) -> [Double] { return [p.x, p.y] }
 
     private static func vector(_ n: Node, _ key: String) -> V {
@@ -20,7 +45,7 @@ enum WorldCodec {
 
     static func settings(_ s: PlayerSettings) -> Node {
         return ["walk": s.walk.name, "throwing": s.throwing.name, "arena": s.arena.name, "court": s.court,
-                "balloons": s.balloons.name, "subjects": s.orderedSubjects.map { $0.name }]
+                "balloons": s.balloons.name, "subjects": s.orderedSubjects.map { $0.name }, "difficulty": s.difficulty.name]
     }
 
     static func settings(_ n: Node) -> PlayerSettings {
@@ -31,7 +56,8 @@ enum WorldCodec {
         if subjects.isEmpty { subjects = [.math] }
         return PlayerSettings(walk: option(n, "walk", WalkMode.easy), throwing: option(n, "throwing", ThrowMode.easy),
                               arena: option(n, "arena", Arena.beach), court: NodeValue.bool(n["court"]) ?? true,
-                              balloons: option(n, "balloons", BalloonMode.onePlace), subjects: subjects)
+                              balloons: option(n, "balloons", BalloonMode.onePlace), subjects: subjects,
+                              difficulty: option(n, "difficulty", Difficulty.easy))
     }
 
     static func member(_ m: Member) -> Node {
@@ -138,10 +164,24 @@ enum WorldCodec {
     static func actorState(_ a: SplashActor) -> Node {
         var heldColor = 5
         if let held = a.held, let choice = a.choices.first(where: { $0.index == held }) { heldColor = choice.color }
-        var out: Node = ["settings": settings(a.settings), "facing": v(a.facing), "position": v(a.position),
-                         "direction": v(a.direction), "move": v(a.move), "held": a.held ?? -1, "heldColor": heldColor,
-                         "height": a.height, "verticalSpeed": a.verticalSpeed, "crouchUntil": a.crouchUntil,
-                         "cleanUntil": a.cleanUntil, "shieldUntil": a.shieldUntil, "recoveryUntil": a.recoveryUntil]
+        var out: Node = ["passBall": a.passBall, "teamHitCount": a.teamHitCount, "slowHits": a.slowHits,
+                         "velocity": v(a.velocity), "travelDistance": a.travelDistance, "travelDirection": v(a.travelDirection),
+                         "runBlend": a.runBlend, "throwPower": a.throwPower, "aimDistance": a.aimDistance,
+                         "botEvadeReady": a.botEvadeReady]
+        if let height = a.aimHeight { out["aimHeight"] = height }
+        out["settings"] = settings(a.settings)
+        out["facing"] = v(a.facing)
+        out["position"] = v(a.position)
+        out["direction"] = v(a.direction)
+        out["move"] = v(a.move)
+        out["held"] = a.held ?? -1
+        out["heldColor"] = heldColor
+        out["height"] = a.height
+        out["verticalSpeed"] = a.verticalSpeed
+        out["crouchUntil"] = a.crouchUntil
+        out["cleanUntil"] = a.cleanUntil
+        out["shieldUntil"] = a.shieldUntil
+        out["recoveryUntil"] = a.recoveryUntil
         out["throwAt"] = a.throwAt
         out["windupAt"] = a.windupAt
         out["pickupAt"] = a.pickupAt
@@ -153,11 +193,27 @@ enum WorldCodec {
         out["paint"] = a.paint.map { p -> [Any] in return [p.color, p.u, p.v] }
         out["nextBotThink"] = a.nextBotThink
         out["botChoice"] = a.botChoice ?? -1
+        out["botThreatId"] = a.botThreatId
+        out["botReactAt"] = a.botReactAt
+        out["botDodge"] = a.botDodge
+        out["botEvadeUntil"] = a.botEvadeUntil
+        out["botEvade"] = v(a.botEvade)
         if let target = a.walkTarget { out["walkTarget"] = v(target) }
         return out
     }
 
     private static func applyActor(_ a: SplashActor, _ n: Node, _ blend: Double) {
+        a.passBall = n.flag("passBall")
+        a.teamHitCount = KotlinNumber.int(n.num("teamHitCount"))
+        a.aimHeight = NodeValue.number(n["aimHeight"])
+        a.slowHits = n.list("slowHits").compactMap { NodeValue.number($0) }
+        a.velocity = vector(n, "velocity")
+        a.travelDistance = n.num("travelDistance")
+        a.travelDirection = vector(n, "travelDirection")
+        a.runBlend = n.num("runBlend")
+        a.throwPower = n.num("throwPower", 1.0)
+        a.aimDistance = n.num("aimDistance")
+        a.botEvadeReady = n.num("botEvadeReady")
         let pos = vector(n, "position")
         a.position = a.position + (pos - a.position) * blend
         if n.has("settings") { a.settings = settings(n.node("settings")) }
@@ -185,6 +241,11 @@ enum WorldCodec {
         a.nextBotThink = n.num("nextBotThink")
         let botChoice = KotlinNumber.int(n.num("botChoice", -1))
         a.botChoice = botChoice >= 0 ? botChoice : nil
+        a.botThreatId = n.str("botThreatId")
+        a.botReactAt = n.num("botReactAt")
+        a.botDodge = n.flag("botDodge")
+        a.botEvadeUntil = n.num("botEvadeUntil")
+        a.botEvade = vector(n, "botEvade")
         var paint: [PaintMark] = []
         for item in n.list("paint") {
             guard let mark = item as? [Any], mark.count >= 3,
@@ -210,12 +271,60 @@ enum WorldCodec {
                            draw: n.flag("draw"), elapsed: n.num("elapsed"))
     }
 
+    /// The committed room result replaces a stale authority checkpoint exactly (scores, clock).
+    static func applyResult(_ e: SplashEngine, _ r: MatchResult) {
+        e.restoreResult(r)
+        e.restoreClock(r.elapsed)
+        for a in e.actors {
+            if let score = r.scores[a.member.id] { a.score = score }
+        }
+        for (i, score) in r.teamScores.prefix(2).enumerated() where i < e.teamScores.count {
+            e.teamScores[i] = score
+        }
+    }
+
+    // MARK: Drills and paint
+
+    static func drill(_ d: SplashDrillSession) -> Node {
+        var incoming: Node = [:]
+        for (id, f) in d.incoming { incoming[id] = ["aim": v(f.aim), "passed": f.passed] as Node }
+        return ["successes": d.successes, "mistakes": d.mistakes, "wave": d.wave, "nextCue": d.nextCue, "releaseAt": d.releaseAt,
+                "lastSuccess": d.lastSuccess, "cueHigh": d.cueHigh, "cueBots": d.cueBots, "resolved": d.resolvedOrder,
+                "incoming": incoming]
+    }
+
+    static func restoreDrill(_ d: SplashDrillSession, _ n: Node) {
+        if n.isEmpty { return }
+        d.successes = KotlinNumber.int(n.num("successes"))
+        d.mistakes = KotlinNumber.int(n.num("mistakes"))
+        d.wave = KotlinNumber.int(n.num("wave"))
+        d.nextCue = n.num("nextCue")
+        d.releaseAt = n.num("releaseAt", -1.0)
+        d.lastSuccess = n.num("lastSuccess", -10.0)
+        d.cueHigh = n.flag("cueHigh")
+        d.cueBots = n.list("cueBots").map { NodeValue.text($0) }
+        d.restoreResolved(n.list("resolved").map { NodeValue.text($0) })
+        d.incoming = [:]
+        for (id, value) in n.node("incoming") {
+            let f = NodeValue.node(value)
+            d.incoming[id] = DrillFlight(vector(f, "aim"), passed: f.flag("passed"))
+        }
+    }
+
     // MARK: Shared world
 
     static func shared(_ e: SplashEngine) -> Node {
         var actors: Node = [:]
         for a in e.actors { actors[a.member.id] = actorState(a) }
         var out: Node = ["time": e.time, "actors": actors, "teamScores": e.teamScores]
+        if let d = e.drill { out["drill"] = drill(d) }
+        let paint = e.paintSession
+        out["paintCatches"] = paint.catches
+        out["paintWalls"] = paint.walls.map { $0.cells }
+        out["paintPoints"] = paint.points
+        out["paintThrows"] = paint.throwsTaken
+        out["paintSpills"] = paint.spills
+        out["paintFailed"] = paint.failed
         out["shots"] = e.shots.map { s -> Node in
             return ["id": s.id, "owner": s.owner, "questionId": s.questionId, "position": v(s.position), "height": s.height,
                     "velocity": v(s.velocity), "vz": s.vz, "color": s.color, "age": s.age]
@@ -231,6 +340,19 @@ enum WorldCodec {
     }
 
     static func applyShared(_ e: SplashEngine, _ n: Node, blend: Double = 1.0) {
+        if let d = e.drill { restoreDrill(d, n.node("drill")) }
+        let paint = e.paintSession
+        paint.catches = KotlinNumber.int(n.num("paintCatches"))
+        for (i, raw) in n.list("paintWalls").enumerated() where i < paint.walls.count {
+            let wall = paint.walls[i]
+            for (j, value) in NodeValue.list(raw).prefix(wall.cells.count).enumerated() {
+                wall.cells[j] = NodeValue.number(value).map { KotlinNumber.int($0) } ?? -1
+            }
+        }
+        for (i, value) in n.list("paintPoints").prefix(2).enumerated() { paint.points[i] = KotlinNumber.int(NodeValue.number(value) ?? 0) }
+        for (i, value) in n.list("paintThrows").prefix(2).enumerated() { paint.throwsTaken[i] = KotlinNumber.int(NodeValue.number(value) ?? 0) }
+        paint.spills = KotlinNumber.int(n.num("paintSpills"))
+        paint.failed = n.flag("paintFailed")
         e.restoreClock(n.num("time"))
         let states = n.node("actors")
         for a in e.actors {
@@ -283,6 +405,8 @@ enum WorldCodec {
 
     static func command(_ c: Command) -> Node {
         switch c {
+        case .drillAim(let x, let height): return ["type": "drillAim", "x": x, "height": height]
+        case .paintAt(let wall, let u, let v): return ["type": "paintAt", "wall": wall, "u": u, "v": v]
         case .move(let vector): return ["type": "move", "x": vector.x, "y": vector.y]
         case .aim(let vector): return ["type": "aim", "x": vector.x, "y": vector.y]
         case .walkTo(let position, let questionId, let index):
@@ -298,6 +422,8 @@ enum WorldCodec {
 
     static func command(_ n: Node) -> Command? {
         switch n.str("type") {
+        case "drillAim": return .drillAim(x: n.num("x"), height: n.num("height"))
+        case "paintAt": return .paintAt(wall: KotlinNumber.int(n.num("wall")), u: n.num("u"), v: n.num("v"))
         case "move": return .move(V(n.num("x"), n.num("y")))
         case "aim": return .aim(V(n.num("x"), n.num("y")))
         case "walkTo": return .walkTo(V(n.num("x"), n.num("y")), questionId: n.str("qid"), index: KotlinNumber.int(n.num("index", -1)))

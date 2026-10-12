@@ -43,6 +43,20 @@ final class ReplicaTests: XCTestCase {
         XCTAssertEqual(replica.actors[0].score, 0)
     }
 
+    func testCommittedResultReplacesStaleAuthorityCheckpointExactly() {
+        let e = SplashEngine(members: [Member("a", "mia"), Member("b", "minik")])
+        e.restoreClock(24.074)
+        e.actor("a")?.score = 9
+        e.finish()
+        let committed = MatchResult(id: "room-r1", winners: ["a"], scores: ["a": 10, "b": 5], teamScores: [0, 0], draw: false, elapsed: 24.076333)
+        WorldCodec.applyResult(e, committed)
+        XCTAssertEqual(e.result, committed)
+        XCTAssertEqual(e.time, committed.elapsed)
+        XCTAssertEqual(e.actor("a")?.score, 10)
+        e.tick(0.1)
+        XCTAssertEqual(e.result, committed)
+    }
+
     /// Firebase delivers lists as arrays and booleans as CFBoolean NSNumbers; both decode.
     func testFoundationValuesDecodeLikeAndroid() {
         let node: Node = ["flag": NSNumber(value: true), "count": NSNumber(value: 3), "list": NSArray(array: [1, 2]),

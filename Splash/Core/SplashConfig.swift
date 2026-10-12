@@ -3,8 +3,9 @@ import Foundation
 /// Port of Android core/SplashConfig.kt: physics, gestures, penalties, bot timing, network
 /// cadence and RenderConfig framing. Values are identical to Android.
 struct SplashConfig: Equatable {
-    var width: Double = 12.0
-    var depth: Double = 12.0
+    /// New arenas are 20 x 20 (Android 2026-10-05); restored rooms and saves keep their own size.
+    var width: Double = 20.0
+    var depth: Double = 20.0
     var moveSpeed: Double = 3.8
     var throwSpeed: Double = 7.8
     var gravity: Double = 2.6
@@ -17,7 +18,7 @@ struct SplashConfig: Equatable {
     var jumpGravity: Double = 9.5
     var crouchSeconds: Double = 0.85
     var pickupRadius: Double = 1.05
-    var answerRing: Double = 1.60
+    var answerRing: Double = 3.6
     var cleanSeconds: Double = 1.5
     var returnShield: Double = 0.8
     var paintLayers: Int = 3
@@ -36,6 +37,15 @@ struct SplashConfig: Equatable {
     var render: RenderConfig = RenderConfig()
     var snapshotHz: Int = 12
     var inputHz: Int = 20
+    /// House players' pace (Android 2026-10): speed, thinking time and the room they leave.
+    var difficulty: Difficulty = .standard
+    /// "Paint walls · teams": each team paints the other team's wall.
+    var wallBattle: Bool = false
+    var hitEffect: HitEffect = .cosmetic
+    /// The daily paint journey's challenge (nil in regular battles), its cycle and journey step.
+    var challenge: ChallengeKind? = nil
+    var chapter: Int = 0
+    var challengeStep: Int = 0
     var botThinkMin: Double = 1.9
     var botThinkMax: Double = 3.8
     var particleLimit: Int = 220
@@ -54,10 +64,50 @@ struct SplashConfig: Equatable {
         ok = ok && target > 0 && teamTarget > 0 && duration > 0.0
         ok = ok && doubleTapMs >= 150 && doubleTapMs <= 350
         ok = ok && snapshotHz >= 5 && snapshotHz <= 30 && inputHz >= 5 && inputHz <= 30
+        ok = ok && doubleTapDistanceDp >= 20.0 && doubleTapDistanceDp <= 70.0 && movementDragDp >= 16.0 && movementDragDp <= 80.0
+        ok = ok && bodyTouchDp > 0 && arcTouchDp > 0 && gestureSlopDp > 0
         ok = ok && botThinkMin > 0.0 && botThinkMax >= botThinkMin
         ok = ok && particleLimit >= 30 && particleLimit <= 600
         return ok
     }
+}
+
+/// Android `Difficulty(speed, think, space)`: house players' speed, thinking time and the room they keep.
+enum Difficulty: String, KotlinEnum {
+    case easy = "EASY"
+    case standard = "STANDARD"
+    case pro = "PRO"
+
+    var speed: Double {
+        switch self {
+        case .easy: return 0.62
+        case .standard: return 0.85
+        case .pro: return 1.0
+        }
+    }
+
+    var think: Double {
+        switch self {
+        case .easy: return 2.0
+        case .standard: return 1.35
+        case .pro: return 1.0
+        }
+    }
+
+    var space: Double {
+        switch self {
+        case .easy: return 3.2
+        case .standard: return 2.4
+        case .pro: return 1.8
+        }
+    }
+}
+
+/// Android `HitEffect`: what a hit does in a wall battle.
+enum HitEffect: String, KotlinEnum {
+    case cosmetic = "COSMETIC"
+    case rest = "REST"
+    case slow = "SLOW"
 }
 
 enum GameMode: String, KotlinEnum {
@@ -72,28 +122,62 @@ enum Topic: String, KotlinEnum {
     case mixed = "MIXED"
 }
 
+/// Android `HouseSkills`: the 1-5 star ratings shown on the house-player cards. Every value
+/// changes actual play (speed, aim error and prediction, dodging, release speed, answers).
+struct HouseSkills: Equatable {
+    let speed: Int
+    let precision: Int
+    let reflexes: Int
+    let power: Int
+    let knowledge: Int
+
+    init(_ speed: Int, _ precision: Int, _ reflexes: Int, _ power: Int, _ knowledge: Int = 3) {
+        self.speed = speed
+        self.precision = precision
+        self.reflexes = reflexes
+        self.power = power
+        self.knowledge = knowledge
+    }
+
+    /// Android `require(all in 1..5)`, kept as a query; the table lookups below clamp instead.
+    var isValid: Bool {
+        return [speed, precision, reflexes, power, knowledge].allSatisfy { $0 >= 1 && $0 <= 5 }
+    }
+
+    private static func star(_ value: Int) -> Int { return min(max(value, 1), 5) - 1 }
+
+    var correctAnswerProbability: Double { return Double(knowledge) / 7.0 }
+    var movementFactor: Double { return 0.5 + Double(speed - 1) * 0.125 }
+    var throwFactor: Double { return 0.64 + Double(power - 1) * 0.09 }
+    var aimErrorDegrees: Double { return [26.0, 19.0, 12.0, 6.0, 2.0][HouseSkills.star(precision)] }
+    var prediction: Double { return 0.25 + Double(precision - 1) * 0.15 }
+    var dodgeChance: Double { return [0.10, 0.20, 0.32, 0.46, 0.62][HouseSkills.star(reflexes)] }
+    var reactionSeconds: Double { return [0.38, 0.31, 0.24, 0.18, 0.13][HouseSkills.star(reflexes)] }
+}
+
 struct SplashCharacter: Equatable {
     let id: String
     let en: String
     let he: String
     let skill: Double
+    let qualities: HouseSkills
 
     func name(_ hebrew: Bool) -> String { return hebrew ? he : en }
 }
 
 enum Characters {
     static let all: [SplashCharacter] = [
-        SplashCharacter(id: "miniko", en: "Miniko", he: "מיניקו", skill: 0.70),
-        SplashCharacter(id: "minik", en: "Minik", he: "מיניק", skill: 0.64),
-        SplashCharacter(id: "kyra", en: "Kyra", he: "ספיר", skill: 0.94),
-        SplashCharacter(id: "flare", en: "Flare", he: "Flare", skill: 0.9),
-        SplashCharacter(id: "gaya", en: "Gaya", he: "גאיה", skill: 0.83),
-        SplashCharacter(id: "mia", en: "Mia", he: "מיה", skill: 0.77),
-        SplashCharacter(id: "amber", en: "Amber", he: "ענבר", skill: 0.82),
-        SplashCharacter(id: "comet", en: "Comet", he: "שביט", skill: 0.86),
-        SplashCharacter(id: "june", en: "June", he: "סהר", skill: 0.80),
-        SplashCharacter(id: "moshiko", en: "Bouncy Bob", he: "מושיקו", skill: 0.66),
-        SplashCharacter(id: "coach67", en: "Coach67", he: "Coach67", skill: 0.88)
+        SplashCharacter(id: "miniko", en: "Miniko", he: "מיניקו", skill: 0.70, qualities: HouseSkills(3, 3, 3, 3, 3)),
+        SplashCharacter(id: "minik", en: "Minik", he: "מיניק", skill: 0.64, qualities: HouseSkills(3, 2, 3, 2, 5)),
+        SplashCharacter(id: "kyra", en: "Kyra", he: "ספיר", skill: 0.94, qualities: HouseSkills(5, 4, 5, 4, 5)),
+        SplashCharacter(id: "flare", en: "Flare", he: "Flare", skill: 0.9, qualities: HouseSkills(5, 4, 5, 5, 4)),
+        SplashCharacter(id: "gaya", en: "Gaya", he: "גאיה", skill: 0.83, qualities: HouseSkills(4, 5, 5, 5, 4)),
+        SplashCharacter(id: "mia", en: "Mia", he: "מיה", skill: 0.77, qualities: HouseSkills(5, 5, 5, 4, 5)),
+        SplashCharacter(id: "amber", en: "Amber", he: "ענבר", skill: 0.82, qualities: HouseSkills(4, 5, 3, 3, 3)),
+        SplashCharacter(id: "comet", en: "Comet", he: "שביט", skill: 0.86, qualities: HouseSkills(5, 4, 5, 4, 4)),
+        SplashCharacter(id: "june", en: "June", he: "סהר", skill: 0.80, qualities: HouseSkills(5, 4, 5, 3, 3)),
+        SplashCharacter(id: "moshiko", en: "Bouncy Bob", he: "מושיקו", skill: 0.66, qualities: HouseSkills(1, 4, 3, 5, 3)),
+        SplashCharacter(id: "coach67", en: "Coach", he: "המאמן", skill: 0.88, qualities: HouseSkills(3, 3, 3, 4, 3))
     ]
 
     static func get(_ id: String) -> SplashCharacter {

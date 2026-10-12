@@ -91,7 +91,8 @@ final class Gestures {
         guard let p = active.removeValue(forKey: id) else { return }
         activeOrder.removeAll { $0 == id }
         if p.dragged {
-            emit(TouchAction(type: "end", pointer: id, target: p.target, x: x, y: y))
+            // The drag length tells a released Hard-throw swipe from a cancelled pointer.
+            emit(TouchAction(type: "end", pointer: id, target: p.target, x: x, y: y, dx: hypot(x - p.x, y - p.y)))
             return
         }
         if p.isDouble {

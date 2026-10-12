@@ -4,7 +4,7 @@ project (default C:/Projects/MinikSplash). It never writes to the Android tree a
 a server.
 
 Checks:
-  catalog   Splash/Localization/apptext.json equals the AppText.kt catalog (order and values).
+  catalog   Splash/Localization/apptext.json equals the effective AppText.rows catalog (order and values).
   facts     Splash/Core/QuestionFacts.swift equals QuestionBank.english/world in Learning.kt.
   texts     Every English/Hebrew pair passed to tr()/AppText.t() in Splash Swift exists in the
             Android Kotlin sources (interpolations normalised), and Android pairs not used on iOS
@@ -166,14 +166,29 @@ def call_pairs(text, literals, names):
 # ---------------------------------------------------------------- catalog and facts
 
 def parse_catalog(android):
-    path = os.path.join(android, "app/src/main/java/com/appsbybros/minik/localization/AppText.kt")
+    """The effective Android `AppText.rows` map: the `mapOf` row functions (AppText.kt, GameSupportText.kt,
+    SplashFeedbackText.kt, SplashJourneyText.kt) joined with `+` in the order of the `rows` expression.
+    Kotlin `+` keeps a key at its first position and takes the last value, like a Python dict."""
+    folder = os.path.join(android, "app/src/main/java/com/appsbybros/minik/localization")
+    sources = [io.open(os.path.join(folder, f), encoding="utf-8").read() for f in sorted(os.listdir(folder)) if f.endswith(".kt")]
+    app_text = io.open(os.path.join(folder, "AppText.kt"), encoding="utf-8").read()
+    expression = re.search(r"private val rows:Map<String,List<String>> by lazy \{([^}]*)\}", app_text)
+    names = re.findall(r"(\w+)\(\)", expression.group(1))
     catalog = {}
-    in_chunks = False
-    for line in io.open(path, encoding="utf-8").read().split("\n"):
-        if line.startswith(" private fun chunk"):
-            in_chunks = True
-            continue
-        if in_chunks and " to listOf(" in line:
+    for name in names:
+        body = None
+        for text in sources:
+            m = re.search(r"(?:private |internal )?fun %s\(\)=mapOf\(\s*\n" % name, text)
+            if m:
+                body = text[m.end():]
+                break
+        if body is None:
+            raise SystemExit("AppText row function %s() not found" % name)
+        for line in body.split("\n"):
+            if " to listOf(" not in line:
+                if line.strip().startswith(")"):
+                    break
+                continue
             values = [v for _, v in kotlin_literals(line, normalise=False)]
             if len(values) != 5:
                 raise SystemExit("unexpected catalog line: " + line[:120])
@@ -297,6 +312,8 @@ def check_art(android):
         name = entry[:-len(".imageset")]
         png = os.path.join(art, entry, name + ".png")
         source = os.path.join(android, "app/src/main/assets/art", name + ".webp")
+        if not os.path.exists(source):
+            source = os.path.join(android, "app/src/main/assets/pro-world", name + ".webp")
         if not os.path.exists(source):
             source = os.path.join(android, "app/src/main/res/drawable-nodpi", name + ".png")
         a, b = Image.open(png), Image.open(source)

@@ -635,13 +635,18 @@ targets:
         CFBundleLocalizations: [en, he, ar, es, hi, nl]
         ITSAppUsesNonExemptEncryption: false
         UILaunchScreen: {}
-        # Portrait only, as on Android; iPad allows that only as a full-screen app.
+        # As on Android: menus are portrait; a battle follows the "Game orientation" setting
+        # (automatic, portrait or landscape) and its rotate button. Full screen on iPad.
         UIRequiresFullScreen: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
         UISupportedInterfaceOrientations~ipad:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.appsbybros.minik.splash
