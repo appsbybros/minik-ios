@@ -133,7 +133,10 @@ final class SplashController: ObservableObject {
     @Published private(set) var hitEffect: HitEffect = .cosmetic
     @Published private(set) var gameOrientation = 0
     @Published var gameSounds = true {
-        didSet { SplashPrefs.setBool(gameSounds, "gameSounds") }
+        didSet {
+            SplashPrefs.setBool(gameSounds, "gameSounds")
+            sounds.enabled = gameSounds
+        }
     }
     @Published var subjectsExpanded = false
     @Published var roomCode = ""
@@ -190,6 +193,7 @@ final class SplashController: ObservableObject {
         topic = Topic(rawValue: SplashPrefs.string("topic") ?? "MATH") ?? .math
         gameOrientation = min(max(SplashPrefs.int("gameOrientation", 0), 0), 2)
         gameSounds = SplashPrefs.bool("gameSounds", true)
+        sounds.enabled = gameSounds
         memoryObserver = NotificationCenter.default.addObserver(forName: UIApplication.didReceiveMemoryWarningNotification, object: nil, queue: .main) { _ in
             Task { @MainActor in ArtStore.shared.purge() }
         }
@@ -830,8 +834,10 @@ final class SplashController: ObservableObject {
                 }
             }
         }
-        e.onEvent = { [weak self] type, id in
-            if id == localId || type == "hit" || type == "finish" { self?.playSound(type) }
+        // The engine calls back outside the controller; the board itself honours "Game sounds".
+        let board = sounds
+        e.onEvent = { type, id in
+            if id == localId || type == "hit" || type == "finish" { board.play(type) }
         }
         pausePresented = false
         screen = .game
@@ -843,12 +849,6 @@ final class SplashController: ObservableObject {
             if self.foreground && !self.pausePresented { v.start() }
         }
         online?.attach(v)
-    }
-
-    /// Android `sounds(type)`: effects respect the "Game sounds" switch.
-    private func playSound(_ type: String) {
-        if !gameSounds { return }
-        sounds.play(type)
     }
 
     func pauseMenu() {

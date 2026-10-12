@@ -5,6 +5,8 @@ import Foundation
 final class SplashSounds {
     private var players: [String: [AVAudioPlayer]] = [:]
     private var paused = false
+    /// Android `prefs.getBoolean("gameSounds", true)`: the grown-ups page's "Game sounds" switch.
+    var enabled = true
 
     init() {
         let files = ["hit": "sfx_hit", "throw": "minik_kick2", "wrong": "sfx_wrong", "finish": "sfx_finish", "pickup": "sfx_pickup"]
@@ -23,7 +25,7 @@ final class SplashSounds {
 
     /// Android `sounds(type)`: unknown event types (jump, crouch) are silent.
     func play(_ type: String) {
-        guard !paused, let list = players[type], !list.isEmpty else { return }
+        guard enabled, !paused, let list = players[type], !list.isEmpty else { return }
         let player = list.first(where: { !$0.isPlaying }) ?? list[0]
         player.currentTime = 0
         player.play()
