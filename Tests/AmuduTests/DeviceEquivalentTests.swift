@@ -110,11 +110,14 @@ final class DeviceEquivalentTests: XCTestCase {
         }
     }
 
+    /// Android `res/values*/app_name.xml` (the launcher names, "Minik" + the game's local name).
     func testLocalizedDisplayNamesMatchAndroidAppNames() throws {
+        let names = ["en": "Minik Spud", "he": "מיניק עמודו", "es": "Minik Pies Quietos!", "ar": "مينيك لعبة أسماء", "hi": "Minik Naam Aur Ball",
+                     "nl": "Minik Stand in de mand"]
         for lang in ["en", "he", "es", "ar", "hi", "nl"] {
             let path = try XCTUnwrap(Bundle.main.path(forResource: lang, ofType: "lproj"), lang)
             let bundle = try XCTUnwrap(Bundle(path: path), lang)
-            XCTAssertEqual(GameText.title(lang), bundle.localizedString(forKey: "CFBundleDisplayName", value: nil, table: "InfoPlist"), lang)
+            XCTAssertEqual(names[lang], bundle.localizedString(forKey: "CFBundleDisplayName", value: nil, table: "InfoPlist"), lang)
         }
     }
 

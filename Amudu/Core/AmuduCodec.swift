@@ -97,8 +97,14 @@ enum AmuduCodec {
         return Member(n.str("id"), n.str("character"), n.str("name"), bot: n.flag("bot"), hebrew: n.flag("hebrew"))
     }
 
+    /// Court geometry and rules are shared match state; a config without them (an older save or room) restores the
+    /// 16x16 court with nickname rules.
     static func config(_ c: GameConfig) -> Node {
         var n: Node = [:]
+        n["challengeStep"] = c.challengeStep
+        n["width"] = c.width
+        n["depth"] = c.depth
+        n["stepLengthFraction"] = c.stepLengthFraction
         n["scene"] = c.scene.rawValue
         n["ball"] = c.ball.rawValue
         n["freeze"] = c.freezeRule.rawValue
@@ -108,6 +114,10 @@ enum AmuduCodec {
         n["daylight"] = c.daylight.rawValue
         n["throwMode"] = c.throwMode.rawValue
         n["wind"] = c.wind.rawValue
+        n["rules"] = c.rules.rawValue
+        n["requireCall"] = c.requireCall
+        n["stepsAfterCall"] = c.stepsAfterCall
+        n["actionSeconds"] = c.actionSeconds
         return n
     }
 
@@ -118,9 +128,14 @@ enum AmuduCodec {
         guard let daylight = Daylight(rawValue: n.str("daylight", "NOON")) else { throw AmuduError.invalidValue("daylight") }
         guard let mode = ThrowMode(rawValue: n.str("throwMode", "STANDARD")) else { throw AmuduError.invalidValue("throwMode") }
         guard let wind = Wind(rawValue: n.str("wind", "NONE")) else { throw AmuduError.invalidValue("wind") }
+        guard let rules = RuleSet(rawValue: n.str("rules", "NICKNAMES")) else { throw AmuduError.invalidValue("rules") }
         return try GameConfig(scene: scene, ball: ball, freezeRule: freeze, participants: Kotlin.toInt(n.num("participants", 6.0)),
-                              turns: Kotlin.toInt(n.num("turns", 0.0)), huddleSeconds: n.num("huddleSeconds", 24.0), daylight: daylight,
-                              throwMode: mode, wind: wind)
+                              turns: Kotlin.toInt(n.num("turns", 0.0)), width: n.num("width", 16.0), depth: n.num("depth", 16.0),
+                              huddleSeconds: n.num("huddleSeconds", 24.0), daylight: daylight, throwMode: mode, wind: wind, rules: rules,
+                              requireCall: n.flag("requireCall"), stepsAfterCall: Kotlin.toInt(n.num("stepsAfterCall")),
+                              actionSeconds: Kotlin.toInt(n.num("actionSeconds", 30.0)),
+                              stepLengthFraction: n.num("stepLengthFraction", 0.03125),
+                              challengeStep: Kotlin.toInt(n.num("challengeStep", -1.0)))
     }
 
     static func outcome(_ r: Outcome) -> Node {
@@ -147,6 +162,14 @@ enum AmuduCodec {
         x["catchReach"] = a.catchReach
         x["catchRoll"] = a.catchRoll
         x["catchProbability"] = a.catchProbability
+        x["spectator"] = a.spectator.rawValue
+        x["idleStrikes"] = a.idleStrikes
+        x["returnAttempts"] = a.returnAttempts
+        x["returnQueued"] = a.returnQueued
+        x["returnAfterBreak"] = a.returnAfterBreak
+        x["jumpHeight"] = a.jumpHeight
+        x["jumpVelocity"] = a.jumpVelocity
+        x["rankEarned"] = a.rankEarned
         x["penalties"] = a.penalties
         x["suffixes"] = a.suffixes
         x["duckUntil"] = a.duckUntil
@@ -177,6 +200,7 @@ enum AmuduCodec {
     /// The public snapshot every room member reads (never private suggestions or votes).
     static func shared(_ e: AmuduEngine) -> Node {
         var n: Node = [:]
+        if let p = e.practice { n["practice"] = practice(p) } else { n["practice"] = NSNull() }
         n["id"] = e.id
         n["seed"] = e.seed
         n["config"] = config(e.config)
@@ -193,6 +217,19 @@ enum AmuduCodec {
         n["regroupPending"] = e.regroupPending
         n["circleFormation"] = e.circleFormation
         if let anchor = e.pickupAnchor { n["pickupAnchor"] = v(anchor) } else { n["pickupAnchor"] = NSNull() }
+        n["sharedPause"] = e.sharedPause
+        n["stepRemaining"] = e.stepRemaining
+        n["actionDeadline"] = e.actionDeadline
+        n["actionActor"] = e.actionActor
+        n["actionStage"] = e.actionStage
+        n["timerHumans"] = e.timerHumans
+        n["breakSerial"] = e.breakSerial
+        n["statusSerial"] = e.statusSerial
+        n["lastStatusAt"] = e.lastStatusAt
+        n["returnTarget"] = e.returnTarget
+        n["returnSerial"] = e.returnSerial
+        n["returnDeadline"] = e.returnDeadline
+        n["returnVotes"] = e.returnVotes
         n["huddleTarget"] = e.huddleTarget
         n["huddleSerial"] = e.huddleSerial
         n["huddleDeadline"] = e.huddleDeadline
@@ -255,6 +292,21 @@ enum AmuduCodec {
         e.regroupPending = n.flag("regroupPending")
         e.circleFormation = n.flag("circleFormation")
         e.pickupAnchor = isNull(n["pickupAnchor"]) ? nil : vector(n["pickupAnchor"])
+        e.sharedPause = n.flag("sharedPause")
+        e.stepRemaining = n.num("stepRemaining")
+        e.actionDeadline = n.num("actionDeadline")
+        e.actionActor = n.str("actionActor")
+        e.actionStage = n.str("actionStage")
+        e.timerHumans = Kotlin.toInt(n.num("timerHumans"))
+        e.breakSerial = Kotlin.toInt(n.num("breakSerial"))
+        e.statusSerial = Kotlin.toInt(n.num("statusSerial"))
+        e.lastStatusAt = n.num("lastStatusAt")
+        e.returnTarget = n.str("returnTarget")
+        e.returnSerial = Kotlin.toInt(n.num("returnSerial"))
+        e.returnDeadline = n.num("returnDeadline")
+        var returnVotes: [String: Bool] = [:]
+        for (key, value) in node(n["returnVotes"]) { returnVotes[key] = boolean(value) == true }
+        e.returnVotes = returnVotes
         e.landing = vector(n["landing"])
         e.huddleTarget = n.str("huddleTarget")
         e.huddleSerial = Kotlin.toInt(n.num("huddleSerial"))
@@ -268,6 +320,12 @@ enum AmuduCodec {
         for (id, value) in node(n["actors"]) {
             guard let a = e.actor(id) else { continue }
             let x = node(value)
+            // Kotlin `SpectatorReason.valueOf` would throw on an unknown name; iOS keeps the actor playing.
+            a.spectator = SpectatorReason(rawValue: x.str("spectator", "NONE")) ?? SpectatorReason.none
+            a.idleStrikes = Kotlin.toInt(x.num("idleStrikes"))
+            a.returnAttempts = Kotlin.toInt(x.num("returnAttempts"))
+            a.returnQueued = x.flag("returnQueued")
+            a.returnAfterBreak = Kotlin.toInt(x.num("returnAfterBreak"))
             a.position = vector(x["position"])
             a.move = vector(x["move"])
             a.direction = vector(x["direction"])
@@ -279,6 +337,9 @@ enum AmuduCodec {
             a.catchRoll = x.num("catchRoll")
             a.catchProbability = x.num("catchProbability", 1.0)
             a.penalties = Kotlin.toInt(x.num("penalties"))
+            a.rankEarned = Kotlin.toInt(x.num("rankEarned"))
+            a.jumpHeight = x.num("jumpHeight")
+            a.jumpVelocity = x.num("jumpVelocity")
             a.suffixes = items(x["suffixes"]).map { text($0) }
             a.duckUntil = x.num("duckUntil")
             a.catchUntil = x.num("catchUntil")
@@ -294,6 +355,7 @@ enum AmuduCodec {
         let holder = b.str("holder")
         e.ball = Ball(vector(b["position"]), b.num("height"), vector(b["velocity"]), b.num("vz"), Kotlin.isBlank(holder) ? nil : holder,
                       bounces: Kotlin.toInt(b.num("bounces")), flightId: b.str("flightId"), launchAt: b.num("launchAt"))
+        if let p = e.practice { readPractice(p, node(n["practice"])) }
         var events: [GameEvent] = []
         for item in items(n["events"]) {
             let x = node(item)
@@ -312,6 +374,59 @@ enum AmuduCodec {
         }
     }
 
+    /// Kotlin `Codec.practice`: the skill-journey drill state of a saved practice.
+    static func practice(_ p: SpudPractice) -> Node {
+        var n: Node = [:]
+        n["successes"] = p.successes
+        n["mistakes"] = p.mistakes
+        n["wave"] = p.wave
+        n["nextAt"] = p.nextAt
+        n["releaseAt"] = p.releaseAt
+        n["cueHigh"] = p.cueHigh
+        n["cue"] = p.cue
+        n["selected"] = p.selected
+        n["target"] = v(p.target)
+        n["targetHeight"] = p.targetHeight
+        n["freezeAt"] = p.freezeAt
+        n["moved"] = p.moved
+        n["freezeReady"] = p.freezeReady
+        n["lastSuccess"] = p.lastSuccess
+        var shots: [Any] = []
+        for s in p.shots {
+            let b = s.ball
+            let item: Node = ["owner": s.owner, "incoming": s.incoming, "rebounded": s.rebounded, "passed": s.passed, "aim": v(s.aim),
+                              "position": v(b.position), "height": b.height, "velocity": v(b.velocity), "vz": b.vz, "id": b.flightId,
+                              "launchAt": b.launchAt]
+            shots.append(item)
+        }
+        n["shots"] = shots
+        return n
+    }
+
+    static func readPractice(_ p: SpudPractice, _ n: Node) {
+        if n.isEmpty { return }
+        p.successes = Kotlin.toInt(n.num("successes"))
+        p.mistakes = Kotlin.toInt(n.num("mistakes"))
+        p.wave = Kotlin.toInt(n.num("wave"))
+        p.nextAt = n.num("nextAt", 2.3)
+        p.releaseAt = n.num("releaseAt", -1.0)
+        p.cueHigh = n.flag("cueHigh")
+        p.cue = items(n["cue"]).map { text($0) }
+        p.selected = n.str("selected")
+        p.target = vector(n["target"])
+        p.targetHeight = n.num("targetHeight", 1.4)
+        p.freezeAt = n.num("freezeAt")
+        p.moved = n.num("moved")
+        p.freezeReady = n.flag("freezeReady")
+        p.lastSuccess = n.num("lastSuccess", -10.0)
+        p.shots = items(n["shots"]).map { value in
+            let x = node(value)
+            let b = Ball(vector(x["position"]), x.num("height"), vector(x["velocity"]), x.num("vz"), nil, bounces: 0, flightId: x.str("id"),
+                         launchAt: x.num("launchAt"))
+            return PracticeBall(b, x.str("owner"), x.flag("incoming"), vector(x["aim"]), rebounded: x.flag("rebounded"), passed: x.flag("passed"))
+        }
+    }
+
     static func command(_ c: GameCommand) -> Node {
         switch c {
         case .move(let value):
@@ -322,6 +437,8 @@ enum AmuduCodec {
             return ["type": "select", "target": target, "name": typedName]
         case .toss(let power, let drift):
             return ["type": "toss", "power": power, "drift": drift]
+        case .jump:
+            return ["type": "jump"]
         case .catchBall:
             return ["type": "catch"]
         case .duck:
@@ -332,6 +449,12 @@ enum AmuduCodec {
             return ["type": "end"]
         case .throwBall(let power):
             return ["type": "throw", "power": power]
+        case .pause(let value):
+            return ["type": "pause", "value": value]
+        case .requestReturn:
+            return ["type": "requestReturn"]
+        case .returnVote(let voteSerial, let yes):
+            return ["type": "returnVote", "serial": voteSerial, "yes": yes]
         case .say(let index):
             return ["type": "say", "index": index]
         }
@@ -342,14 +465,27 @@ enum AmuduCodec {
         case "move": return .move(vector(n["vector"]))
         case "aim": return .aim(vector(n["vector"]))
         case "select": return .select(target: n.str("target"), typedName: n.str("name"))
+        case "jump": return .jump
         case "toss": return .toss(power: n.num("power"), drift: n.num("drift"))
         case "catch": return .catchBall
         case "duck": return .duck
         case "shout": return .shout
         case "end": return .end
         case "throw": return .throwBall(power: n.num("power"))
+        case "pause": return .pause(value: n.flag("value"))
+        case "requestReturn": return .requestReturn
+        case "returnVote": return .returnVote(serial: Kotlin.toInt(n.num("serial")), yes: n.flag("yes"))
         case "say": return .say(index: Kotlin.toInt(n.num("index")))
         default: return nil
         }
+    }
+}
+
+/// Android `SnapshotGuard`: an empty/delayed snapshot must never teleport the ball to (0,0).
+enum SnapshotGuard {
+    static func playable(_ n: Node) -> Bool {
+        let b = AmuduCodec.node(n["ball"])
+        return AmuduCodec.number(n["time"]) != nil && !AmuduCodec.node(n["actors"]).isEmpty &&
+            AmuduCodec.number(b["height"]) != nil && AmuduCodec.items(b["position"]).count == 2
     }
 }

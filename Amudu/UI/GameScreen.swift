@@ -12,7 +12,8 @@ struct ArenaContainer: UIViewRepresentable {
     func updateUIView(_ uiView: ArenaView, context: Context) {}
 }
 
-/// Android `present()`: the arena plus its dialogs (pause, typed nickname, preset phrases, private nickname huddle).
+/// Android `present()`: the arena plus its dialogs (pause, typed nickname, roster, preset phrases, private nickname
+/// huddle, players & scores, return vote) and the loading spinner of a practice.
 struct GameScreen: View {
     @ObservedObject var model: AppModel
 
@@ -23,8 +24,21 @@ struct GameScreen: View {
                 ArenaContainer(view: arena)
                     .id(ObjectIdentifier(arena))
             }
+            if model.sceneLoading {
+                ProgressView()
+                    .progressViewStyle(.circular)
+                    .tint(.white)
+                    .scaleEffect(1.6)
+                    .frame(width: 64, height: 64)
+            }
             if model.huddle != nil {
                 HuddleCard(model: model)
+            }
+            if let rows = model.statusRows {
+                StatusCard(model: model, rows: rows)
+            }
+            if let vote = model.returnVote {
+                ReturnVoteCard(model: model, vote: vote)
             }
         }
         .alert(model.tr("Take a break", "זמן להפסקה"), isPresented: $model.pauseVisible) {
@@ -43,10 +57,71 @@ struct GameScreen: View {
         } message: {
             Text(model.tr("An incorrect nickname adds one penalty.", "כינוי שגוי מוסיף נקודת חובה אחת."))
         }
+        .confirmationDialog(model.tr("Choose a player", "בחירת שחקן"), isPresented: $model.rosterVisible, titleVisibility: .visible) {
+            ForEach(model.rosterCandidates) { candidate in
+                Button(candidate.name) { model.choose(candidate.id) }
+            }
+            Button(model.tr("Back", "חזרה"), role: .cancel) {}
+        }
         .confirmationDialog(model.tr("Say something", "אומרים משהו"), isPresented: $model.sayVisible, titleVisibility: .visible) {
             ForEach(0..<model.sayPhrases.count, id: \.self) { i in
                 Button(model.sayPhrases[i]) { model.say(i) }
             }
+        }
+    }
+}
+
+/// Android `showScores()`: players and scores after a penalty; it closes itself when the next turn starts.
+struct StatusCard: View {
+    @ObservedObject var model: AppModel
+    let rows: [StatusRow]
+
+    var body: some View {
+        DialogCard(RuleText["status"]) {
+            ScrollView {
+                VStack(spacing: 0) {
+                    ForEach(rows) { row in
+                        HStack(spacing: 0) {
+                            Image(uiImage: model.art.portrait(row.character))
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 45, height: 54)
+                            AmuduLabel(row.name, size: 17, color: 0xff173047)
+                            AmuduLabel(row.score, size: 20, color: 0xff173047)
+                                .fixedSize()
+                        }
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+            }
+            .frame(maxHeight: 360)
+            DialogTextButton(title: model.tr("Continue", "המשך")) { model.closeScores() }
+        }
+    }
+}
+
+/// Android `showReturnVote()`: cannot be dismissed; it closes when the vote ends.
+struct ReturnVoteCard: View {
+    @ObservedObject var model: AppModel
+    let vote: ReturnVoteState
+
+    var body: some View {
+        DialogCard(vote.title) {
+            VStack(spacing: 0) {
+                AmuduLabel(RuleText["pausedVote"], size: 17, color: 0xff173047)
+                AmuduLabel(RuleText.format(RuleText["seconds"], vote.seconds), size: 21, color: 0xff173047)
+                if vote.canVote {
+                    if vote.voted {
+                        AmuduLabel(RuleText["voted"], size: 17, color: 0xff173047)
+                    } else {
+                        AmuduButton(RuleText["yes"]) { model.castReturnVote(true) }
+                        AmuduButton(RuleText["no"]) { model.castReturnVote(false) }
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
         }
     }
 }
@@ -131,6 +206,10 @@ struct RootView: View {
         case .lobby: LobbyScreen(model: model)
         case .game: GameScreen(model: model)
         case .result: ResultScreen(model: model)
+        case .journey: JourneyScreen(model: model)
+        case .journeyResult: JourneyResultScreen(model: model)
+        case .support: SupportScreen(model: model)
+        case .rank: RankScreen(model: model)
         }
     }
 }

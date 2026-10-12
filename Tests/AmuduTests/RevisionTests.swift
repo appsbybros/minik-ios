@@ -211,7 +211,7 @@ final class RevisionTests: XCTestCase {
         e.circle("b")
         XCTAssertFalse(e.command("b", "bad", .select(target: "a", typedName: "Alex frog sparkly")))
         XCTAssertEqual(1, e.actor("b")!.penalties)
-        tick(e, 2.4)
+        tick(e, 5.4)
         XCTAssertTrue(e.command("b", "good", .select(target: "a", typedName: "frog sparkly")))
     }
 

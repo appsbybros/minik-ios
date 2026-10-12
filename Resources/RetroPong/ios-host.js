@@ -84,7 +84,7 @@
       button.setAttribute("aria-label", lang === "he" ? "להורים · הסרת פרסומות" : "For parents · Remove ads");
       if (getComputedStyle(parent).position === "static") parent.style.position = "relative";
       Object.assign(button.style, {position: "absolute", bottom: "10px", insetInlineStart: "16px", zIndex: "2", padding: "10px 12px",
-        minHeight: "44px", color: "#ff8fc0", background: "transparent", border: "0", font: "inherit", fontSize: "15px",
+        minHeight: "44px", color: "#3F8CFF", background: "transparent", border: "0", font: "inherit", fontSize: "15px",
         fontWeight: "700", textDecoration: "underline", cursor: "pointer", whiteSpace: "nowrap"});
       button.onclick = () => send({type: "parents"});
       parent.append(button);

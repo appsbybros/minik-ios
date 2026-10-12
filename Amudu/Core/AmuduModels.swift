@@ -298,6 +298,19 @@ enum ThrowMode: String, CaseIterable {
     }
 }
 
+/// Android `RuleSet`: the two playable variants (funny nicknames, or four letters then watching).
+enum RuleSet: String, CaseIterable {
+    case nicknames = "NICKNAMES"
+    case spud = "SPUD"
+}
+
+/// Android `SpectatorReason`: why an actor is watching (`none` while playing).
+enum SpectatorReason: String, CaseIterable {
+    case none = "NONE"
+    case inactive = "INACTIVE"
+    case letters = "LETTERS"
+}
+
 enum FreezeRule: String, CaseIterable {
     case freeze = "FREEZE"
     case honor = "HONOR"
@@ -312,11 +325,16 @@ enum Phase: String, CaseIterable {
     case flight = "FLIGHT"
     case resolve = "RESOLVE"
     case huddle = "HUDDLE"
+    case returnVote = "RETURN_VOTE"
+    case waiting = "WAITING"
     case finished = "FINISHED"
 }
 
 /// Android `GameConfig`. The validating initializer throws where Kotlin's `require` throws.
 struct GameConfig: Equatable {
+    /// Kotlin `actionSeconds in listOf(0,20,30,45,60)`.
+    static let actionChoices = [0, 20, 30, 45, 60]
+
     let scene: ArenaScene
     let ball: BallKind
     let freezeRule: FreezeRule
@@ -336,26 +354,47 @@ struct GameConfig: Equatable {
     let daylight: Daylight
     let throwMode: ThrowMode
     let wind: Wind
+    let rules: RuleSet
+    let requireCall: Bool
+    let stepsAfterCall: Int
+    let actionSeconds: Int
+    let stepLengthFraction: Double
+    let returnVoteSeconds: Double
+    let idleLimit: Int
+    let returnAttemptLimit: Int
+    /// Kotlin `challengeStep`: the skill-journey challenge this engine practices (-1 for a regular game).
+    let challengeStep: Int
 
     init(scene: ArenaScene = .park, ball: BallKind = .foam, freezeRule: FreezeRule = .freeze, participants: Int = 6, turns: Int = 0,
          width: Double = 16.0, depth: Double = 16.0, moveSpeed: Double = 4.4, catchWindow: Double = 0.7, duckSeconds: Double = 0.8,
          duckHeight: Double = 0.66, standingHeight: Double = 1.75, doubleTapMs: Int = 190, resolveSeconds: Double = 2.2,
          huddleSeconds: Double = 24.0, snapshotHz: Int = 12, daylight: Daylight = .noon, throwMode: ThrowMode = .standard,
-         wind: Wind = .none) throws {
-        let basic = participants >= 2 && participants <= 10 && turns >= 0 && turns <= 100 && width >= 12 && depth >= 12 && moveSpeed > 0
+         wind: Wind = .none, rules: RuleSet = .nicknames, requireCall: Bool = false, stepsAfterCall: Int = 0, actionSeconds: Int = 30,
+         stepLengthFraction: Double = 0.03125, returnVoteSeconds: Double = 15.0, idleLimit: Int = 3, returnAttemptLimit: Int = 3,
+         challengeStep: Int = -1) throws {
+        let modes = GameConfig.actionChoices.contains(actionSeconds) && stepsAfterCall >= 0 && stepsAfterCall <= 4 &&
+            stepLengthFraction >= 0.01 && stepLengthFraction <= 0.04 && returnVoteSeconds >= 10.0 && returnVoteSeconds <= 20.0 &&
+            idleLimit == 3 && returnAttemptLimit == 3
+        let basic = participants >= 2 && participants <= 10 && turns >= 0 && turns <= 100 && width >= 12.0 && width <= 40.0 &&
+            depth >= 12.0 && depth <= 40.0 && moveSpeed > 0
         let timing = catchWindow >= 0.1 && catchWindow <= 0.8 && duckHeight > 0 && duckHeight < standingHeight
         let network = huddleSeconds >= 1 && snapshotHz >= 5 && snapshotHz <= 20
-        guard basic && timing && network else { throw AmuduError.invalidConfig }
+        guard modes && basic && timing && network else { throw AmuduError.invalidConfig }
         self.init(raw: scene, ball: ball, freezeRule: freezeRule, participants: participants, turns: turns, width: width, depth: depth,
                   moveSpeed: moveSpeed, catchWindow: catchWindow, duckSeconds: duckSeconds, duckHeight: duckHeight,
                   standingHeight: standingHeight, doubleTapMs: doubleTapMs, resolveSeconds: resolveSeconds, huddleSeconds: huddleSeconds,
-                  snapshotHz: snapshotHz, daylight: daylight, throwMode: throwMode, wind: wind)
+                  snapshotHz: snapshotHz, daylight: daylight, throwMode: throwMode, wind: wind, rules: rules, requireCall: requireCall,
+                  stepsAfterCall: stepsAfterCall, actionSeconds: actionSeconds, stepLengthFraction: stepLengthFraction,
+                  returnVoteSeconds: returnVoteSeconds, idleLimit: idleLimit, returnAttemptLimit: returnAttemptLimit,
+                  challengeStep: challengeStep)
     }
 
     private init(raw scene: ArenaScene, ball: BallKind, freezeRule: FreezeRule, participants: Int, turns: Int, width: Double,
                  depth: Double, moveSpeed: Double, catchWindow: Double, duckSeconds: Double, duckHeight: Double,
                  standingHeight: Double, doubleTapMs: Int, resolveSeconds: Double, huddleSeconds: Double, snapshotHz: Int,
-                 daylight: Daylight, throwMode: ThrowMode, wind: Wind) {
+                 daylight: Daylight, throwMode: ThrowMode, wind: Wind, rules: RuleSet, requireCall: Bool, stepsAfterCall: Int,
+                 actionSeconds: Int, stepLengthFraction: Double, returnVoteSeconds: Double, idleLimit: Int, returnAttemptLimit: Int,
+                 challengeStep: Int) {
         self.scene = scene
         self.ball = ball
         self.freezeRule = freezeRule
@@ -375,28 +414,50 @@ struct GameConfig: Equatable {
         self.daylight = daylight
         self.throwMode = throwMode
         self.wind = wind
+        self.rules = rules
+        self.requireCall = requireCall
+        self.stepsAfterCall = stepsAfterCall
+        self.actionSeconds = actionSeconds
+        self.stepLengthFraction = stepLengthFraction
+        self.returnVoteSeconds = returnVoteSeconds
+        self.idleLimit = idleLimit
+        self.returnAttemptLimit = returnAttemptLimit
+        self.challengeStep = challengeStep
     }
 
-    /// The Kotlin defaults (6 players, park, foam, noon, standard, no wind, no turn limit).
+    /// The Kotlin defaults (6 players, park, foam, noon, standard, no wind, no turn limit, nickname rules, 16x16 court).
     static let defaults = GameConfig(raw: .park, ball: .foam, freezeRule: .freeze, participants: 6, turns: 0, width: 16.0, depth: 16.0,
                                      moveSpeed: 4.4, catchWindow: 0.7, duckSeconds: 0.8, duckHeight: 0.66, standingHeight: 1.75,
                                      doubleTapMs: 190, resolveSeconds: 2.2, huddleSeconds: 24.0, snapshotHz: 12, daylight: .noon,
-                                     throwMode: .standard, wind: .none)
+                                     throwMode: .standard, wind: .none, rules: .nicknames, requireCall: false, stepsAfterCall: 0,
+                                     actionSeconds: 30, stepLengthFraction: 0.03125, returnVoteSeconds: 15.0, idleLimit: 3,
+                                     returnAttemptLimit: 3, challengeStep: -1)
+
+    /// Kotlin `copy(...)`: every field that is not passed keeps its value; the copy is validated like the constructor.
+    func copy(scene: ArenaScene? = nil, ball: BallKind? = nil, freezeRule: FreezeRule? = nil, participants: Int? = nil, turns: Int? = nil,
+              width: Double? = nil, depth: Double? = nil, huddleSeconds: Double? = nil, daylight: Daylight? = nil,
+              throwMode: ThrowMode? = nil, wind: Wind? = nil, rules: RuleSet? = nil, requireCall: Bool? = nil,
+              stepsAfterCall: Int? = nil, actionSeconds: Int? = nil, stepLengthFraction: Double? = nil) throws -> GameConfig {
+        return try GameConfig(scene: scene ?? self.scene, ball: ball ?? self.ball, freezeRule: freezeRule ?? self.freezeRule,
+                              participants: participants ?? self.participants, turns: turns ?? self.turns, width: width ?? self.width,
+                              depth: depth ?? self.depth, moveSpeed: moveSpeed, catchWindow: catchWindow, duckSeconds: duckSeconds,
+                              duckHeight: duckHeight, standingHeight: standingHeight, doubleTapMs: doubleTapMs,
+                              resolveSeconds: resolveSeconds, huddleSeconds: huddleSeconds ?? self.huddleSeconds, snapshotHz: snapshotHz,
+                              daylight: daylight ?? self.daylight, throwMode: throwMode ?? self.throwMode, wind: wind ?? self.wind,
+                              rules: rules ?? self.rules, requireCall: requireCall ?? self.requireCall,
+                              stepsAfterCall: stepsAfterCall ?? self.stepsAfterCall, actionSeconds: actionSeconds ?? self.actionSeconds,
+                              stepLengthFraction: stepLengthFraction ?? self.stepLengthFraction, returnVoteSeconds: returnVoteSeconds,
+                              idleLimit: idleLimit, returnAttemptLimit: returnAttemptLimit, challengeStep: challengeStep)
+    }
 
     /// Kotlin `copy(participants = n)`.
     func with(participants n: Int) throws -> GameConfig {
-        return try GameConfig(scene: scene, ball: ball, freezeRule: freezeRule, participants: n, turns: turns, width: width, depth: depth,
-                              moveSpeed: moveSpeed, catchWindow: catchWindow, duckSeconds: duckSeconds, duckHeight: duckHeight,
-                              standingHeight: standingHeight, doubleTapMs: doubleTapMs, resolveSeconds: resolveSeconds,
-                              huddleSeconds: huddleSeconds, snapshotHz: snapshotHz, daylight: daylight, throwMode: throwMode, wind: wind)
+        return try copy(participants: n)
     }
 
-    /// Kotlin `copy(...)` for the settings a test or the setup screen changes.
+    /// Kotlin `copy(scene = ...)` for the settings a test or the setup screen changes.
     func with(scene newScene: ArenaScene) throws -> GameConfig {
-        return try GameConfig(scene: newScene, ball: ball, freezeRule: freezeRule, participants: participants, turns: turns, width: width,
-                              depth: depth, moveSpeed: moveSpeed, catchWindow: catchWindow, duckSeconds: duckSeconds, duckHeight: duckHeight,
-                              standingHeight: standingHeight, doubleTapMs: doubleTapMs, resolveSeconds: resolveSeconds,
-                              huddleSeconds: huddleSeconds, snapshotHz: snapshotHz, daylight: daylight, throwMode: throwMode, wind: wind)
+        return try copy(scene: newScene)
     }
 }
 
@@ -429,6 +490,11 @@ struct Member: Equatable {
 final class GameActor {
     let member: Member
     var position: V
+    /// Colour-rank points this actor earned in this match (5 for a catch or a successful tag).
+    var rankEarned = 0
+    /// Kotlin `jumpHeight`/`jumpVelocity`: a practice jump (skill journey only).
+    var jumpHeight = 0.0
+    var jumpVelocity = 0.0
     var move = V.zero
     var direction = V(0, 1)
     var facing = V(0, 1)
@@ -446,9 +512,17 @@ final class GameActor {
     var hitAt = -99.0
     var gait = 0.0
     var actuallyMoving = false
+    var spectator = SpectatorReason.none
+    var idleStrikes = 0
+    var returnAttempts = 0
+    var returnQueued = false
+    var returnAfterBreak = 0
     var nextThink = 0.0
     var catchDecided = false
     var movementPenaltyTurn = -1
+
+    /// Kotlin `active`: playing, not watching.
+    var active: Bool { return spectator == SpectatorReason.none }
 
     init(member: Member, position: V) {
         self.member = member
@@ -508,11 +582,19 @@ enum GameCommand: Equatable {
     /// Kotlin `Command.Select(target, typedName = "")`.
     case select(target: String, typedName: String = "")
     case toss(power: Double, drift: Double)
+    /// Kotlin `Command.Jump`: only skill-journey practice uses it.
+    case jump
     case catchBall
     case duck
     case shout
     case throwBall(power: Double)
     case end
+    /// Kotlin `Command.Pause(value)`: only the last active human can pause a shared match.
+    case pause(value: Bool)
+    /// Kotlin `Command.RequestReturn`: an inactive watcher asks to rejoin (nickname rules only).
+    case requestReturn
+    /// Kotlin `Command.ReturnVote(serial, yes)`.
+    case returnVote(serial: Int, yes: Bool)
     case say(index: Int)
 }
 

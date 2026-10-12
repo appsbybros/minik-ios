@@ -3,7 +3,9 @@ import Foundation
 private final class AppTextBundleToken {}
 
 /// Android `com.appsbybros.minik.localization.AppText`: the device-language catalog. English and Hebrew come from the
-/// call sites; Spanish, Arabic, Hindi and Dutch come from `AmuduCatalog.json` (all 820 Android rows, same order).
+/// call sites; Spanish, Arabic, Hindi and Dutch come from `AmuduCatalog.json` (all 959 rows of Android's effective
+/// `rows` map: `screenPresentationRevision() + chunk0() + … + chunk13() + gameSupportText() + spudJourneyText()`,
+/// first position and last value per key).
 /// Never changes stored names or network answer keys.
 enum AppText {
     static let supported: Set<String> = ["en", "he", "es", "ar", "hi", "nl"]

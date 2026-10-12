@@ -1,6 +1,6 @@
 import UIKit
 
-/// One atlas cell: its pixel rectangle and the hand anchor normalized to the 256x320 cell (Android `SpriteFrame`).
+/// One atlas cell: its pixel rectangle and the hand anchor normalized to that cell's size (Android `SpriteFrame`).
 struct SpriteFrame {
     let rect: CGRect
     let handX: CGFloat
@@ -25,6 +25,7 @@ final class ArtStore {
     private var frameImages: [String: [UIImage]] = [:]
     private var directionalImages: [String: [UIImage]] = [:]
     private var portraits: [String: UIImage] = [:]
+    private var anchors: [String: SpriteAnchor] = [:]
     private(set) var scenes: [ArenaScene: UIImage] = [:]
     private(set) var balls: [BallKind: UIImage] = [:]
     private let placeholderFrame = SpriteFrame(rect: CGRect(x: 0, y: 0, width: 256, height: 320), handX: 0.5, handY: 0.6)
@@ -44,7 +45,6 @@ final class ArtStore {
             directionalFrames[c.id] = directions
             frameImages[c.id] = front.map { ArtStore.crop(sheet, $0.rect) }
             directionalImages[c.id] = directions.map { ArtStore.crop(side, $0.rect) }
-            portraits[c.id] = ArtStore.crop(sheet, CGRect(x: 0, y: 0, width: 256, height: 320))
         }
     }
 
@@ -65,7 +65,8 @@ final class ArtStore {
         return (root["characters"] as? [String: Any]) ?? [:]
     }
 
-    /// Hand anchors in both files are pixels of a 256x320 cell; Android normalizes x/256 and y/320.
+    /// Hand anchors are pixels of their cell; Android normalizes them by the cell's width and height (front cells are
+    /// 256x320, directional cells 192x240).
     private static func parse(_ table: [String: Any], _ id: String) -> [SpriteFrame] {
         guard let entry = table[id] as? [String: Any], let list = entry["frames"] as? [Any] else { return [] }
         var out: [SpriteFrame] = []
@@ -75,7 +76,7 @@ final class ArtStore {
             let h = (f["hand"] as? [Any])?.compactMap { AmuduCodec.number($0) } ?? []
             guard r.count >= 4, h.count >= 2 else { continue }
             let rect = CGRect(x: r[0], y: r[1], width: r[2], height: r[3])
-            out.append(SpriteFrame(rect: rect, handX: CGFloat(h[0] / 256.0), handY: CGFloat(h[1] / 320.0)))
+            out.append(SpriteFrame(rect: rect, handX: CGFloat(h[0] / r[2]), handY: CGFloat(h[1] / r[3])))
         }
         return out
     }
@@ -92,7 +93,35 @@ final class ArtStore {
 
     func ball(_ kind: BallKind) -> UIImage { return balls[kind] ?? UIImage() }
 
-    func portrait(_ id: String) -> UIImage { return portraits[AmuduCharacters.get(id).id] ?? UIImage() }
+    /// Android `ArtStore.portrait`: the front idle cell, sized by its opaque bounds into a 256x320 portrait (cached).
+    func portrait(_ id: String) -> UIImage {
+        let key = AmuduCharacters.get(id).id
+        if let cached = portraits[key] { return cached }
+        guard let cell = frameImages[key]?.first else { return UIImage() }
+        let made = SpriteSizing.portrait(cell, frontAnchor(key))
+        portraits[key] = made
+        return made
+    }
+
+    private func frontAnchor(_ id: String) -> SpriteAnchor {
+        let key = id + "/front"
+        if let cached = anchors[key] { return cached }
+        let made = SpriteSizing.anchor(cell(frameImages[id], 0))
+        anchors[key] = made
+        return made
+    }
+
+    /// Android `ArtStore.anchor`: the opaque bounds of the idle cell for this facing (front, back or side), cached.
+    func anchor(_ character: String, _ visual: SpriteVisual) -> SpriteAnchor {
+        let id = AmuduCharacters.get(character).id
+        let facing = visual.facing == "front" ? "front" : (visual.facing == "back" ? "back" : "side")
+        if facing == "front" { return frontAnchor(id) }
+        let key = id + "/" + facing
+        if let cached = anchors[key] { return cached }
+        let made = SpriteSizing.anchor(cell(directionalImages[id], facing == "back" ? 8 : 0))
+        anchors[key] = made
+        return made
+    }
 
     /// Android `ArtStore.frame`: which of the 16 front cells an actor shows right now.
     func frame(_ a: GameActor, _ e: AmuduEngine) -> Int {
@@ -127,8 +156,8 @@ final class ArtStore {
         case 6, 7: pose = 5
         case 8: pose = 6
         case 9, 10: pose = 7
-        case 12: pose = 1
-        case 14: pose = 2
+        case 12, 13: pose = 1
+        case 14, 15: pose = 2
         default: pose = 0
         }
         let directional = pose + (facing == "back" ? 8 : 0)

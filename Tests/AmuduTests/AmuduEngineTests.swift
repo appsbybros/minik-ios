@@ -123,7 +123,9 @@ final class AmuduEngineTests: XCTestCase {
         for i in 0..<5 { e.command("p2", "m\(i)", .move(V(1, 0))) }
         XCTAssertEqual(1, e.actor("p2")!.penalties)
         tick(e, 0.1)
-        XCTAssertGreaterThan(e.actor("p2")!.position.x, 14)
+        // Android (2026-10): the honor penalty ends the throw at once, so nobody keeps running.
+        XCTAssertEqual(.resolve, e.phase)
+        XCTAssertEqual(14.0, e.actor("p2")!.position.x, accuracy: 0.0001)
     }
 
     func testDuplicateThrowAndInvalidNumbersRejected() throws {
@@ -138,7 +140,8 @@ final class AmuduEngineTests: XCTestCase {
         let e = try aimed()
         e.actor("p1")!.penalties = 2
         e.command("p0", "t", .throwBall(power: 0.5))
-        tick(e, 2.7)
+        // A penalty keeps the players & scores view for five seconds before the huddle.
+        tick(e, 5.7)
         XCTAssertEqual(.huddle, e.phase)
         XCTAssertFalse(e.propose("p1", "frog"))
         XCTAssertTrue(e.propose("p0", "frog"))
@@ -150,7 +153,7 @@ final class AmuduEngineTests: XCTestCase {
         e.circle("p0")
         XCTAssertFalse(e.command("p0", "s1", .select(target: "p1")))
         XCTAssertEqual(1, e.actor("p0")!.penalties)
-        tick(e, 2.4)
+        tick(e, 5.4)
         XCTAssertTrue(e.command("p0", "s2", .select(target: "p1", typedName: "frog")))
     }
 

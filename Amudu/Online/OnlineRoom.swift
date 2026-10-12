@@ -54,6 +54,8 @@ import FirebaseDatabase
     private weak var view: ArenaView?
     private var closed = false
     private var active = true
+    /// Android `connected`: the Realtime Database `.info/connected` state.
+    private var isConnected = false
     private var authority = false
     private var claiming = false
     private var loading = false
@@ -119,6 +121,21 @@ import FirebaseDatabase
         }
         auth = link.auth
         db = link.database
+        let connectivity = link.database.reference(withPath: ".info/connected")
+        let connectivityHandle = connectivity.observe(.value, with: { [weak self] snapshot in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.isConnected = (snapshot.value as? Bool) == true
+                self.view?.networkWaiting = !self.isConnected
+            }
+        }, withCancel: { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.isConnected = false
+                self.view?.networkWaiting = true
+            }
+        })
+        listeners.append((connectivity, connectivityHandle))
         if let user = link.auth.currentUser {
             connected(user.uid, join)
             return
@@ -355,7 +372,7 @@ import FirebaseDatabase
             r.child("members/\(me)/ready").setValue(true)
         }, onStart: { [weak self] in
             self?.start()
-        })
+        }, gameConfig: try? AmuduCodec.readConfig(node(meta["config"])))
     }
 
     private func start() {
@@ -499,6 +516,7 @@ import FirebaseDatabase
     func attach(_ v: ArenaView) {
         view = v
         v.remote = !authority
+        v.networkWaiting = !isConnected
         v.sendCommand = { [weak self] cmd in
             guard let self else { return }
             if self.authority {
@@ -525,6 +543,7 @@ import FirebaseDatabase
 
     /// Guests apply each 12 Hz snapshot once, then interpolate positions over 100 ms.
     private func remoteUpdate(_ v: ArenaView) {
+        if !SnapshotGuard.playable(latest) { return }
         if version != applied {
             previousPositions.removeAll()
             for a in v.engine.actors { previousPositions[a.member.id] = a.position }
@@ -626,12 +645,13 @@ import FirebaseDatabase
     }
 
     private func cycle() {
-        guard active, let r = room, !meta.isEmpty else { return }
+        guard active, isConnected, let r = room, !meta.isEmpty else { return }
         if meta.str("phase") == "finished" {
             pending.removeAll()
             return
         }
         let stamp = now()
+        view?.networkWaiting = !authority && (received == 0 || uptimeMs() - received > 4500)
         if authority && stamp - lastHeartbeat > 2000 {
             lastHeartbeat = stamp
             r.child("meta/leaseUntil").setValue(stamp + 8000)
@@ -702,10 +722,10 @@ import FirebaseDatabase
         })
     }
 
-    private func connectedHumanLeader(excluding target: String) -> String? {
+    private func connectedHumanLeader(_ e: AmuduEngine, excluding target: String) -> String? {
         let keys = members.filter { entry in
             let n = node(entry.value)
-            return entry.key != target && !n.flag("bot") && n.flag("connected")
+            return entry.key != target && e.actor(entry.key)?.active == true && !n.flag("bot") && n.flag("connected")
         }.map { $0.key }
         return keys.min(by: Kotlin.less)
     }
@@ -740,7 +760,7 @@ import FirebaseDatabase
         // Rules intentionally require the public phase to be committed first. A local
         // optimistic snapshot is insufficient; wait for the completed publication.
         if authority && huddleMeta.isEmpty && publishedHuddle == e.huddleSerial && !creatingHuddle && now() >= nextHuddleAttempt {
-            let leader = connectedHumanLeader(excluding: e.huddleTarget)
+            let leader = connectedHumanLeader(e, excluding: e.huddleTarget)
             creatingHuddle = true
             var value: Node = [:]
             value["target"] = e.huddleTarget
@@ -766,7 +786,7 @@ import FirebaseDatabase
         if authority && !huddleMeta.isEmpty && !replacingLeader {
             let current = huddleMeta.str("leader")
             if !node(members[current]).flag("connected") {
-                let replacement = connectedHumanLeader(excluding: e.huddleTarget)
+                let replacement = connectedHumanLeader(e, excluding: e.huddleTarget)
                 replacingLeader = true
                 let change: [AnyHashable: Any] = ["leader": replacement ?? uid, "botOnly": replacement == nil]
                 Task { @MainActor [weak self] in
@@ -784,7 +804,7 @@ import FirebaseDatabase
             }
             return
         }
-        let bots = members.filter { $0.key != target && node($0.value).flag("bot") }
+        let bots = members.filter { $0.key != target && e.actor($0.key)?.active == true && node($0.value).flag("bot") }
         for (bid, b) in bots where huddleSuggestions[bid] == nil {
             r.child("huddles/\(id)/suggestions/\(bid)").setValue(Words.suggestion(Int(Kotlin.hashCode(bid)), hebrew: node(b).flag("hebrew")))
         }
@@ -796,13 +816,15 @@ import FirebaseDatabase
         }
         if Double(now()) >= huddleMeta.num("deadline") {
             let fallback = Words.suggestion(e.huddleSerial, hebrew: identity.hebrew)
-            let humans = members.filter { !node($0.value).flag("bot") }.map { $0.key }
+            let humans = members.filter { e.actor($0.key)?.active == true && !node($0.value).flag("bot") }.map { $0.key }
+            let eligibleProposals = huddleSuggestions.filter { e.actor($0.key)?.active == true && $0.key != target }
+            let eligibleVotes = huddleVotes.filter { e.actor($0.key)?.active == true && $0.key != target }
             var priority: String?
             if humans.count == 1 {
                 let human = humans[0]
-                if human != target && huddleSuggestions[human] != nil { priority = human }
+                if human != target && eligibleProposals[human] != nil { priority = human }
             }
-            let winner = priority ?? AmuduEngine.rankedWinner(keys: Array(huddleSuggestions.keys), votes: Array(huddleVotes.values))
+            let winner = priority ?? AmuduEngine.rankedWinner(keys: Array(eligibleProposals.keys), votes: Array(eligibleVotes.values))
             huddleWriting = true
             let name = winner.flatMap { huddleSuggestions[$0] } ?? fallback
             writeHuddleResult(r, id, name: name, winner: winner ?? "fallback")
@@ -835,7 +857,7 @@ import FirebaseDatabase
     }
 
     func propose(_ text: String) {
-        if Kotlin.isBlank(huddleId) || !Words.validSuggestion(text) || huddleMeta.str("target") == uid { return }
+        if world?.actor(uid)?.active != true || Kotlin.isBlank(huddleId) || !Words.validSuggestion(text) || huddleMeta.str("target") == uid { return }
         guard let r = room else { return }
         let value = Words.nfkcTrim(text)
         let path = "huddles/\(huddleId)/suggestions/\(uid)"
@@ -849,7 +871,7 @@ import FirebaseDatabase
     }
 
     func vote(_ id: String) {
-        if huddleSuggestions[id] == nil || huddleMeta.str("target") == uid { return }
+        if world?.actor(uid)?.active != true || huddleSuggestions[id] == nil || huddleMeta.str("target") == uid { return }
         guard let r = room else { return }
         let path = "huddles/\(huddleId)/votes/\(uid)"
         Task { @MainActor [weak self] in
@@ -861,7 +883,27 @@ import FirebaseDatabase
         }
     }
 
+    /// Android `setPaused`: only the last active human pauses the shared match (Command.Pause).
+    func setPaused(_ value: Bool) {
+        guard let e = world else { return }
+        if e.activeHumans > 1 || e.actor(uid)?.active != true { return }
+        if authority {
+            if e.command(uid, UUID().uuidString.lowercased(), .pause(value: value)), let r = room {
+                let update: [AnyHashable: Any] = ["public": AmuduCodec.shared(e), "checkpoint": AmuduCodec.checkpoint(e)]
+                if JSONSerialization.isValidJSONObject(update) { r.updateChildValues(update) }
+            }
+        } else {
+            if let index = pending.firstIndex(where: { $0.0 == "pause" }) {
+                pending[index] = ("pause", .pause(value: value))
+            } else {
+                pending.append(("pause", .pause(value: value)))
+            }
+            flush()
+        }
+    }
+
     func background() {
+        setPaused(true)
         if let r = room, !uid.isEmpty {
             if meta.str("phase") == "playing" && world?.result == nil {
                 pending.removeAll { $0.0 == "move" }
@@ -879,6 +921,7 @@ import FirebaseDatabase
     func foreground() {
         if closed { return }
         active = true
+        setPaused(false)
         if let r = room, !uid.isEmpty { r.child("members/\(uid)/connected").setValue(true) }
     }
 
@@ -920,6 +963,7 @@ import FirebaseDatabase
 
     func attach(_ v: ArenaView) {}
     func endGame() {}
+    func setPaused(_ value: Bool) {}
     func huddleRemainingSeconds() -> Int { return 0 }
     func propose(_ text: String) {}
     func vote(_ id: String) {}

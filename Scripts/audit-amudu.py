@@ -33,6 +33,22 @@ KOTLIN_SOURCES = [
     "app/src/main/java/com/appsbybros/minik/amudu/SelectionWidgets.kt",
     "app/src/main/java/com/appsbybros/minik/amudu/core/AmuduEngine.kt",
     "app/src/main/java/com/appsbybros/minik/amudu/core/Models.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/core/ProgressRanks.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/HebrewStopCalls.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/PictureChoices.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/RuleText.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/SnapshotGuard.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/StopCallVoice.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/JourneyCelebration.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/core/SpudJourney.kt",
+    "app/src/main/java/com/appsbybros/minik/world/SpudReceptionZoom.kt",
+    "app/src/main/java/com/appsbybros/minik/ui/CenteredToggleSpan.kt",
+    "app/src/main/java/com/appsbybros/minik/ui/GameDialogBuilder.kt",
+    "app/src/main/java/com/appsbybros/minik/world/ArenaCamera.kt",
+    "app/src/main/java/com/appsbybros/minik/world/ArenaWorldView.kt",
+    "app/src/main/java/com/appsbybros/minik/world/LandscapeFraming.kt",
+    "app/src/main/java/com/appsbybros/minik/world/SpriteSizing.kt",
+    "app/src/main/java/com/appsbybros/minik/world/StableLabels.kt",
 ]
 
 # Android-only literals: debug QA intents/files, ads/billing/parent gate, Android framework identifiers.
@@ -41,6 +57,8 @@ EXCLUDED_SUBSTRINGS = [
     "Restore purchase", "Enter code", "Your Amudu code", "For a grown-up", "Try again.", "Apply", "unconfigured", "purchased",
     "ready\"", "emulator", "1:1234567890", "demo-minik-amudu", "firebaseio", "127.0.0.1", "sans-serif", "art/", ".webp",
     "tennis.png", "Missing ", "amudu_ads", "frequency", "Amudu code", "Code copied", "$a × $b",
+    # The OpenGL ES world shaders are ported to Metal Shading Language (Amudu/World/ArenaWorldView.swift).
+    "gl_Position", "gl_FragColor",
 ]
 # Literals whose behavior the Swift code reproduces without the same literal (documented in the handoff):
 # Hebrew ads/billing/parent-gate texts (feature off on iOS), the debug demo name, regexes replaced by Unicode-category
@@ -51,12 +69,34 @@ EQUIVALENT = {
     "למבוגר אחראי", "{} × {} = ?", "נסו שוב.", "{}/{}/{}/{}", "{} · {}", "own", "running", "meanFrameMs", "screen", "origin",
     "width", "hands", "UNCHECKED_CAST", "minikAmudu/rooms/{}", "members/{}", "commands/{}",
     "House players must have unique avatars, distinct from humans.", r"[\p{L}\p{M}\p{N}]+", r"[\p{L}\p{M}\p{N} '\-]+", r"\s+",
+    # Android accessibility class name: iOS marks the picture choices with the selected button trait.
+    "android.widget.RadioButton",
+    # OpenGL attribute/uniform names: Metal binds the same values by buffer index.
+    "aPos", "aUv", "uMode", "uAlpha", "uTex", "uCamera", "uLens", "uCenterX", "uCenter", "uTime", "uNight", "uScene", "uBounds",
+    # World art Android loads but never draws in this (non-Pro) edition; not bundled on iOS. iOS names the three skies
+    # in full ("park_sky", ...) instead of joining scene + "_" + "sky".
+    "heroes", "barriers", "scenes", "micro", "gloss", "urban", "parking", "building", "sky",
+    # The family module (com.appsbybros.family, MinikFamilyServices) is Android-only: "More Minik apps", public rooms,
+    # and the "Return to room" prefix FamilyMenu uses to file "Return to room (CODE)" (iOS builds that button directly).
+    "More Minik apps & games", "עוד אפליקציות ומשחקי מיניק", "Public rooms & championships", "חדרים פתוחים ואליפויות",
+    "Return to room", "חזרה לחדר",
+    # Settings & feedback: Android shares and rates its Play listing through an Intent chooser; iOS shares the game's
+    # public page with the system share sheet (no chooser title) and asks the App Store for its rating prompt.
+    "https://play.google.com/store/apps/details?id={}", "text/plain", "Share", "שיתוף",
+    # Android help passes "\\n" (a visible backslash and n, so no translation matches); iOS shows the line break the
+    # game screen uses for the same text.
+    "Drag to run · Tap / hold to catch\\nDouble-tap to duck", "גררו כדי לרוץ · נגיעה או לחיצה לתפיסה\\nנגיעה כפולה להתכופפות",
 }
 EXCLUDED_EXACT = {
     "", " ", "amudu", "saved", "room", "name", "avatar", "scene", "ball", "freeze", "count", "turns", "house", "daylight",
     "throwMode", "wind", "language", "{}", "hand", "rect", "frames", "characters", "front", "back", "left", "right",
     "fallback", "house", "-", "/", "?", "en", "he", "frog", "banana", "say", "renamed", "call", "freeze", "selected",
     "Online activation is pending.",
+    # Preference names: iOS keeps them in UserDefaults with this app's "amudu." prefix.
+    "ruleSet", "ruleConfig_", "ruleHouse_", "colourPoints", "rankReceipts", "skillJourney", "practiceSaved",
+    "receptionZoomOwn", "receptionZoomOthers", "gameSounds", "battleOrientation",
+    # Android view tags and QA control names (device tests only).
+    "receptionZoomGroup", "group_", "arena_choices", "ball_choices", "choice_", "rotate", "roster", "camera", "chat",
 }
 
 
@@ -217,37 +257,53 @@ def check_strings(android):
     return unique
 
 
-def kotlin_catalog(android):
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    src = open(os.path.join(android, "app/src/main/java/com/appsbybros/minik/localization/AppText.kt"), encoding="utf-8").read()
-    body = src[src.index("private fun chunk0()"):]
-    rows = {}
-    order = []
-    i = 0
+def kotlin_map_pairs(src, k):
+    """The `"key" to listOf("a", ...)` pairs of one Kotlin `mapOf(` call; `k` is the index just after `mapOf(`."""
+    pairs = []
     while True:
-        j = body.find('"', i)
-        if j < 0:
-            break
-        key, k = decode_kotlin(body, j)
-        m = re.match(r"\s*to\s+listOf\(", body[k:])
+        while src[k] in " \t\r\n,":
+            k += 1
+        if src[k] == ")":
+            return pairs
+        key, k = decode_kotlin(src, k)
+        m = re.match(r"\s*to\s+listOf\(", src[k:])
         if not m:
-            i = k
-            continue
+            raise ValueError("unexpected AppText entry near %r" % src[k:k + 60])
         k += m.end()
         values = []
         while True:
-            while body[k] in " \t\r\n,":
+            while src[k] in " \t\r\n,":
                 k += 1
-            if body[k] == ")":
+            if src[k] == ")":
                 k += 1
                 break
-            v, k = decode_kotlin(body, k)
+            v, k = decode_kotlin(src, k)
             values.append(v)
-        if key not in rows:
-            order.append(key)
-        rows[key] = values
-        i = k
-    return [[key] + rows[key] for key in order]
+        pairs.append((key, values))
+
+
+def kotlin_catalog(android):
+    """The effective Android `AppText.rows` map: the `mapOf` functions joined with `+` in the order of the `rows`
+    expression. Kotlin `+` and `mapOf` keep a key at its first position and take the last value, like a Python dict."""
+    folder = os.path.join(android, "app/src/main/java/com/appsbybros/minik/localization")
+    src = open(os.path.join(folder, "AppText.kt"), encoding="utf-8").read()
+    expression = re.search(r"private val rows:Map<String,List<String>> by lazy \{([^}]*)\}", src)
+    names = re.findall(r"(\w+)\(\)", expression.group(1))
+    # The row functions live in AppText.kt (private) or in their own files (internal, e.g. SpudJourneyText.kt).
+    sources = [open(os.path.join(folder, f), encoding="utf-8").read() for f in sorted(os.listdir(folder)) if f.endswith(".kt")]
+    rows = {}
+    for name in names:
+        found = None
+        for text in sources:
+            m = re.search(r"(?:private |internal )?fun %s\(\)=mapOf\(" % name, text)
+            if m:
+                found = (text, m.end())
+                break
+        if found is None:
+            raise ValueError("AppText row function %s() not found" % name)
+        for key, values in kotlin_map_pairs(found[0], found[1]):
+            rows[key] = values
+    return [[key] + values for key, values in rows.items()]
 
 
 def check_catalog(android):
@@ -295,7 +351,7 @@ def check_assets():
         if not os.path.isfile(os.path.join(folder, n + ".png")) or not os.path.isfile(os.path.join(folder, "Contents.json")):
             problems.append("missing imageset " + n)
     for f in ["sfx_throw.mp3", "bounce.wav", "ball_catch.wav", "sfx_pickup.mp3", "sfx_wrong.mp3", "whistle.wav", "sfx_finish.mp3",
-              "connected.mp3", "player_ready.mp3"]:
+              "connected.mp3", "player_ready.mp3", "amodu_call_funny.mp3", "amodu_call_standard.mp3"]:
         if not os.path.isfile(os.path.join(IOS, "Audio", f)):
             problems.append("missing audio " + f)
     for f in ["Art/atlas.json", "Art/directions.json", "Text/AmuduCatalog.json"]:

@@ -1,5 +1,355 @@
 [
 [
+" · You",
+" · Tú",
+" · أنت",
+" · आप",
+" · Jij"
+],
+[
+" · Your avatar",
+" · Tu avatar",
+" · صورتك",
+" · आपका अवतार",
+" · Jouw avatar"
+],
+[
+" · Not ready",
+" · Sin preparar",
+" · غير جاهز",
+" · तैयार नहीं",
+" · Niet klaar"
+],
+[
+"Choose a player",
+"Elige un jugador",
+"اختر لاعبًا",
+"एक खिलाड़ी चुनें",
+"Kies een speler"
+],
+[
+"Your close-up · live",
+"Tu primer plano · en directo",
+"لقطتك القريبة · مباشر",
+"आपका पास का दृश्य · लाइव",
+"Jouw close-up · live"
+],
+[
+"↔ Rotate view",
+"↔ Girar vista",
+"↔ تدوير العرض",
+"↔ दृश्य घुमाएँ",
+"↔ Beeld draaien"
+],
+[
+"Game orientation",
+"Orientación del juego",
+"اتجاه الشاشة",
+"खेल की दिशा",
+"Schermrichting"
+],
+[
+"Automatic rotation",
+"Giro automático",
+"تدوير تلقائي",
+"अपने आप घुमाएँ",
+"Automatisch draaien"
+],
+[
+"Landscape",
+"Horizontal",
+"أفقي",
+"आड़ा",
+"Liggend"
+],
+[
+"Portrait",
+"Vertical",
+"عمودي",
+"खड़ा",
+"Staand"
+],
+[
+"Your question",
+"Tu pregunta",
+"سؤالك",
+"आपका सवाल",
+"Jouw vraag"
+],
+[
+"Your colour ranks",
+"Tus rangos de color",
+"رتب ألوانك",
+"आपके रंग स्तर",
+"Jouw kleurrangen"
+],
+[
+"Learn to play with Minik",
+"Aprende a jugar con Minik",
+"تعلّم اللعب مع مينيك",
+"Minik के साथ खेलना सीखें",
+"Leer spelen met Minik"
+],
+[
+"Learn to play with Mia",
+"Aprende a jugar con Mia",
+"تعلّم اللعب مع ميا",
+"Mia के साथ खेलना सीखें",
+"Leer spelen met Mia"
+],
+[
+"Standard · tap anywhere to throw",
+"Estándar · toca donde quieras lanzar",
+"عادي · المس مكان الرمية",
+"सामान्य · जहाँ फेंकना है वहाँ टैप करें",
+"Standaard · tik waar je wilt gooien"
+],
+[
+"Hard · aim the arc; swipe for power",
+"Difícil · apunta con el arco y desliza",
+"صعب · وجّه القوس واسحب للقوة",
+"कठिन · चाप से निशाना, स्वाइप से ताकत",
+"Moeilijk · richt de boog en veeg voor kracht"
+],
+[
+"Try Hard",
+"Prueba Difícil",
+"جرّب الصعب",
+"कठिन आज़माएँ",
+"Probeer Moeilijk"
+],
+[
+"Single battle",
+"Una batalla",
+"معركة واحدة",
+"एक मुकाबला",
+"Eén gevecht"
+],
+[
+"5 battles cup",
+"Copa de 5 batallas",
+"كأس من 5 معارك",
+"5 मुकाबलों का कप",
+"Beker met 5 gevechten"
+],
+[
+"Game mode",
+"Modo de juego",
+"نمط اللعب",
+"खेल का प्रकार",
+"Spelmodus"
+],
+[
+"For this game only · your saved settings stay the same",
+"Solo para esta partida · tus ajustes guardados no cambian",
+"لهذه اللعبة فقط · تبقى إعداداتك المحفوظة كما هي",
+"केवल इस खेल के लिए · सहेजी सेटिंग नहीं बदलेंगी",
+"Alleen dit spel · je opgeslagen instellingen blijven gelijk"
+],
+[
+"Parking plaza",
+"Plaza de aparcamiento",
+"ساحة المواقف",
+"पार्किंग मैदान",
+"Parkeerplein"
+],
+[
+"Five-floor tower",
+"Torre de cinco plantas",
+"برج من خمسة طوابق",
+"पाँच मंज़िला टावर",
+"Toren met vijf verdiepingen"
+],
+[
+"Battle rules",
+"Reglas de la batalla",
+"قواعد المعركة",
+"मुकाबले के नियम",
+"Gevechtsregels"
+],
+[
+"Public rooms & championships",
+"Salas públicas y campeonatos",
+"غرف عامة وبطولات",
+"सार्वजनिक कमरे और चैंपियनशिप",
+"Openbare kamers en kampioenschappen"
+],
+[
+"Waiting for all assigned players.",
+"Esperando a todos los jugadores asignados.",
+"بانتظار جميع اللاعبين المحددين.",
+"सभी तय खिलाड़ियों का इंतज़ार है।",
+"Wachten op alle ingedeelde spelers."
+],
+[
+"All assigned players must join and be Ready.",
+"Todos los jugadores asignados deben unirse y estar preparados.",
+"يجب أن ينضم جميع اللاعبين المحددين ويكونوا جاهزين.",
+"सभी तय खिलाड़ियों को जुड़कर तैयार होना होगा।",
+"Alle ingedeelde spelers moeten meedoen en klaarstaan."
+],
+[
+"Waiting for the fixture host to open the room.",
+"Esperando a que el anfitrión abra la sala.",
+"بانتظار أن يفتح مضيف المباراة الغرفة.",
+"मैच के मेज़बान के कमरा खोलने का इंतज़ार है।",
+"Wachten tot de wedstrijdhost de kamer opent."
+],
+[
+"You are not assigned to this fixture.",
+"No estás asignado a este encuentro.",
+"أنت غير مسجل في هذه المباراة.",
+"आप इस मैच में शामिल नहीं हैं।",
+"Je bent niet ingedeeld voor deze wedstrijd."
+],
+[
+"Amudu code",
+"Código de Amudu",
+"رمز الغرفة",
+"कमरे का कोड",
+"Amudu-code"
+],
+[
+"Balloon ready. Tap any ground point or player to throw there.",
+"Globo listo. Toca el suelo o un jugador para lanzar hacia allí.",
+"البالون جاهز. المس نقطة على الأرض أو لاعبًا للرمي نحوها.",
+"गुब्बारा तैयार है। ज़मीन या किसी खिलाड़ी पर टैप करके वहाँ फेंकें।",
+"Ballon klaar. Tik op de grond of een speler om daarheen te gooien."
+],
+[
+"Balloon ready. Drag the arc to aim. A faster swipe throws harder; tap to use your saved aim.",
+"Globo listo. Arrastra el arco para apuntar. Desliza más rápido para lanzar más fuerte; toca para usar la dirección guardada.",
+"البالون جاهز. اسحب القوس للتصويب. السحب الأسرع يرمي بقوة أكبر؛ المس للرمي بالاتجاه المحفوظ.",
+"गुब्बारा तैयार है। चाप खींचकर निशाना लगाएँ। तेज़ स्वाइप से तेज़ फेंकें; तय दिशा में फेंकने के लिए टैप करें।",
+"Ballon klaar. Sleep de boog om te richten. Sneller vegen gooit harder; tik om je bewaarde richting te gebruiken."
+],
+[
+"Earn 2 points for a correct answer and 5 for a hit. Your colour stays with you between games.",
+"Gana 2 puntos por una respuesta correcta y 5 por un impacto. Tu color se conserva entre partidas.",
+"اكسب نقطتين للإجابة الصحيحة و5 للإصابة. يبقى لونك بين الألعاب.",
+"सही जवाब पर 2 अंक और निशाना लगने पर 5 अंक पाएँ। आपका रंग अगले खेल में भी रहता है।",
+"Verdien 2 punten voor een goed antwoord en 5 voor een treffer. Je kleur blijft tussen spellen bewaard."
+],
+[
+"Choose how to throw. Standard: tap any ground point or player. Hard: aim with the arc and swipe faster for more power. Try both.",
+"Elige cómo lanzar. Estándar: toca el suelo o un jugador. Difícil: apunta con el arco y desliza más rápido para dar más fuerza. Prueba ambos.",
+"اختر طريقة الرمي. العادي: المس الأرض أو لاعبًا. الصعب: صوّب بالقوس واسحب أسرع لقوة أكبر. جرّب الاثنين.",
+"फेंकने का तरीका चुनें। सामान्य: ज़मीन या खिलाड़ी पर टैप करें। कठिन: चाप से निशाना लगाएँ और ताकत के लिए तेज़ स्वाइप करें। दोनों आज़माएँ।",
+"Kies hoe je gooit. Standaard: tik op de grond of een speler. Moeilijk: richt met de boog en veeg sneller voor meer kracht. Probeer beide."
+],
+[
+"Try Hard throwing: collect a correct balloon. Swipe the arc toward your target and release to throw. Faster means stronger. You can also tap to throw with the saved aim.",
+"Prueba el lanzamiento difícil: recoge el globo correcto. Desliza el arco hacia tu objetivo y suelta. Más rápido significa más fuerte. También puedes tocar para usar la dirección guardada.",
+"جرّب الرمي الصعب: التقط بالون الإجابة الصحيحة. اسحب القوس نحو الهدف وأفلت للرمي. الأسرع أقوى. يمكنك أيضًا اللمس للرمي بالاتجاه المحفوظ.",
+"कठिन फेंक आज़माएँ: सही गुब्बारा उठाएँ। चाप को लक्ष्य की ओर स्वाइप करके छोड़ें। तेज़ का मतलब ताकतवर। तय दिशा में फेंकने के लिए टैप भी कर सकते हैं।",
+"Probeer moeilijk gooien: pak de juiste ballon. Veeg de boog naar je doel en laat los. Sneller is harder. Je kunt ook tikken om in de bewaarde richting te gooien."
+],
+[
+"Try Standard throwing: collect the correct balloon, then tap your teacher or a ground point. The balloon flies towards him; he can still dodge.",
+"Prueba el lanzamiento estándar: recoge el globo correcto y toca a tu guía o el suelo. El globo irá allí, pero tu guía puede esquivarlo.",
+"جرّب الرمي العادي: التقط البالون الصحيح ثم المس معلّمك أو الأرض. يتجه البالون نحوه، ويمكنه تفاديه.",
+"सामान्य फेंक आज़माएँ: सही गुब्बारा उठाकर अपने शिक्षक या ज़मीन पर टैप करें। गुब्बारा वहाँ जाएगा; शिक्षक बच भी सकते हैं।",
+"Probeer standaard gooien: pak de juiste ballon en tik op je leraar of de grond. De ballon vliegt daarheen; je leraar kan nog ontwijken."
+],
+[
+"Use solid cover. Cars and planters block low balloons; duck behind them or move around for a clear shot.",
+"Usa cobertura sólida. Los coches y las jardineras bloquean globos bajos; agáchate detrás o rodéalos para tener un tiro libre.",
+"استخدم الغطاء. السيارات وأحواض الزرع توقف البالونات المنخفضة؛ انحنِ خلفها أو التف حولها لرمية واضحة.",
+"आड़ लें। गाड़ियाँ और गमले नीचे के गुब्बारे रोकते हैं; पीछे झुकें या साफ़ निशाने के लिए घूमकर जाएँ।",
+"Zoek dekking. Auto’s en plantenbakken blokkeren lage ballonnen; buk erachter of loop eromheen voor een vrij schot."
+],
+[
+"A battle supports at most twelve players. Remove a house player or a connected friend.",
+"Una batalla admite hasta doce jugadores. Quita un personaje o un amigo conectado.",
+"تدعم المعركة اثني عشر لاعبًا كحد أقصى. أزل لاعبًا آليًا أو صديقًا متصلًا.",
+"एक मुकाबले में अधिकतम बारह खिलाड़ी हो सकते हैं। कोई गेम खिलाड़ी या जुड़े दोस्त को हटाएँ।",
+"Er kunnen maximaal twaalf spelers meedoen. Verwijder een huisgenoot of verbonden vriend."
+],
+[
+"Team battles need two equal teams of two to six players. Adjust the roster before starting.",
+"Las batallas por equipos necesitan dos equipos iguales de dos a seis jugadores. Ajusta la lista antes de empezar.",
+"تحتاج المعارك إلى فريقين متساويين من لاعبين إلى ستة لكل فريق. عدّل القائمة قبل البدء.",
+"टीम मुकाबले में दो बराबर टीमें चाहिए, हर टीम में दो से छह खिलाड़ी। शुरू करने से पहले सूची बदलें।",
+"Teamgevechten hebben twee gelijke teams van twee tot zes spelers nodig. Pas de spelerslijst aan voor je begint."
+],
+[
+"Five-battle online cups need a service update. Choose one or three battles, or play five with house players.",
+"Las copas en línea de cinco batallas necesitan una actualización. Elige una o tres batallas, o juega cinco con personajes.",
+"تحتاج كؤوس الخمس معارك عبر الإنترنت إلى تحديث الخدمة. اختر معركة أو ثلاثًا، أو العب خمسًا مع لاعبي اللعبة.",
+"पाँच ऑनलाइन मुकाबलों के कप के लिए सेवा अपडेट चाहिए। एक या तीन चुनें, या गेम खिलाड़ियों के साथ पाँच खेलें।",
+"Online bekers met vijf gevechten vereisen een service-update. Kies één of drie gevechten, of speel vijf met huisgenoten."
+],
+[
+"Drag to run · Tap / hold to catch\nDouble-tap to duck",
+"Arrastra para correr · Toca o mantén para atrapar\nDos toques para agacharte",
+"اسحب للركض · المس أو اضغط للإمساك\nلمستان للانحناء",
+"दौड़ने के लिए खींचें · कैच के लिए टैप / दबाएँ\nझुकने के लिए दो बार टैप",
+"Sleep om te rennen · Tik/houd vast om te vangen\nDubbeltik om te bukken"
+],
+[
+"Your colors & progress",
+"Tus colores y progreso",
+"ألوانك وتقدمك",
+"आपके रंग और प्रगति",
+"Je kleuren en voortgang"
+],
+[
+"Earn 5 points for a catch or a successful tag, and 15 for winning a completed game. Your color is saved across sessions.",
+"Gana 5 puntos por atrapar o acertar y 15 por ganar una partida terminada. Tu color se guarda entre partidas.",
+"احصل على 5 نقاط للإمساك أو الإصابة الناجحة و15 للفوز بلعبة مكتملة. يُحفظ لونك بين الجلسات.",
+"कैच या सफल हिट पर 5 अंक और पूरी बाज़ी जीतने पर 15 अंक पाएँ। आपका रंग अगली बार भी बना रहता है।",
+"Verdien 5 punten voor vangen of raken en 15 voor een gewonnen afgeronde wedstrijd. Je kleur blijft bewaard."
+],
+[
+"Total points: ",
+"Puntos totales: ",
+"مجموع النقاط: ",
+"कुल अंक: ",
+"Totaal aantal punten: "
+],
+[
+"Earn points through good catches, hits and wins. Your name color follows your total.",
+"Gana puntos al atrapar, acertar y ganar. El color de tu nombre sigue tu total.",
+"اجمع النقاط بالإمساك والتصويب والفوز. يتغير لون اسمك حسب مجموعك.",
+"कैच, हिट और जीत से अंक पाएँ। नाम का रंग कुल अंकों के साथ बदलता है।",
+"Verdien punten met vangen, raken en winnen. Je naamkleur volgt je totaal."
+],
+[
+"Your color journey",
+"Tu viaje de colores",
+"رحلتك مع الألوان",
+"रंगों का सफ़र",
+"Je kleurenreis"
+],
+[
+"Turn your phone to play in landscape, or tap ↻ during a game. Your chosen orientation is remembered for the next game.",
+"Gira el teléfono para jugar en horizontal o toca ↻ durante una partida. La orientación elegida se guarda para la siguiente partida.",
+"أدر الهاتف للعب أفقيًا أو اضغط ↻ أثناء اللعب. يُحفظ اتجاهك المختار للمباراة التالية.",
+"लैंडस्केप में खेलने के लिए फ़ोन घुमाएँ या गेम में ↻ दबाएँ। चुनी दिशा अगले गेम के लिए याद रहती है।",
+"Draai je telefoon om liggend te spelen of tik tijdens het spel op ↻. Je keuze wordt voor het volgende spel onthouden."
+],
+[
+"Choose player",
+"Elegir jugador",
+"اختيار لاعب",
+"खिलाड़ी चुनें",
+"Speler kiezen"
+],
+[
+"Your view · switch",
+"Tu vista · cambiar",
+"منظورك · تبديل",
+"आपका दृश्य · बदलें",
+"Jouw beeld · wisselen"
+],
+[
+"Action view · switch",
+"Vista de acción · cambiar",
+"منظور الحدث · تبديل",
+"एक्शन दृश्य · बदलें",
+"Actiebeeld · wisselen"
+],
+[
 "1 · Choose and toss",
 "1 · Elige y lanza",
 "1 · اختر وارمِ",
@@ -21,11 +371,11 @@
 "2 · Ren en vang"
 ],
 [
-"Drag and hold to run; lift to stop. Tap or briefly hold to prepare a catch for 0.7 seconds. Your character raises their hands and stops moving. Be close to the descending ball. After the attempt ends you can move again. Double-tap to duck.",
-"Arrastra y mantén para correr; suelta para parar. Toca o mantén un instante para intentar atrapar durante 0,7 segundos. El personaje alza las manos y se detiene. Acércate a la pelota mientras baja. Después podrás moverte de nuevo. Dos toques para agacharte.",
-"اسحب واضغط للركض، وارفع إصبعك للتوقف. المس أو اضغط قليلًا لمحاولة الإمساك لمدة 0.7 ثانية. ترفع الشخصية يديها وتتوقف. اقترب من الكرة النازلة. يمكنك الحركة بعد انتهاء المحاولة. لمستان للانحناء.",
-"दौड़ने के लिए खींचकर पकड़े रहें; छोड़ने पर रुकेंगे। टैप या थोड़ी देर दबाने पर 0.7 सेकंड का कैच प्रयास होगा। किरदार हाथ उठाकर रुकेगा। उतरती गेंद के पास रहें। उसके बाद फिर चल सकते हैं। झुकने के लिए दो बार टैप करें।",
-"Sleep en houd vast om te rennen; laat los om te stoppen. Tik of houd kort vast voor een vangpoging van 0,7 seconden. Je personage heft de handen en staat stil. Blijf bij de dalende bal. Daarna kun je weer bewegen. Dubbeltik om te bukken."
+"Drag and hold to run; lift to stop. Tap or briefly hold to prepare a brief catch attempt. Your character raises their hands and stops moving. Be close to the descending ball. After the attempt ends you can move again. Double-tap to duck.",
+"Arrastra y mantén para correr; suelta para parar. Toca o mantén un instante para hacer un intento breve de atrapar. El personaje alza las manos y se detiene. Acércate a la pelota mientras baja. Después podrás moverte de nuevo. Dos toques para agacharte.",
+"اسحب واضغط للركض، وارفع إصبعك للتوقف. المس أو اضغط قليلًا لمحاولة إمساك قصيرة. ترفع الشخصية يديها وتتوقف. اقترب من الكرة النازلة. يمكنك الحركة بعد انتهاء المحاولة. لمستان للانحناء.",
+"दौड़ने के लिए खींचकर पकड़े रहें; छोड़ने पर रुकेंगे। टैप करें या थोड़ी देर दबाएँ ताकि पात्र गेंद पकड़ने के लिए तैयार हो। किरदार हाथ उठाकर रुकेगा। उतरती गेंद के पास रहें। उसके बाद फिर चल सकते हैं। झुकने के लिए दो बार टैप करें।",
+"Sleep en houd vast om te rennen; laat los om te stoppen. Tik of houd kort vast voor een korte vangpoging. Je personage heft de handen en staat stil. Blijf bij de dalende bal. Daarna kun je weer bewegen. Dubbeltik om te bukken."
 ],
 [
 "3 · Pick up, then choose",
@@ -348,13 +698,6 @@
 "أمسكها أو انحنِ!",
 "पकड़ें या झुकें!",
 "Vangen of bukken!"
-],
-[
-"Drag to run · Tap / hold to catch · 0.7 sec\nDouble-tap to duck",
-"Arrastra para correr · Toca o mantén para atrapar · 0,7 s\nDos toques para agacharte",
-"اسحب للركض · المس أو اضغط للإمساك · 0.7 ثانية\nلمستان للانحناء",
-"दौड़ने के लिए खींचें · कैच के लिए टैप / दबाएँ · 0.7 सेकंड\nझुकने के लिए दो बार टैप",
-"Sleep om te rennen · Tik/houd vast om te vangen · 0,7 sec\nDubbeltik om te bukken"
 ],
 [
 "Take a break.\nThe next round is on its way.",
@@ -925,10 +1268,10 @@
 ],
 [
 "Catch",
-"Recepción",
-"الإمساك",
-"कैच",
-"Vangen"
+"Atrapar",
+"التقط",
+"पकड़ें",
+"Vang"
 ],
 [
 "Throw mode",
@@ -5534,14 +5877,14 @@
 "Saltar",
 "اقفز",
 "कूदें",
-"Springen"
+"Spring"
 ],
 [
 "Duck",
 "Agacharse",
 "انحنِ",
 "झुकें",
-"Bukken"
+"Duik"
 ],
 [
 "Free practice",
@@ -5738,5 +6081,635 @@
 "متوقف مؤقتًا · المس للمتابعة",
 "रुका हुआ · जारी रखने के लिए टैप करें",
 "Gepauzeerd · tik om door te gaan"
+],
+[
+"Rate the app",
+"Valora la aplicación",
+"قيّم التطبيق",
+"ऐप को रेटिंग दें",
+"Beoordeel de app"
+],
+[
+"Share the game",
+"Comparte el juego",
+"شارك اللعبة",
+"खेल साझा करें",
+"Deel het spel"
+],
+[
+"Your message",
+"Tu mensaje",
+"رسالتك",
+"आपका संदेश",
+"Jouw bericht"
+],
+[
+"Come play with me! ",
+"¡Ven a jugar conmigo! ",
+"تعال والعب معي! ",
+"मेरे साथ खेलें! ",
+"Kom met me spelen! "
+],
+[
+"No app is available to open this link.",
+"No hay una aplicación disponible para abrir este enlace.",
+"لا يوجد تطبيق متاح لفتح هذا الرابط.",
+"यह लिंक खोलने के लिए कोई ऐप उपलब्ध नहीं है।",
+"Er is geen app beschikbaar om deze link te openen."
+],
+[
+"Enjoying the game? Your feedback helps shape the next update.",
+"¿Te gusta el juego? Tus comentarios ayudan a mejorar la próxima actualización.",
+"هل تستمتع باللعبة؟ ملاحظاتك تساعد في تحسين التحديث القادم.",
+"खेल पसंद आया? आपके सुझाव अगले अपडेट को बेहतर बनाते हैं।",
+"Vind je het spel leuk? Je feedback helpt bij de volgende update."
+],
+[
+"Ball approach zoom",
+"Zoom al acercarse el balón",
+"تقريب الكاميرا عند اقتراب الكرة",
+"गेंद पास आने पर ज़ूम",
+"Zoom bij een naderende bal"
+],
+[
+"A closer view as the ball approaches. Game speed stays the same.",
+"Una vista más cercana cuando llega el balón. La velocidad del juego no cambia.",
+"رؤية أقرب عندما تقترب الكرة. تبقى سرعة اللعب كما هي.",
+"गेंद पास आने पर नज़दीक से देखें। खेल की गति नहीं बदलती।",
+"Een dichterbij beeld als de bal nadert. De spelsnelheid blijft gelijk."
+],
+[
+"Zoom when the ball approaches me",
+"Acercar cuando el balón viene hacia mí",
+"التقريب عندما تقترب الكرة مني",
+"गेंद मेरे पास आने पर ज़ूम करें",
+"Zoom als de bal naar mij komt"
+],
+[
+"Follow another human's approach zoom",
+"Seguir el zoom de otro jugador humano",
+"متابعة التقريب للاعب بشري آخر",
+"दूसरे मानव खिलाड़ी के पास आती गेंद पर ज़ूम करें",
+"Volg de zoom bij een andere menselijke speler"
+],
+[
+"Your first catch",
+"Tu primera recepción",
+"التقاطتك الأولى",
+"आपका पहला कैच",
+"Je eerste vangst"
+],
+[
+"Duck under",
+"Agáchate por debajo",
+"انحنِ تحتها",
+"नीचे झुकें",
+"Duik eronder"
+],
+[
+"Jump over",
+"Salta por encima",
+"اقفز فوقها",
+"ऊपर से कूदें",
+"Spring erover"
+],
+[
+"Step aside",
+"Muévete a un lado",
+"تحرّك جانبًا",
+"किनारे हटें",
+"Stap opzij"
+],
+[
+"Meet the practice tree",
+"Conoce el árbol de práctica",
+"تعرّف إلى شجرة التدريب",
+"अभ्यास के पेड़ से मिलें",
+"Ontmoet de oefenboom"
+],
+[
+"Through the ring",
+"Por el aro",
+"عبر الحلقة",
+"छल्ले से होकर",
+"Door de ring"
+],
+[
+"Land on the island",
+"Aterriza en la isla",
+"اهبط على الجزيرة",
+"द्वीप पर उतारें",
+"Land op het eiland"
+],
+[
+"Move and catch",
+"Muévete y atrapa",
+"تحرّك والتقط",
+"चलें और पकड़ें",
+"Beweeg en vang"
+],
+[
+"Pass and return",
+"Pasa y devuelve",
+"مرّر وأعد الكرة",
+"पास दें और लौटाएँ",
+"Overgooien en teruggooien"
+],
+[
+"Tree rebound",
+"Rebote del árbol",
+"ارتداد الشجرة",
+"पेड़ से लौटती गेंद",
+"Terugkaatsing van de boom"
+],
+[
+"Two throwers: duck",
+"Dos lanzadores: agáchate",
+"راميان: انحنِ",
+"दो फेंकने वाले: झुकें",
+"Twee werpers: duik"
+],
+[
+"Two throwers: jump",
+"Dos lanzadores: salta",
+"راميان: اقفز",
+"दो फेंकने वाले: कूदें",
+"Twee werpers: spring"
+],
+[
+"Choose your escape",
+"Elige cómo esquivar",
+"اختر طريقة التفادي",
+"बचने का तरीका चुनें",
+"Kies hoe je ontwijkt"
+],
+[
+"Follow the ring",
+"Sigue el aro",
+"اتبع الحلقة",
+"छल्ले का पीछा करें",
+"Volg de ring"
+],
+[
+"Near and far",
+"Cerca y lejos",
+"قريب وبعيد",
+"पास और दूर",
+"Dichtbij en veraf"
+],
+[
+"Find your teammate",
+"Encuentra a tu compañero",
+"اعثر على زميلك",
+"साथी को खोजें",
+"Vind je teamgenoot"
+],
+[
+"Duck in rhythm",
+"Agáchate al ritmo",
+"انحنِ بإيقاع",
+"लय में झुकें",
+"Duik op het ritme"
+],
+[
+"Jump in rhythm",
+"Salta al ritmo",
+"اقفز بإيقاع",
+"लय में कूदें",
+"Spring op het ritme"
+],
+[
+"Both directions",
+"Ambas direcciones",
+"من الاتجاهين",
+"दोनों दिशाएँ",
+"Beide richtingen"
+],
+[
+"Ready for the rebound",
+"Listos para el rebote",
+"استعد للارتداد",
+"लौटती गेंद के लिए तैयार",
+"Klaar voor de terugkaatsing"
+],
+[
+"Aim higher",
+"Apunta más alto",
+"صوّب أعلى",
+"ऊँचा निशाना लगाएँ",
+"Mik hoger"
+],
+[
+"Quick hands",
+"Manos rápidas",
+"يدان سريعتان",
+"फुर्तीले हाथ",
+"Snelle handen"
+],
+[
+"Two balls: duck",
+"Dos pelotas: agáchate",
+"كرتان: انحنِ",
+"दो गेंदें: झुकें",
+"Twee ballen: duik"
+],
+[
+"Two balls: jump",
+"Dos pelotas: salta",
+"كرتان: اقفز",
+"दो गेंदें: कूदें",
+"Twee ballen: spring"
+],
+[
+"Three-way lookout",
+"Vigila tres direcciones",
+"راقب ثلاثة اتجاهات",
+"तीन दिशाओं पर नज़र",
+"Let op drie richtingen"
+],
+[
+"All around you",
+"A tu alrededor",
+"من كل الجهات",
+"आपके चारों ओर",
+"Overal om je heen"
+],
+[
+"Pairs in rhythm",
+"Parejas al ritmo",
+"أزواج بإيقاع",
+"लय में जोड़ियाँ",
+"Paren op het ritme"
+],
+[
+"Pass and move",
+"Pasa y muévete",
+"مرّر وتحرّك",
+"पास दें और चलें",
+"Gooi en beweeg"
+],
+[
+"Call and lob",
+"Llama y lanza alto",
+"نادِ وارفع الكرة",
+"नाम पुकारें और ऊँचा फेंकें",
+"Roep en gooi hoog"
+],
+[
+"Run, call, freeze",
+"Corre, escucha, párate",
+"اركض واسمع وتوقّف",
+"दौड़ें, सुनें, रुकें",
+"Rennen, roepen, stilstaan"
+],
+[
+"Daily skill journey",
+"Aventura diaria de habilidades",
+"رحلة المهارات اليومية",
+"कौशल का दैनिक सफ़र",
+"Dagelijks vaardigheidsavontuur"
+],
+[
+"Challenge {0} of 30 · Cycle {1}",
+"Reto {0} de 30 · Ciclo {1}",
+"التحدي {0} من 30 · المسار {1}",
+"चुनौती {0}/30 · चक्र {1}",
+"Uitdaging {0} van 30 · Ronde {1}"
+],
+[
+"Goal: {0} successes · three hearts · no countdown",
+"Objetivo: {0} aciertos · tres corazones · sin cuenta atrás",
+"الهدف: {0} نجاحات · ثلاثة قلوب · بلا عدّ تنازلي",
+"लक्ष्य: {0} सफलताएँ · तीन दिल · कोई उलटी गिनती नहीं",
+"Doel: {0} successen · drie hartjes · geen aftelklok"
+],
+[
+"Your first success today earns 30 bonus points. Missing a day never resets your progress.",
+"Tu primer acierto de hoy gana 30 puntos extra. Saltarte un día nunca borra tu progreso.",
+"أول نجاح اليوم يمنحك 30 نقطة إضافية. تفويت يوم لا يمحو تقدّمك.",
+"आज की पहली सफलता पर 30 बोनस अंक मिलेंगे। एक दिन छूटने से प्रगति नहीं मिटती।",
+"Je eerste succes vandaag geeft 30 bonuspunten. Een dag overslaan wist je voortgang nooit."
+],
+[
+"Today's bonus is yours. Keep practicing if you like!",
+"Ya tienes el bono de hoy. ¡Sigue practicando si quieres!",
+"حصلت على مكافأة اليوم. واصل التدريب إن أحببت!",
+"आज का बोनस मिल गया। चाहें तो अभ्यास जारी रखें!",
+"Je dagbonus is binnen. Oefen gerust verder!"
+],
+[
+"Continue your practice",
+"Sigue tu práctica",
+"واصل تدريبك",
+"अभ्यास जारी रखें",
+"Verder oefenen"
+],
+[
+"Learn by playing",
+"Aprende jugando",
+"تعلّم باللعب",
+"खेलकर सीखें",
+"Leren door te spelen"
+],
+[
+"Let's try again",
+"Vamos a intentarlo otra vez",
+"لنحاول مجددًا",
+"फिर कोशिश करें",
+"Probeer het opnieuw"
+],
+[
+"{0}/{1} successes",
+"{0}/{1} aciertos",
+"{0}/{1} نجاحات",
+"{0}/{1} सफलताएँ",
+"{0}/{1} successen"
+],
+[
+"{0}/{1} successes · {2} hearts",
+"{0}/{1} aciertos · {2} corazones",
+"{0}/{1} نجاحات · {2} قلوب",
+"{0}/{1} सफलताएँ · {2} दिल",
+"{0}/{1} successen · {2} hartjes"
+],
+[
+"Progress saved · +{0} points",
+"Progreso guardado · +{0} puntos",
+"تم حفظ التقدّم · +{0} نقطة",
+"प्रगति सुरक्षित · +{0} अंक",
+"Voortgang bewaard · +{0} punten"
+],
+[
+"Practice at your own pace · progress is saved",
+"Practica a tu ritmo · se guarda tu progreso",
+"تدرّب بالوتيرة المناسبة لك · التقدّم محفوظ",
+"अपनी गति से अभ्यास करें · प्रगति सुरक्षित है",
+"Oefen op je eigen tempo · voortgang wordt bewaard"
+],
+[
+"Tap or hold to catch as the ball arrives. Drag to reach the landing marker. A catch counts only before the ball touches the ground.",
+"Toca o mantén pulsado para atrapar cuando llegue la pelota. Arrastra para llegar a la marca. Solo cuenta si la pelota no ha tocado el suelo.",
+"المس أو اضغط مطوّلًا للإمساك عند وصول الكرة. اسحب للوصول إلى علامة الهبوط. يُحسب الالتقاط قبل ملامسة الأرض فقط.",
+"गेंद आने पर पकड़ने के लिए टैप करें या दबाए रखें। उतरने के निशान तक खींचकर जाएँ। ज़मीन छूने से पहले पकड़ना ही गिना जाएगा।",
+"Tik of houd vast om de aankomende bal te vangen. Sleep naar de landingsmarkering. Alleen vangen vóór de bal de grond raakt telt."
+],
+[
+"Double-tap the arena to duck under the ball. Walking and jumping rest this round. Watch the cue above the thrower.",
+"Toca dos veces la pista para agacharte bajo la pelota. En esta ronda no caminas ni saltas. Mira la señal sobre el lanzador.",
+"المس الساحة مرتين للانحناء تحت الكرة. لا مشي ولا قفز في هذه الجولة. راقب الإشارة فوق الرامي.",
+"गेंद के नीचे झुकने के लिए मैदान पर दो बार टैप करें। इस दौर में चलना और कूदना बंद है। फेंकने वाले के ऊपर संकेत देखें।",
+"Dubbeltik op het veld om onder de bal te duiken. Lopen en springen rusten deze ronde. Kijk naar het teken boven de werper."
+],
+[
+"Tap Jump as the low ball approaches. Walking and ducking rest this round. Watch the thrower and time your jump.",
+"Toca Saltar cuando se acerque la pelota baja. En esta ronda no caminas ni te agachas. Mira al lanzador y elige el momento.",
+"المس «اقفز» عند اقتراب الكرة المنخفضة. لا مشي ولا انحناء في هذه الجولة. راقب الرامي واختر توقيت القفزة.",
+"नीचे की गेंद पास आने पर कूदें दबाएँ। इस दौर में चलना और झुकना बंद है। फेंकने वाले को देखकर सही समय पर कूदें।",
+"Tik op Spring als de lage bal nadert. Lopen en duiken rusten deze ronde. Let op de werper en kies je springmoment."
+],
+[
+"Drag to leave the ball's path. Jumping and ducking rest this round.",
+"Arrastra para salir de la trayectoria. En esta ronda no saltas ni te agachas.",
+"اسحب للابتعاد عن مسار الكرة. لا قفز ولا انحناء في هذه الجولة.",
+"गेंद के रास्ते से हटने के लिए खींचें। इस दौर में कूदना और झुकना बंद है।",
+"Sleep om uit de baan van de bal te komen. Springen en duiken rusten deze ronde."
+],
+[
+"Choose how to escape: drag to move, tap Jump or double-tap to duck. Paired balls always allow the same escape for both.",
+"Elige cómo esquivar: arrastra para moverte, toca Saltar o toca dos veces para agacharte. Dos pelotas a la vez siempre se esquivan con la misma acción.",
+"اختر طريقة التفادي: اسحب للتحرّك، أو المس «اقفز»، أو المس مرتين للانحناء. يمكن دائمًا تفادي الكرتين المتزامنتين بالحركة نفسها.",
+"बचने का तरीका चुनें: चलने के लिए खींचें, कूदें दबाएँ या दो बार टैप करके झुकें। साथ आने वाली दोनों गेंदों से एक ही क्रिया से बच सकते हैं।",
+"Kies: sleep om te bewegen, tik op Spring of dubbeltik om te duiken. Twee gelijktijdige ballen kun je altijd met dezelfde actie ontwijken."
+],
+[
+"Tap the golden island to aim, then swipe from your ball to throw. Only the first ground contact counts. Explore different throwing strengths.",
+"Toca la isla dorada para apuntar y desliza desde tu pelota para lanzar. Solo cuenta el primer contacto con el suelo. Prueba distintas fuerzas.",
+"المس الجزيرة الذهبية للتصويب، ثم اسحب من الكرة للرمي. تُحسب الملامسة الأولى للأرض فقط. جرّب درجات قوة مختلفة.",
+"निशाना लगाने के लिए सुनहरे द्वीप पर टैप करें, फिर गेंद से स्वाइप करके फेंकें। ज़मीन से पहला संपर्क ही गिना जाता है। अलग-अलग ताकत आज़माएँ।",
+"Tik op het gouden eiland om te richten en veeg vanaf je bal om te gooien. Alleen het eerste grondcontact telt. Probeer verschillende werpkrachten."
+],
+[
+"Aim at the ring and swipe from your ball to throw. The ball must pass inside the ring in the air. A faster swipe throws higher and faster.",
+"Apunta al aro y desliza desde tu pelota. Debe pasar por dentro en el aire. Un deslizamiento más rápido lanza más alto y más fuerte.",
+"صوّب نحو الحلقة واسحب من الكرة للرمي. يجب أن تمر الكرة داخل الحلقة في الهواء. السحب الأسرع يرمي أعلى وأسرع.",
+"छल्ले पर निशाना लगाकर गेंद से स्वाइप करें। गेंद को हवा में छल्ले के अंदर से निकलना होगा। तेज़ स्वाइप से गेंद ऊँची और तेज़ जाती है।",
+"Mik op de ring en veeg vanaf je bal. De bal moet door de ring vliegen. Een snellere veeg gooit hoger en sneller."
+],
+[
+"Aim at the mark on the tree trunk and swipe from your ball. Hit the tree before the ball touches the ground.",
+"Apunta a la marca del tronco y desliza desde tu pelota. Golpea el árbol antes de que toque el suelo.",
+"صوّب نحو العلامة على جذع الشجرة واسحب من الكرة. أصب الشجرة قبل أن تلمس الكرة الأرض.",
+"पेड़ के तने के निशान पर निशाना लगाकर गेंद से स्वाइप करें। ज़मीन पर लगने से पहले पेड़ पर मारें।",
+"Mik op de markering op de stam en veeg vanaf je bal. Raak de boom voordat de bal de grond raakt."
+],
+[
+"Throw at the tree trunk, then catch the rebound before it lands. Drag into position and tap or hold to catch at the right moment.",
+"Lanza al tronco y atrapa el rebote antes de que caiga. Arrastra para colocarte y toca o mantén pulsado en el momento justo.",
+"ارمِ نحو جذع الشجرة، ثم التقط الارتداد قبل هبوطه. اسحب إلى المكان المناسب والمس أو اضغط للإمساك في الوقت المناسب.",
+"पेड़ के तने पर फेंकें और लौटती गेंद ज़मीन पर गिरने से पहले पकड़ें। खींचकर सही जगह जाएँ और समय पर टैप करें या दबाए रखें।",
+"Gooi tegen de stam en vang de terugkaatsing vóór de landing. Sleep naar de juiste plek en tik of houd vast op het goede moment."
+],
+[
+"Pass to the marked partner, then catch the return. When the marker moves, aim at the new partner. Move toward passes that drift sideways.",
+"Pasa al compañero marcado y atrapa la devolución. Cuando cambie la marca, apunta al nuevo compañero. Muévete hacia los pases desviados.",
+"مرّر إلى الشريك المحدّد، ثم التقط الكرة العائدة. عندما تنتقل العلامة، صوّب نحو الشريك الجديد. تحرّك نحو التمريرات المائلة.",
+"चिह्नित साथी को पास दें, फिर लौटती गेंद पकड़ें। निशान बदलने पर नए साथी पर निशाना लगाएँ। किनारे जाते पास की ओर चलें।",
+"Gooi naar de gemarkeerde partner en vang de bal terug. Verplaatst de markering, richt dan op de nieuwe partner. Beweeg naar worpen die opzij gaan."
+],
+[
+"Tap the marked partner to call them, then swipe upward from your ball for a lob. Your partner must reach the catch before it lands.",
+"Toca al compañero marcado para llamarlo y desliza hacia arriba desde tu pelota para lanzarla alta. Debe llegar a atraparla antes de que caiga.",
+"المس الشريك المحدّد لتناديه، ثم اسحب للأعلى من الكرة لرفعها. يجب أن يصل شريكك لالتقاطها قبل هبوطها.",
+"चिह्नित साथी पर टैप करके पुकारें, फिर गेंद से ऊपर स्वाइप करके ऊँचा फेंकें। गिरने से पहले साथी को गेंद पकड़नी होगी।",
+"Tik op de gemarkeerde partner om die te roepen en veeg omhoog vanaf je bal voor een lob. Je partner moet de bal vóór de landing vangen."
+],
+[
+"Drag to run while RUN is shown. When SPUD appears, release and stay still until the next cue. Run before each stop.",
+"Arrastra para correr cuando veas CORRE. Cuando aparezca SPUD, suelta y quédate quieto hasta la próxima señal. Corre antes de cada parada.",
+"اسحب للركض عند ظهور «اركض». عندما تظهر SPUD، ارفع إصبعك واثبت حتى الإشارة التالية. اركض قبل كل توقّف.",
+"दौड़ें दिखने पर खींचकर दौड़ें। SPUD आने पर छोड़ दें और अगले संकेत तक रुकें। हर बार रुकने से पहले दौड़ना ज़रूरी है।",
+"Sleep om te rennen als REN verschijnt. Laat los en blijf stilstaan als SPUD verschijnt, tot het volgende teken. Ren vóór elke stop."
+],
+[
+"This is your partner. Start with a very accurate passer. Each new cycle asks for a little more movement, while passes stay within reach.",
+"Es tu compañero. Empiezas con pases muy precisos. Cada nuevo ciclo pide un poco más de movimiento, pero siempre puedes alcanzar los pases.",
+"هذا شريكك. تبدأ بتمريرات دقيقة جدًا. كل مسار جديد يتطلب حركة أكثر قليلًا، لكن التمريرات تبقى في متناولك.",
+"यह आपका साथी है। शुरुआत में पास बहुत सटीक होंगे। हर नए चक्र में थोड़ा ज़्यादा चलना पड़ेगा, लेकिन पास पहुँच में रहेंगे।",
+"Dit is je partner. Begin met heel nauwkeurige worpen. Elke ronde vraagt iets meer beweging, maar de worpen blijven bereikbaar."
+],
+[
+"This is your opponent. Start against an easier thrower. Each new cycle gradually increases the accuracy, power and speed that matter for this skill.",
+"Es tu rival. Empiezas con un lanzador más fácil. Cada ciclo aumenta gradualmente la precisión, fuerza y velocidad relevantes para esta habilidad.",
+"هذا خصمك. تبدأ أمام رامٍ أسهل. كل مسار يزيد تدريجيًا الدقة والقوة والسرعة المرتبطة بهذه المهارة.",
+"यह आपका विरोधी है। आसान फेंकने वाले से शुरू करें। हर चक्र में इस कौशल के लिए सटीकता, ताकत और गति धीरे-धीरे बढ़ती है।",
+"Dit is je tegenstander. Begin met een makkelijkere werper. Elke ronde verhoogt geleidelijk de precisie, kracht en snelheid die voor deze vaardigheid tellen."
+],
+[
+"This character is your guide. Practice without a countdown, learn from a miss and try again. After three misses, restart without losing progress.",
+"Este personaje te guía. Practica sin cuenta atrás, aprende de los fallos y vuelve a intentarlo. Tras tres fallos, reinicia sin perder progreso.",
+"هذه الشخصية مرشدتك. تدرّب بلا عدّ تنازلي، وتعلّم من المحاولة الفائتة ثم حاول مجددًا. بعد ثلاث محاولات فائتة، ابدأ من جديد دون خسارة تقدّمك.",
+"यह किरदार मार्गदर्शक है। बिना उलटी गिनती अभ्यास करें, चूक से सीखें और फिर कोशिश करें। तीन चूक के बाद प्रगति खोए बिना फिर शुरू करें।",
+"Dit personage is je gids. Oefen zonder aftelklok, leer van een misser en probeer opnieuw. Na drie missers begin je opnieuw zonder voortgang te verliezen."
+],
+[
+"SPUD · stay still",
+"SPUD · quédate quieto",
+"SPUD · اثبت مكانك",
+"SPUD · रुकें",
+"SPUD · blijf stilstaan"
+],
+[
+"RUN · drag to move",
+"CORRE · arrastra para moverte",
+"اركض · اسحب للتحرّك",
+"दौड़ें · चलने के लिए खींचें",
+"REN · sleep om te bewegen"
+],
+[
+"Tap the starred partner, then swipe up from your ball",
+"Toca al compañero con estrella y desliza hacia arriba desde tu pelota",
+"المس الشريك ذي النجمة، ثم اسحب للأعلى من الكرة",
+"तारे वाले साथी पर टैप करें, फिर गेंद से ऊपर स्वाइप करें",
+"Tik op de partner met de ster en veeg omhoog vanaf je bal"
+],
+[
+"Double-tap to duck",
+"Toca dos veces para agacharte",
+"المس مرتين للانحناء",
+"झुकने के लिए दो बार टैप करें",
+"Dubbeltik om te duiken"
+],
+[
+"Tap Jump at the right moment",
+"Toca Saltar en el momento justo",
+"المس «اقفز» في الوقت المناسب",
+"सही समय पर कूदें दबाएँ",
+"Tik op Spring op het juiste moment"
+],
+[
+"Drag to move aside",
+"Arrastra para apartarte",
+"اسحب للتحرّك جانبًا",
+"किनारे हटने के लिए खींचें",
+"Sleep om opzij te gaan"
+],
+[
+"Move, jump or duck",
+"Muévete, salta o agáchate",
+"تحرّك أو اقفز أو انحنِ",
+"चलें, कूदें या झुकें",
+"Beweeg, spring of duik"
+],
+[
+"Tap a target to aim · swipe from your ball to throw",
+"Toca la diana para apuntar · desliza desde la pelota para lanzar",
+"المس الهدف للتصويب · اسحب من الكرة للرمي",
+"निशाने पर टैप करें · गेंद से स्वाइप करके फेंकें",
+"Tik op een doel om te richten · veeg vanaf je bal om te gooien"
+],
+[
+"Drag into position · tap or hold to catch",
+"Arrastra a tu sitio · toca o mantén para atrapar",
+"اسحب إلى مكانك · المس أو اضغط للإمساك",
+"सही जगह खींचें · पकड़ने के लिए टैप करें या दबाएँ",
+"Sleep naar je plek · tik of houd vast om te vangen"
+],
+[
+"Jump ↑",
+"Saltar ↑",
+"اقفز ↑",
+"कूदें ↑",
+"Spring ↑"
+],
+[
+"DUCK ↓",
+"AGÁCHATE ↓",
+"انحنِ ↓",
+"झुकें ↓",
+"DUIK ↓"
+],
+[
+"JUMP ↑",
+"SALTA ↑",
+"اقفز ↑",
+"कूदें ↑",
+"SPRING ↑"
+],
+[
+"Ready!",
+"¡Listos!",
+"استعد!",
+"तैयार!",
+"Klaar!"
+],
+[
+"Settings & feedback",
+"Ajustes y comentarios",
+"الإعدادات والملاحظات",
+"सेटिंग और सुझाव",
+"Instellingen en feedback"
+],
+[
+"What should we improve?",
+"¿Qué podemos mejorar?",
+"ما الذي نحسّنه؟",
+"क्या सुधारें?",
+"Wat kunnen we verbeteren?"
+],
+[
+"Challenge complete!",
+"¡Reto superado!",
+"اكتمل التحدي!",
+"चुनौती पूरी!",
+"Uitdaging voltooid!"
+],
+[
+"Next challenge",
+"Siguiente reto",
+"التحدي التالي",
+"अगली चुनौती",
+"Volgende uitdaging"
+],
+[
+"Start challenge",
+"Empezar reto",
+"ابدأ التحدي",
+"चुनौती शुरू करें",
+"Start uitdaging"
+],
+[
+"Your progress is safe. Take your time and try again.",
+"Tu progreso está a salvo. Tómate tu tiempo e inténtalo de nuevo.",
+"تقدمك محفوظ. خذ وقتك وحاول مجددًا.",
+"आपकी प्रगति सुरक्षित है। आराम से फिर कोशिश करें।",
+"Je voortgang is veilig. Neem je tijd en probeer het opnieuw."
+],
+[
+"Send feedback",
+"Envía tus comentarios",
+"أرسل ملاحظاتك",
+"सुझाव भेजें",
+"Feedback sturen"
+],
+[
+"Your feedback",
+"Tus comentarios",
+"ملاحظاتك",
+"आपके सुझाव",
+"Jouw feedback"
+],
+[
+"Choose an app",
+"Elige una aplicación",
+"اختر تطبيقًا",
+"ऐप चुनें",
+"Kies een app"
+],
+[
+"Game sounds",
+"Sonidos del juego",
+"أصوات اللعبة",
+"खेल की आवाज़ें",
+"Spelgeluiden"
 ]
 ]

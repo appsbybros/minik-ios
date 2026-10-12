@@ -570,19 +570,24 @@ targets:
     info:
       path: GeneratedInfoPlists/MinikAmudu-Info.plist
       properties:
-        CFBundleDisplayName: Spud
+        CFBundleDisplayName: Minik Spud
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleLocalizations: [en, he, ar, es, hi, nl]
         ITSAppUsesNonExemptEncryption: false
         UILaunchScreen: {}
-        # Portrait only, as on Android; iPad allows that only as a full-screen app.
+        # As on Android: the pages are portrait and a game turns to landscape (the app asks for one orientation
+        # at a time, which iPad allows only for a full-screen app).
         UIRequiresFullScreen: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
         UISupportedInterfaceOrientations~ipad:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.appsbybros.minik.spud

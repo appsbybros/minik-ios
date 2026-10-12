@@ -7,6 +7,8 @@ final class AmuduEngine {
     let config: GameConfig
     let seed: Int64
     let id: String
+    /// Kotlin `practice`: the skill-journey drill when `config.challengeStep >= 0`, else nil.
+    let practice: SpudPractice?
     var actors: [GameActor]
     var phase: Phase = .circle
     var phaseAt = 0.0
@@ -28,6 +30,20 @@ final class AmuduEngine {
     var huddleTarget = ""
     var huddleSerial = 0
     var huddleDeadline = 0.0
+    var sharedPause = false
+    var stepRemaining = 0.0
+    var actionDeadline = 0.0
+    var actionActor = ""
+    var actionStage = ""
+    var timerHumans = 0
+    var breakSerial = 0
+    var statusSerial = 0
+    var lastStatusAt = 0.0
+    var returnTarget = ""
+    var returnSerial = 0
+    var returnDeadline = 0.0
+    /// Kotlin `linkedMapOf<String, Boolean>()`: only counts are read, so key order is not needed.
+    var returnVotes: [String: Bool] = [:]
     var infoEn = ""
     var infoHe = ""
     var infoUntil = 0.0
@@ -43,6 +59,12 @@ final class AmuduEngine {
     var onEvent: ((GameEvent) -> Void)?
     let windVector: V
 
+    /// Kotlin `activeActors`: the actors still playing, in roster order.
+    var activeActors: [GameActor] { return actors.filter { $0.active } }
+
+    /// Kotlin `activeHumans`.
+    var activeHumans: Int { return actors.filter { $0.active && !$0.member.bot }.count }
+
     /// Kotlin defaults: `config = GameConfig(participants = members.size)`, `seed = 1`, `id = "local-" + seed`.
     init(members: [Member], config: GameConfig? = nil, seed: Int64 = 1, id: String? = nil) throws {
         guard let first = members.first else { throw AmuduError.invalidRoster }
@@ -51,6 +73,7 @@ final class AmuduEngine {
         self.config = cfg
         self.seed = seed
         self.id = id ?? ("local-" + String(seed))
+        practice = cfg.challengeStep >= 0 ? SpudPractice(cfg.challengeStep) : nil
         actors = members.map { GameActor(member: $0, position: V.zero) }
         thrower = first.id
         nextThrower = first.id
@@ -66,6 +89,7 @@ final class AmuduEngine {
         // House players must have unique avatars, distinct from humans.
         guard Set(bots).count == bots.count, !bots.contains(where: { humans.contains($0) }) else { throw AmuduError.invalidRoster }
         circle(thrower)
+        practice?.prepare(self)
     }
 
     func actor(_ id: String) -> GameActor? {
@@ -73,6 +97,7 @@ final class AmuduEngine {
     }
 
     func emit(_ kind: String, _ actorId: String, _ text: String = "") {
+        if kind == "catch" && practice == nil { actor(actorId)?.rankEarned += 5 }
         serial += 1
         let e = GameEvent(id: serial, kind: kind, actor: actorId, text: text, at: time)
         events.append(e)
@@ -95,7 +120,7 @@ final class AmuduEngine {
 
     func ballWithinReach(_ uid: String) -> Bool {
         guard let a = actor(uid) else { return false }
-        if ball.holder != nil || time < a.duckUntil { return false }
+        if !a.active || ball.holder != nil || time < a.duckUntil { return false }
         let pickup = phase == .retrieve && uid == called && ball.height <= 1.4
         let catchingPhase = (phase == .air && uid == called) || (phase == .flight && uid != thrower)
         let catching = catchingPhase && ball.height >= 0.35 && ball.height <= 2.1
@@ -106,26 +131,42 @@ final class AmuduEngine {
     func isFrozen() -> Bool { return frozen || phase == .aim }
 
     func canAim(_ uid: String) -> Bool {
-        return uid == thrower && ball.holder == uid && (phase == .shout || phase == .aim)
+        return actor(uid)?.active == true && uid == thrower && ball.holder == uid && (phase == .shout || phase == .aim)
     }
 
     private func locked(_ a: GameActor) -> Bool {
         let anchored = (pickupAnchor != nil || phase == .aim) && a.member.id == thrower
         let throwingPhase = phase == .shout || phase == .aim || phase == .flight
-        return (anchored && throwingPhase) || time < a.catchUntil
+        return !a.active || (anchored && throwingPhase) || time < a.catchUntil
     }
 
     private func movingPhase() -> Bool {
         switch phase {
         case .air, .retrieve, .shout, .aim, .flight:
             return true
-        case .circle, .resolve, .huddle, .finished:
+        case .circle, .resolve, .huddle, .returnVote, .waiting, .finished:
             return false
         }
     }
 
     private func canRun(_ a: GameActor) -> Bool {
-        return movingPhase() && !locked(a) && (!isFrozen() || config.freezeRule == .honor)
+        if !a.active || !movingPhase() || time < a.catchUntil { return false }
+        // After the call the thrower may spend the step allowance, and nothing more.
+        if a.member.id == thrower && phase == .aim && ball.holder == thrower { return stepRemaining > 0.00001 }
+        return !locked(a) && (!isFrozen() || config.freezeRule == .honor)
+    }
+
+    /// Kotlin `moveActor`: bounded movement; the thrower's movement after the call spends `stepRemaining`.
+    private func moveActor(_ a: GameActor, _ delta: V) {
+        let desired = bounded(a.position + delta) - a.position
+        if a.member.id == thrower && phase == .aim {
+            let length = desired.length()
+            let amount = min(length, stepRemaining)
+            if length > 0.000001 { a.position = a.position + desired * (amount / length) }
+            stepRemaining = max(stepRemaining - amount, 0.0)
+        } else {
+            a.position = a.position + desired
+        }
     }
 
     @discardableResult
@@ -134,6 +175,18 @@ final class AmuduEngine {
         if !consumed.insert(eventId) { return false }
         if consumed.count > 8192 { consumed.removeFirst() }
         guard let a = actor(uid) else { return false }
+        if case .pause(let value) = cmd {
+            if !a.active || a.member.bot || activeHumans > 1 || phase == .huddle || phase == .returnVote { return false }
+            sharedPause = value
+            for other in actors { other.move = V.zero }
+            return true
+        }
+        if sharedPause { return false }
+        if let practice { return practice.command(self, a, cmd) }
+        if cmd == .requestReturn { return requestReturn(a) }
+        if case .returnVote(let voteSerial, let yes) = cmd { return castReturnVote(a, voteSerial, yes) }
+        if !a.active { return false }
+        if (phase == .huddle || phase == .returnVote || phase == .waiting) && cmd != .end { return false }
         switch cmd {
         case .move(let v):
             if !v.finite() { return false }
@@ -142,9 +195,10 @@ final class AmuduEngine {
                 return false
             }
             a.move = v.length() > 1 ? v.unit() : v
-            if isFrozen() && a.move.length() > 0.12 && a.movementPenaltyTurn != turn {
+            if isFrozen() && uid != thrower && a.move.length() > 0.12 && a.movementPenaltyTurn != turn {
                 a.movementPenaltyTurn = turn
-                penalty(a, "Moved after SPUD!", "זזתם אחרי עמודו!")
+                penalty(a, "Moved after the call.", "זזתם אחרי הקריאה.")
+                resolve(uid, "Moved after the call.", "זזתם אחרי הקריאה.", who: uid, code: "moved")
             }
         case .aim(let v):
             if !canAim(uid) || !v.finite() || v.length() < 0.01 { return false }
@@ -152,8 +206,8 @@ final class AmuduEngine {
             a.facing = a.direction
         case .select(let target, let typedName):
             if phase != .circle || uid != thrower || target == uid { return false }
-            guard let t = actor(target) else { return false }
-            if !t.suffixes.isEmpty {
+            guard let t = actor(target), t.active else { return false }
+            if config.rules == .nicknames && !t.suffixes.isEmpty {
                 let typed = Words.normalize(typedName)
                 let names = [t.fullName(), t.fullName(hebrew: false), t.fullName(hebrew: true)]
                 if !names.contains(where: { typed == Words.normalize($0) }) {
@@ -169,6 +223,7 @@ final class AmuduEngine {
             if phase != .circle || uid != thrower || Kotlin.isBlank(selected) || !rawPower.isFinite || !rawDrift.isFinite { return false }
             let power = Kotlin.clamp(rawPower, 0.0, 1.0)
             let duration = 1.05 + power * 2.95
+            a.idleStrikes = 0
             called = selected
             let goal = V(config.width / 2, config.depth / 2)
             let driftX = Kotlin.clamp(rawDrift, -1.0, 1.0) * (1 + power * 2)
@@ -195,6 +250,8 @@ final class AmuduEngine {
             transition(.air)
             emit("call", uid, actor(called)?.fullName() ?? "")
             emit("throw", uid)
+        case .jump:
+            return false
         case .catchBall:
             if time < a.duckUntil || time < a.catchUntil || time < a.catchRecoveryUntil { return false }
             if phase == .retrieve && uid == called && ball.height <= 1.4 && (ball.position - a.position).length() < config.ball.catchRadius + 0.25 {
@@ -237,6 +294,7 @@ final class AmuduEngine {
             if phase != .shout || uid != called || ball.holder != uid { return false }
             thrower = uid
             frozen = true
+            stepRemaining = Double(config.stepsAfterCall) * min(config.width, config.depth) * config.stepLengthFraction
             for other in actors {
                 other.move = V.zero
                 other.actuallyMoving = false
@@ -247,7 +305,9 @@ final class AmuduEngine {
             emit("freeze", uid)
             message("SPUD! Catch or duck — keep your feet still.", "עמודו! תפסו או התכופפו — בלי להזיז רגליים.")
         case .throwBall(let rawPower):
-            if !canAim(uid) || !rawPower.isFinite { return false }
+            if !canAim(uid) || !rawPower.isFinite || (config.requireCall && phase != .aim) { return false }
+            a.idleStrikes = 0
+            stepRemaining = 0.0
             let p = Kotlin.clamp(rawPower, 0.0, 1.0)
             let profile = throwProfile(a, p)
             if phase == .aim { frozen = true }
@@ -266,6 +326,8 @@ final class AmuduEngine {
         case .end:
             if uid != members[0].id { return false }
             finish()
+        case .pause, .requestReturn, .returnVote:
+            return false
         case .say(let index):
             if index < 0 || index >= Words.phrasesEn.count { return false }
             if let last = events.last(where: { $0.actor == uid && $0.kind == "say" }), time - last.at < 4 { return false }
@@ -298,20 +360,33 @@ final class AmuduEngine {
     }
 
     func circle(_ uid: String, regroup: Bool = true) {
-        thrower = uid
+        var candidate = actor(uid)
+        if let chosen = candidate, !chosen.active { candidate = nil }
+        let eligibleActor = candidate ?? activeActors.first
+        guard let eligible = eligibleActor, activeActors.count >= 2 else {
+            transition(.waiting)
+            ball.holder = nil
+            return
+        }
+        let current = eligible.member.id
+        thrower = current
         selected = ""
         called = ""
         transition(.circle)
         frozen = false
         pickupAnchor = nil
+        stepRemaining = 0.0
+        actionStage = ""
+        actionDeadline = 0.0
         circleFormation = regroup
         regroupPending = false
         let center = V(config.width / 2, config.depth / 2)
         var index = 0
-        let count = actors.count - 1
-        for a in actors {
+        let playing = activeActors
+        let count = playing.count - 1
+        for a in playing {
             if regroup {
-                if a.member.id == uid {
+                if a.member.id == current {
                     a.position = center
                 } else {
                     let angle = -Double.pi / 2 + 2 * Double.pi * Double(index) / Double(count)
@@ -326,21 +401,33 @@ final class AmuduEngine {
             a.catchRecoveryUntil = 0.0
             a.nextThink = time + 1.0
             a.catchDecided = false
-            if let t = actor(uid) { a.facing = (t.position - a.position).unit() }
+            a.facing = (eligible.position - a.position).unit()
         }
-        if let t = actor(uid) { ball = Ball(t.position, 1.2, V.zero, 0.0, uid) }
+        ball = Ball(eligible.position, 1.2, V.zero, 0.0, current)
     }
 
     private func penalty(_ a: GameActor, _ en: String, _ he: String) {
+        if !a.active { return }
         a.penalties += 1
         a.hitAt = time
         regroupPending = true
         emit("penalty", a.member.id)
         message(a.member.displayName(hebrew: false) + ": " + en, a.member.displayName(hebrew: true) + ": " + he)
-        if a.penalties % 3 == 0 { pendingHuddles.append(a.member.id) }
+        if config.rules == .spud && a.penalties >= 4 {
+            a.spectator = .letters
+            a.move = V.zero
+            emit("spectator", a.member.id)
+        } else if config.rules == .nicknames && a.penalties % 3 == 0 {
+            pendingHuddles.append(a.member.id)
+        }
     }
 
     private func resolve(_ next: String, _ en: String, _ he: String, who: String? = nil, code: String = "") {
+        if regroupPending {
+            breakSerial += 1
+            statusSerial += 1
+            lastStatusAt = time
+        }
         nextThrower = next
         for a in actors {
             a.move = V.zero
@@ -351,7 +438,7 @@ final class AmuduEngine {
     }
 
     func tick(_ rawDt: Double) {
-        if paused || result != nil { return }
+        if paused || sharedPause || result != nil { return }
         var left = Kotlin.clamp(rawDt, 0.0, 0.1)
         while left > 0 {
             let dt = min(left, 1.0 / 120)
@@ -361,10 +448,7 @@ final class AmuduEngine {
     }
 
     private func airborne(_ dt: Double) {
-        ball.position = ball.position + (ball.velocity * dt + windVector * (0.5 * dt * dt))
-        ball.velocity = ball.velocity + windVector * dt
-        ball.height += ball.vz * dt - 0.5 * config.scene.gravity * dt * dt
-        ball.vz -= config.scene.gravity * dt
+        BallFlight.advance(&ball, dt, config.scene.gravity, windVector)
     }
 
     private func ground() {
@@ -393,6 +477,19 @@ final class AmuduEngine {
 
     private func step(_ dt: Double) {
         time += dt
+        if let practice {
+            practice.tick(self, dt)
+            return
+        }
+        if phase == .returnVote {
+            if time >= returnDeadline { finishReturnVote() }
+            return
+        }
+        if phase == .waiting {
+            beginReturnVoteIfReady()
+            return
+        }
+        if tickActionTimer() { return }
         if phase == .huddle {
             if !onlineHuddles {
                 botsHuddle()
@@ -407,7 +504,8 @@ final class AmuduEngine {
                 if ball.height <= 0.23 { ground() }
                 wall()
             }
-            if time - phaseAt >= config.resolveSeconds { afterResolution() }
+            let wait = regroupPending ? max(5.0, config.resolveSeconds) : config.resolveSeconds
+            if time - phaseAt >= wait { afterResolution() }
             return
         }
         moveActors(dt)
@@ -420,7 +518,7 @@ final class AmuduEngine {
         switch phase {
         case .air, .retrieve, .flight:
             break
-        case .circle, .shout, .aim, .resolve, .huddle, .finished:
+        case .circle, .shout, .aim, .resolve, .huddle, .returnVote, .waiting, .finished:
             return
         }
         if phase == .retrieve && ball.height <= 0.23001 && ball.vz == 0.0 && ball.velocity.length() < 0.001 { return }
@@ -448,8 +546,9 @@ final class AmuduEngine {
         if phase == .flight && (time - phaseAt > 4.5 || ball.bounces >= 2) { miss("The throw missed.", "הזריקה החטיאה.") }
     }
 
+    /// The `activeActors.forEach` movement loop of Kotlin `step` (the list is taken once, as Kotlin does).
     private func moveActors(_ dt: Double) {
-        for a in actors {
+        for a in activeActors {
             if a.member.bot { bot(a) }
             if !canRun(a) {
                 a.move = V.zero
@@ -458,8 +557,7 @@ final class AmuduEngine {
             if a.move.length() > 0.01 {
                 let old = a.position
                 let factor = a.member.bot ? AmuduCharacters.get(a.member.character).qualities.runFactor : 1.0
-                let distance = config.moveSpeed * config.scene.run * factor * dt
-                a.position = bounded(a.position + a.move * distance)
+                moveActor(a, a.move * (config.moveSpeed * config.scene.run * factor * dt))
                 let actual = a.position - old
                 a.actuallyMoving = actual.length() > 0.0001
                 if a.actuallyMoving {
@@ -481,6 +579,7 @@ final class AmuduEngine {
             for j in (i + 1)..<n {
                 let a = actors[i]
                 let b = actors[j]
+                if !a.active || !b.active { continue }
                 let delta = b.position - a.position
                 let distance = delta.length()
                 if distance < 1.1 {
@@ -490,8 +589,8 @@ final class AmuduEngine {
                     let canB = canRun(b)
                     let share: Double = (canA && canB) ? 2 : 1
                     let push = direction * ((1.1 - distance) / share)
-                    if canA { a.position = bounded(a.position - push) }
-                    if canB { b.position = bounded(b.position + push) }
+                    if canA { moveActor(a, push * -1.0) }
+                    if canB { moveActor(b, push) }
                 }
             }
         }
@@ -532,7 +631,7 @@ final class AmuduEngine {
         let delta = ball.position - before
         let squared = delta.x * delta.x + delta.y * delta.y
         var collisions: [(actor: GameActor, t: Double, dist: Double)] = []
-        for a in actors where a.member.id != thrower {
+        for a in activeActors where a.member.id != thrower {
             var t = 0.0
             if delta.length() >= 0.0001 {
                 let projection = (a.position.x - before.x) * delta.x + (a.position.y - before.y) * delta.y
@@ -559,6 +658,7 @@ final class AmuduEngine {
                     resolve(a.member.id, "Caught it! The thrower gets a penalty.", "תפסתם! הזורק מקבל נקודת חובה.", who: a.member.id, code: "tag_catch")
                 } else {
                     a.catchUntil = 0.0
+                    actor(thrower)?.rankEarned += 5
                     penalty(a, "Tagged!", "הכדור פגע!")
                     rebound(a)
                     resolve(a.member.id, "A tag, not a catch. Back to the circle.", "פגיעה ולא תפיסה. חוזרים למעגל.", who: a.member.id, code: "tagged")
@@ -588,6 +688,12 @@ final class AmuduEngine {
     }
 
     private func afterResolution() {
+        if config.rules == .spud && activeActors.count <= 1 {
+            finish()
+            return
+        }
+        if beginReturnVoteIfReady() { return }
+        pendingHuddles.removeAll { actor($0)?.active != true }
         if !pendingHuddles.isEmpty {
             beginHuddle(pendingHuddles.removeFirst())
             return
@@ -595,6 +701,10 @@ final class AmuduEngine {
         if config.turns > 0 && turn >= config.turns {
             finish()
             return
+        }
+        if time - lastStatusAt >= 180 {
+            statusSerial += 1
+            lastStatusAt = time
         }
         turn += 1
         circle(nextThrower, regroup: regroupPending)
@@ -613,14 +723,14 @@ final class AmuduEngine {
 
     @discardableResult
     func propose(_ uid: String, _ text: String) -> Bool {
-        if phase != .huddle || uid == huddleTarget || actor(uid) == nil || !Words.validSuggestion(text) { return false }
+        if phase != .huddle || uid == huddleTarget || actor(uid)?.active != true || !Words.validSuggestion(text) { return false }
         suggestions[uid] = Words.nfkcTrim(text)
         return true
     }
 
     @discardableResult
     func vote(_ uid: String, _ proposal: String) -> Bool {
-        if phase != .huddle || uid == huddleTarget || actor(uid) == nil || suggestions[proposal] == nil { return false }
+        if phase != .huddle || uid == huddleTarget || actor(uid)?.active != true || suggestions[proposal] == nil { return false }
         votes[uid] = proposal
         return true
     }
@@ -646,7 +756,8 @@ final class AmuduEngine {
         if suggestions.isEmpty {
             suggestions["fallback"] = Words.suggestion(huddleSerial, hebrew: actor(huddleTarget)?.member.hebrew ?? false)
         }
-        let humans = actors.filter { !$0.member.bot }
+        // Kotlin `activeActors.singleOrNull { !it.member.bot }`.
+        let humans = activeActors.filter { !$0.member.bot }
         var chosen: String?
         if humans.count == 1 {
             let human = humans[0].member.id
@@ -661,6 +772,7 @@ final class AmuduEngine {
         if phase != .huddle || !Words.validSuggestion(winner) { return false }
         guard let a = actor(huddleTarget) else { return false }
         a.suffixes.append(Kotlin.trim(winner))
+        statusSerial += 1
         emit("renamed", a.member.id, a.fullName())
         huddleTarget = ""
         transition(.resolve)
@@ -670,13 +782,143 @@ final class AmuduEngine {
 
     func finish() {
         if result != nil { return }
-        let low = actors.map { $0.penalties }.min() ?? 0
+        // SPUD: the last active player wins; nickname rules: the fewest penalties among everyone.
+        let eligible = config.rules == .spud ? activeActors : actors
+        let low = eligible.map { $0.penalties }.min()
         var penalties: [String: Int] = [:]
         for a in actors { penalties[a.member.id] = a.penalties }
-        let winners = actors.filter { $0.penalties == low }.map { $0.member.id }
+        let winners = eligible.filter { $0.penalties == low }.map { $0.member.id }
         result = Outcome(id: id, penalties: penalties, winners: winners, elapsed: time)
         transition(.finished)
         emit("finish", "")
+    }
+
+    /// Kotlin `countdownSeconds()`: whole seconds left on the action timer, or -1 when no timer runs.
+    func countdownSeconds() -> Int {
+        if actionDeadline > 0 && !actionStage.isEmpty { return max(Kotlin.toInt(ceil(actionDeadline - time)), 0) }
+        return -1
+    }
+
+    /// Kotlin `tickActionTimer()`: with two or more active humans, an unfinished toss, pickup or throw costs a penalty;
+    /// three in a row make the actor a watcher. Returns true when the turn was resolved.
+    private func tickActionTimer() -> Bool {
+        let stage: String
+        switch phase {
+        case .circle:
+            stage = "toss"
+        case .retrieve:
+            stage = ball.height <= 1.4 ? "retrieve" : ""
+        case .shout, .aim:
+            stage = "throw"
+        case .air, .flight, .resolve, .huddle, .returnVote, .waiting, .finished:
+            stage = ""
+        }
+        let uid = phase == .retrieve ? called : thrower
+        let humans = activeHumans
+        if config.actionSeconds == 0 || humans < 2 || stage.isEmpty {
+            actionStage = ""
+            actionActor = ""
+            actionDeadline = 0.0
+            timerHumans = humans
+            return false
+        }
+        if stage != actionStage || uid != actionActor || timerHumans < 2 {
+            actionStage = stage
+            actionActor = uid
+            actionDeadline = time + Double(config.actionSeconds)
+        }
+        timerHumans = humans
+        if time < actionDeadline { return false }
+        guard let a = actor(uid), a.active else { return false }
+        actionStage = ""
+        actionDeadline = 0.0
+        a.idleStrikes += 1
+        penalty(a, "Time ran out.", "הזמן נגמר.")
+        if a.active && a.idleStrikes >= config.idleLimit {
+            a.spectator = .inactive
+            a.returnAttempts = 0
+            a.returnQueued = false
+            a.move = V.zero
+            a.actuallyMoving = false
+            pendingHuddles.removeAll { $0 == uid }
+            emit("spectator", uid)
+        }
+        let index = actors.firstIndex { $0 === a } ?? 0
+        var next = uid
+        for offset in 1...actors.count {
+            let candidate = actors[(index + offset) % actors.count]
+            if candidate.active {
+                next = candidate.member.id
+                break
+            }
+        }
+        ball.holder = nil
+        ball.velocity = V.zero
+        ball.vz = 0.0
+        resolve(next, "Time ran out. Next player.", "הזמן נגמר. עוברים לשחקן הבא.", who: uid, code: "timeout")
+        return true
+    }
+
+    private func requestReturn(_ a: GameActor) -> Bool {
+        if config.rules != .nicknames || a.spectator != .inactive || a.returnQueued || a.member.bot ||
+            a.returnAttempts >= config.returnAttemptLimit || returnTarget == a.member.id { return false }
+        a.returnQueued = true
+        a.returnAfterBreak = breakSerial + (phase == .waiting ? 0 : 1)
+        emit("return_requested", a.member.id)
+        return true
+    }
+
+    @discardableResult
+    private func beginReturnVoteIfReady() -> Bool {
+        if config.rules != .nicknames { return false }
+        guard let a = actors.first(where: { $0.returnQueued && $0.spectator == .inactive && $0.returnAfterBreak <= breakSerial }) else { return false }
+        a.returnQueued = false
+        a.returnAttempts += 1
+        returnTarget = a.member.id
+        returnSerial += 1
+        returnVotes.removeAll()
+        returnDeadline = time + config.returnVoteSeconds
+        for other in actors {
+            other.move = V.zero
+            other.actuallyMoving = false
+        }
+        transition(.returnVote)
+        emit("return_vote", a.member.id)
+        return true
+    }
+
+    private func castReturnVote(_ a: GameActor, _ voteSerial: Int, _ yes: Bool) -> Bool {
+        if phase != .returnVote || voteSerial != returnSerial || !a.active || a.member.bot || a.member.id == returnTarget ||
+            returnVotes[a.member.id] != nil { return false }
+        returnVotes[a.member.id] = yes
+        return true
+    }
+
+    private func finishReturnVote() {
+        guard let a = actor(returnTarget) else { return }
+        let eligible = returnVotes.filter { entry in
+            guard let voter = actor(entry.key) else { return false }
+            return voter.active && !voter.member.bot
+        }
+        let yes = eligible.values.filter { $0 }.count
+        let no = eligible.values.filter { !$0 }.count
+        if yes > no {
+            a.spectator = SpectatorReason.none
+            a.idleStrikes = 0
+            a.returnAttempts = 0
+            a.returnQueued = false
+            regroupPending = true
+            statusSerial += 1
+            emit("returned", a.member.id)
+        } else {
+            emit("return_denied", a.member.id)
+        }
+        returnTarget = ""
+        returnVotes.removeAll()
+        returnDeadline = 0.0
+        actionStage = ""
+        actionDeadline = 0.0
+        transition(.resolve)
     }
 
     private func nextBotId() -> String {
@@ -697,7 +939,7 @@ final class AmuduEngine {
 
     private func botThrow(_ a: GameActor) {
         let q = AmuduCharacters.get(a.member.character).qualities
-        let others = actors.filter { $0.member.id != a.member.id }
+        let others = activeActors.filter { $0.member.id != a.member.id }
         guard var target = others.first else { return }
         // Kotlin `minBy`: the selector (and its random draw) runs only when there are at least two candidates.
         if others.count > 1 {
@@ -747,7 +989,8 @@ final class AmuduEngine {
         switch phase {
         case .circle:
             if uid == thrower && time > a.nextThink {
-                let others = actors.filter { $0.member.id != uid }
+                let others = activeActors.filter { $0.member.id != uid }
+                if others.isEmpty { return }
                 let target = others[random.nextIndex(others.count)]
                 command(uid, nextBotId(), .select(target: target.member.id, typedName: target.fullName()))
                 let tossId = nextBotId()
@@ -775,7 +1018,8 @@ final class AmuduEngine {
             if uid == thrower {
                 a.move = V.zero
                 if time > a.nextThink {
-                    if random.nextDouble() < 0.58 {
+                    // A required call or a step allowance means the house player always calls first.
+                    if config.requireCall || config.stepsAfterCall > 0 || random.nextDouble() < 0.58 {
                         command(uid, nextBotId(), .shout)
                         a.nextThink = time + 0.7
                     } else {
@@ -788,7 +1032,24 @@ final class AmuduEngine {
         case .aim:
             a.move = V.zero
             a.facing = (ball.position - a.position).unit()
-            if uid == thrower && time > a.nextThink { botThrow(a) }
+            if uid == thrower {
+                // Kotlin `activeActors.filter { it != a }.minByOrNull { distance }`.
+                var target: GameActor?
+                var nearest = 0.0
+                for other in activeActors where other !== a {
+                    let d = (other.position - a.position).length()
+                    if target == nil || d < nearest {
+                        target = other
+                        nearest = d
+                    }
+                }
+                if stepRemaining > 0.01, let t = target, (t.position - a.position).length() > 2.5 {
+                    a.move = (t.position - a.position).unit()
+                    a.nextThink = max(a.nextThink, time + 0.15)
+                } else if time > a.nextThink {
+                    botThrow(a)
+                }
+            }
         case .flight:
             if uid != thrower {
                 if !isFrozen() && !a.catchDecided { flee(a) }
@@ -804,13 +1065,13 @@ final class AmuduEngine {
                     }
                 }
             }
-        case .resolve, .huddle, .finished:
+        case .resolve, .huddle, .returnVote, .waiting, .finished:
             break
         }
     }
 
     private func botsHuddle() {
-        let helpers = actors.filter { $0.member.bot && $0.member.id != huddleTarget }
+        let helpers = activeActors.filter { $0.member.bot && $0.member.id != huddleTarget }
         for a in helpers {
             if time > a.nextThink && suggestions[a.member.id] == nil {
                 let index = Int(random.nextInt(until: 6))

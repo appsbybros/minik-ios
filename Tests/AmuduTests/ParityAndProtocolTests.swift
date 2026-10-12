@@ -91,7 +91,9 @@ final class ProtocolTests: XCTestCase {
         XCTAssertEqual(true, member["connected"] as? Bool)
         let config = AmuduCodec.config(try GameConfig(scene: .andromeda, ball: .tennis, freezeRule: .honor, participants: 10, turns: 50,
                                                       daylight: .night, throwMode: .easy, wind: .fast))
-        XCTAssertEqual(Set(["scene", "ball", "freeze", "participants", "turns", "huddleSeconds", "daylight", "throwMode", "wind"]), Set(config.keys))
+        XCTAssertEqual(Set(["challengeStep", "width", "depth", "stepLengthFraction", "scene", "ball", "freeze", "participants", "turns",
+                            "huddleSeconds", "daylight", "throwMode", "wind", "rules", "requireCall", "stepsAfterCall", "actionSeconds"]),
+                       Set(config.keys))
         XCTAssertEqual("ANDROMEDA", config["scene"] as? String)
         XCTAssertEqual("TENNIS", config["ball"] as? String)
         XCTAssertEqual("HONOR", config["freeze"] as? String)
