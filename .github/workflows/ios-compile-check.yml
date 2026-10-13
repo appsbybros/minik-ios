@@ -33,6 +33,9 @@ jobs:
       - name: Compile every app and the tests, stopping at the first failure
         shell: bash
         run: |
+          # GitHub runs "shell: bash" as "bash -e -o pipefail": without "set +e" the first failing
+          # build or test run ends this step before the remaining apps are compiled.
+          set +e
           set -uo pipefail
           mkdir -p build/logs
           # One shared DerivedData builds Firebase, Google Mobile Ads and the commerce

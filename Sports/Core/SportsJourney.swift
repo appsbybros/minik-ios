@@ -389,13 +389,13 @@ final class CourtPractice {
         var nearest = 0
         var best = Double.greatestFiniteMagnitude
         for i in ts.indices {
-            let d = hypot(x - ts[i].x, z - ts[i].y)
+            let d = KotlinMath.hypot(x - ts[i].x, z - ts[i].y)
             if d < best {
                 best = d
                 nearest = i
             }
         }
-        let found = hypot(x - ts[nearest].x, z - ts[nearest].y) <= radius ? nearest : -1
+        let found = KotlinMath.hypot(x - ts[nearest].x, z - ts[nearest].y) <= radius ? nearest : -1
         let expected = painted.count
         let moved = stage.skill != .move || human(e).steps - initialSteps > 0.6
         let good = found >= 0 && (!shape || !painted.contains(found)) && (stage.skill != .order || found == expected) && moved

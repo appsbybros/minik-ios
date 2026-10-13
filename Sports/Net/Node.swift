@@ -11,9 +11,13 @@ enum NodeValue {
         return CFGetTypeID(boxed) == CFBooleanGetTypeID()
     }
 
-    /// Kotlin `as? Number` (a Boolean is not a Number).
+    /// Kotlin `as? Number` (a Boolean is not a Number), as exact as org.json's `Double.valueOf`.
+    /// JSONSerialization writes 17 significant digits and returns a long fixed-point number such as
+    /// "0.070000000000000007" as an NSDecimalNumber whose `doubleValue` is not correctly rounded
+    /// (0.07 would come back as 0.07000000000000003); its exact decimal text reads back as the original.
     static func number(_ value: Any?) -> Double? {
         guard let value = value, !(value is NSNull), let boxed = value as? NSNumber, !isBoolean(boxed) else { return nil }
+        if boxed is NSDecimalNumber, let exact = Double(boxed.stringValue) { return exact }
         return boxed.doubleValue
     }
 

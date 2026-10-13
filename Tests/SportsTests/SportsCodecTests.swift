@@ -47,6 +47,16 @@ final class SportsCodecTests: XCTestCase {
         }
     }
 
+    /// JSONSerialization writes 0.07 as "0.070000000000000007" and reads that text back as an
+    /// NSDecimalNumber (doubleValue 0.07000000000000003); Android's org.json restores exactly 0.07.
+    func testSnapshotNumbersReadBackExactly() throws {
+        for value in [0.07, -0.07, 0.015034388851090229, 14.999999999999789] {
+            let text = try XCTUnwrap(NodeJSON.string(["v": value]))
+            let node = try XCTUnwrap(NodeJSON.node(text))
+            XCTAssertEqual(try node.getDouble("v"), value, text)
+        }
+    }
+
     func testDrillSnapshotKeepsItsProgress() throws {
         let original = engine(.volley, step: 3, human: true)
         run(original, 600)

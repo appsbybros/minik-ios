@@ -39,10 +39,13 @@ enum AmuduCodec {
         return (value as? [Any]) ?? []
     }
 
+    /// As exact as org.json's `Double.valueOf`: JSONSerialization returns a long fixed-point number such
+    /// as "0.070000000000000007" as an NSDecimalNumber whose `doubleValue` is not correctly rounded.
     static func number(_ value: Any?) -> Double? {
         if isNull(value) { return nil }
         guard let n = value as? NSNumber else { return nil }
         if CFGetTypeID(n) == CFBooleanGetTypeID() { return nil }
+        if n is NSDecimalNumber, let exact = Double(n.stringValue) { return exact }
         return n.doubleValue
     }
 

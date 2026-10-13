@@ -472,7 +472,10 @@ final class VolleyRefinementTests: XCTestCase {
     }
 
     func testServeControlIndependentFromRally() {
-        XCTAssertEqual(game(.beginner, .pro).volley.serveMode, .pro)
+        // The engine must outlive the `volley` read: VolleyPlay holds it `unowned` (Kotlin: strongly), and a temporary
+        // engine is released as soon as `.volley` returns, before `serveMode` reads it.
+        let e = game(.beginner, .pro)
+        XCTAssertEqual(e.volley.serveMode, .pro)
         XCTAssertEqual(game(.standard, .beginner).effectiveControl, .standard)
     }
 

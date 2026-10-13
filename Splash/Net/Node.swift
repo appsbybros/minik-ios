@@ -12,8 +12,11 @@ enum NodeValue {
     }
 
     /// Kotlin `as? Number` (a Boolean is not a Number).
+    /// As exact as org.json's `Double.valueOf`: JSONSerialization returns a long fixed-point number such
+    /// as "0.070000000000000007" as an NSDecimalNumber whose `doubleValue` is not correctly rounded.
     static func number(_ value: Any?) -> Double? {
         guard let value = value, !(value is NSNull), let boxed = value as? NSNumber, !isBoolean(boxed) else { return nil }
+        if boxed is NSDecimalNumber, let exact = Double(boxed.stringValue) { return exact }
         return boxed.doubleValue
     }
 

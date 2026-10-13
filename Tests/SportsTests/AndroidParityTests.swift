@@ -219,4 +219,26 @@ final class AndroidParityTests: XCTestCase {
             for expected in f[6].components(separatedBy: ";") { XCTAssertEqual(r.nextDouble(-0.001, 0.001), Double(expected) ?? -1, line) }
         }
     }
+
+    /// Android's `hypot` is Java's `StrictMath.hypot` (fdlibm); the values come from Java. The first
+    /// four differ in the last bit from `sqrt(x * x + y * y)`; such a bit once moved Beginner
+    /// assistance in squash-human-beginner.
+    func testHypotMatchesJavaStrictMath() {
+        let cases: [(Double, Double, Double)] = [
+            (0.1444916969699659, -1.1269443794222038, 1.136169654939154),
+            (-0.8769200625890525, 0.5775042890133476, 1.05),
+            (3.5232606575682, 3.365558500524903, 4.872406970032711),
+            (-1.3996915157896288, -0.6928767484492634, 1.561798491456274),
+            (3.0, 4.0, 5.0),
+            (-3.0, 0.0, 3.0),
+            (0.0, -0.0, 0.0),
+            (1e300, 1e300, 1.4142135623730952e300),
+            (1e-200, 3e-200, 3.1622776601683794e-200)
+        ]
+        for (x, y, expected) in cases {
+            XCTAssertEqual(KotlinMath.hypot(x, y).bitPattern, expected.bitPattern, "hypot(\(x), \(y))")
+        }
+        XCTAssertEqual(KotlinMath.hypot(.infinity, .nan), .infinity)
+        XCTAssertTrue(KotlinMath.hypot(.nan, 1.0).isNaN)
+    }
 }

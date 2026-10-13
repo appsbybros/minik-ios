@@ -3,6 +3,9 @@ import Foundation
 /// Port of Android core/VolleyPlay.kt: authority-only volleyball actions. Inputs carry intent;
 /// contacts and points remain physical events.
 final class VolleyPlay {
+    /// Unowned: the engine owns this object (`lazy var volley`), and Kotlin's strong back-reference would be a
+    /// retain cycle that leaks every match here. Use a VolleyPlay only while its engine is held elsewhere: on a
+    /// temporary (`SportsEngine(...).volley.serveMode`) Swift releases the engine before `serveMode` runs, which traps.
     private unowned let e: SportsEngine
     var serveQueued = false
     var serveWindup = 0.0

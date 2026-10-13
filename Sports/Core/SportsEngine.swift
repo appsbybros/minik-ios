@@ -68,7 +68,8 @@ struct Vec: Equatable {
     static func -= (a: inout Vec, b: Vec) { a = a - b }
     static func *= (a: inout Vec, s: Double) { a = a * s }
 
-    func length() -> Double { return hypot(x, y) }
+    /// Kotlin's `hypot` (fdlibm, `KotlinMath.hypot`), not Darwin's: every distance stays Android's.
+    func length() -> Double { return KotlinMath.hypot(x, y) }
     func unit() -> Vec { return length() < 0.0001 ? Vec() : self * (1 / length()) }
 }
 
@@ -837,13 +838,13 @@ final class SportsEngine {
                     var index = 0
                     var best = Double.greatestFiniteMagnitude
                     for i in 0...3 {
-                        let d = hypot(ball.p.x - targetX(i), ball.z - targetZ(i))
+                        let d = KotlinMath.hypot(ball.p.x - targetX(i), ball.z - targetZ(i))
                         if d < best {
                             best = d
                             index = i
                         }
                     }
-                    if hypot(ball.p.x - targetX(index), ball.z - targetZ(index)) < 0.58, let a = player(ball.hitter) {
+                    if KotlinMath.hypot(ball.p.x - targetX(index), ball.z - targetZ(index)) < 0.58, let a = player(ball.hitter) {
                         shotRecorded = true
                         let window = answers[a.member.id].flatMap { $0.question.id == shotQuestion.id ? $0 : nil }
                         recordAnswer(a, shotQuestion, index, window)
@@ -974,5 +975,71 @@ enum KotlinMath {
         if x > 0 { return 1.0 }
         if x < 0 { return -1.0 }
         return x
+    }
+
+    /// `kotlin.math.hypot` on Android is `java.lang.Math.hypot`, which is `StrictMath.hypot`:
+    /// fdlibm's `e_hypot.c` bit for bit (OpenJDK `FdLibm.Hypot`; bionic's `hypot` is the same
+    /// algorithm). Darwin's `hypot` differs from it in the last bit in several percent of the
+    /// engine's calls, and the engine amplifies such bits: a 0.72 s shot reaches the front wall
+    /// exactly on the 90th 0.008 s step of `predictIntercept`, so one bit decides where Beginner
+    /// assistance walks, and two bodies exactly 1.05 apart either push apart or not in `separate()`.
+    static func hypot(_ x: Double, _ y: Double) -> Double {
+        var a = abs(x)
+        var b = abs(y)
+        if !a.isFinite || !b.isFinite {
+            if a == .infinity || b == .infinity { return .infinity }
+            return a + b // NaN
+        }
+        if b > a { swap(&a, &b) }
+        var ha = highWord(a)
+        var hb = highWord(b)
+        if ha &- hb > 0x3c00000 { return a + b } // a / b > 2^60
+        var k = 0
+        if a > 0x1.00000ffffffffp500 { // a > ~2^500: scale a and b by 2^-600
+            ha = ha &- 0x25800000
+            hb = hb &- 0x25800000
+            a = a * 0x1p-600
+            b = b * 0x1p-600
+            k += 600
+        }
+        if b < 0x1p-500 {
+            if b < Double.leastNormalMagnitude { // subnormal b or 0; fdlibm keeps ha and hb unscaled here
+                if b == 0.0 { return a }
+                let t1 = 0x1p1022
+                b *= t1
+                a *= t1
+                k -= 1022
+            } else { // scale a and b by 2^600
+                ha = ha &+ 0x25800000
+                hb = hb &+ 0x25800000
+                a = a * 0x1p600
+                b = b * 0x1p600
+                k -= 600
+            }
+        }
+        var w = a - b
+        if w > b {
+            let t1 = withHighWord(ha)
+            let t2 = a - t1
+            w = (t1 * t1 - (b * -b - t2 * (a + t1))).squareRoot()
+        } else {
+            a = a + a
+            let y1 = withHighWord(hb)
+            let y2 = b - y1
+            let t1 = withHighWord(ha &+ 0x00100000)
+            let t2 = a - t1
+            w = (t1 * y1 - (w * -w - (t1 * y2 + t2 * b))).squareRoot()
+        }
+        return k != 0 ? Double(sign: .plus, exponent: k, significand: 1.0) * w : w
+    }
+
+    /// fdlibm `__HI(x)`: the high 32 bits of a double.
+    private static func highWord(_ x: Double) -> Int32 {
+        return Int32(truncatingIfNeeded: x.bitPattern >> 32)
+    }
+
+    /// fdlibm `__HI(0.0, word)`: a double with this high word and a zero low word.
+    private static func withHighWord(_ word: Int32) -> Double {
+        return Double(bitPattern: UInt64(UInt32(bitPattern: word)) << 32)
     }
 }
