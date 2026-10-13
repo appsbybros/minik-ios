@@ -261,6 +261,13 @@ struct ParentAreaView: View {
             languageActionButtons(metrics: metrics)
                 .padding(.top, metrics.switchToButtons)
 
+            // The family card (Android Minik opens it from the Parent Area), as a quiet link.
+            FamilyMenuLink(title: FamilyMessages.text("More Minik apps & games", "עוד אפליקציות ומשחקי מיניק",
+                                                      language: interfaceLocaleController.selectedLocale.rawValue)) {
+                FamilyMessages.shared.showMoreApps(gate: nil)
+            }
+            .padding(.top, 14)
+
             // Accessibility text sizes keep the footer links in the scrolling card.
             if metrics.usesAccessibilityLayout {
                 languageExtraLinks(metrics: metrics)
@@ -588,7 +595,6 @@ struct ParentAreaView: View {
         case .purchases: return interfaceLocale.text("Purchases")
         case .leaderboard: return interfaceLocale.text("Online leaderboard")
         case .privacy: return interfaceLocale.text("Privacy, support & legal")
-        case .moreApps: return FamilyMessages.text("More Minik apps & games", "עוד אפליקציות ומשחקי מיניק", language: interfaceLocale.rawValue)
         }
     }
 
@@ -599,9 +605,6 @@ struct ParentAreaView: View {
         case .purchases: return "Purchases"
         case .leaderboard: return "Online leaderboard"
         case .privacy: return "Privacy, support & legal"
-        case .moreApps:
-            return LocalizedStringKey(FamilyMessages.text("More Minik apps & games", "עוד אפליקציות ומשחקי מיניק",
-                                                          language: interfaceLocaleController.selectedLocale.rawValue))
         }
     }
 
@@ -611,9 +614,6 @@ struct ParentAreaView: View {
             onShowRecords()
         case .reminders, .purchases, .leaderboard, .privacy:
             languageExtra = extra
-        case .moreApps:
-            // The card's links open behind Android's family grown-up gate.
-            FamilyMessages.shared.showMoreApps(gate: nil)
         }
     }
 
@@ -660,9 +660,6 @@ struct ParentAreaView: View {
             leaderboardSection(compact: true, inDialog: true)
         case .privacy:
             releaseInformationSection(compact: true, inDialog: true)
-        case .moreApps:
-            // Shown as the family card, never as a panel.
-            EmptyView()
         }
     }
 
@@ -694,13 +691,11 @@ struct ParentAreaView: View {
                         commerceSection(compact: metrics.compact)
                         if configuration.contentDomain == .math {
                             // Android Math Plus ParentScreens: "More Minik apps & games", before the
-                            // feedback links.
-                            Button { FamilyMessages.shared.showMoreApps(gate: nil) } label: {
-                                Text(verbatim: FamilyMessages.text("More Minik apps & games", "עוד אפליקציות ומשחקי מיניק",
-                                                                   language: interfaceLocaleController.selectedLocale.rawValue))
-                                    .frame(maxWidth: .infinity)
+                            // feedback links; a quiet link here, never a regular app button.
+                            FamilyMenuLink(title: FamilyMessages.text("More Minik apps & games", "עוד אפליקציות ומשחקי מיניק",
+                                                                      language: interfaceLocaleController.selectedLocale.rawValue)) {
+                                FamilyMessages.shared.showMoreApps(gate: nil)
                             }
-                            .buttonStyle(ParentAreaActionButtonStyle())
                         }
                         releaseInformationSection(compact: metrics.compact)
                         progressActionsSection
@@ -1311,13 +1306,11 @@ private enum LanguageParentExtra: String, CaseIterable, Hashable, Identifiable {
     case purchases
     case leaderboard
     case privacy
-    case moreApps
 
     var id: String { rawValue }
 
-    /// The pages in the footer menu; Privacy has its own footer link. "More Minik apps & games"
-    /// (Android DailyLearningActivity, opened from the Parent Area) shows the family card.
-    static let footerMenuPages: [LanguageParentExtra] = [.records, .reminders, .purchases, .leaderboard, .moreApps]
+    /// The pages in the footer menu; Privacy has its own footer link.
+    static let footerMenuPages: [LanguageParentExtra] = [.records, .reminders, .purchases, .leaderboard]
 }
 
 /// The design's glossy pill (MinikPretty.PillBackground) with Fredoka text that

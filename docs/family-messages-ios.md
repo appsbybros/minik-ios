@@ -26,8 +26,8 @@ hosts it.
 
 | App | Android host | iPhone |
 | --- | --- | --- |
-| Minik Plus, Minik Plus English | DailyLearningActivity (from the Parent Area); InterstitialHelper promotion | Parent Area footer "Menu" → "More Minik apps & games"; promotion in `MinikAdCoordinator` |
-| Minik Math Plus | ParentScreens button (after Speech, before Feedback) | Parent Area button before the support and feedback links |
+| Minik Plus, Minik Plus English | DailyLearningActivity (from the Parent Area); InterstitialHelper promotion | Link at the end of the Parent Area card; promotion in `MinikAdCoordinator` |
+| Minik Math Plus | ParentScreens button (after Speech, before Feedback) | Link in the Parent Area before the support and feedback links |
 | Minik Ping Pong | PlayActivity Advanced link; AdCoordinator promotion and idle-menu reminder | Link above "Parents / adults"; promotion in `MPAds.completed`; reminder 1.5 s after the home appears |
 | Multi Ping Pong | PlayActivity Advanced link (ads off) | Link at the end of the home |
 | Spud, Splash, Minik Squash, Minik Beach Volley | Home "Advanced" link (FamilyMenu.organize), the app's own parent gate | Same, with the app's own gate; no ads, so no promotion or reminder |
@@ -42,6 +42,8 @@ promotes itself.
 
 ## Differences from Android
 
+- "More Minik apps & games" is always a quiet underlined link (Android `FamilyMenu.link`, `FamilyMenuLink`
+  on iOS), never a regular app button, also in Minik Plus and Math Plus, where Android uses buttons.
 - No "View on Google Play" button on iOS.
 - The app is recognised by its catalogue key instead of Android package names and aliases.
 - The cadence is stored as JSON in UserDefaults (`minik_family_messages.cadence`) instead of Java
