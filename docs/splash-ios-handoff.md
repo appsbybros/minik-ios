@@ -204,8 +204,9 @@ sources under `Splash/`, tests under `Tests/SplashTests/` (scheme `MinikSplash`,
   "Ads & purchases" page: ads, purchases and code redemption stay off on iOS for now. The parent
   zone keeps Android's text "Learning and purchases, in one place." unchanged (consider rewording
   once iOS purchases exist). `MonetizationTest` (2 tests) therefore has no port.
-- The family-services module (`com.appsbybros.family`: "More Minik apps & games", family reminders):
-  not part of the iOS apps (as for Spud). Its menu labels without a Splash button ("Public rooms &
+- The family-services module (`com.appsbybros.family`): "More Minik apps & games" is ported (2026-10-13) as a link
+  in Advanced behind the parent gate (shared `Family/` module, `docs/family-messages-ios.md`); its promotions
+  and reminders need ads, which stay off on iOS. The Android menu labels without a Splash button ("Public rooms &
   championships", "Saved games") and two arena names of another game ("Parking plaza", "Five-floor
   tower") are the remaining Android-only texts, with "Share" (Android's chooser title).
 - DEBUG-only QA hooks (`qa*` intent extras, `qa-state.json`, visual-capture preferences): Android

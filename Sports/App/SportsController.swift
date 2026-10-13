@@ -44,8 +44,9 @@ struct PublicEntry: Equatable {
 }
 
 /// Port of Android SportsActivity.kt: the pages, settings, local and journey matches, the local
-/// cup, private rooms and public tournaments, pause/save, results and the parent zone. Ads,
-/// purchases and the family services module are not part of this iOS port.
+/// cup, private rooms and public tournaments, pause/save, results and the parent zone. Ads and
+/// purchases are not part of this iOS port; the family "More Minik apps & games" card is (the
+/// shared Family module), without its ad-break promotion and reminder.
 @MainActor
 final class SportsController: ObservableObject, SportsOnlineHost {
     let sport = SportsLaunch.sport
@@ -106,6 +107,8 @@ final class SportsController: ObservableObject, SportsOnlineHost {
 
     init() {
         AppText.configure(Locale.preferredLanguages.first ?? "en")
+        // Android `FamilyMessages.get(this).setLanguage(AppText.language)`.
+        FamilyMessages.shared.languageOverride = AppText.language
         avatar = SportsPrefs.string("avatar") ?? "miniko"
         opponent = SportsPrefs.string("opponent") ?? "minik"
         mode = Control(rawValue: SportsPrefs.string("control") ?? "BEGINNER") ?? .beginner
@@ -781,6 +784,11 @@ final class SportsController: ObservableObject, SportsOnlineHost {
     }
 
     func parentZone() { page(.parentZone) }
+
+    /// Android "More Minik apps & games": the family card, its links behind the parent gate.
+    func moreApps() {
+        FamilyMessages.shared.showMoreApps(gate: { [weak self] action in self?.parentGate(action) })
+    }
     func privacyPage() { page(.privacy) }
 
     // MARK: Lifecycle (Android onPause / onResume)

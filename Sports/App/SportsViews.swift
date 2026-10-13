@@ -523,6 +523,8 @@ struct SportsRootView: View {
             if controller.pausePresented {
                 PauseDialog(controller: controller)
             }
+            // Under the app's own grown-up gate and toasts, which the card's links open above it.
+            FamilyOverlay()
             if controller.gatePresented {
                 ParentGate(controller: controller)
             }
@@ -830,6 +832,8 @@ struct HomePage: View {
             }
             FamilySection(advanced, color: FamilyMenuColors.advanced, open: c.sectionOpen(advanced, 3), toggle: { c.toggleSection(advanced, 3) }) {
                 FamilyButton(title: c.tr("Settings", "הגדרות"), color: FamilyMenuColors.advanced) { c.settings() }
+                // Android FamilyMenu.organize moves "More Minik apps & games" here as a link.
+                FamilyLink(title: FamilyMessages.text("More Minik apps & games", "עוד אפליקציות ומשחקי מיניק")) { c.moreApps() }
             }
             FamilyLink(title: c.tr("Parent zone", "אזור הורים")) { c.parentGate { [weak c] in c?.parentZone() } }
         }

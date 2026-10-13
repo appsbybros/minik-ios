@@ -35,7 +35,7 @@ on a simulator.
 | Sounds (SoundPool at 0.55) and the menu music (0.17) | Ported (AVAudioPlayer); Android's `game_start` serve sound has no file, so it is silent on both |
 | Privacy policy pages (6 languages) | Bundled as `privacy-<language>.html`, shown in a WKWebView with JavaScript off |
 | Ads, purchases, code redemption, UMP | Not ported (ads are off in both Android apps; no iOS products) |
-| "More Minik apps & games" and the family reminders | Not yet on iOS (planned as a shared family module for every iPhone app) |
+| "More Minik apps & games" | Link in Advanced behind the parent gate (shared `Family/` module, see `docs/family-messages-ios.md`); no ads, so no family promotion or reminder |
 | Android unit tests | All 83 core tests ported (`SportsEngineTests`, `SportsJourneyTests`, `RefinementTests`); `AdPolicyTest` tests left-out code |
 | Android parity | `AndroidParityTests` replays 29 reference traces (whole matches and drills) recorded from the real Kotlin engine, plus 180 journey stages, questions and Kotlin `Random` vectors |
 

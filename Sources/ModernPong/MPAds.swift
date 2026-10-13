@@ -87,11 +87,19 @@ struct MPAdPolicy: Codable {
     /// Call only after the durable, authoritative result; never while Ready or rallying.
     func completed(_ id: String, then: @escaping () -> Void) {
         let fresh = policy.completion(id); preferences.save("ads", policy)
-        guard fresh, eligible, !presenting, policy.due(now: MPClock.now), UIApplication.shared.applicationState == .active else { then(); return }
+        // Android AdCoordinator also returns while a family message is up, so no ad opens over it.
+        guard fresh, eligible, !presenting, !FamilyMessages.shared.isShowing, policy.due(now: MPClock.now),
+              UIApplication.shared.applicationState == .active else { then(); return }
         #if canImport(GoogleMobileAds)
         // Android AdCoordinator: an interstitial loaded 55 minutes ago or more is discarded, never shown.
         guard let ad = interstitial, MPClock.now - loadedAt < 3_300_000 else { interstitial = nil; preload(); then(); return }
         do { try ad.canPresent(from: nil) } catch { interstitial = nil; preload(); then(); return }
+        // Android AdCoordinator: one eligible ad break in 30 (at most once a day) shows a Minik family
+        // app instead; the cadence counts it as the ad.
+        if FamilyMessages.shared.replaceAd(id, ownershipResolved: true, adFree: { [weak self] in !(self?.eligible ?? false) }, gate: nil,
+                                          finished: { [weak self] in then(); self?.preload() }) {
+            policy.shown(now: MPClock.now); preferences.save("ads", policy); return
+        }
         presenting = true; continuation = then; ad.present(from: nil)
         #else
         then()

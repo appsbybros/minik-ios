@@ -181,6 +181,8 @@ struct RootView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             screen
+            // Under the toasts: a wrong grown-up answer for a card link shows its toast above the card.
+            FamilyOverlay()
             if let message = model.toast {
                 ToastView(text: message)
                     .allowsHitTesting(false)

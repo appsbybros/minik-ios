@@ -112,10 +112,13 @@ protocol MinikInterstitialAdService: Sendable {
     /// Returns once the presented interstitial has closed (at once when none is on screen).
     /// Minik Math waits for it, as Android does, before a round's results appear.
     func waitUntilDismissed() async
+    /// An interstitial is loaded and could be shown now (Android `interstitialAd != null`).
+    func isInterstitialReady() async -> Bool
 }
 
 extension MinikInterstitialAdService {
     func waitUntilDismissed() async {}
+    func isInterstitialReady() async -> Bool { false }
 }
 
 actor UnconfiguredMinikInterstitialAdService: MinikInterstitialAdService {
@@ -289,6 +292,33 @@ enum MinikAdOpportunityResult: Equatable, Sendable {
     case presentation(MinikInterstitialPresentationResult)
 }
 
+/// Android Minik InterstitialHelper's family messages at an ad break (Minik Plus and Minik Plus
+/// English): no ad while a family message is up, and at one eligible break in 30 (at most once a
+/// day) the family card for another Minik app instead of the ad.
+struct MinikFamilyAdBreak: Sendable {
+    /// Android `family.isShowing`.
+    let isShowing: @MainActor @Sendable () -> Bool
+    /// Android `FamilyMessages.replaceAd`: true when the card was shown instead of the ad.
+    let replaceAd: @MainActor @Sendable (_ ownershipResolved: Bool) -> Bool
+
+    /// The family messages of Minik Plus and Minik Plus English; the other apps have none here.
+    static func forProduct(_ product: ProductVariant) -> MinikFamilyAdBreak? {
+        guard product == .minikPlus || product == .minikPlusEnglish else { return nil }
+        return MinikFamilyAdBreak(
+            isShowing: { FamilyMessages.shared.isShowing },
+            replaceAd: { ownershipResolved in
+                FamilyMessages.shared.replaceAd(
+                    UUID().uuidString.lowercased(),
+                    ownershipResolved: ownershipResolved,
+                    adFree: { MinikCommerceEntitlementRepository().isRemoveAdsActive(for: product) },
+                    gate: nil,
+                    finished: {}
+                )
+            }
+        )
+    }
+}
+
 actor MinikAdCoordinator {
     let configuration: MinikAdsConfiguration
     private let service: any MinikInterstitialAdService
@@ -296,16 +326,20 @@ actor MinikAdCoordinator {
     private var policy: AndroidCompatibleInterstitialPolicy
     private var providerIsReady = false
     private var hasStarted = false
+    private let family: MinikFamilyAdBreak?
+    private var familyBreakInProgress = false
 
     init(
         configuration: MinikAdsConfiguration,
         service: any MinikInterstitialAdService = UnconfiguredMinikInterstitialAdService(),
         repository: MinikAdPolicyRepository = MinikAdPolicyRepository(),
-        sessionStartedAt: Date = Date()
+        sessionStartedAt: Date = Date(),
+        family: MinikFamilyAdBreak? = nil
     ) {
         self.configuration = configuration
         self.service = service
         self.repository = repository
+        self.family = family
         self.policy = AndroidCompatibleInterstitialPolicy(
             state: repository.load(for: configuration.product),
             sessionStartedAt: sessionStartedAt
@@ -320,10 +354,13 @@ actor MinikAdCoordinator {
         providerIsReady = await service.configure(providerConfiguration)
     }
 
+    /// `ownershipResolved` (Android `RemoveAds.ownershipResolved`): the store has answered whether
+    /// Remove Ads is owned; until then the family card never replaces an ad.
     @discardableResult
     func record(
         _ opportunity: MinikAdOpportunity,
         isRemoveAdsActive: Bool,
+        ownershipResolved: Bool = false,
         at date: Date = Date()
     ) async -> MinikAdOpportunityResult {
         let decision = policy.record(
@@ -334,7 +371,24 @@ actor MinikAdCoordinator {
         )
         repository.save(policy.state, for: configuration.product)
         guard decision == .requestPresentation else { return .policy(decision) }
+        guard let family else { return await presentAd(at: date) }
 
+        // Android Minik InterstitialHelper.maybeShow runs a break on the main thread from start to
+        // end: no ad opens over a family message, and only a break with a loaded ad may show the
+        // family card instead (the cadence counts it as shown).
+        if familyBreakInProgress { return .presentation(.unavailable) }
+        familyBreakInProgress = true
+        defer { familyBreakInProgress = false }
+        if await family.isShowing() { return .presentation(.unavailable) }
+        if await service.isInterstitialReady(), await family.replaceAd(ownershipResolved) {
+            policy.recordPresentation(at: date)
+            repository.save(policy.state, for: configuration.product)
+            return .presentation(.presented)
+        }
+        return await presentAd(at: date)
+    }
+
+    private func presentAd(at date: Date) async -> MinikAdOpportunityResult {
         let result = await service.presentInterstitial()
         if result == .presented {
             policy.recordPresentation(at: date)
@@ -365,7 +419,8 @@ enum MinikAdsComposition {
     ) -> MinikAdCoordinator {
         MinikAdCoordinator(
             configuration: MinikAdsConfiguration.load(product: product, bundle: bundle),
-            service: service ?? ProductionMinikInterstitialAdServiceFactory.make()
+            service: service ?? ProductionMinikInterstitialAdServiceFactory.make(),
+            family: MinikFamilyAdBreak.forProduct(product)
         )
     }
 }
@@ -388,7 +443,8 @@ final class MinikPingPongHostServices: PingPongHostServices {
         guard isInterstitialOpportunity else { return }
         Task { @MainActor [weak commerceController, adCoordinator] in
             let removesAds = commerceController?.isRemoveAdsActive ?? false
-            await adCoordinator.record(.pingPongMatch, isRemoveAdsActive: removesAds)
+            let ownershipResolved = commerceController?.ownershipResolved ?? false
+            await adCoordinator.record(.pingPongMatch, isRemoveAdsActive: removesAds, ownershipResolved: ownershipResolved)
         }
     }
 

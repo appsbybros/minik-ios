@@ -246,6 +246,9 @@ struct MinikActivityHubView: View {
         }
         .sheet(isPresented: parentAreaPresented) {
             parentAreaContent
+                // The family card opened from the Parent Area is drawn here, above the sheet (only
+                // the FamilyOverlay that appeared last draws it).
+                .overlay { FamilyOverlay() }
                 .presentationDetents([.fraction(0.82), .large])
                 .presentationDragIndicator(.visible)
                 .presentationBackground(.clear)
@@ -1494,8 +1497,9 @@ struct MinikActivityHubView: View {
 
     private func recordLanguageAdOpportunity(_ opportunity: MinikAdOpportunity) {
         let removesAds = commerceController.isRemoveAdsActive
+        let ownershipResolved = commerceController.ownershipResolved
         Task {
-            await adCoordinator.record(opportunity, isRemoveAdsActive: removesAds)
+            await adCoordinator.record(opportunity, isRemoveAdsActive: removesAds, ownershipResolved: ownershipResolved)
         }
     }
 
@@ -1506,8 +1510,9 @@ struct MinikActivityHubView: View {
         )
         guard isOpportunity else { return }
         let removesAds = commerceController.isRemoveAdsActive
+        let ownershipResolved = commerceController.ownershipResolved
         Task {
-            await adCoordinator.record(.pingPongMatch, isRemoveAdsActive: removesAds)
+            await adCoordinator.record(.pingPongMatch, isRemoveAdsActive: removesAds, ownershipResolved: ownershipResolved)
         }
     }
 

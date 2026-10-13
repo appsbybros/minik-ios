@@ -176,6 +176,12 @@ import SpriteKit
                         if model.connecting { ProgressView(t("Connecting…", "מתחברים…")) }
                         else if !model.connected { Button(t("Retry online connection", "נסו להתחבר שוב")) { Task { await model.retryOnline(removeAds: false) } }.font(.headline).padding(12) }
                     }
+                    // Android PlayActivity (Advanced): "More Minik apps & games" as a link, behind the family grown-up gate.
+                    Button { FamilyMessages.shared.showMoreApps(gate: nil) } label: {
+                        Text(FamilyMessages.text("More Minik apps & games", "עוד אפליקציות ומשחקי מיניק")).font(.system(size: 17, weight: .bold)).underline()
+                            .foregroundStyle(Color(red: 0x28 / 255, green: 0x69 / 255, blue: 0xbd / 255))
+                            .multilineTextAlignment(.center).frame(maxWidth: .infinity, minHeight: 48).padding(.horizontal, 8)
+                    }.buttonStyle(.plain)
                 }
                 if model.busy { ProgressView().accessibilityLabel(t("Loading", "טוען")) }
             }.frame(maxWidth: 560).padding(.horizontal, 20).padding(.bottom, 28).frame(maxWidth: .infinity)

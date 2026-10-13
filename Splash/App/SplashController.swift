@@ -185,6 +185,8 @@ final class SplashController: ObservableObject {
     init() {
         AppText.configure(Locale.preferredLanguages.first ?? "en")
         hebrew = AppText.language == "he"
+        // Android `FamilyMessages.get(this).setLanguage(AppText.language)`.
+        FamilyMessages.shared.languageOverride = AppText.language
         if let node = NodeJSON.node(SplashPrefs.string("playerSettings") ?? "{}") { settings = WorldCodec.settings(node) }
         selectedHouse = SplashPrefs.stringSet("housePlayers")
         selected = SplashPrefs.string("character") ?? (SplashLaunch.proEdition ? "mia" : "miniko")
@@ -415,6 +417,11 @@ final class SplashController: ObservableObject {
                 self.message(self.tr("No app is available to open this link.", "אין אפליקציה זמינה לפתיחת הקישור."))
             }
         }
+    }
+
+    /// Android "More Minik apps & games": the family card, its links behind the parent gate.
+    func moreApps() {
+        FamilyMessages.shared.showMoreApps(gate: { [weak self] action in self?.requestParentGate(action) })
     }
 
     // MARK: Parent gate

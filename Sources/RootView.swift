@@ -46,6 +46,11 @@ struct RootView: View {
             adCoordinator: resolvedAdCoordinator,
             commerceController: resolvedCommerceController
         )
+        // Set before the first screen is drawn: menu labels such as "More Minik apps & games" read it.
+        FamilyMessages.shared.languageOverride = RootView.familyLanguage(
+            configuration,
+            interfaceLocale: interfaceLocaleRepository.load(for: configuration.variant)
+        )
     }
 
     @ViewBuilder
@@ -99,7 +104,9 @@ struct RootView: View {
         }
         .onChange(of: interfaceLocaleController.selectedLocale) { _, newLocale in
             Task { await learningReminderController.rescheduleForLocaleChange(newLocale) }
+            applyFamilyLanguage()
         }
+        .onAppear { applyFamilyLanguage() }
         .sheet(isPresented: Binding(
             get: { removeAdsReminderController.isPresented },
             set: { isPresented in
@@ -111,6 +118,9 @@ struct RootView: View {
                 commerceController: commerceController
             )
         }
+        // Android MinikFamilyServices: the "More Minik apps & games" card, its grown-up gate and
+        // the family remove-ads reminder, above every Minik app.
+        .overlay { FamilyOverlay() }
     }
 
     /// Like Android Modern Ping Pong, the standalone Ping Pong app is Hebrew on a
@@ -128,6 +138,24 @@ struct RootView: View {
             return effectiveInterfaceLocale.layoutDirection
         }
         return systemLayoutDirection
+    }
+
+    @MainActor
+    private func applyFamilyLanguage() {
+        FamilyMessages.shared.languageOverride = RootView.familyLanguage(configuration, interfaceLocale: interfaceLocaleController.selectedLocale)
+    }
+
+    /// The language of the family card, reminder and "More Minik apps & games" label, as on Android:
+    /// Minik Plus and Math Plus use the interface language; Minik Ping Pong is English, or Hebrew on a
+    /// Hebrew device (LocalizedActivity); Multi Ping Pong uses its six app languages (AppText).
+    private static func familyLanguage(_ configuration: ProductConfiguration, interfaceLocale: InterfaceLocaleID) -> String {
+        #if MINIK_MULTI_PING_PONG
+        return MPText.language
+        #else
+        guard configuration.launchExperience == .pingPong else { return interfaceLocale.rawValue }
+        let primary = Locale.preferredLanguages.first.flatMap { InterfaceLocaleID(languageTag: $0) }
+        return primary == .hebrew ? "he" : "en"
+        #endif
     }
 
     @MainActor

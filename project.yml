@@ -47,6 +47,13 @@ targetTemplates:
         MINIK_LEGAL_NOTICE: "© Apps by Bros. All rights reserved."
     sources:
       - path: Sources
+      # The shared family messages (Android MinikFamilyServices). Apps that show them also add the
+      # catalogue and art below and set MinikFamilyCatalogKey.
+      - path: Family
+        excludes:
+          - "FamilyArt.xcassets"
+          - "FamilyArt.xcassets/**"
+          - "minik-family-catalog.json"
       - path: Resources/MinikVisuals.xcassets
         buildPhase: resources
     info:
@@ -103,12 +110,18 @@ targets:
         buildPhase: resources
       - path: Resources/Privacy/Language/PrivacyInfo.xcprivacy
         buildPhase: resources
+      - path: Family/FamilyArt.xcassets
+        buildPhase: resources
+      - path: Family/minik-family-catalog.json
+        buildPhase: resources
       # Fredoka Bold for the rainbow-sky design (MinikPrettyDesign.swift).
       - path: Resources/Fonts
         buildPhase: resources
     info:
       properties:
         CFBundleDisplayName: Minik
+        # This app's family catalogue key: the "More Minik apps & games" card never promotes the app itself.
+        MinikFamilyCatalogKey: minik
         UIAppFonts: [fredoka_medium.ttf, fredoka_bold.ttf]
         CFBundleLocalizations: [en, am, ar, de, es, fr, he, nl, pt-BR, pt-PT, ru]
         # Portrait only, as on Android (sensorPortrait); iPad allows that only as a
@@ -203,12 +216,18 @@ targets:
         buildPhase: resources
       - path: Resources/Privacy/Language/PrivacyInfo.xcprivacy
         buildPhase: resources
+      - path: Family/FamilyArt.xcassets
+        buildPhase: resources
+      - path: Family/minik-family-catalog.json
+        buildPhase: resources
       # Fredoka Bold for the rainbow-sky design (MinikPrettyDesign.swift).
       - path: Resources/Fonts
         buildPhase: resources
     info:
       properties:
         CFBundleDisplayName: Minik
+        # This app's family catalogue key: the "More Minik apps & games" card never promotes the app itself.
+        MinikFamilyCatalogKey: minik
         UIAppFonts: [fredoka_medium.ttf, fredoka_bold.ttf]
         CFBundleLocalizations: [en, am, ar, de, es, fr, nl, pt-BR, pt-PT, ru]
         # Portrait only, as on Android (sensorPortrait); iPad allows that only as a
@@ -311,9 +330,15 @@ targets:
         buildPhase: resources
       - path: Resources/MathFonts
         buildPhase: resources
+      - path: Family/FamilyArt.xcassets
+        buildPhase: resources
+      - path: Family/minik-family-catalog.json
+        buildPhase: resources
     info:
       properties:
         CFBundleDisplayName: Minik Math Plus
+        # This app's family catalogue key: the "More Minik apps & games" card never promotes the app itself.
+        MinikFamilyCatalogKey: math-plus
         UIAppFonts: [fredoka_bold.ttf, fredoka_medium.ttf]
         CFBundleLocalizations: [en, am, ar, de, es, fr, he, nl, pt-BR, pt-PT, ru]
     settings:
@@ -415,9 +440,15 @@ targets:
         buildPhase: resources
       - path: Resources/Privacy/ModernPong/PrivacyInfo.xcprivacy
         buildPhase: resources
+      - path: Family/FamilyArt.xcassets
+        buildPhase: resources
+      - path: Family/minik-family-catalog.json
+        buildPhase: resources
     info:
       properties:
         CFBundleDisplayName: Minik Ping Pong
+        # This app's family catalogue key: the "More Minik apps & games" card never promotes the app itself.
+        MinikFamilyCatalogKey: pong
         ModernPongTestAdsEnabled: $(MODERN_PONG_TEST_ADS)
         CFBundleLocalizations: [en, am, ar, de, es, fr, he, nl, pt-BR, pt-PT, ru]
     settings:
@@ -517,9 +548,12 @@ targets:
         buildPhase: resources
       - path: Resources/Privacy/ModernPong/PrivacyInfo.xcprivacy
         buildPhase: resources
+      - path: Family
     info:
       properties:
         CFBundleDisplayName: Multi Ping Pong
+        # This app's family catalogue key: the "More Minik apps & games" card never promotes the app itself.
+        MinikFamilyCatalogKey: multiplayer
         ModernPongTestAdsEnabled: $(MODERN_PONG_TEST_ADS)
         CFBundleLocalizations: [en, he, ar, es, hi, nl]
     settings:
@@ -565,12 +599,15 @@ targets:
     platform: iOS
     sources:
       - path: Amudu
+      - path: Family
       - path: Resources/Privacy/Amudu/PrivacyInfo.xcprivacy
         buildPhase: resources
     info:
       path: GeneratedInfoPlists/MinikAmudu-Info.plist
       properties:
         CFBundleDisplayName: Minik Spud
+        # This app's family catalogue key: the "More Minik apps & games" card never promotes the app itself.
+        MinikFamilyCatalogKey: spud
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleLocalizations: [en, he, ar, es, hi, nl]
@@ -624,12 +661,15 @@ targets:
     platform: iOS
     sources:
       - path: Splash
+      - path: Family
       - path: Resources/Privacy/Splash/PrivacyInfo.xcprivacy
         buildPhase: resources
     info:
       path: GeneratedInfoPlists/MinikSplash-Info.plist
       properties:
         CFBundleDisplayName: Minik Splash
+        # This app's family catalogue key: the "More Minik apps & games" card never promotes the app itself.
+        MinikFamilyCatalogKey: splash
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleLocalizations: [en, he, ar, es, hi, nl]
@@ -682,6 +722,7 @@ targets:
     platform: iOS
     sources:
       - path: Sports
+      - path: Family
       - path: Resources/Privacy/Sports/PrivacyInfo.xcprivacy
         buildPhase: resources
     info:
@@ -695,6 +736,8 @@ targets:
         UILaunchScreen: {}
         # Android manifest `sports.game`: the same sources play Squash or Beach Volley.
         SportsGame: SQUASH
+        # This app's family catalogue key: the "More Minik apps & games" card never promotes the app itself.
+        MinikFamilyCatalogKey: squash
         # As on Android (fullSensor): every page and the court follow the device orientation.
         UIRequiresFullScreen: true
         UISupportedInterfaceOrientations:
@@ -729,6 +772,7 @@ targets:
     platform: iOS
     sources:
       - path: Sports
+      - path: Family
       - path: Resources/Privacy/Sports/PrivacyInfo.xcprivacy
         buildPhase: resources
     info:
@@ -742,6 +786,8 @@ targets:
         UILaunchScreen: {}
         # Android manifest `sports.game`: the same sources play Squash or Beach Volley.
         SportsGame: VOLLEY
+        # This app's family catalogue key: the "More Minik apps & games" card never promotes the app itself.
+        MinikFamilyCatalogKey: volley
         # As on Android (fullSensor): every page and the court follow the device orientation.
         UIRequiresFullScreen: true
         UISupportedInterfaceOrientations:

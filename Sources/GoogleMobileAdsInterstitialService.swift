@@ -28,6 +28,11 @@ actor GoogleMobileAdsInterstitialAdService: MinikInterstitialAdService {
         guard let driver else { return }
         await driver.waitUntilDismissed()
     }
+
+    func isInterstitialReady() async -> Bool {
+        guard let driver else { return false }
+        return await driver.isInterstitialReady()
+    }
 }
 
 @MainActor
@@ -82,6 +87,11 @@ private final class GoogleMobileAdsInterstitialDriver: NSObject, FullScreenConte
             presentationContinuation = continuation
             interstitial.present(from: nil)
         }
+    }
+
+    /// Android `interstitialAd != null`: an ad is loaded and none is being presented.
+    func isInterstitialReady() -> Bool {
+        interstitial != nil && presentationContinuation == nil
     }
 
     func waitUntilDismissed() async {

@@ -119,6 +119,9 @@ final class MinikCommerceController: ObservableObject {
     @Published private(set) var status: Status
     @Published private(set) var removeAdsProduct: CommerceProduct?
     @Published private(set) var isRemoveAdsActive: Bool
+    /// Android `RemoveAds.ownershipResolved`: the store has answered whether Remove Ads is owned (an
+    /// entitlement refresh, purchase or restore succeeded); the family messages wait for it.
+    private(set) var ownershipResolved = false
 
     let configuration: MinikCommerceConfiguration
     private let store: (any CommerceStore)?
@@ -228,6 +231,7 @@ final class MinikCommerceController: ObservableObject {
     }
 
     private func apply(_ state: EntitlementState) {
+        ownershipResolved = true
         isRemoveAdsActive = state.contains(.minikRemoveAds)
         repository.save(state, for: configuration.product)
     }

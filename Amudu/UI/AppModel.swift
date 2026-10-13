@@ -74,8 +74,8 @@ struct ShareText: Identifiable {
 }
 
 /// Android `AmuduActivity`: screens, saved settings, the local/online game lifecycle, the daily skill journey, colour
-/// ranks, dialogs, sounds and speech. Ads, purchases, code redemption and the family "More Minik apps" catalogue are
-/// not part of the iOS app.
+/// ranks, dialogs, sounds and speech. Ads, purchases and code redemption are not part of the iOS app; the family
+/// "More Minik apps & games" card is (the shared Family module), without its ad-break promotion and reminder.
 @MainActor final class AppModel: ObservableObject {
     enum Screen: Equatable {
         case home
@@ -243,6 +243,8 @@ struct ShareText: Identifiable {
         receptionZoomOthers = (d.object(forKey: Keys.receptionZoomOthers) as? Bool) ?? true
         gameSounds = (d.object(forKey: Keys.gameSounds) as? Bool) ?? true
         loadRulePreferences(rules)
+        // Android `FamilyMessages.get(this).setLanguage(AppText.language)`.
+        FamilyMessages.shared.languageOverride = AppText.language
     }
 
     private static func validHouse(_ ids: [String]) -> [String] {
@@ -388,6 +390,11 @@ struct ShareText: Identifiable {
             return
         }
         present(engine, uid: "p0", network: nil)
+    }
+
+    /// Android "More Minik apps & games": the family card, its links behind the grown-up gate.
+    func moreApps() {
+        FamilyMessages.shared.showMoreApps(gate: { [weak self] action in self?.parentGate(action) })
     }
 
     // MARK: Grown-up gate (Android `parentGate`)

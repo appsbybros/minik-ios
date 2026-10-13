@@ -283,6 +283,8 @@ struct SplashRootView: View {
             if controller.pausePresented {
                 PauseDialog(controller: controller)
             }
+            // Under the toasts: a wrong grown-up answer for a card link shows its toast above the card.
+            FamilyOverlay()
             ToastOverlay(controller: controller)
         }
         .preferredColorScheme(.dark)
@@ -448,6 +450,8 @@ struct HomePage: View {
             }
             MenuSection(advanced, color: MenuColors.advanced, open: c.sectionOpen(advanced, 3), toggle: { c.toggleSection(advanced, 3) }) {
                 SectionButton(tr("Settings", "הגדרות"), color: MenuColors.advanced) { c.openSettings() }
+                // Android FamilyMenu.organize moves "More Minik apps & games" here as a link.
+                FamilyLink(title: FamilyMessages.text("More Minik apps & games", "עוד אפליקציות ומשחקי מיניק")) { c.moreApps() }
             }
             FamilyLink(title: tr("Parent zone", "אזור הורים")) {
                 c.requestParentGate { [weak c] in c?.openParentZone() }

@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Android `home()` after `FamilyMenu.organize`: the title, ball and motto, then four sections. "More Minik apps"
-/// and "Ads & purchases" are not part of the iOS app.
+/// Android `home()` after `FamilyMenu.organize`: the title, ball and motto, then four sections; "More Minik apps
+/// & games" is a link in Advanced. "Ads & purchases" is not part of the iOS app.
 struct HomeScreen: View {
     @ObservedObject var model: AppModel
 
@@ -39,6 +39,7 @@ struct HomeScreen: View {
             }
             MenuSection(advanced, color: MenuColors.advanced, open: model.sectionOpen(advanced, false), toggle: { model.toggleSection(advanced, false) }) {
                 SectionButton(model.tr("Settings & feedback", "הגדרות ומשוב"), color: MenuColors.advanced) { model.openSettings() }
+                MenuLink(title: FamilyMessages.text("More Minik apps & games", "עוד אפליקציות ומשחקי מיניק")) { model.moreApps() }
             }
         }
         .alert(model.tr("Join a private room", "הצטרפות לחדר פרטי"), isPresented: $model.joinVisible) {

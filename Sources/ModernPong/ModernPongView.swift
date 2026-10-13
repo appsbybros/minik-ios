@@ -70,6 +70,7 @@ import StoreKit
         .onChange(of: phase) { _, value in model.lifecycle(active: value == .active) }
         .onChange(of: commerce.isRemoveAdsActive) { _, value in model.ads.removeAds(value) }
         .onDisappear { model.close() }
+        .task(id: model.route) { await familyMenuIdle() }
         .alert(t("Please try again", "נסו שוב"), isPresented: Binding(get: { model.error != nil }, set: { if !$0 { model.error = nil } })) {
             Button(t("OK", "אישור")) { model.error = nil }
         } message: { Text(model.error ?? "") }
@@ -136,6 +137,8 @@ import StoreKit
                             Button(t("Join", "הצטרפו")) { Task { await model.join(joinCode) } }.font(.headline).padding(14).background(MPStyle.blue, in: RoundedRectangle(cornerRadius: 14)).disabled(!model.connected || model.busy)
                         }.padding(.top, 8)
                     }
+                    // Android PlayActivity (Advanced): "More Minik apps & games" as a link, behind the family grown-up gate.
+                    familyLink(FamilyMessages.text("More Minik apps & games", "עוד אפליקציות ומשחקי מיניק")) { FamilyMessages.shared.showMoreApps(gate: nil) }
                     action(commerce.isRemoveAdsActive ? t("Parents / adults · Ads removed", "להורים ולמבוגרים · הפרסומות הוסרו") : t("Parents / adults · Remove ads", "להורים ולמבוגרים · הסרת פרסומות"), color: MPStyle.mint) { commerceUnlocked = false; showCommerce = true }
                 } else {
                     controls
@@ -147,6 +150,27 @@ import StoreKit
         }.scrollDismissesKeyboard(.interactively)
     }
     private func toggle(_ key: String) { if expanded.contains(key) { expanded.remove(key) } else { expanded.insert(key) } }
+    /// Android `FamilyMenu.link` with no background: bold, underlined, family blue.
+    private func familyLink(_ title: String, _ perform: @escaping () -> Void) -> some View {
+        Button(action: perform) {
+            Text(title).font(.system(size: 17, weight: .bold)).underline().foregroundStyle(Color(red: 0x28 / 255, green: 0x69 / 255, blue: 0xbd / 255))
+                .multilineTextAlignment(.center).frame(maxWidth: .infinity, minHeight: 48).padding(.horizontal, 8)
+        }.buttonStyle(.plain)
+    }
+    /// Android `AdCoordinator.familyMenuIdle`, 1.5 s after the home appears: the family remove-ads
+    /// reminder (after 14 days, then at most every 14 days); "Remove ads" opens the purchase sheet.
+    private func familyMenuIdle() async {
+        // Android skips QA and screenshot launches.
+        guard model.route == .menu, model.experience == .full, model.ads.configured, StoreScreenshotScene.name == nil else { return }
+        try? await Task.sleep(nanoseconds: 1_500_000_000)
+        // Android `hasWindowFocus()`: no other sheet or alert is up.
+        guard !Task.isCancelled, model.route == .menu, !model.busy, !showCommerce, !showHelp, !showGameSettings, model.error == nil else { return }
+        FamilyMessages.shared.remind(ownershipResolved: commerce.ownershipResolved, adFree: { [commerce] in commerce.isRemoveAdsActive },
+                                     purchaseAvailable: commerce.removeAdsProduct != nil, gate: nil) {
+            commerceUnlocked = true
+            showCommerce = true
+        }
+    }
     private func action(_ title: String, color: Color = MPStyle.blue, _ perform: @escaping () -> Void) -> some View {
         Button(action: perform) { Text(title).font(.system(.headline, design: .rounded, weight: .bold)).multilineTextAlignment(.center).frame(maxWidth: .infinity, minHeight: 64).padding(.horizontal, 8) }
             .buttonStyle(.plain).background(color, in: RoundedRectangle(cornerRadius: 18)).disabled(model.busy)

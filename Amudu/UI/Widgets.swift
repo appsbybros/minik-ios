@@ -172,6 +172,28 @@ struct MenuSection<Content: View>: View {
     }
 }
 
+/// Android `FamilyMenu.link`: the quiet underlined link ("More Minik apps & games").
+struct MenuLink: View {
+    let title: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 17, weight: .bold))
+                .underline()
+                .foregroundColor(Color(argb: 0xff2869bd))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity, minHeight: 48)
+                .background(RoundedRectangle(cornerRadius: 8).fill(Color(argb: 0xeef7fbff)))
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 /// Android `FamilyMenu.style`: a section's button in the section colour with dark ink and 15 dp corners.
 struct SectionButton: View {
     let title: String

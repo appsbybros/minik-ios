@@ -118,8 +118,9 @@ Source: Android project `C:/Projects/MinikAmudu` (read-only; state of 2026-10-12
 - AdMob interstitials, UMP consent, Play Billing "Remove ads", signed code redemption and the "Ads & purchases" page:
   ads and purchases stay off on iOS until the app has its own AdMob IDs and App Store products. The grown-up gate is
   ported (it guards Settings & feedback).
-- The family module (`MinikFamilyServices`: "More Minik apps & games", automatic promotions, Remove-ads reminders):
-  awaiting the owner's decision. Its menu layout (four sections, colours, remembered open/closed state) is ported.
+- The family module (`MinikFamilyServices`): "More Minik apps & games" is ported (2026-10-13) as a link in Advanced
+  behind the grown-up gate (shared `Family/` module, `docs/family-messages-ios.md`). Its automatic promotions and
+  Remove-ads reminders need ads and purchases, which stay off on iOS.
 - `AdPolicyTest` (ad frequency policy): its code belongs to the excluded ads stack.
 - Debug-only QA hooks (`qaDemo`, `qaCapture`, `qaOnline`, intent overrides, `qa-state.json`) and the Android debug
   build's Firebase emulator wiring: a fabricated `FirebaseOptions` app ID risks a FirebaseCore configuration exception;
