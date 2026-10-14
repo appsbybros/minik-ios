@@ -191,15 +191,23 @@ const online=(r,...uids)=>{r.connections={...r.connections,...Object.fromEntries
 const others=(r,...ids)=>{const out=clone(r);for(const id of ids)delete out.matches[id];return out};
 
 // ---- isolation and structure ----
-test('merge adds only minikCrossPong to the live rules; every other subtree is byte-for-byte unchanged',()=>{
+// iOS mirror (5c1aa4d): Android's generate-rules.cjs now also merges the separate team root (minikCrossTeams, from
+// cross-team.json); Android's own copy of this test was not updated for it. Both roots are excluded here.
+// Android's committed merged candidate at 5c1aa4d is older than its generator: its minikCrossPong has no
+// receptionPreferences and its minikCrossTeams differs from cross-team.json. So the two deepEqual checks below fail, here
+// and on Android, until Android regenerates merged-database-rules.json and rules/merged.json is copied again.
+const TEAMS='minikCrossTeams';
+test('merge adds only minikCrossPong and minikCrossTeams to the live rules; every other subtree is byte-for-byte unchanged',()=>{
   const current=JSON.parse(fs.readFileSync(path.resolve(__dirname,'../rules/current.json'),'utf8'));
   const merged=JSON.parse(fs.readFileSync(mergedPath,'utf8'));
   const fragment=JSON.parse(fs.readFileSync(path.resolve(__dirname,'../rules/crosspong.fragment.json'),'utf8'));
+  const teams=JSON.parse(fs.readFileSync(path.resolve(__dirname,'../rules/cross-team.json'),'utf8'));
   assert.equal(merged.rules['.read'],false);assert.equal(merged.rules['.write'],false);
   assert.deepEqual(merged.rules[NS],fragment.rules[NS]);
+  assert.deepEqual(merged.rules[TEAMS],teams.rules[TEAMS]);
   assert.ok(current.rules.minikPingPong&&current.rules.tripleShot,'the live rules hold the original apps');
-  for(const key of Object.keys(current.rules))if(key!==NS)assert.equal(JSON.stringify(merged.rules[key]),JSON.stringify(current.rules[key]),key);
-  assert.deepEqual(Object.keys(merged.rules).filter(k=>k!==NS),Object.keys(current.rules).filter(k=>k!==NS));
+  for(const key of Object.keys(current.rules))if(key!==NS&&key!==TEAMS)assert.equal(JSON.stringify(merged.rules[key]),JSON.stringify(current.rules[key]),key);
+  assert.deepEqual(Object.keys(merged.rules).filter(k=>k!==NS&&k!==TEAMS),Object.keys(current.rules).filter(k=>k!==NS&&k!==TEAMS));
   assert.equal(merged.rules[NS]['.read'],false);assert.equal(merged.rules[NS]['.write'],false);
 });
 test('collection scans, unknown children and monetization are denied even to signed-in users',async()=>{

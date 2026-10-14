@@ -101,7 +101,7 @@ foreach ($forbiddenIdentifier in @(
 }
 Require-Pattern $project 'ASSETCATALOG_COMPILER_APPICON_NAME: \$\(MINIK_APP_ICON_NAME\)' 'App icon build-setting hook is missing.'
 Require-Pattern $project 'MINIK_APP_ICON_NAME: MinikPlusAppIcon' 'MinikPlus Android-derived app icon is not selected.'
-Require-Pattern $project 'MinikPlusEnglish:[\s\S]*?MINIK_APP_ICON_NAME: MinikPlusAppIcon' 'MinikPlusEnglish must share the MinikPlus launcher icon, as on Android.'
+Require-Pattern $project 'MinikPlusEnglish:[\s\S]*?MINIK_APP_ICON_NAME: MinikPlusEnglishAppIcon' 'MinikPlusEnglish must keep its own launcher icon: Android plus-english-only kept the former one when Plus moved to the rainbow icon.'
 Require-Pattern $project '(?m)^  MinikMath:[\s\S]*?MINIK_APP_ICON_NAME: MinikMathAppIcon' 'MinikMath must use the MINIK Math icon (Android Minik Math app_icon.png).'
 Require-Pattern $project '(?m)^  MinikMathPlus:[\s\S]*?MINIK_APP_ICON_NAME: MinikMathPlusAppIcon' 'MinikMathPlus must use the Android Minik Math Plus store icon.'
 $firebaseConfigurations = @(
@@ -166,12 +166,28 @@ $sourceText = (Get-ChildItem -File -Recurse -LiteralPath (Join-Path $RepositoryR
 if ($sourceText -notmatch '\bUserDefaults\b') {
     $errors.Add('Privacy audit expected app-owned UserDefaults use but found none; review manifest scope.')
 }
+# Every app's own Swift: the shared Sources and the game folders the other targets add.
+$appCodeText = (@('Sources', 'Family', 'MultiPong', 'Amudu', 'Splash', 'Sports') |
+    ForEach-Object { Join-Path $RepositoryRoot $_ } |
+    Where-Object { Test-Path -LiteralPath $_ -PathType Container } |
+    ForEach-Object { Get-ChildItem -File -Recurse -LiteralPath $_ -Filter '*.swift' } |
+    ForEach-Object { Get-Content -Raw -Encoding utf8 -LiteralPath $_.FullName }) -join "`n"
+# ProcessInfo.systemUptime times events inside the app (online rooms, journeys, game clocks), so every
+# manifest declares SystemBootTime with reason 35F9.1; App Store Connect rejects an undeclared use.
+if ($appCodeText -match '\bsystemUptime\b') {
+    foreach ($manifest in @(Get-ChildItem -File -Recurse -LiteralPath (Join-Path $RepositoryRoot 'Resources\Privacy') -Filter 'PrivacyInfo.xcprivacy')) {
+        $manifestText = Get-Content -Raw -Encoding utf8 -LiteralPath $manifest.FullName
+        if ($manifestText -notmatch 'NSPrivacyAccessedAPICategorySystemBootTime</string>\s*<key>NSPrivacyAccessedAPITypeReasons</key>\s*<array>\s*<string>35F9\.1</string>') {
+            $errors.Add("$($manifest.Directory.Name) privacy manifest must declare SystemBootTime (35F9.1): the app code uses ProcessInfo.systemUptime.")
+        }
+    }
+}
 $otherRequiredReasonAPIs = [regex]::Matches(
-    $sourceText,
-    '\b(systemUptime|mach_absolute_time|creationDate|modificationDate|fileModificationDate|contentModificationDateKey|creationDateKey|volumeAvailableCapacityKey|volumeAvailableCapacityForImportantUsageKey|volumeAvailableCapacityForOpportunisticUsageKey|volumeTotalCapacityKey|activeInputModes)\b'
+    $appCodeText,
+    '\b(mach_absolute_time|creationDate|modificationDate|fileModificationDate|contentModificationDateKey|creationDateKey|volumeAvailableCapacityKey|volumeAvailableCapacityForImportantUsageKey|volumeAvailableCapacityForOpportunisticUsageKey|volumeTotalCapacityKey|activeInputModes)\b'
 ).Count
 if ($otherRequiredReasonAPIs -ne 0) {
-    $errors.Add("Found $otherRequiredReasonAPIs app-owned required-reason API reference(s) outside the current UserDefaults-only manifest inventory.")
+    $errors.Add("Found $otherRequiredReasonAPIs app-owned required-reason API reference(s) outside the current UserDefaults and SystemBootTime manifest inventory.")
 }
 
 $iconSets = @(Get-ChildItem -Directory -Recurse -LiteralPath $RepositoryRoot -Filter '*.appiconset')
@@ -249,7 +265,7 @@ Write-Output "RELEASE_FORBIDDEN_BUNDLE_IDENTIFIER_ERRORS=$forbiddenBundleIdentif
 Write-Output "RELEASE_FIREBASE_PLIST_MAPPINGS=$($firebaseConfigurations.Count)"
 Write-Output "RELEASE_FIREBASE_PLIST_MISMATCH_ERRORS=$firebasePlistMismatchErrors"
 Write-Output "RELEASE_FIREBASE_CONFIGURE_CALLS=$firebaseConfigureCalls"
-Write-Output 'RELEASE_REQUIRED_REASON_API_CATEGORIES=UserDefaults'
+Write-Output 'RELEASE_REQUIRED_REASON_API_CATEGORIES=UserDefaults,SystemBootTime'
 Write-Output "RELEASE_OTHER_REQUIRED_REASON_API_REFERENCES=$otherRequiredReasonAPIs"
 Write-Output "RELEASE_CONFIGURATION_AUDIT_ERRORS=$($errors.Count)"
 if ($errors.Count -gt 0) {

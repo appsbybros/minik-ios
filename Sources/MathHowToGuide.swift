@@ -145,6 +145,7 @@ private struct MathActivityChromeModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
+            .environment(\.mathHowToIsShowing, showsHowTo && topic != nil)
             .overlay {
                 if showsHowTo, let topic {
                     MathHowToCard(topic: topic, onStart: dismissHowTo)
@@ -169,12 +170,14 @@ private struct MathActivityChromeModifier: ViewModifier {
 }
 
 /// The "How to play" card over a dimmed activity: what the activity is, what to
-/// do, a Listen button for children who do not read yet, and "Let's start!".
+/// do, a Listen button for children who do not read yet, and "Let's start!". With
+/// Read aloud on, the card reads itself when it opens (Android HowToScreen).
 private struct MathHowToCard: View {
     let topic: MathHowToTopic
     let onStart: () -> Void
     @StateObject private var speechPlayer = InterfaceSpeechPlayer()
     @Environment(\.interfaceLocaleID) private var interfaceLocaleID
+    @Environment(\.mathReadAloudEnabled) private var readAloudEnabled
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     private var wide: Bool {
@@ -187,8 +190,7 @@ private struct MathHowToCard: View {
 
     /// String(localized:) follows the app's own language, so the voice does too.
     private var speechLocale: InterfaceLocaleID {
-        Bundle.main.preferredLocalizations.first
-            .flatMap { InterfaceLocaleID(languageTag: $0) } ?? interfaceLocaleID
+        MathReadAloud.voiceLocale(fallback: interfaceLocaleID)
     }
 
     var body: some View {
@@ -209,6 +211,9 @@ private struct MathHowToCard: View {
             }
             .padding(.horizontal, wide ? 40 : 16)
             .padding(.vertical, 20)
+        }
+        .onAppear {
+            if readAloudEnabled { speak() }
         }
         .onDisappear {
             speechPlayer.stop()

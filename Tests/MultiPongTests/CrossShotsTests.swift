@@ -44,12 +44,12 @@ final class CrossShotsTests: XCTestCase {
         return Int(signum(gesture))
     }
 
-    // Kotlin: basePaceAndStandardPower
+    // Kotlin: basePaceAndStandardPower (5c1aa4d: PACE_SCALE 2.45, so the base pace is 0.98)
     func testBasePaceAndStandardPower() {
-        XCTAssertEqual(0.88, CrossShots.basePace(starter), accuracy: 1e-12)
-        XCTAssertEqual(0.88, CrossShots.pace(starter), accuracy: 1e-12)
-        XCTAssertEqual(0.88 * 1.35, CrossShots.pace(starter, power: 1.0), accuracy: 1e-12)
-        XCTAssertEqual(0.88 * 1.35, CrossShots.pace(starter, power: 7.0), accuracy: 1e-12)
+        XCTAssertEqual(0.98, CrossShots.basePace(starter), accuracy: 1e-12)
+        XCTAssertEqual(0.98, CrossShots.pace(starter), accuracy: 1e-12)
+        XCTAssertEqual(0.98 * 1.35, CrossShots.pace(starter, power: 1.0), accuracy: 1e-12)
+        XCTAssertEqual(0.98 * 1.35, CrossShots.pace(starter, power: 7.0), accuracy: 1e-12)
     }
 
     // Kotlin: targetedShotsFromEverySeatLandInEveryOtherTerritoryClearingTheNets

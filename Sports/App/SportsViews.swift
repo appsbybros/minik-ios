@@ -8,7 +8,7 @@ private let ink: UInt32 = 0xff163d50
 
 // MARK: Building blocks
 
-/// Android `backButton`: a pink arrow pointing to the start side.
+/// Android `backButton`: a raised pink arrow pointing to the start side.
 private struct BackArrow: Shape {
     let rtl: Bool
 
@@ -35,10 +35,20 @@ struct BackButton: View {
 
     var body: some View {
         Button(action: action) {
-            BackArrow(rtl: AppText.rtl)
-                .stroke(SportsPalette.color(SportsPalette.pink), style: StrokeStyle(lineWidth: 4, lineCap: .round))
-                .frame(width: 56, height: 56)
-                .contentShape(Rectangle())
+            // Android draws the arrow three times: a dark edge 2 dp lower, the pink face, and a thin
+            // highlight 1 dp higher.
+            ZStack {
+                BackArrow(rtl: AppText.rtl)
+                    .stroke(SportsPalette.color(0xff9d225a), style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                    .offset(y: 2)
+                BackArrow(rtl: AppText.rtl)
+                    .stroke(SportsPalette.color(0xffe63f89), style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                BackArrow(rtl: AppText.rtl)
+                    .stroke(SportsPalette.color(0xffffadd1), style: StrokeStyle(lineWidth: 1, lineCap: .round))
+                    .offset(y: -1)
+            }
+            .frame(width: 56, height: 56)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)
@@ -64,13 +74,15 @@ struct SLabel: View {
     }
 }
 
-/// Android `button(text, color)`: 54 high, bold 17 (shrinking to 12), 18 dp corners.
+/// Android `button(text, color)`: 54 high, bold 17 (shrinking to 12), on a raised sky surface with
+/// 18 dp corners (FamilySkyDrawable); a disabled button has the gray face.
 @MainActor
 struct SButton: View {
     let title: String
     var color: UInt32 = 0xffc6ecdd
     var textColor: UInt32 = ink
     var enabled = true
+    var top: CGFloat = 10
     let action: () -> Void
 
     var body: some View {
@@ -83,56 +95,116 @@ struct SButton: View {
                 .minimumScaleFactor(12.0 / 17.0)
                 .padding(.horizontal, 12)
                 .frame(maxWidth: 520, minHeight: 54, maxHeight: 54)
-                .background(RoundedRectangle(cornerRadius: 18).fill(SportsPalette.color(color)))
-                .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .padding(.top, 10)
+        .buttonStyle(SportsSkyButtonStyle(color: color, enabled: enabled))
+        .padding(.top, top)
     }
 }
 
-/// Android `page(title, back)`.
+/// Android `page(title, back)`: the title bar, then the centred column (FamilyReadingPanel: the whole
+/// width in portrait, about half of a landscape window). The home menu reserves the "More below" row
+/// under the scrolling column (Android FamilyMoreFrame).
 @MainActor
 struct SPage<Content: View>: View {
     let title: String
     let back: (() -> Void)?
+    let moreCue: Bool
     let content: Content
+    @StateObject private var cue = SportsScrollCue()
 
-    init(_ title: String, back: (() -> Void)?, @ViewBuilder content: () -> Content) {
+    init(_ title: String, back: (() -> Void)?, moreCue: Bool = false, @ViewBuilder content: () -> Content) {
         self.title = title
         self.back = back
+        self.moreCue = moreCue
         self.content = content()
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            ZStack(alignment: .leading) {
-                Text(title)
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundColor(SportsPalette.color(ink))
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .minimumScaleFactor(16.0 / 24.0)
-                    .padding(.horizontal, 58)
-                    .frame(maxWidth: .infinity, minHeight: 64)
-                if let back = back {
-                    BackButton(title: AppText.t("Back", "חזרה")) { back() }
+        GeometryReader { geo in
+            let column = SportsSky.column(geo)
+            VStack(spacing: 0) {
+                ZStack(alignment: .leading) {
+                    Text(title)
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundColor(SportsPalette.color(ink))
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .minimumScaleFactor(16.0 / 24.0)
+                        .padding(.horizontal, 58)
+                        .frame(maxWidth: .infinity, minHeight: 64)
+                    if let back = back {
+                        BackButton(title: AppText.t("Back", "חזרה")) { back() }
+                    }
+                }
+                .frame(minHeight: 64)
+                ScrollView {
+                    VStack(spacing: 0) {
+                        content
+                    }
+                    .frame(maxWidth: column)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 6)
+                    .padding(.bottom, 24)
+                    .frame(maxWidth: .infinity)
+                    .background {
+                        if moreCue { SportsScrollProbe(cue: cue) }
+                    }
+                }
+                if moreCue {
+                    MoreBelowCue(cue: cue)
                 }
             }
-            .frame(minHeight: 64)
-            ScrollView {
-                VStack(spacing: 0) {
-                    content
-                }
-                .frame(maxWidth: 520)
-                .padding(.horizontal, 20)
-                .padding(.top, 6)
-                .padding(.bottom, 24)
-                .frame(maxWidth: .infinity)
-            }
+            .frame(width: geo.size.width, height: geo.size.height)
         }
         .background(SportsPalette.color(SportsPalette.page).ignoresSafeArea())
         .environment(\.layoutDirection, AppText.rtl ? .rightToLeft : .leftToRight)
+    }
+}
+
+/// Android `FamilyMoreFrame` on the light menu: a 48 point row under the menu with "More below" and a
+/// gently bouncing chevron while more actions lie below; a tap scrolls about two thirds of a screen.
+/// The row keeps its place when hidden, so it never covers an action.
+@MainActor
+struct MoreBelowCue: View {
+    @ObservedObject var cue: SportsScrollCue
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
+
+    var body: some View {
+        let shown = cue.more
+        let animate = shown && !reduceMotion && !voiceOver
+        Button(action: { cue.scrollDown() }) {
+            HStack(spacing: 0) {
+                Text(FamilyMessages.text("More below", "עוד למטה"))
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(SportsPalette.color(0xff183652))
+                    .shadow(color: SportsPalette.color(0xfff7fbff), radius: 1, x: 0, y: 1)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                TimelineView(.animation(minimumInterval: nil, paused: !animate)) { timeline in
+                    ChevronDown()
+                        .stroke(SportsPalette.color(0xff245477), style: StrokeStyle(lineWidth: 3.5, lineCap: .round, lineJoin: .round))
+                        .shadow(color: Color.black.opacity(0.6), radius: 1, x: 0, y: 1)
+                        .frame(width: 38, height: 44)
+                        .offset(y: animate ? MoreBelowCue.bounce(timeline.date) : 0)
+                }
+                .frame(width: 38, height: 44)
+            }
+            .frame(maxWidth: .infinity, minHeight: 48, maxHeight: 48)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .opacity(shown ? 1 : 0)
+        .allowsHitTesting(shown)
+        .accessibilityHidden(!shown)
+        .accessibilityLabel(FamilyMessages.text("More options below. Tap to scroll", "עוד אפשרויות למטה. הקישו לגלילה"))
+    }
+
+    /// Android's ObjectAnimator: 0 to 4 dp in 850 ms and back, accelerating and decelerating.
+    nonisolated static func bounce(_ date: Date) -> CGFloat {
+        let cycle = date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 1.7) / 0.85
+        let t = cycle > 1 ? 2 - cycle : cycle
+        return CGFloat(4 * (0.5 - 0.5 * cos(Double.pi * t)))
     }
 }
 
@@ -171,7 +243,7 @@ struct SChoose: View {
                         .frame(width: 44, height: 56)
                 }
                 .frame(maxWidth: 520, minHeight: 56, maxHeight: 56)
-                .background(RoundedRectangle(cornerRadius: 18).fill(SportsPalette.color(0xffdfedf6)))
+                .background(SportsSkySurface(color: 0xffdfedf6, enabled: enabled))
             }
             .disabled(!enabled)
         }
@@ -220,7 +292,8 @@ enum FamilyMenuColors {
     static let ink: UInt32 = 0xff282d4e
 }
 
-/// Android `FamilyMenu.section` on a light page ("family-menu-light"): ink title, − / + sign.
+/// Android `FamilyMenu.section` on a light page ("family-menu-light"): a raised pale panel
+/// (FamilySkyDrawable panel) outlined in the section colour, ink title, − / + sign.
 @MainActor
 struct FamilySection<Content: View>: View {
     let title: String
@@ -250,6 +323,8 @@ struct FamilySection<Content: View>: View {
                         .foregroundColor(SportsPalette.color(FamilyMenuColors.ink))
                         .frame(width: 42, height: 48)
                 }
+                .padding(.horizontal, 6)
+                .padding(.vertical, 4)
                 .frame(minHeight: 54)
                 .contentShape(Rectangle())
             }
@@ -261,12 +336,12 @@ struct FamilySection<Content: View>: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 4)
-        .overlay(RoundedRectangle(cornerRadius: 18).stroke(SportsPalette.color(color), lineWidth: 2))
+        .background(SportsSkySurface(color: color, panel: true, strokeWidth: 2, strokeColor: color))
         .padding(.bottom, 14)
     }
 }
 
-/// Android `FamilyMenu.style`: a section button in the section colour with ink text, 15 dp corners.
+/// Android `FamilyMenu.style`: a raised section button in the section colour with ink text, 15 dp corners.
 @MainActor
 struct FamilyButton: View {
     let title: String
@@ -283,10 +358,8 @@ struct FamilyButton: View {
                 .minimumScaleFactor(12.0 / 17.0)
                 .padding(.horizontal, 12)
                 .frame(maxWidth: .infinity, minHeight: 54, maxHeight: 54)
-                .background(RoundedRectangle(cornerRadius: 15).fill(SportsPalette.color(color)))
-                .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(SportsSkyButtonStyle(color: color, radius: 15))
         .padding(.top, 4)
         .padding(.bottom, 8)
     }
@@ -475,9 +548,8 @@ struct Carousel: View {
                 .font(.system(size: 29))
                 .foregroundColor(SportsPalette.color(ink))
                 .frame(width: 52, height: 52)
-                .background(RoundedRectangle(cornerRadius: 18).fill(SportsPalette.color(0xffdfedf6)))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(SportsSkyButtonStyle(color: 0xffdfedf6))
     }
 
     /// Android's arrow buttons change the player at once, without animation.
@@ -523,6 +595,9 @@ struct SportsRootView: View {
             if controller.pausePresented {
                 PauseDialog(controller: controller)
             }
+            if controller.saveCupPresented {
+                SaveCupDialog(controller: controller)
+            }
             // Under the app's own grown-up gate and toasts, which the card's links open above it.
             FamilyOverlay()
             if controller.gatePresented {
@@ -554,6 +629,7 @@ struct SportsRootView: View {
         case .tutorial: TutorialPage(controller: c)
         case .tournament: TournamentPage(controller: c)
         case .online: OnlinePage(controller: c)
+        case .roomOptions: RoomOptionsPage(controller: c)
         case .publicTournaments: PublicTournamentsPage(controller: c)
         case .lobby: LobbyPage(controller: c)
         case .result: ResultPage(controller: c)
@@ -636,7 +712,7 @@ private struct DialogCard<Content: View>: View {
             .padding(.horizontal, 24)
             .padding(.top, 22)
             .padding(.bottom, 14)
-            .background(RoundedRectangle(cornerRadius: 18).fill(SportsPalette.color(0xfff6fbff)))
+            .background(SportsSkySurface(color: 0xfff6fbff))
             .padding(.horizontal, 28)
             .frame(maxWidth: 520)
         }
@@ -672,6 +748,71 @@ struct PauseDialog: View {
                    cancel: { c.resumeFromPause() }) {
             EmptyView()
         }
+    }
+}
+
+/// Android `FamilyTournamentUi.confirmSave`: "Save this tournament?" on a raised pale panel, with
+/// three tall buttons (Save, a pink Don't save, Cancel). A tap outside does not close it.
+@MainActor
+struct SaveCupDialog: View {
+    @ObservedObject var controller: SportsController
+
+    var body: some View {
+        let c = controller
+        let titleInk: UInt32 = 0xff282d4e
+        ZStack {
+            Color.black.opacity(0.45)
+                .ignoresSafeArea()
+            GeometryReader { geo in
+                ScrollView {
+                    card(c, titleInk)
+                        .frame(maxWidth: .infinity, minHeight: geo.size.height)
+                }
+            }
+        }
+        .environment(\.layoutDirection, AppText.rtl ? .rightToLeft : .leftToRight)
+    }
+
+    private func card(_ c: SportsController, _ titleInk: UInt32) -> some View {
+        VStack(spacing: 0) {
+            Text(c.tr("Save this tournament?", "לשמור את הטורניר?"))
+                .font(.system(size: 22, weight: .bold))
+                .foregroundColor(SportsPalette.color(titleInk))
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+            Text(c.tr("Save to continue later. Don't save removes the saved cup on this device; other players can continue.",
+                      "שמרו כדי להמשיך מאוחר יותר. ללא שמירה, הגביע השמור יוסר מהמכשיר הזה; שחקנים אחרים יוכלו להמשיך."))
+                .font(.system(size: 17))
+                .foregroundColor(SportsPalette.color(titleInk))
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 16)
+                .padding(.bottom, 12)
+            choice(c.tr("Save", "שמירה"), 0xffb8d9ff, titleInk) { c.saveCupAndLeave() }
+            choice(c.tr("Don't save", "לא לשמור"), 0xffe91e63, 0xffffffff) { c.discardCupAndLeave() }
+            choice(c.tr("Cancel", "ביטול"), 0xffe8e0ff, titleInk) { c.cancelSaveCup() }
+        }
+        .padding(24)
+        .background(SportsSkySurface(color: 0xfff6f8ff, radius: 24, panel: true))
+        .padding(.horizontal, 28)
+        .padding(.vertical, 24)
+        .frame(maxWidth: 520)
+    }
+
+    private func choice(_ title: String, _ color: UInt32, _ text: UInt32, _ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 17, weight: .bold))
+                .foregroundColor(SportsPalette.color(text))
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.75)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .frame(maxWidth: .infinity, minHeight: 64, maxHeight: 64)
+        }
+        .buttonStyle(SportsSkyButtonStyle(color: color, radius: 16))
+        .padding(.top, 18)
     }
 }
 
@@ -764,9 +905,8 @@ struct GamePage: View {
                 .minimumScaleFactor(0.7)
                 .padding(.horizontal, 4)
                 .frame(maxWidth: .infinity, minHeight: 44, maxHeight: 44)
-                .background(RoundedRectangle(cornerRadius: 18).fill(SportsPalette.color(color)))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(SportsSkyButtonStyle(color: color))
     }
 }
 
@@ -785,26 +925,19 @@ struct HomePage: View {
         let advanced = c.tr("Advanced", "מתקדם")
         let points = c.points()
         let rank = ProgressRanks.at(points)
-        SPage(c.appName, back: nil) {
-            GeometryReader { geo in
-                if let hero = c.art.bitmap(c.sport == .squash ? "squash" : (c.arena == "beach" ? "volley_beach" : c.arena)) {
-                    Image(uiImage: hero)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: geo.size.width, height: geo.size.height)
-                        .clipped()
-                }
-            }
-            .frame(maxWidth: 520)
-            .frame(height: UIScreen.main.bounds.height < 500 ? 100 : 142)
-            .background(Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: 18))
-            .padding(.bottom, 12)
-            .accessibilityHidden(true)
+        SPage(c.appName, back: nil, moreCue: true) {
+            // Android `squash_menu_clean` / `volley_menu_clean`: the whole picture across the column,
+            // without a frame or cropping.
+            Image(c.sport == .squash ? "squash_menu_clean" : "volley_menu_clean")
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: .infinity)
+                .padding(.bottom, 12)
+                .accessibilityHidden(true)
             // Android FamilyMenu.organize: the tutorial and daily actions, then the avatar row, in "Start & learn".
             FamilySection(learn, color: FamilyMenuColors.learn, open: c.sectionOpen(learn, 0), toggle: { c.toggleSection(learn, 0) }) {
                 FamilyButton(title: c.tr("Learn to play with Minik", "לומדים לשחק עם מיניק"), color: FamilyMenuColors.learn) { c.tutorialIntro() }
-                FamilyButton(title: c.tr("Daily skill journey", "מסע האתגר היומי"), color: FamilyMenuColors.learn) { c.journeyPage() }
+                FamilyButton(title: c.tr("Daily skill journey", "אתגר יומי"), color: FamilyMenuColors.learn) { c.journeyPage() }
                 FamilyButton(title: c.tr("Your avatar & colors", "הדמות והצבעים שלכם"), color: FamilyMenuColors.learn) { c.avatars() }
                 HStack(spacing: 0) {
                     Portrait(id: c.avatar, width: 70, height: 82)
@@ -815,7 +948,10 @@ struct HomePage: View {
                         .minimumScaleFactor(0.7)
                         .padding(.horizontal, 6)
                         .frame(width: 210, height: 52)
-                        .background(RoundedRectangle(cornerRadius: 18).fill(SportsPalette.color(rank.color)))
+                        // Android FamilyFormStyle flattens this label. Its rank ink is kept: Android's
+                        // FamilyMenu.readableProfile also turns the white ink of the Blue and Brown
+                        // ranks dark, which leaves dark text on a dark rank colour.
+                        .background(SportsFlatLabel(color: rank.color))
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -852,7 +988,7 @@ struct JourneyPage: View {
         let d = SportsJourney.stage(c.sport, step)
         let cycle = step / 30
         let guide = d.bot(cycle, c.sport, [c.avatar])
-        SPage(c.tr("Daily skill journey", "מסע האתגר היומי"), back: { c.home() }) {
+        SPage(c.tr("Daily skill journey", "אתגר יומי"), back: { c.home() }) {
             SLabel(text: c.tr("A little practice each day. Your first completed stage today earns a bonus. Play more whenever you like; missing a day never takes progress away.",
                               "קצת תרגול בכל יום. השלב הראשון שמסיימים היום מעניק בונוס. אפשר לשחק עוד מתי שרוצים; דילוג על יום אינו מוחק התקדמות."))
             SLabel(text: "\(step % 30 + 1) / 30  ·  " + c.tr("Cycle", "מסלול") + " \(cycle + 1)", size: 20)
@@ -994,7 +1130,7 @@ struct AvatarsPage: View {
                     .padding(.horizontal, 6)
                     .padding(.vertical, 8)
                     .frame(maxWidth: .infinity)
-                    .background(RoundedRectangle(cornerRadius: 18).fill(SportsPalette.color(r.color)))
+                    .background(SportsFlatLabel(color: r.color))
                     .padding(.top, 7)
             }
         }
@@ -1041,9 +1177,9 @@ struct SettingsPage: View {
             SButton(title: c.tr("Rate, share & feedback", "דירוג, שיתוף ומשוב")) { c.parentGate { [weak c] in c?.openSupport() } }
             SButton(title: c.tr("Ball reception assistance ▾", "עזרה בקבלת הכדור ▾")) { c.receptionOpen.toggle() }
             if c.receptionOpen {
-                SSwitch(title: c.tr("Zoom as the ball approaches me", "קירוב כשהכדור מתקרב אליי"), isOn: c.receptionValue("receptionZoom")) { c.setReception("receptionZoom", $0) }
+                SSwitch(title: c.tr("Zoom as the ball approaches me", "מיקוד המצלמה כשהכדור מתקרב אליי"), isOn: c.receptionValue("receptionZoom")) { c.setReception("receptionZoom", $0) }
                 SSwitch(title: c.tr("Slow motion for my reception", "הילוך איטי בקבלת הכדור שלי"), isOn: c.receptionValue("receptionSlow")) { c.setReception("receptionSlow", $0) }
-                SSwitch(title: c.tr("Follow another human's reception", "קירוב גם בקבלת כדור של אדם אחר"), isOn: c.receptionValue("receptionFollow")) { c.setReception("receptionFollow", $0) }
+                SSwitch(title: c.tr("Follow another human's reception", "מיקוד המצלמה כששחקן אחר מקבל את הכדור"), isOn: c.receptionValue("receptionFollow")) { c.setReception("receptionFollow", $0) }
                 SLabel(text: c.tr("Online, everyone shares the same slow motion. This setting controls your turns; other players choose for theirs. Bots never trigger the camera.",
                                   "ברשת כולם משחקים באותו הילוך איטי. ההגדרה קובעת לגבי התור שלכם; כל שחקן בוחר לגבי שלו. בוטים אינם מפעילים את הקירוב."), size: 16)
             }
@@ -1098,7 +1234,7 @@ struct TournamentPage: View {
 
     var body: some View {
         let c = controller
-        SPage(c.tr("Tournament", "טורניר"), back: { c.home() }) {
+        SPage(c.tr("Tournament", "טורניר"), back: { c.leaveCupScreen() }) {
             if let cup = c.cupState {
                 let round = cup.optInt("round")
                 let results = ((cup["results"] as? [Any]) ?? []).map { NodeValue.text($0) }
@@ -1113,7 +1249,7 @@ struct TournamentPage: View {
                 } else {
                     SLabel(text: c.tr("Cup complete!", "הגביע הושלם!"), size: 26)
                 }
-                SButton(title: c.tr("Finish tournament", "סיום הטורניר")) { c.finishCup() }
+                SButton(title: c.tr("Delete tournament", "מחיקת הטורניר"), color: SportsPalette.pink, textColor: 0xffffffff, top: 24) { c.finishCup() }
             } else {
                 SLabel(text: c.tr("A three-match cup against three different house players. Scores and completed fixtures are saved.", "גביע של שלושה משחקים מול שלושה שחקני בית שונים. הניקוד והמשחקים שהסתיימו נשמרים."))
                 SButton(title: c.tr("Start tournament", "תחילת טורניר")) { c.startCup() }
@@ -1130,26 +1266,38 @@ struct OnlinePage: View {
 
     var body: some View {
         let c = controller
-        let formats = [1, 3, 5]
         SPage(c.tr("Play with friends", "משחק עם חברים"), back: { c.home() }) {
             SLabel(text: c.tr("Create a private room, share its code, and get ready together. Empty volleyball places can be filled by house players.", "צרו חדר פרטי, שתפו את הקוד והתכוננו יחד. שחקני בית יכולים למלא מקומות פנויים בכדורעף."))
-            SChoose(title: c.tr("Match format", "סוג המשחק"), items: formats.map { $0 == 1 ? c.tr("Single match", "משחק יחיד") : "\($0) " + c.tr("match cup", "משחקי גביע") },
-                    selected: formats.firstIndex(of: c.onlineRounds) ?? 0) { c.onlineRounds = formats[$0] }
-            SButton(title: c.tr("Create room", "יצירת חדר")) { c.connect(nil) }
-            TextField(c.tr("Room code", "קוד חדר"), text: Binding(get: { c.roomCode }, set: { value in
+            SButton(title: c.tr("Create room", "יצירת חדר")) { c.roomOptions(false) }
+            SportsDashedDivider()
+            SportsField(placeholder: c.tr("Room code", "קוד חדר"), text: Binding(get: { c.roomCode }, set: { value in
                 c.roomCode = String(value.uppercased().prefix(6))
             }))
-            .textInputAutocapitalization(.characters)
-            .autocorrectionDisabled(true)
-            .multilineTextAlignment(.center)
-            .font(.system(size: 18))
-            .foregroundColor(SportsPalette.color(ink))
-            .frame(height: 56)
-            .overlay(Rectangle().frame(height: 1).foregroundColor(SportsPalette.color(0xff567780)), alignment: .bottom)
             SButton(title: c.tr("Join room", "הצטרפות לחדר")) { c.connect(c.roomCode.trimmingCharacters(in: .whitespaces)) }
             if let saved = c.savedRoom {
                 SButton(title: c.tr("Return to room", "חזרה לחדר") + " (\(saved))") { c.connect(saved) }
             }
+        }
+    }
+}
+
+/// Android `roomOptions(publicCup)`: the host chooses a single match or a cup before creating the
+/// room (a public tournament is always a cup); Back and Cancel return to where the host came from.
+@MainActor
+struct RoomOptionsPage: View {
+    @ObservedObject var controller: SportsController
+
+    var body: some View {
+        let c = controller
+        let publicCup = c.roomOptionsPublic
+        let formats = publicCup ? [3, 5] : [1, 3, 5]
+        let current = publicCup ? max(c.onlineRounds, 3) : c.onlineRounds
+        SPage(publicCup ? c.tr("Create public tournament", "יצירת טורניר פתוח") : c.tr("Create room", "יצירת חדר"),
+              back: { c.leaveRoomOptions() }) {
+            SChoose(title: c.tr("Match format", "סוג המשחק"), items: formats.map { $0 == 1 ? c.tr("Single match", "משחק יחיד") : "\($0) " + c.tr("match cup", "משחקי גביע") },
+                    selected: formats.firstIndex(of: current) ?? 0) { c.onlineRounds = formats[$0] }
+            SButton(title: c.tr("Create room", "יצירת חדר")) { c.connect(nil, publicCup: publicCup) }
+            SButton(title: c.tr("Cancel", "ביטול"), color: SportsPalette.pink, textColor: 0xffffffff) { c.leaveRoomOptions() }
         }
     }
 }
@@ -1160,12 +1308,9 @@ struct PublicTournamentsPage: View {
 
     var body: some View {
         let c = controller
-        let formats = [3, 5]
         SPage(c.tr("Public tournaments", "טורנירים פתוחים"), back: { c.home() }) {
             SLabel(text: c.tr("Public listings show room codes and free places only. There is no chat.", "ברשימה הציבורית מופיעים רק קודי חדרים ומקומות פנויים. אין צ׳אט."))
-            SChoose(title: c.tr("Match format", "סוג המשחק"), items: formats.map { "\($0) " + c.tr("match cup", "משחקי גביע") },
-                    selected: formats.firstIndex(of: max(c.onlineRounds, 3)) ?? 0) { c.onlineRounds = formats[$0] }
-            SButton(title: c.tr("Create public tournament", "יצירת טורניר פתוח")) { c.connect(nil, publicCup: true) }
+            SButton(title: c.tr("Create public tournament", "יצירת טורניר פתוח")) { c.roomOptions(true) }
             if c.publicEntries.isEmpty {
                 SLabel(text: c.tr("No open tournaments yet. You can create one.", "אין עדיין טורנירים פתוחים. אפשר ליצור טורניר."))
             }
@@ -1182,15 +1327,20 @@ struct LobbyPage: View {
 
     var body: some View {
         let c = controller
-        SPage(c.tr("Friends room", "חדר חברים"), back: { c.home() }) {
+        SPage(c.tr("Friends room", "חדר חברים"), back: { c.leaveCupScreen() }) {
             if let l = c.lobbyModel {
+                let alone = l.members.count == 1
                 SLabel(text: l.code, size: 32)
                 SButton(title: c.tr("Copy code", "העתקת קוד")) { c.copyCode(l.code) }
                 ForEach(l.members, id: \.id) { m in
-                    SLabel(text: (m.id == l.uid ? c.tr("You", "אתם") : Characters.get(m.character).name(c.hebrew)) + " • "
-                           + (l.ready.contains(m.id) ? c.tr("Ready", "מוכן") : c.tr("Getting ready", "מתכוננים")), size: 20)
+                    let name = m.id == l.uid ? c.tr("You", "אתם") : Characters.get(m.character).name(c.hebrew)
+                    let ready = l.ready.contains(m.id) ? c.tr("Ready", "מוכן") : c.tr("Getting ready", "מתכוננים")
+                    // Android: a host alone in the room has "Not started" (house players fill the rest).
+                    SLabel(text: name + " • " + (alone ? c.tr("Not started", "טרם התחיל") : ready), size: 20)
                 }
-                SButton(title: c.tr("Ready", "מוכנים")) { c.lobbyReady() }
+                if !alone {
+                    SButton(title: c.tr("Ready", "מוכנים")) { c.lobbyReady() }
+                }
                 if l.host { SButton(title: c.tr("Start", "התחלה")) { c.lobbyStart() } }
             }
         }
@@ -1231,7 +1381,7 @@ struct ResultPage: View {
                             .padding(.horizontal, 8)
                             .padding(.vertical, 14)
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                            .background(RoundedRectangle(cornerRadius: 18).fill(SportsPalette.color(p.member.id == id ? 0xffd4effa : 0xfff8e0ec)))
+                            .background(SportsSkySurface(color: p.member.id == id ? 0xffd4effa : 0xfff8e0ec))
                         }
                     }
                     .fixedSize(horizontal: false, vertical: true)
@@ -1247,7 +1397,7 @@ struct ResultPage: View {
                             .padding(.horizontal, 6)
                             .padding(.vertical, 8)
                             .frame(maxWidth: .infinity)
-                            .background(RoundedRectangle(cornerRadius: 18).fill(SportsPalette.color(VolleyPalette.color(colorId))))
+                            .background(SportsFlatLabel(color: VolleyPalette.color(colorId)))
                             .padding(.top, 24)
                             .padding(.bottom, 12)
                         ForEach(e.players.filter { $0.member.team == t }, id: \.member.id) { p in
@@ -1352,8 +1502,11 @@ struct PrivacyPage: View {
                     .frame(maxWidth: .infinity, minHeight: 64)
                 BackButton(title: c.tr("Back", "חזרה")) { c.parentZone() }
             }
-            PrivacyWeb(language: AppText.language)
-                .padding(.horizontal, 20)
+            GeometryReader { geo in
+                PrivacyWeb(language: AppText.language)
+                    .frame(maxWidth: SportsSky.textColumn(geo))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
         }
         .background(SportsPalette.color(SportsPalette.page).ignoresSafeArea())
         .environment(\.layoutDirection, AppText.rtl ? .rightToLeft : .leftToRight)

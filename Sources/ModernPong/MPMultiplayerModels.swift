@@ -214,6 +214,7 @@ enum MPError: String, Error, LocalizedError {
     case duplicate = "This house player is already in the tournament."
     case permission = "This action is not available."
     case invalidResult = "Invalid final score."
+    case assistance = "Ball assistance could not be shared. The match uses normal speed until it connects."
     var errorDescription: String? { rawValue }
 }
 struct MPStanding: Identifiable {

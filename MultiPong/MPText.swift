@@ -1,6 +1,6 @@
 import Foundation
 
-/// Android `localization/AppText.kt` (MinikCrossPong 1908719; first ported from the working tree on 828c6fc, 2026-10-04): the
+/// Android `localization/AppText.kt` (MinikCrossPong 5c1aa4d; first ported from the working tree on 828c6fc, 2026-10-04): the
 /// device-language catalog.
 ///
 /// English and Hebrew stay at their call sites (`t(english, hebrew)`). Spanish, Arabic, Hindi and Dutch come from
@@ -63,6 +63,13 @@ enum MPText {
         // R.string.new_match, the cross settings action (1908719 shortened the Dutch text so that Cancel stays visible).
         "Apply & start new match": ["nl": "Nieuw spel starten"],
     ]
+    /// Android `res/values*/journey.xml` (5c1aa4d): resource strings that are not catalog rows, by English text and language.
+    static let journeyTexts: [String: [String: String]] = [
+        // R.string.guide_team_practice, the team action of the cross guide's team and scoring cards.
+        "Learn team play": ["he": "תרגול קבוצתי", "ar": "تعلّم اللعب الجماعي", "es": "Aprender juego en equipo", "hi": "टीम खेल सीखें", "nl": "Leer samenspelen"],
+    ]
+    /// Android `getString` of a `journey.xml` string: its text in the app language, English otherwise.
+    static func journey(_ en: String) -> String { journeyTexts[en]?[current] ?? en }
     /// Android `getString(R.string.…)` for a resource string whose English text is a catalog key: the resource text of the app
     /// language when it differs from the catalog row (`resourceTexts`), otherwise `t(en, he, hebrew)`.
     static func resource(_ en: String, _ he: String, _ hebrew: Bool) -> String {

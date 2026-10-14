@@ -93,6 +93,14 @@ final class MPSubscription {
     func action(_ id: String, _ sequence: Int64, _ value: MPWire) async throws
     func leave(_ session: MPSession, delete: Bool) async throws
     func cleanup() async throws
+    /// Android `PongRepository.receptionPreferences` (5c1aa4d): publishes this player's "slow motion for my return" choice and
+    /// reports every listed player's (uid → slow) as it changes. Without a server every choice is unknown, so no match slows.
+    func receptionPreferences(_ players: Set<String>, _ changed: @escaping ([String: Bool]) -> Void, _ failed: @escaping (String) -> Void) -> MPSubscription
+}
+extension MPRepository {
+    func receptionPreferences(_ players: Set<String>, _ changed: @escaping ([String: Bool]) -> Void, _ failed: @escaping (String) -> Void) -> MPSubscription {
+        changed([:]); return MPSubscription()
+    }
 }
 
 /// Local sessions have their own storage. A Firebase outage never overwrites a cloud room.
@@ -310,6 +318,25 @@ import FirebaseDatabase
     func connection(_ changed: @escaping (Bool) -> Void) -> MPSubscription {
         let r = database.reference(withPath: ".info/connected"), handle = r.observe(.value) { changed(($0.value as? Bool) == true) }
         return .init { r.removeObserver(withHandle: handle) }
+    }
+    /// Android `FirebasePongRepository.receptionPreferences`: `minikCrossPong/receptionPreferences/<uid>` = {version 1, slow}.
+    func receptionPreferences(_ players: Set<String>, _ changed: @escaping ([String: Bool]) -> Void, _ failed: @escaping (String) -> Void) -> MPSubscription {
+        let note = "Ball assistance could not be shared. The match uses normal speed until it connects."
+        var values: [String: Bool] = [:]
+        var handles: [(DatabaseReference, UInt)] = []
+        if players.contains(uid) {
+            root.child("receptionPreferences").child(uid).setValue(["version": 1, "slow": MPPreferences().receptionSlow] as [String: Any]) { error, _ in if error != nil { failed(note) } }
+        }
+        for player in players.sorted() {
+            let ref = root.child("receptionPreferences").child(player)
+            let handle = ref.observe(.value, with: { snapshot in
+                let w = MPCodec.map(snapshot.value)
+                if CrossWire.number(w, "version") == 1, let slow = w["slow"] as? Bool { values[player] = slow } else { values[player] = nil }
+                changed(values)
+            }, withCancel: { _ in values[player] = nil; changed(values); failed(note) })
+            handles.append((ref, handle))
+        }
+        return .init { handles.forEach { $0.0.removeObserver(withHandle: $0.1) } }
     }
     func presence(_ kind: MPSessionKind, _ code: String) -> MPSubscription {
         let r = ref(kind, code).child("connections").child(uid).child(String(presenceSlot % 16)); presenceSlot += 1

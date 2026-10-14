@@ -12,7 +12,8 @@ Checks:
             the Android Kotlin sources (interpolations normalised), and Android pairs not used on iOS
             are listed (ads/purchases/family services are expected there).
   art       Every Sports/Assets.xcassets/Art PNG decodes to exactly the Android WebP pixels.
-  files     Audio MP3s, art JSON and privacy pages are byte-identical to Android.
+  files     Audio MP3s, art JSON, privacy pages and the two menu pictures (Assets.xcassets/Menu, from
+            the app modules' res/drawable-nodpi) are byte-identical to Android.
   swift     Swift sources use LF line endings and contain exactly one @main.
 
 Usage:  python Scripts/audit-sports.py [--android PATH] [--write-facts] [--write-catalog] [--hashes]
@@ -393,6 +394,8 @@ def check_files(android):
     pairs = [("Audio/" + n + ".mp3", MODULE + "/res/raw/" + n + ".mp3") for n in SOUNDS]
     pairs += [("Art/" + n, MODULE + "/assets/art/" + n) for n in ("atlas.json", "directions.json", "volley-actions.json", "volley-passes.json")]
     pairs += [("Privacy/privacy-%s.html" % n, MODULE + "/assets/privacy/%s.html" % n) for n in LANGUAGES]
+    pairs += [("Assets.xcassets/Menu/%s_menu_clean.imageset/%s_menu_clean.png" % (n, n), "%s/src/main/res/drawable-nodpi/%s_menu_clean.png" % (n, n))
+              for n in ("squash", "volley")]
     ok = True
     for ios, droid in pairs:
         if sha(os.path.join(SPORTS, ios)) != sha(os.path.join(android, droid)):

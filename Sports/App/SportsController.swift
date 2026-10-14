@@ -4,7 +4,7 @@ import UIKit
 
 enum SportsScreen: Equatable {
     case home, journey, journeyList, journeyResult, setup, avatars, settings, support, tutorial, tournament
-    case online, publicTournaments, lobby, result, parentZone, privacy, game
+    case online, roomOptions, publicTournaments, lobby, result, parentZone, privacy, game
 }
 
 struct SportsToast: Identifiable, Equatable {
@@ -54,6 +54,8 @@ final class SportsController: ObservableObject, SportsOnlineHost {
     @Published private(set) var screen: SportsScreen = .home
     @Published var toast: SportsToast?
     @Published var pausePresented = false
+    /// Android `FamilyTournamentUi.confirmSave` ("Save this tournament?").
+    @Published private(set) var saveCupPresented = false
     @Published var gatePresented = false
     @Published var gateAnswer = ""
     @Published var shareSheet: SportsShare?
@@ -75,6 +77,8 @@ final class SportsController: ObservableObject, SportsOnlineHost {
     @Published private(set) var answerSeconds = 15
     @Published private(set) var questionsEnabled = true
     @Published var onlineRounds = 1
+    /// Android `roomOptions(publicCup)`: the host's settings page for a room or a public cup.
+    @Published private(set) var roomOptionsPublic = false
     @Published var roomCode = ""
     @Published var receptionOpen = false
 
@@ -103,7 +107,7 @@ final class SportsController: ObservableObject, SportsOnlineHost {
     static let storeLink = "https://miniklearn.com"
 
     var hebrew: Bool { return AppText.language == "he" }
-    var appName: String { return sport == .squash ? "Minik Squash" : "Minik Beach Volley" }
+    var appName: String { return sport == .squash ? "Minik Squash" : "Minik Beach Volleyball" }
 
     init() {
         AppText.configure(Locale.preferredLanguages.first ?? "en")
@@ -152,7 +156,9 @@ final class SportsController: ObservableObject, SportsOnlineHost {
     // MARK: Pages
 
     /// Android `page(title, back)`: stops a shown match, clears the result and plays the menu music.
+    /// Squash pages are portrait (Android SCREEN_ORIENTATION_PORTRAIT).
     private func page(_ next: SportsScreen) {
+        if sport == .squash { SportsOrientation.apply(.portrait) }
         view?.running = false
         view?.teardown()
         view = nil
@@ -520,6 +526,8 @@ final class SportsController: ObservableObject, SportsOnlineHost {
     }
 
     func present(_ e: SportsEngine, _ id: String, _ link: SportsOnline?) {
+        // Android SCREEN_ORIENTATION_FULL_SENSOR: a match follows the device.
+        if sport == .squash { SportsOrientation.apply(SportsOrientation.full) }
         view?.teardown()
         resultWorld = nil
         engine = e
@@ -548,7 +556,17 @@ final class SportsController: ObservableObject, SportsOnlineHost {
         screen = .game
         revision += 1
         music.setMenu(false)
+        landscapeHint(v)
         link?.view = v
+    }
+
+    /// Android `FamilyLandscapeHint.show`: a match that starts in portrait suggests landscape once.
+    private func landscapeHint(_ shown: SportsView) {
+        Task { @MainActor [weak self, weak shown] in
+            try? await Task.sleep(nanoseconds: 900_000_000)
+            guard let self, let shown, self.view === shown, shown.window != nil, shown.bounds.height > shown.bounds.width else { return }
+            self.message(FamilyMessages.text("For a wider view, play in landscape.", "לתצוגה רחבה יותר, שחקו במצב אופקי."))
+        }
     }
 
     private func gameSound(_ ev: GameEvent, _ e: SportsEngine, _ id: String) {
@@ -695,10 +713,46 @@ final class SportsController: ObservableObject, SportsOnlineHost {
         startLocal()
     }
 
+    /// Android "Delete tournament".
     func finishCup() {
         cup = nil
         SportsPrefs.remove("cup")
         home()
+    }
+
+    /// Android `leaveCupScreen()`: Back from the cup table or a room lobby. With a cup in progress
+    /// (local, or an online cup of several matches) it asks whether to save the tournament.
+    func leaveCupScreen() {
+        if cup == nil && (online?.totalRounds ?? 1) <= 1 {
+            home()
+            return
+        }
+        saveCupPresented = true
+    }
+
+    /// "Save": keep the cup (and the room to return to) for later.
+    func saveCupAndLeave() {
+        saveCupPresented = false
+        if cup != nil { persistCup() }
+        home()
+    }
+
+    /// "Don't save": leave the room for good, or remove the local cup from this device.
+    func discardCupAndLeave() {
+        saveCupPresented = false
+        if let link = online {
+            link.close()
+            online = nil
+            SportsPrefs.remove("room")
+        } else {
+            cup = nil
+            SportsPrefs.remove("cup")
+        }
+        home()
+    }
+
+    func cancelSaveCup() {
+        saveCupPresented = false
     }
 
     private func recordCup(_ e: SportsEngine) {
@@ -727,6 +781,21 @@ final class SportsController: ObservableObject, SportsOnlineHost {
     func onlinePage() {
         roomCode = ""
         page(.online)
+    }
+
+    /// Android `roomOptions(publicCup)`.
+    func roomOptions(_ publicCup: Bool) {
+        roomOptionsPublic = publicCup
+        page(.roomOptions)
+    }
+
+    /// Back or Cancel on the room options: the public list again, or the friends page.
+    func leaveRoomOptions() {
+        if roomOptionsPublic {
+            connect("PUBLIC")
+        } else {
+            onlinePage()
+        }
     }
 
     func connect(_ code: String?, publicCup: Bool = false) {

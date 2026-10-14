@@ -7,7 +7,7 @@ import UIKit
 /// pause and lifecycle. Ads, purchases, code redemption and the family-services module (more apps,
 /// family reminders) are not part of the iOS build.
 enum SplashScreen: Equatable {
-    case home, settings, support, parentZone, progress, ranks, play, wallOptions, journey, journeyResult, join, house, lobby, results, game
+    case home, settings, support, parentZone, progress, ranks, play, playOptions, wallOptions, journey, journeyResult, join, house, lobby, results, game
 }
 
 struct ResultPlayerRow: Identifiable {
@@ -115,6 +115,8 @@ final class SplashController: ObservableObject {
     }
     @Published var toast: ToastMessage?
     @Published var pausePresented = false
+    /// Android `leaveCupScreen()`: the Save / Don't save / Cancel choice for a cup.
+    @Published private(set) var cupExitPresented = false
     @Published var gate: ParentGateModel?
     @Published var gateAnswer = ""
     @Published private(set) var results: ResultsModel?
@@ -130,6 +132,8 @@ final class SplashController: ObservableObject {
     @Published private(set) var upcomingCount: Int?
     @Published private(set) var upcomingArena: Arena?
     @Published private(set) var upcomingRounds = 1
+    /// Android `playOptions(house)`: the options page leads to house players (true) or a new room.
+    @Published private(set) var optionsHouse = false
     @Published private(set) var hitEffect: HitEffect = .cosmetic
     @Published private(set) var gameOrientation = 0
     @Published var gameSounds = true {
@@ -221,6 +225,7 @@ final class SplashController: ObservableObject {
         gameView = nil
         music.setMenu(true)
         pausePresented = false
+        cupExitPresented = false
         screen = next
     }
 
@@ -466,6 +471,13 @@ final class SplashController: ObservableObject {
     func playMenu() {
         wallBattle = false
         showPage(.play)
+    }
+
+    /// Android `playOptions(house)`: arena, players, single battle or cup and difficulty for the next
+    /// game only, before creating a room or choosing house players.
+    func playOptions(_ house: Bool) {
+        optionsHouse = house
+        showPage(.playOptions)
     }
 
     func continueBattle() {
@@ -847,6 +859,7 @@ final class SplashController: ObservableObject {
             if id == localId || type == "hit" || type == "finish" { board.play(type) }
         }
         pausePresented = false
+        cupExitPresented = false
         screen = .game
         // The battle starts once the arena's first frame has replaced the loading screen.
         v.stop()
@@ -856,6 +869,13 @@ final class SplashController: ObservableObject {
             if self.foreground && !self.pausePresented { v.start() }
         }
         online?.attach(v)
+        // Android `FamilyLandscapeHint`: a portrait battle suggests landscape once, 0.9 s in (a toast that
+        // never covers or moves the HUD).
+        Task { @MainActor [weak self, weak v] in
+            try? await Task.sleep(nanoseconds: 900_000_000)
+            guard let self = self, let v = v, self.gameView === v, v.window != nil, v.bounds.height > v.bounds.width else { return }
+            self.message(FamilyMessages.text("For a wider view, play in landscape.", "לתצוגה רחבה יותר, שחקו במצב אופקי."))
+        }
     }
 
     func pauseMenu() {
@@ -979,6 +999,45 @@ final class SplashController: ObservableObject {
                                onlineCup: onlineCup, nextRound: nextRound, cupLine: cupLine, cupStandings: cupStandings,
                                nextBattle: nextBattle, playAgain: playAgain)
         showPage(.results)
+    }
+
+    // MARK: Leaving a cup (Android `leaveCupScreen`)
+
+    /// Results "Main menu" and the room's "Back": a local or online cup asks Save / Don't save / Cancel.
+    func leaveCupScreen() {
+        if network?.isCup() != true && !cup {
+            home()
+            return
+        }
+        cupExitPresented = true
+    }
+
+    /// Save keeps the cup to continue later (an online room keeps its "Return to" bookmark).
+    func cupExitSave() {
+        cupExitPresented = false
+        if network == nil && cup { saveCup() }
+        home()
+    }
+
+    /// Don't save forgets the cup on this device: an online room loses this device's bookmark (the
+    /// shared room continues for the others); a local cup and its saved battle are deleted.
+    func cupExitDiscard() {
+        cupExitPresented = false
+        if let session = network {
+            session.close()
+            network = nil
+            SplashPrefs.onlineRoom = nil
+        } else {
+            cup = false
+            cupRoster = nil
+            SplashPrefs.setString(nil, "cupState")
+            localStore.clear()
+        }
+        home()
+    }
+
+    func cupExitCancel() {
+        cupExitPresented = false
     }
 
     func resultsNextRound() { network?.nextRound() }

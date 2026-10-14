@@ -34,7 +34,12 @@ struct MathFractionConstructionView: View {
                 }
             }
         }
-        .onAppear(perform: speakPrompt)
+        .mathReadAloud(
+            instruction: session.isComplete ? nil : String(localized: "Build this quantity"),
+            exercise: session.isComplete ? nil : session.currentRound.spokenPrompt,
+            id: session.currentRoundIndex,
+            player: speechPlayer
+        )
         .onDisappear(perform: speechPlayer.stop)
     }
 
@@ -136,11 +141,15 @@ struct MathFractionConstructionView: View {
         let wasComplete = session.isComplete
         session.nextRound()
         if !wasComplete && session.isComplete { onComplete() }
-        else { roundStartedAt = Date(); speakPrompt() }
+        else { roundStartedAt = Date() }
     }
 
     private func speakPrompt() {
-        speechPlayer.speak(session.currentRound.spokenPrompt, interfaceLocale: interfaceLocaleID)
+        MathReadAloud.say(
+            MathReadAloud.text(instruction: nil, exercise: session.currentRound.spokenPrompt),
+            with: speechPlayer,
+            fallback: interfaceLocaleID
+        )
     }
 
     private func exit() { speechPlayer.stop(); onExit() }

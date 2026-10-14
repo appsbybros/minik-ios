@@ -359,7 +359,12 @@ final class SportsOnline {
 
     func start() {
         if !authority || starting || phase != "lobby" { return }
-        if members.values.contains(where: { NodeValue.bool($0["ready"]) != true || NodeValue.bool($0["connected"]) != true }) {
+        // A host alone in the room (house players fill the rest) may start without pressing Ready.
+        let alone = members.count == 1
+        let own = uid
+        if members.contains(where: { entry in
+            (NodeValue.bool(entry.value["ready"]) != true && !(alone && entry.key == own)) || NodeValue.bool(entry.value["connected"]) != true
+        }) {
             error(tr("Everyone must be ready first.", "כולם צריכים להיות מוכנים קודם."))
             return
         }

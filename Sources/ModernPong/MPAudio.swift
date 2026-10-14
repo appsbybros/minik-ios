@@ -3,6 +3,8 @@ import AVFoundation
 @MainActor final class MPAudio {
     private var players: [String: AVAudioPlayer] = [:]
     private var music: AVAudioPlayer?
+    /// Android PongMenuMusic: the menu-only remix at 22 % volume (bundled with the standalone app only).
+    private var menu: AVAudioPlayer?
     var enabled = true
     init() {
         for name in ["minik_kick", "minik_kick2", "splash", "failure_sound", "success_in_a_raw_sound", "success_pictures_screen_sound", "minik_claps", "connected", "player_ready"] {
@@ -13,6 +15,13 @@ import AVFoundation
         guard enabled && active else { music?.pause(); return }
         if music == nil, let url = Bundle.main.url(forResource: "cool_music2", withExtension: "mp3"), let player = try? AVAudioPlayer(contentsOf: url) { music = player; player.numberOfLoops = -1; player.prepareToPlay() }
         if music?.isPlaying == false { music?.play() }
+    }
+    func menuMusic(_ on: Bool) {
+        guard on else { menu?.pause(); return }
+        if menu == nil, let url = Bundle.main.url(forResource: "pong_menu_remix", withExtension: "mp3", subdirectory: "ModernPongArt"), let player = try? AVAudioPlayer(contentsOf: url) {
+            player.numberOfLoops = -1; player.volume = 0.22; player.prepareToPlay(); menu = player
+        }
+        if menu?.isPlaying == false { menu?.play() }
     }
     func play(_ name: String) {
         guard enabled else { return }

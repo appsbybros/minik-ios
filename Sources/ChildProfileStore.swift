@@ -116,7 +116,9 @@ struct ChildProfileStoredKey: Hashable, Sendable {
             ChildProfileStoredKey(name: "minik.tic-tac-toe.adaptive-state", kind: .data),
             ChildProfileStoredKey(name: "minik.tic-tac-toe.first-instruction-spoken", kind: .bool),
             // SoccerIntroductionRepository (Android numOfTimesShownSoccerIntro).
-            ChildProfileStoredKey(name: "minik.languageSoccer.introductionPresentationCount.v1", kind: .integer)
+            ChildProfileStoredKey(name: "minik.languageSoccer.introductionPresentationCount.v1", kind: .integer),
+            // MinikDailyLearningRepository (Android DailyLearning, keyed by the child's slot).
+            ChildProfileStoredKey(name: MinikDailyLearningRepository.storageKey(for: product), kind: .data)
         ]
     }
 

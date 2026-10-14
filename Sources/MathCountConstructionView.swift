@@ -55,15 +55,24 @@ struct MathCountConstructionView: View {
                 }
             }
         }
-        .onAppear(perform: speakPrompt)
+        .mathReadAloud(
+            instruction: session.isComplete ? nil : instruction,
+            exercise: session.isComplete ? nil : session.currentRound.spokenPrompt,
+            id: session.currentRoundIndex,
+            player: speechPlayer
+        )
         .onDisappear(perform: speechPlayer.stop)
+    }
+
+    private var instruction: String {
+        presentation == .tower
+            ? String(localized: "Build this many blocks")
+            : String(localized: "Build this quantity")
     }
 
     private var prompt: some View {
         VStack(spacing: 10) {
-            Text(presentation == .tower
-                ? String(localized: "Build this many blocks")
-                : String(localized: "Build this quantity"))
+            Text(instruction)
                 .font(.headline.weight(.semibold))
                 .foregroundStyle(Color(red: 0.17, green: 0.45, blue: 0.57))
                 .multilineTextAlignment(.center)
@@ -304,14 +313,14 @@ struct MathCountConstructionView: View {
             onComplete()
         } else {
             roundStartedAt = Date()
-            speakPrompt()
         }
     }
 
     private func speakPrompt() {
-        speechPlayer.speak(
-            session.currentRound.spokenPrompt,
-            interfaceLocale: interfaceLocaleID
+        MathReadAloud.say(
+            MathReadAloud.text(instruction: nil, exercise: session.currentRound.spokenPrompt),
+            with: speechPlayer,
+            fallback: interfaceLocaleID
         )
     }
 

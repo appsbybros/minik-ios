@@ -87,10 +87,9 @@ struct LanguageChoicePage: View {
     /// The height of LanguagePracticeReaction's try-again artwork (Android's 165 x 220 dp).
     private static let tryAgainHeight: CGFloat = 220
 
-    /// Minik's reaction and the stars across the whole panel, with the Next button above
-    /// them. Android draws the try-again Minik over Next, but in its screenshot the label
-    /// stays readable above Minik's head, with only the horn touching it; drawing Next on
-    /// top keeps it readable on every screen size and text size.
+    /// Minik's reaction and the stars across the whole panel, above the Next button, as
+    /// Android draws them: the try-again Minik covers everything while he shows (owner
+    /// report, 14 October 2026), and Next is seen once he leaves after 1.5 seconds.
     private func reactionLayer(pillAnchor: Anchor<CGRect>?, wide: Bool, sizes: LanguageChoiceMetrics) -> some View {
         let insetX = LanguagePanelInsets.horizontal(wide: wide)
         let insetY = LanguagePanelInsets.vertical(wide: wide)
@@ -101,14 +100,14 @@ struct LanguageChoicePage: View {
                 // Android's feedback spans the panel itself, so the layer takes the panel's
                 // insets back: the try-again Minik stands on the panel's bottom edge and the
                 // success jump crosses the whole panel.
-                feedbackLayer(sizes: sizes, pillMiddle: pillMiddle)
-                    .padding(.horizontal, -insetX)
-                    .padding(.vertical, -insetY)
                 if canSkip, let pill {
                     nextButton(sizes)
                         .frame(width: pill.width, height: pill.height)
                         .position(x: pill.midX, y: pill.midY)
                 }
+                feedbackLayer(sizes: sizes, pillMiddle: pillMiddle)
+                    .padding(.horizontal, -insetX)
+                    .padding(.vertical, -insetY)
             }
         }
     }
@@ -226,7 +225,7 @@ struct LanguageChoicePage: View {
     /// Android's sunny Next pill (bg_next_link), shown after a wrong attempt without
     /// changing the target on retry. The slot is always reserved, so the answers never
     /// move when Next appears. The slot only holds an invisible copy of the pill and
-    /// publishes its bounds: reactionLayer draws the button there, above Minik's
+    /// publishes its bounds: reactionLayer draws the button there, under Minik's
     /// reaction.
     private func nextSlot(_ sizes: LanguageChoiceMetrics) -> some View {
         ZStack(alignment: .top) {
@@ -315,7 +314,7 @@ private struct ChoiceBoardFillLayout: Layout {
 }
 
 /// The Next pill's bounds, published by its slot in the board so that the button can
-/// be drawn above Minik's reaction.
+/// be drawn in the reaction layer, under Minik.
 private struct ChoiceNextPillKey: PreferenceKey {
     static var defaultValue: Anchor<CGRect>? { nil }
 

@@ -85,9 +85,12 @@ struct MPExercise {
 struct MPState: Codable {
     var score: MPScore; var flight: MPFlight?; var rally: Int; var pointDelay: Double?; var serveDelay: Double?
     var status: String; var pendingFault: MPResolution?; var faultTime: Double
+    /// Android `EngineState.reception` (2026-10): the authority's shared clock. Absent in older checkpoints.
+    var reception: MPReceptionAssist? = nil
     var reflected: Self { .init(score: score.reflected, flight: flight?.reflected, rally: rally,
         pointDelay: pointDelay, serveDelay: nil, status: status,
-        pendingFault: pendingFault.map { .init(winner: $0.winner.other, fault: $0.fault) }, faultTime: faultTime) }
+        pendingFault: pendingFault.map { .init(winner: $0.winner.other, fault: $0.fault) }, faultTime: faultTime,
+        reception: reception?.reflected) }
     var valid: Bool { score.child >= 0 && score.minik >= 0 && score.rallies >= 0 && rally >= 0 &&
         (flight?.valid ?? true) && faultTime.isFinite && (pointDelay?.isFinite ?? true) }
 }
@@ -171,6 +174,8 @@ final class MPEngine {
     var paused = false
     /// Set by MPMatchLink. A networked non-authority never awards a speculative point (Android `authoritative`).
     var authoritative = true
+    /// Android `ModernEngine.reception`: optional slow motion before the receiver's return, on one shared clock.
+    var reception = MPReceptionAssist()
     var automaticContact: Bool { level.automaticContact }
     /// Small decaying racket tilt from lateral paddle movement, in degrees (Android `paddleTilt`).
     private(set) var paddleTilt = 0.0
@@ -273,7 +278,14 @@ final class MPEngine {
     }
     func advance(_ dt: Double) {
         guard !paused else { return }
-        let delta = dt.mpClamp(0, 1.0 / 30); correctionAge = max(0, correctionAge - delta)
+        // Android ModernEngine.advance (2026-10): the receiving human (online: either human) may slow the whole
+        // simulation for their return. Everything below uses the same, possibly slower, delta.
+        let incoming = flight.flatMap { $0.resolved ? nil : $0 }
+        let receiver = incoming.flatMap { f -> MPSide? in let side = f.striker.other; return side == .child || networked ? side : nil }
+        let seat = receiver.map { $0 == .child ? 0 : 1 }
+        var eta: Double?
+        if let incoming, let receiver { eta = MPReceptionAssist.eta(incoming.position, incoming.velocity, .init(incoming.position.x, receiver == .child ? 0.84 : 0.16)) }
+        let delta = reception.advance(dt, seat: seat, eta: eta, authority: authoritative); correctionAge = max(0, correctionAge - delta)
         if let fault = pendingFault {
             faultTime -= delta
             if faultTime <= 0 { pendingFault = nil; resolve(fault, striker: flight?.striker ?? fault.winner) }
@@ -483,9 +495,11 @@ final class MPEngine {
         tapAim = 0; tapVelocity = .zero; tapStart = paddle
         planReturn()
     }
-    func snapshot() -> MPState { .init(score: score, flight: flight, rally: rally, pointDelay: pointDelay, serveDelay: serveDelay, status: status, pendingFault: pendingFault, faultTime: faultTime) }
+    func snapshot() -> MPState { .init(score: score, flight: flight, rally: rally, pointDelay: pointDelay, serveDelay: serveDelay, status: status, pendingFault: pendingFault, faultTime: faultTime, reception: reception) }
     func restore(_ s: MPState, preserveInput: Bool = false) {
         guard s.valid else { return }
+        // Android restoreState: the shared clock is restored first, even for an acknowledged local flight.
+        reception = s.reception ?? MPReceptionAssist()
         let before = ball, samePoint = preserveInput && s.score.rallies == score.rallies && s.score.child == score.child && s.score.minik == score.minik && s.score.winner == nil
         // An acknowledgement of the same point, rally and striker must not rewind the locally
         // predicted flight or replay its contact. A fresh reconnect still restores fully.

@@ -112,7 +112,10 @@ enum CrossForecast {
         while tick <= limit {
             if tick >= earliest {
                 let s = probe.state
-                if geometry.inStrikeZone(seat, s.position) && s.height <= reachHeight && (s.height >= rise || s.lift <= 0) {
+                // House players stand outside the table: they wait for the ball near its end rather than returning from the
+                // inner edge of the human reach window (5c1aa4d).
+                if geometry.toLocal(seat, s.position).v >= CrossGeometry.reach - 0.12 && geometry.inStrikeZone(seat, s.position) &&
+                    s.height <= reachHeight && (s.height >= rise || s.lift <= 0) {
                     return CrossReach(ticks: tick, state: s, inZone: true)
                 }
                 if !late { fallback = CrossReach(ticks: tick, state: s, inZone: false); late = true }

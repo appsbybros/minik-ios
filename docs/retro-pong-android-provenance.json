@@ -484,9 +484,16 @@
   },
   {
     "source": "C:\\Projects\\MinikPaddleAndLearn\\app\\src\\main\\assets\\www\\index.html",
-    "sourceSHA256": "6a3a460440358707f92dbeccddcf5e6e52d18b598816e9d8157dba9e9d2767a8",
+    "sourceSHA256": "0235255b15df1bc52690f9720a374989d8b9b41febfad7dfacfcbaba43a9555d",
     "output": "Resources/RetroPong/index.html",
-    "outputSHA256": "d34599b945b2db578ebb0c875a36d542b0a97b2fc6f191faace0f4eabab0e24d",
+    "outputSHA256": "b76616e5f081379c149c5c299ad66428d20815d7d60b63f4238c0d68b7f171bc",
+    "outputHashMode": "lf-text"
+  },
+  {
+    "source": "C:\\Projects\\MinikPaddleAndLearn\\app\\src\\main\\assets\\www\\maze-sky.css",
+    "sourceSHA256": "161229ed29a17235c85eca97c616d96eab55fccbb078c906c34109fd3cd145a7",
+    "output": "Resources/RetroPong/maze-sky.css",
+    "outputSHA256": "44891c3646f1e3aa69c2b6e5583c2a7ae45389cb8acf12fd19446c682751018a",
     "outputHashMode": "lf-text"
   },
   {

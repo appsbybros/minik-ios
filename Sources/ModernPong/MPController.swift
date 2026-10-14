@@ -3,11 +3,17 @@ import Combine
 import os
 
 struct ModernPongResult: Codable, Equatable { var playerPoints: Int; var opponentPoints: Int; var won: Bool }
-enum MPRoute { case menu, lobby, game, guide, result }
+/// `journey`: Android PongJourneyActivity (daily journey, team play, settings, online teams).
+/// `createTournament`: Android PlayActivity's separate "Create tournament" page (2026-10).
+enum MPRoute { case menu, lobby, game, guide, result, journey, createTournament }
 
 @MainActor final class MPController: ObservableObject {
     let experience: ModernPongExperience, preferences: MPPreferences, audio = MPAudio(), ads: MPAds
-    @Published var route = MPRoute.menu
+    /// Android PongJourneyActivity's pages; Back from its first page returns to this menu.
+    let journey = MPJourneyController()
+    @Published var route = MPRoute.menu { didSet { syncMenuMusic() } }
+    /// Android PlayActivity.confirmTournamentExit: Back from an unfinished tournament asks Save / Don't save / Cancel.
+    @Published var tournamentExitPrompt = false
     @Published var scene: MPScene?
     @Published var session: MPSession?
     @Published var fixture: MPFixture?
@@ -71,12 +77,17 @@ enum MPRoute { case menu, lobby, game, guide, result }
             repo = MPLocalRepository()
             #endif
         }
+        journey.onExit = { [weak self] in self?.route = .menu }
+        // The header shows the journey page's own title.
+        journeyWatch = journey.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }
     }
+    private var journeyWatch: AnyCancellable?
     var online: Bool { repo.online }
     var selectedPlayer: MPHousePlayer { MPRoster.all[playerIndex % MPRoster.all.count] }
     func text(_ english: String, _ hebrew: String) -> String { self.hebrew ? hebrew : english }
     func start(hebrew: Bool, removeAds: Bool) async {
         self.hebrew = hebrew; guard !started else { return }; started = true
+        syncMenuMusic()
         ads.start(removeAds: removeAds)
         ads.willPresent = { [weak self] in self?.audio.stop() }
         guard experience.online else { return }
@@ -106,6 +117,10 @@ enum MPRoute { case menu, lobby, game, guide, result }
     }
     private func show(_ issue: Error) {
         Self.log.error("Modern Pong issue: \(String(describing: issue), privacy: .public)")
+        // Owner report 2026-10-14: "Connection problem" showed while the child played the house players of a
+        // tournament. Those players run on this device; the room only needs the server to start the match and
+        // to save its result, which the match link retries ("Saving the result…" stays up until it is saved).
+        if route == .game && link?.housePlayersOnly == true { return }
         if route == .game {
             // Owner report 2026-10: never interrupt a match with a dialog. The status line explains it and the
             // match link keeps retrying (Android PrivateMatchActivity shows the same kind of line).
@@ -332,6 +347,10 @@ enum MPRoute { case menu, lobby, game, guide, result }
         }
     }
     func back() {
+        if route == .journey { journey.back(); return }
+        if route == .createTournament { route = .menu; return }
+        // Android: leaving an unfinished tournament's room asks whether to keep it.
+        if route == .lobby, let s = session, s.kind == .tournament, !s.complete { tournamentExitPrompt = true; return }
         audio.stop(); scene?.setActive(false)
         if route == .result && session != nil { closeResult(); return }
         // A local match's result returns to the Ping Pong menu; a Simple host is left from there.
@@ -347,11 +366,44 @@ enum MPRoute { case menu, lobby, game, guide, result }
         celebration = nil; closeObservers(); scene = nil; session = nil; fixture = nil; route = .menu
         if experience.closesAfterMatch { completion(nil) }
     }
+    /// Android PongMenuMusic: a quiet remix on the menu and room screens only, while the app is in front and the
+    /// "Menu music" setting is on. Matches, the guide and the journey stay without it.
+    func syncMenuMusic() {
+        audio.menuMusic(experience == .full && foreground && (route == .menu || route == .lobby || route == .createTournament) && MPJourneyController.musicOn)
+    }
+    func openJourney(_ page: MPJourneyController.Page) {
+        audio.stop(); journey.open(page, identity: identity, hebrew: hebrew); route = .journey
+    }
+    /// Android `tournamentOptions`: the tournament's settings on their own page.
+    func openTournamentOptions() { route = .createTournament }
+    /// "Save" keeps the tournament in Saved tournaments; the room is left open for the other players.
+    func saveTournamentAndLeave() {
+        tournamentExitPrompt = false
+        if let s = session { preferences.remember(s); rooms = preferences.rooms }
+        closeObservers(); scene = nil; session = nil; fixture = nil; route = .menu
+    }
+    /// "Don't save": delete a tournament this player may delete, otherwise leave it for the others.
+    func discardTournament() async {
+        tournamentExitPrompt = false
+        guard let s = session else { return }
+        await leave(delete: MPRules.canDelete(s, actor: repo.uid))
+    }
+    /// Android PlayActivity.leaveFriendly(delete = false): "Save for later" keeps the game listed.
+    func saveFriendlyForLater() {
+        if let s = session { preferences.remember(s); rooms = preferences.rooms }
+        closeObservers(); scene = nil; session = nil; fixture = nil; route = .menu
+    }
+    /// Android matchRow "Start" for a match whose only human is this player: readiness alone starts it.
+    func startHouseMatch(_ match: MPFixture) async {
+        guard let s = session else { return }; let uid = repo.uid
+        await perform { _ = try await self.repo.mutate(s.kind, s.code) { try MPRules.ready($0, match: match.id, uid: uid, value: true) } }
+    }
     /// Result screen "Play again" after a local match: the same opponent, controls and points to win.
     func playAgain() { celebration = nil; startSingle(practice: practice) }
-    func close() { foreground = false; audio.stop(); scene?.setActive(false); closeObservers() }
+    func close() { foreground = false; audio.stop(); audio.menuMusic(false); journey.lifecycle(active: false); scene?.setActive(false); closeObservers() }
     func lifecycle(active: Bool) {
         guard foreground != active else { return }; foreground = active
+        journey.lifecycle(active: active); syncMenuMusic()
         if !active { audio.stop(); scene?.setActive(false); closeObservers() }
         else if let s = session {
             let wasGame = route == .game; scene?.setActive(false); closing = false
@@ -397,7 +449,13 @@ enum MPRoute { case menu, lobby, game, guide, result }
     private func tutorialFrame() {
         guard let engine = scene?.engine else { return }
         if !tutorialStep.serve { scene?.guidePoint = engine.flight?.receiver == true ? engine.ball : nil }
-        if let success = engine.trainingResult { tutorialSuccess = success; tutorialPhase = .feedback; scene?.setActive(false); audio.guideMusic(foreground); return }
+        if let success = engine.trainingResult {
+            // Android ModernTutorial: a demonstration returns to the lesson card; only the child's own try is
+            // judged. Owner report 2026-10-14: "Well done!" showed after Minik's demo, before the child had hit.
+            if tutorialPhase == .demonstration { tutorialPhase = .explanation }
+            else { tutorialSuccess = success; tutorialPhase = .feedback }
+            scene?.setActive(false); audio.guideMusic(foreground); return
+        }
         guard tutorialPhase == .demonstration else { return }
         if tutorialStep.serve && engine.awaitingServe && engine.trainingTime > 0.7 { engine.touch(tutorialStep.servePoint); engine.endTouch() }
         else if !tutorialStep.serve, let flight = engine.flight, flight.striker == .minik, flight.receiver, flight.position.y >= 0.78, !demoGesture {
@@ -413,7 +471,6 @@ enum MPRoute { case menu, lobby, game, guide, result }
         }
     }
     func tutorialNext() {
-        guard tutorialSuccess else { return }
         if let next = MPTutorialStep(rawValue: tutorialStep.rawValue + 1) { tutorialStep = next; tutorialPhase = .explanation; scene = nil }
         else { guideToGame() }
     }

@@ -144,8 +144,9 @@ test inventory.
 If ads are approved, MinikPlus and MinikPlusEnglish each need an iOS AdMob app
 ID and interstitial unit ID for Language placements. MinikMath uses the iOS Minik
 Math AdMob app (`ca-app-pub-6728099379581161~7244879780`), since it now owns the
-Minik Math App Store record; MinikMathPlus still carries the same pair and needs
-its own before release. MinikPingPong needs
+Minik Math App Store record; MinikMathPlus uses its own iOS AdMob app
+(`ca-app-pub-6728099379581161~4538162680`, interstitial
+`ca-app-pub-6728099379581161/6011026452`, supplied by the owner on 2026-10-14). MinikPingPong needs
 its own pair before production ads are enabled. The new Modern adapter currently supports only the explicitly approved Debug Google test configuration (`MODERN_PONG_TEST_ADS=YES`); Release keeps it `NO`. Never copy Android IDs or invent Apple IDs.
 
 ## Local notifications

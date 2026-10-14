@@ -482,5 +482,69 @@
       "beforeSHA256": null,
       "afterSHA256": "40f18380074f0bf498881142444b2aa6a5ae79bbb66c6b9e8570511d3d93650c"
     }
+  ],
+  "updates": [
+    {
+      "date": "2026-10-13",
+      "android": "MinikPaddleAndLearn 506490e",
+      "baseCommit": "080510d",
+      "files": [
+        {
+          "file": "docs/retro-pong-android-provenance.json",
+          "beforeSHA256": "bc89ac48d9631068d2ef47f43c70b061cdfc02bc03088f826623c0e801da7e05",
+          "afterSHA256": "887244a43e7b11fc82a715de8045502cd4028fd16dfbf12940ca046fea0aa8ba"
+        },
+        {
+          "file": "docs/retro-pong-ios-handoff.md",
+          "beforeSHA256": "f99c3dfadb7a3df0a9c772490622894504937b8264d93c35e83b6af00a9a5e8d",
+          "afterSHA256": "c25d36166b9561b5c32bd371ab9304f3dbdeaf30efe4428e524bb709f1f27370"
+        },
+        {
+          "file": "project.yml",
+          "beforeSHA256": "0f53ac6b82e1efdda1dd97329fe8b80a87e7b54bc623fdd53c5a57de94926031",
+          "afterSHA256": "736ca59ff4691b62764200fe370c73268b752733b2ab7cb8107355b4dcd4831e"
+        },
+        {
+          "file": "Resources/RetroPong/index.html",
+          "beforeSHA256": "d34599b945b2db578ebb0c875a36d542b0a97b2fc6f191faace0f4eabab0e24d",
+          "afterSHA256": "b76616e5f081379c149c5c299ad66428d20815d7d60b63f4238c0d68b7f171bc"
+        },
+        {
+          "file": "Resources/RetroPong/ios-host.css",
+          "beforeSHA256": "47dc4689ce9dd41a9738accc2f95b1433a020742debd88adf7188d11d21fc5ac",
+          "afterSHA256": "d558719130b89f8f00203169aaccdd5c934c56c757c154e88ab3fccbaff17362"
+        },
+        {
+          "file": "Resources/RetroPong/ios-host.js",
+          "beforeSHA256": "5593a53dafb4e1ccef36bd4f588ed499614f66e3f948ce551151d32793ad8cc3",
+          "afterSHA256": "ac4ea89fa4fe084393f72a7e6a91b83098723f786192a330c77e26fc9fd4a85e"
+        },
+        {
+          "file": "Resources/RetroPong/maze-sky.css",
+          "beforeSHA256": null,
+          "afterSHA256": "44891c3646f1e3aa69c2b6e5583c2a7ae45389cb8acf12fd19446c682751018a"
+        },
+        {
+          "file": "Scripts/audit-retro-pong.py",
+          "beforeSHA256": "69f150050325635dccbefe44f262110f607c87eb2dd8e421bb871c3d661c2885",
+          "afterSHA256": "38c26965f7b8c24c95f3c90621e3d41d4f4f70301a4bf4390774031074fdfc1d"
+        },
+        {
+          "file": "Sources/RetroPong/BounceRootView.swift",
+          "beforeSHA256": "a741c23949140415798f84d79bdbd98cf9ece6856b980ddce5a128311590c996",
+          "afterSHA256": "bfd0d602e2c89da37cd1640d60ecdf57aa187326013eea0791468d0541efcd16"
+        },
+        {
+          "file": "Sources/RetroPong/RetroPongView.swift",
+          "beforeSHA256": "70b696d1f4e7b82306f15b3b08b55555c3cdc0d830a387d9444299da9ecdcd7f",
+          "afterSHA256": "22be087af2463fb2e2267447b7b700bbd802812479672c246950b1060bf476f0"
+        },
+        {
+          "file": "Tests/RetroPong/host.test.cjs",
+          "beforeSHA256": "0199955223fec94ff192a77e55379bf188df440fb578b803b655df8f7b3e8e65",
+          "afterSHA256": "772efd24ef4cc4d6e77d9b2b94d79c296b2d6c4e44ab8a6447a6b716b655a441"
+        }
+      ]
+    }
   ]
 }

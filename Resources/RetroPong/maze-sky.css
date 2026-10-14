@@ -1,0 +1,46 @@
+/* Maze-inspired raised controls. Keep authored dimensions and semantic color roles. */
+:is(.primary,.secondary,.ghost-pill,.answer,.number-card,.mode-card,.back-btn,.pong-help-button,.pong-guide-close) {
+ box-shadow:inset 0 2px 0 #ffffffd0,inset 0 -5px 0 #20487840,inset 1px 0 0 #ffffff80,inset -1px 0 0 #ffffff80,0 2px 3px #20487824;
+}
+:is(.primary,.secondary,.ghost-pill,.answer,.number-card,.mode-card,.back-btn,.pong-help-button,.pong-guide-close):active {
+ box-shadow:inset 0 3px 0 #20487835,inset 0 -1px 0 #ffffff80;
+}
+.primary {background:linear-gradient(#eee2ff,#d8bfff 48%,#cbb1f2);color:#204878;}
+.secondary,.ghost-pill {background:linear-gradient(#f2fbff,#c2e7ff 48%,#b5dfff);color:#204878;}
+:is(.panel,.game-card,.pong-guide):not(.canvas-card) {
+ background-image:linear-gradient(145deg,#dff5fff5,#fffef2f5 35%,#f4fbfff5 70%,#ffdeebf5);
+ box-shadow:inset 0 2px 0 #fff,inset 0 -5px 0 #3869a52e,0 3px 10px #3869a524;
+}
+.app-back-art {filter:drop-shadow(0 2px 0 #682742) drop-shadow(0 -1px 0 #ffffffa0);}
+@media (orientation:landscape) and (min-width:600px) {
+ /* Form/menu columns only: never narrow the playable court. */
+ body:not([data-view="pong"]) .app-shell,
+ .pong-setup-panel,.pong-exit-panel,.pong-guide {
+  width:min(520px,52vw);max-width:calc(100vw - 32px);margin-inline:auto;box-sizing:border-box;
+ }
+}
+
+:is(.pong-difficulty-buttons,.pong-madness-options,.pong-table-size-buttons) button,
+.pong-madness-toggle,.pong-landscape-new,.pong-infield-new {
+ box-shadow:inset 0 2px 0 #ffffffb0,inset 0 -4px 0 #20487840,0 2px 3px #20487824;
+}
+.pong-landscape-setup {box-shadow:inset 0 2px 0 #fff,inset 0 -5px 0 #3869a52e,0 3px 10px #3869a524;}
+@media (orientation:landscape) and (min-width:600px) {
+ .pong-landscape-setup {max-width:min(560px,60vw);margin-inline:auto;left:0;right:0;}
+}
+
+/* Match the more-specific legacy WebView selectors without changing their geometry. */
+.pong-guide .pong-guide-continue, .pong-setup-help,
+.pong-guide .pong-guide-tabs button {
+ box-shadow:inset 0 2px 0 #ffffffb0,inset 0 -4px 0 #20487850,inset 1px 0 0 #ffffff80,inset -1px 0 0 #ffffff80,0 2px 3px #20487824;
+}
+.pong-guide .pong-guide-continue {
+ background:linear-gradient(#eee2ff,#d8bfff 48%,#cbb1f2);color:#204878;
+}
+.pong-guide .pong-guide-card {
+ box-shadow:inset 0 2px 0 #fff,inset 0 -4px 0 #3869a525;
+ background:linear-gradient(145deg,#eaf8ff,#fffff7 45%,#fff0f8);
+}
+
+/* Text entry is a white form field, not a raised action. */
+input:not([type=range]):not([type=checkbox]):not([type=radio]), textarea {background:#fff;color:#17384d;border:1px solid #879baa;border-radius:8px;box-shadow:none;}

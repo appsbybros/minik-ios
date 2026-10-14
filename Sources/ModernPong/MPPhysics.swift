@@ -245,9 +245,14 @@ struct MPFlight: Codable, Equatable {
         var f = self; f.position = position.reflected; f.velocity = velocity.reversed; f.striker = striker.other
         f.spin = -spin; f.serve = serve?.reflected; return f
     }
-    init(_ plan: MPServe, _ t: MPTuning) {
-        position = plan.start; height = 0.055; velocity = .zero; lift = 0; striker = plan.server; serve = plan
+    /// Android `Flight(plan, tuning, startHeight)`: team and practice serves start from a raised paddle (0.25).
+    init(_ plan: MPServe, _ t: MPTuning, startHeight: Double = 0.055) {
+        position = plan.start; height = startHeight; velocity = .zero; lift = 0; striker = plan.server; serve = plan
         segment(plan.start, plan.first, speed: plan.speed, arc: plan.arc, height: height, tuning: t)
+    }
+    /// Android `Flight(position, height, velocity, verticalVelocity, striker)` (raw state; tests and the doubles table).
+    init(position: MPPoint, height: Double, velocity: MPPoint, lift: Double, striker: MPSide) {
+        self.position = position; self.height = height; self.velocity = velocity; self.lift = lift; self.striker = striker
     }
     mutating func segment(_ start: MPPoint, _ target: MPPoint, speed: Double, arc: Double, height: Double, tuning t: MPTuning) {
         var time = max(start.distance(target) / max(speed, 0.05), max(2 * arc / t.gravity * 0.55, 0.16))

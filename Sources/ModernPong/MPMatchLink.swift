@@ -8,8 +8,12 @@ import Foundation
     private var loaded = false, ended = false, busy = false, saving = false, finalQueued = false, finalSaved = false
     private var pending: MPWire?, buffered: [MPWire] = [], lastCheckpoint: Int64 = 0, lastSave: Int64 = 0
     private var lastRallies = -1, lastAwaiting = false
+    /// Android MatchLink.receptionOptions: each human's published slow-motion choice (2026-10).
+    private var receptionOptions: [String: Bool] = [:]
     var active = false, networkAvailable = true
     var ready: Bool { loaded && active && networkAvailable && humans.allSatisfy(session.connected) }
+    /// The child plays a house player: no other device follows this match.
+    var housePlayersOnly: Bool { remote == nil }
     init(repo: any MPRepository, session: MPSession, record: MPFixture, engine: MPEngine, preferences: MPPreferences, message: @escaping (Error) -> Void) {
         self.repo = repo; self.session = session; self.record = record; self.engine = engine; self.preferences = preferences; self.message = message
         authority = session.authority(record) == repo.uid
@@ -17,6 +21,7 @@ import Foundation
         engine.authoritative = authority
     }
     func open() {
+        subscriptions.append(repo.receptionPreferences(Set(humans), { [weak self] values in self?.receptionOptions = values; self?.applyReception() }, message))
         subscriptions.append(repo.connection { [weak self] in self?.networkAvailable = $0 })
         subscriptions.append(repo.watchLive(record.id, actions: false, { [weak self] w in self?.received(w) }, message))
         if authority && remote != nil {
@@ -47,9 +52,18 @@ import Foundation
         if let flight = try? MPCodec.decode(MPFlight.self, w["flight"]) { engine.remoteStrike(flight.reflected, rallies: Int(MPCodec.number(w, "rallies")), hit: Int(MPCodec.number(w, "hit"))) }
         checkpoint()
     }
+    /// Android MatchLink.applyReception: the authority shares one clock. Slow motion runs only when every human's
+    /// choice is known; each receiver's own choice decides their return.
+    private func applyReception() {
+        guard authority else { return }
+        engine.reception.enabled = humans.allSatisfy { receptionOptions[$0] != nil }
+        engine.reception.slow[0] = receptionOptions[repo.uid] ?? true
+        engine.reception.slow[1] = remote.flatMap { receptionOptions[$0] } ?? true
+    }
     func update(_ session: MPSession) { self.session = session; if session.matches[record.id]?.phase != .playing { pending = nil } }
     func frame(_ events: [MPEvent]) {
         guard !ended, loaded, session.matches[record.id]?.phase == .playing else { return }
+        applyReception()
         let now = MPClock.now
         if !authority && events.contains(where: { if case .contact(.child, _, _, _) = $0 { return true }; return false }), let flight = engine.flight {
             let sequence = preferences.sequence(record.id); latestLocalSequence = sequence; latestLocalAt = now
@@ -66,7 +80,9 @@ import Foundation
             default: return false
             }
         }
-        if authority && (contact || engine.score.rallies != lastRallies || engine.awaitingServe != lastAwaiting || ready && now - lastCheckpoint >= 2000) { checkpoint() }
+        // While slow motion may be active the peer follows the shared clock closely (Android: every 100 ms).
+        let interval: Int64 = engine.reception.enabled && engine.flight != nil ? 100 : 2000
+        if authority && (contact || engine.score.rallies != lastRallies || engine.awaitingServe != lastAwaiting || ready && now - lastCheckpoint >= interval) { checkpoint() }
         lastRallies = engine.score.rallies; lastAwaiting = engine.awaitingServe
         if authority && engine.score.winner != nil && !finalQueued { checkpoint() }
         if authority && engine.score.winner != nil && finalSaved && !busy && pending == nil && !saving && now - lastSave > 1500 {

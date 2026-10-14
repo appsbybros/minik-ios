@@ -93,14 +93,19 @@ if args.android.exists():
     play=kt['multiplayer/PlayActivity.kt']; view=read(modern/'ModernPongView.swift')
     check('controlValues=listOf(4,0,3)' in play and '.tag(MPLevel.beginner)' in view,'Beginner / Standard / Pro room control')
     check('Standings points per win' in play and 'Standings points per win' in view and 'winPoints: winPoints' in view,'Tournament win-points selector')
-    check('tr("Remove ","הסרת ")' in play and 'model.removeHouse(id)' in view,'Host can remove a house player before the tournament starts')
+    check('tr("Remove ","הסרת ")' in play and 'model.removeHouse(row.id)' in view,'Host can remove a house player before the tournament starts')
     check('fun canFinishFriendly' in kt['multiplayer/PongModels.kt'] and 'MPRules.canFinishFriendly(s, actor: actor)' in repository,'Either friendly participant may finish the game')
     rules=args.android/'firebase-setup/merged-database-rules.json'; fragment=args.android/'firebase/pingpong.rules.fragment.json'
-    sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+    # Compared without CR: this Windows checkout converts LF to CRLF (core.autocrlf) and Android keeps some rules in CRLF.
+    lf=lambda p:p.read_bytes().replace(b'\r\n',b'\n')
+    sha=lambda p:hashlib.sha256(lf(p)).hexdigest()
     check(sha(root/'Tests/ModernPongFirebase/rules/merged.json')==sha(rules) and sha(root/'Tests/ModernPongFirebase/rules/pingpong.json')==sha(fragment) and sha(root/'Tests/ModernPongFirebase/rules/original.json')==sha(args.android/'firebase-setup/current-database-rules.json'),'Rules snapshot matches current Android')
-    rules_test=(args.android/'firebase/tests/rules.test.cjs').read_bytes()
+    check(sha(root/'Tests/ModernPongFirebase/rules/pong-team.json')==sha(args.android/'firebase/pong-team.rules.json'),'Doubles room rules (minikPongTeams) match current Android')
+    rules_test=lf(args.android/'firebase/tests/rules.test.cjs')
     for a,b in [(b"'../../firebase-setup/merged-database-rules.json'",b"'../rules/merged.json'"),(b"'../../firebase-setup/current-database-rules.json'",b"'../rules/original.json'"),(b"'../pingpong.rules.fragment.json'",b"'../rules/pingpong.json'")]: rules_test=rules_test.replace(a,b)
-    check((root/'Tests/ModernPongFirebase/tests/rules.test.cjs').read_bytes()==rules_test,'Rules tests match current Android (local paths only)')
+    check(lf(root/'Tests/ModernPongFirebase/tests/rules.test.cjs')==rules_test,'Rules tests match current Android (local paths only)')
+    for name in ['pong-teams.test.cjs','room-identities.test.cjs']:
+        check(lf(root/'Tests/ModernPongFirebase/tests'/name)==lf(args.android/'firebase/tests'/name).replace(b"__dirname+'/../pong-team.rules.json'",b"__dirname+'/../rules/pong-team.json'"),'Doubles rules test matches current Android (local path only): '+name)
     ads_policy=read(args.android/'app/src/main/java/com/appsbybros/minik/monetization/AdPolicy.java')
     check(all(k in ads_policy for k in ['totalCompleted <= 2','2 * MINUTE','completedSinceAd >= 3 && activeSinceAd >= 5 * MINUTE','completedSinceAd >= 2 || activeSinceAd >= 210_000','Math.min(milliseconds, 5_000)','id.contains(",")']),'Android AdPolicy reference unchanged')
     # Android 2026-10-01 working tree: knockout, rally variation, controls, confetti, completion text.
@@ -136,12 +141,55 @@ if args.android.exists():
             if not hebrew.search(text): continue
             for fragment in re.split(r'\$\{[^}]*\}|\$[A-Za-z_]\w*',text):
                 if len(fragment.strip())>1 and fragment not in ios_text: missing.append(name+': '+fragment)
-    play_added=['שיטת הטורניר','בכל סיבוב מוגרלים זוגות מחדש. כשמספר השחקנים אי־זוגי, שחקן אחד נבחר באקראי ועולה בלי לשחק. מנצחים וממשיכים!','מתחילים: מזיזים את המחבט למקום לחבטה אוטומטית; החלקה קטנה הצידה מכוונת אותה.','רגילה: מקישים או מחליקים; החלקה מהירה מוסיפה עוצמה.','יכולת היריב נקבעת לפי שחקן הבית שתבחרו.','רמת השליטה: ','משחקים שנותרו בסיבוב הזה: ','המשחקים שלכם הסתיימו. ממתינים לשאר השחקנים לסיום הטורניר.','שחקנים · נוקאאוט','עץ הטורניר','החליקו לצדדים לצפייה בעץ. הזוגות מוגרלים מחדש בכל סיבוב.','לעץ הטורניר','ניצחתם במשחק!']
+    play_added=['שיטת הטורניר','בכל סיבוב מוגרלים זוגות מחדש. כשמספר השחקנים אי־זוגי, שחקן אחד נבחר באקראי ועולה בלי לשחק. מנצחים וממשיכים!','מתחילים: מזיזים את המחבט למקום לחבטה אוטומטית; החלקה קטנה הצידה מכוונת אותה.','רגילה: מקישים או מחליקים; החלקה מהירה מוסיפה עוצמה.','יכולת היריב נקבעת לפי שחקן הבית שתבחרו.','רמת השליטה: ','משחקים שנותרו בסיבוב הזה: ','המשחקים שלכם הסתיימו. ממתינים לשאר השחקנים לסיום הטורניר.','עץ הטורניר','החליקו לצדדים לצפייה בעץ. הזוגות מוגרלים מחדש בכל סיבוב.','לעץ הטורניר','ניצחתם במשחק!']
     play_src=read(src/'multiplayer/PlayActivity.kt')+read(src/'multiplayer/PrivateMatchActivity.kt')
     for text in play_added:
         if text not in play_src: missing.append('Android reference changed: '+text)
         elif text not in ios_text: missing.append('PlayActivity/PrivateMatchActivity: '+text)
     check(not missing,'Every new Android Hebrew text is in the iOS port'+('' if not missing else ': '+'; '.join(missing)))
+if args.android.exists():
+    # Android 739f2f8 (2026-10-13): ball assistance, daily journey, team play, live doubles lobby, menus and rooms.
+    src=args.android/'app/src/main/java/com/appsbybros/minik/pingpong'
+    reception_kt=read(src/'ReceptionAssist.kt'); camera_kt=read(src/'ReceptionCamera.kt'); reception=read(modern/'MPReception.swift')
+    check(all(k in reception_kt for k in ['1-.55*strength','eta.coerceAtLeast(0.0)/1.1','eta in -.12..1.1','exp(-dt*5)','<.35']) and all(k in reception for k in ['1 - 0.55 * strength','max(eta, 0) / 1.1','eta >= -0.12, eta <= 1.1','exp(-dt * 5)','< 0.35 ? t : nil']),'Ball assistance clock matches Android ReceptionAssist')
+    check(all(k in camera_kt for k in ['1+.42*amount','dt.coerceIn(0.0,.075)*4','height*.62f']) and all(k in reception for k in ['1 + 0.42 * amount','dt.mpClamp(0, 0.075) * 4','size.height * 0.62']),'Reception camera zoom matches Android ReceptionCamera')
+    match_kt=read(src/'multiplayer/MatchLink.kt'); link=read(modern/'MPMatchLink.swift'); engine=read(modern/'MPEngine.swift')
+    check('engine.reception.enabled&&engine.flight!=null)100 else 2000' in match_kt and 'engine.reception.enabled && engine.flight != nil ? 100 : 2000' in link and 'applyReception()' in link and 'reception.advance(dt, seat: seat, eta: eta, authority: authoritative)' in engine,'Shared slow-motion clock reaches the 1v1 engine and checkpoints (100 ms)')
+    check('"receptionPreferences"' in rules_fragment and 'child("receptionPreferences")' in repository and '"version": 1, "slow": MPReceptionSettings.slow' in repository,'Reception choices are published as Android does (receptionPreferences/<uid>)')
+    authority_kt=read(src/'PongTeamAuthority.kt'); room_kt=read(src/'PongTeamRoom.kt'); team=read(modern/'MPTeam.swift'); room=read(modern/'MPTeamRoom.swift')
+    check('const val PROTOCOL="pong-doubles-v1"' in authority_kt and 'static let protocolName = "pong-doubles-v1"' in team and '"-lobby-v2"' in room and 'minikPongTeams' in room and 'minikPongTeams' in room_kt,'Doubles room protocol and root match Android')
+    check('padStart(16,\'0\')' in room_kt and 'max(0, 16 - String(sequence).count)' in room and 'uptime-moveAt<45' in room_kt and 'uptime - moveAt < 0.045' in room,'Doubles inputs: 16-digit keys and 45 ms move throttle as Android')
+    play_kt=read(src/'PongPlay.kt'); journey_kt=read(src/'PongJourney.kt'); play=read(modern/'MPPlay.swift')
+    android_keys=set(re.findall(r'"(\w+)" to ',play_kt.split('fun save():Wire=',1)[1].split('companion object',1)[0]))
+    save_body=play.split('func save() -> MPWire {',1)[1].split('static func restore',1)[0]
+    ios_keys=set(re.findall(r'w\["(\w+)"\] = ',save_body))|set(re.findall(r'"(\w+)": ',save_body))
+    check(android_keys==ios_keys,'Doubles snapshot keys match Android PongPlay.save ('+str(len(ios_keys))+')')
+    android_stages=re.findall(r'PongStage\("(\w+)"',journey_kt.split('val stages=listOf(',1)[1])
+    ios_stages=re.findall(r'MPStage\("(\w+)"',play.split('static let stages',1)[1].split('static func stage',1)[0])
+    check(android_stages==ios_stages and len(ios_stages)==30,'Daily journey: thirty stages in Android order')
+    check(all(k in play_kt for k in ['bounceRestitution=.86','.coerceIn(.09,.38)','.coerceIn(.62,.91)','(.75+successes*.022+cycle*.02).coerceAtMost(1.08)','else if(team).82 else .65','seed xor (attempts.toLong()*1000003L+rally*1009L+i*9176L)'])
+          and all(k in play for k in ['t.bounceRestitution = 0.86','x.mpClamp(0.09, 0.38)','x.mpClamp(0.62, 0.91)','min(0.75 + Double(successes) * 0.022 + Double(cycle) * 0.02, 1.08)','(team ? 0.82 : 0.65)','Int64(attempts) &* 1000003 &+ Int64(rally) &* 1009 &+ Int64(i) &* 9176']),'Doubles table constants match Android PongPlay')
+    android_assets=args.android/'app/src/main/assets'; art=root/'Resources/ModernPongArt'
+    files=[('pong-poses/'+f.name,f) for f in sorted((android_assets/'pong-poses').iterdir())]+[('team-celebration/'+f.name,f) for f in sorted((android_assets/'team-celebration').iterdir()) if f.suffix=='.webp']
+    files.append(('tournament_remove.webp',args.android/'app/src/main/res/drawable-nodpi/tournament_remove.webp'))
+    check(all((art/name).is_file() and (art/name).read_bytes()==original.read_bytes() for name,original in files),'Pose atlases, team celebration and remove mark are byte-identical to Android ('+str(len(files))+' files)')
+    check((art/'pong_menu_remix.mp3').stat().st_size>500_000,'Menu music converted from Android pong_menu_remix.ogg')
+    ping_block=project.split('  MinikPingPong:\n',1)[1].split('\n  MinikRetroPingPong:',1)[0]
+    multi_block=project.split('  MinikMultiPingPong:\n',1)[1].split('\n  MultiPongTests:',1)[0]
+    math_block=project.split('  MinikMathPlus:\n',1)[1].split('\n  MinikMath:',1)[0]
+    check('path: Resources/ModernPongArt\n        type: folder' in ping_block and 'ModernPongArt' not in multi_block and 'ModernPongArt' not in math_block,'Journey art bundled with the standalone app only')
+    ios_all='\n'.join(read(p) for p in modern.glob('*.swift'))
+    def hebrew_literals(source): return [m.group(1) for m in re.finditer(r'"((?:[^"\\]|\\.)*)"',source) if re.search(r'[֐-׿]',m.group(1))]
+    missing=[]
+    for name in ['PongJourney.kt','PongPlay.kt','PongRallyEnding.kt','ReceptionCamera.kt','TeamLobbyCards.kt','PongJourneyActivity.kt','PongOnlineTeamsActivity.kt','TeamVictoryView.kt','PongPracticeView.kt']:
+        for text in hebrew_literals(read(src/name)):
+            for fragment in re.split(r'\$\{[^}]*\}|\$[A-Za-z_]\w*',text):
+                if len(fragment.strip())>1 and fragment not in ios_all: missing.append(name+': '+fragment)
+    for text in ['מתחילים ולומדים','אתגר יומי','משחקים שמורים','מתקדם','הגדרות · משוב ושיתוף','משחק קבוצתי','לשמור את הטורניר?','לא לשמור','יצירת חדר','הצטרפות לחדר','שחקנים · יכולות מתוך 10','החליקו לצדדים כדי לראות את כל היכולות','המשחקים הבאים שאפשר לשחק','סיימו את המשחק הנוכחי לפני התחלת משחק נוסף.','טורנירים שמורים','עוד אין כאן משחקים. אפשר להתחיל למעלה!','לומדים משחק קבוצתי']:
+        if text not in read(src/'multiplayer/PlayActivity.kt')+read(args.android/'app/src/main/res/values-iw/journey.xml'): missing.append('Android reference changed: '+text)
+        elif text not in ios_all: missing.append('PlayActivity: '+text)
+    check(not missing,'Every Android 739f2f8 Hebrew text is in the iOS port'+('' if not missing else ': '+'; '.join(missing)))
+    check('MPKotlinRandom(seed: seed ^ mixed)' in play and 'func nextDouble()' in read(modern/'MPKnockout.swift'),'House players in doubles roll Kotlin Random(seed) exactly as Android')
 controller=read(modern/'MPController.swift'); view=read(modern/'ModernPongView.swift'); ads=read(modern/'MPAds.swift')
 check('UserDefaults.standard.bool(forKey: "MinikOfflineSmoke")' in controller and 'else if MPController.offlineSmoke { repo = MPLocalRepository() }' in controller,'CI offline smoke launch never uses Firebase')
 check('if !practice && !skipGuide && !guideOffered' in controller and 'didSet { preferences.skipGuide = skipGuide }' in controller,'Guide opens automatically unless hidden')
@@ -149,7 +197,7 @@ check('ParentalGateView(onCancel:' in view and 'if commerceUnlocked { commerceSh
 check('guard experience == .full, ProductVariant.current == .minikPingPong' in ads and 'MinikAdsConfiguration.load(product: .minikPingPong).providerConfiguration' in ads,'Modern ads: standalone Full only; production IDs from MinikAdsConfiguration')
 check(all(k in ads for k in ['ageRestrictedTreatment = .child','GADMaxAdContentRating.general','publisherPrivacyPersonalizationState = .disabled','await MobileAds.shared.start()']),'Modern ad requests are child-directed, G-rated and non-personalized')
 check(re.search(r'total > 2[\s\S]*120_000[\s\S]*300_000[\s\S]*210_000',ads) is not None and 'id.count <= 200, !id.contains(",")' in ads,'Modern ad cadence matches Android AdPolicy')
-tests=read(root/'Tests/ProductConfigurationTests/ModernPongParityTests.swift')
+tests=read(root/'Tests/ProductConfigurationTests/ModernPongParityTests.swift')+read(root/'Tests/ProductConfigurationTests/ModernPongTeamsTests.swift')
 test_count=len(re.findall(r'func test\w+\(',tests))
 check(test_count>=20,'Focused XCTest cases registered: '+str(test_count))
 print(json.dumps({'status':'PASS','source_asset_config_checks':len(checks),'swift_tests_authored_not_executed':test_count,'asset_bytes':sum(p.stat().st_size for p in assets),'checks':checks},ensure_ascii=True,indent=2))

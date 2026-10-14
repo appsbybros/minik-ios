@@ -1,6 +1,6 @@
 import Foundation
 
-// Android cross/CrossEngine.kt (MinikCrossPong 828c6fc).
+// Android cross/CrossEngine.kt (MinikCrossPong 5c1aa4d).
 
 enum CrossSeatKind { case local, remote, house }
 
@@ -50,11 +50,15 @@ enum CrossStatus { case yourServe, otherServe, incoming, yourReturn, inPlay, poi
 enum CrossDrill { case serve, returning }
 /// Tutorial hook. serve: the local seat serves; returning: `server` (default the next seat) serves to the local seat, which
 /// returns. No rally ever scores: the local ball's legal receiving bounce in `expected`'s territory (any opponent when nil) is
-/// a success, any fault or miss before it a failure. House players never return in a drill.
+/// a success, any fault or miss before it a failure. House players never return in a drill. A daily-journey feed (5c1aa4d) also
+/// sets the spread (`feedWidth`), the side (`feedSide`) and the pace of the serve sent to the local seat.
 struct CrossExercise {
     var drill: CrossDrill
     var expected: Int? = nil
     var server: Int? = nil
+    var feedWidth = 0.0
+    var feedSide = 0.0
+    var paceMultiplier = 1.0
 }
 struct CrossTrainingResult: Equatable {
     var success: Bool
@@ -111,6 +115,11 @@ final class CrossEngine {
     let exercise: CrossExercise?
     let scoring: CrossScoring
     private let startScores: [Int]?
+    /// Team play (5c1aa4d): seat membership, a tap on another court picks the return target (`tapTargets`), and a team lesson
+    /// whose house players keep feeding `teamLesson`'s teammate.
+    let teams: CrossTeams?
+    let tapTargets: Bool
+    let teamLesson: Int?
     let players: Int
     let geometry: CrossGeometry
     let aims: CrossAimMap
@@ -123,6 +132,8 @@ final class CrossEngine {
     var automaticContact: Bool { control == .beginner }
     /// Set by the link before the first network frame.
     var authoritative = true
+    /// Android `ReceptionAssist`: the shared simulation clock that may slow down before a human's return.
+    let reception = CrossReception()
     var paused = false
     private let opening: Int
     private(set) var referee: CrossReferee
@@ -134,6 +145,20 @@ final class CrossEngine {
     private let motions: [CrossMotion]
     private let variation = CrossVariation()
     private var events: [CrossEvent] = []
+    /// Android `onEvent`: hears every event as it is added (sounds of screens whose practice drains the engine itself).
+    var onEvent: ((CrossEvent) -> Void)?
+    private(set) var teamFlight: CrossTeamFlight?
+    private var teamLift = false
+    private var teamPass = false
+    private var teamHoldUntil: Int64 = 0
+    /// The court of another player the local player tapped (journeys and team tables): the next return goes there.
+    private(set) var selectedAim: MPPoint?
+    private var practicePaddlePlaced = false
+    /// One raised pass is armed for the local return (a double tap).
+    var setArmed: Bool { teamLift }
+    /// The live ball is a teammate's raised pass to the local seat: only a swipe returns it.
+    var receivingSet: Bool { localSeat != nil && teamFlight?.setReceiver == localSeat }
+    func teammate(_ seat: Int) -> Int? { teams?.partner(seat) }
     private var serial = 0
     private var ticks: Int64 = 0
     private var carry = 0.0
@@ -177,7 +202,8 @@ final class CrossEngine {
     /// Android requires 2...4 seats in index order and at most one local seat; the app always builds them so. Seat indices are
     /// renumbered by position here, so a stray index can never break the arrays.
     init(seats input: [CrossSeat], control: CrossControl, target: Int, seed: Int64, networked: Bool = false, firstServer: Int = 0,
-         exercise: CrossExercise? = nil, scoring: CrossScoring = .multi, startScores: [Int]? = nil) {
+         exercise: CrossExercise? = nil, scoring: CrossScoring = .multi, startScores: [Int]? = nil, teams: CrossTeams? = nil,
+         tapTargets: Bool = false, teamLesson: Int? = nil) {
         let numbered = input.enumerated().map { item -> CrossSeat in
             var seat = item.element
             seat.index = item.offset
@@ -188,6 +214,11 @@ final class CrossEngine {
         self.scoring = scoring; self.startScores = startScores
         let n = numbered.count
         players = n
+        // Android requires team membership to match the table; a mismatch plays individually.
+        var membership: CrossTeams?
+        if let teams, teams.seats.count == n { membership = teams }
+        self.teams = membership; self.tapTargets = tapTargets; self.teamLesson = teamLesson
+        teamFlight = membership.map { CrossTeamFlight(members: $0.seats) }
         let g = CrossGeometry(n)
         geometry = g
         aims = CrossAimMap(g)
@@ -202,7 +233,7 @@ final class CrossEngine {
         if let exercise { start = exercise.drill == .serve ? local : (exercise.server ?? local.map { $0 + 1 }) }
         let opener = start ?? firstServer
         opening = opener
-        referee = CrossReferee(g, target: target, firstServer: opener, scoring: scoring, startScores: startScores)
+        referee = CrossReferee(g, target: target, firstServer: opener, scoring: scoring, startScores: startScores, teams: membership)
         ball = CrossBall(g, tuning: shared, initial: CrossBallState(position: .zero, height: 0, velocity: .zero, lift: 0, stopped: true))
         // Each house player draws its own well-mixed seed: nearly equal seeds give correlated XorWow streams.
         var master = MPKotlinRandom(seed: seed)
@@ -250,7 +281,10 @@ final class CrossEngine {
     var status: CrossStatus {
         let local = localSeat
         if exercise != nil && trainingResult != nil { return .practiceDone }
-        if let winner = referee.winner { return winner == local ? .youWon : .matchOver }
+        if let winner = referee.winner {
+            let together = local.map { teams?.same(winner, $0) == true } ?? false
+            return winner == local || together ? .youWon : .matchOver
+        }
         switch referee.phase {
         case .resolved: return .point
         case .awaitingServe: return local != nil && referee.server == local ? .yourServe : .otherServe
@@ -258,6 +292,7 @@ final class CrossEngine {
         case .serveOwn, .toReceiver: return local != nil && predicted == local ? .incoming : .inPlay
         }
     }
+    private func emit(_ event: CrossEvent) { events.append(event); onEvent?(event) }
     func drainEvents() -> [CrossEvent] {
         let drained = events
         events.removeAll(keepingCapacity: true)
@@ -265,9 +300,9 @@ final class CrossEngine {
     }
     func discardEvents() { events.removeAll() }
     func restart() {
-        referee = CrossReferee(geometry, target: referee.target, firstServer: opening, scoring: scoring, startScores: startScores)
+        referee = CrossReferee(geometry, target: referee.target, firstServer: opening, scoring: scoring, startScores: startScores, teams: teams)
         stopAfterRally = false
-        paused = false; events.removeAll(); release()
+        paused = false; teamFlight = teams.map { CrossTeamFlight(members: $0.seats) }; events.removeAll(); release()
         for i in strokes.indices { strokes[i].cancel() }
         motions.forEach { $0.reset() }
         houses.values.forEach { $0.reset() }
@@ -276,6 +311,9 @@ final class CrossEngine {
         startRally()
     }
     private func startRally() {
+        practicePaddlePlaced = false
+        if var flight = teamFlight { flight.setReceiver = nil; flight.friendlyHits = 0; teamFlight = flight }
+        teamLift = false; teamPass = false; teamHoldUntil = 0
         pointDelay = nil; grace = nil; serveAt = nil; serveSwing = false; pendingServe = nil; pendingTap = nil
         serveArmed = false; settled = false; predicted = nil; trainingResult = nil; trainingTime = 0; gestureAnchor = nil
         variation.reset()
@@ -295,11 +333,16 @@ final class CrossEngine {
         serveAt = at
         return at
     }
-    /// Clamps dt to 1/30 s and runs fixed 1/120 s substeps (a remainder carries to the next frame).
+    /// Clamps dt to 1/30 s and runs fixed 1/120 s substeps (a remainder carries to the next frame). The reception clock may
+    /// slow the whole match while a ball approaches a human receiver who asked for it.
     func advance(_ dt: Double) {
         // A NaN frame is dropped: it would stop the clock for good.
         if paused || dt.isNaN { return }
-        carry += min(CrossEngine.maxFrame, max(0, dt))
+        var receiving: Int?
+        if let r = predictedReceiver, kind(r) != .house, !ball.stopped { receiving = r }
+        let aimPoint = receiving.map { geometry.fromLocal($0, geometry.toLocal($0, ball.position).u, 0.88) }
+        let eta = aimPoint.flatMap { CrossReception.eta(ball.position, ball.velocity, $0) }
+        carry += reception.advance(dt, seat: receiving, eta: eta, authority: authoritative)
         while carry >= CrossEngine.step - 1e-9 { carry -= CrossEngine.step; tick() }
     }
     private func tick() {
@@ -361,7 +404,21 @@ final class CrossEngine {
     private func houseServe(_ server: Int) {
         guard let house = houses[server] else { return }
         let drill = exercise?.drill
-        launchServe(house.serve(serveSpot(server), target: exercise != nil ? localSeat : nil, allowFault: exercise == nil, middle: drill == .returning))
+        if let feed = exercise, feed.drill == .returning, feed.feedWidth > 0 || feed.feedSide != 0 || feed.paceMultiplier != 1, let local = localSeat {
+            let u = (feed.feedSide + house.random.nextDouble(-1, 1) * feed.feedWidth).mpClamp(-0.35, 0.35)
+            launchServe(CrossShots.serve(geometry, physics, server: server, start: serveSpot(server), first: geometry.fromLocal(server, 0, 0.78),
+                                         second: geometry.fromLocal(local, u, 0.83), pace: CrossShots.basePace(physics) * feed.paceMultiplier))
+            return
+        }
+        if let lesson = teamLesson, let teams, !teams.same(server, lesson), let mate = teammate(lesson) {
+            launchServe(CrossShots.serve(geometry, physics, server: server, start: serveSpot(server), first: geometry.fromLocal(server, 0, 0.78),
+                                         second: geometry.fromLocal(mate, 0, 0.83), pace: CrossShots.basePace(physics)))
+            return
+        }
+        var target: Int?
+        if exercise != nil { target = localSeat }
+        else if let others = teams?.opponents(server), !others.isEmpty { target = others[(referee.rallyId + server) % others.count] }
+        launchServe(house.serve(serveSpot(server), target: target, allowFault: exercise == nil, middle: drill == .returning))
     }
     private func launchServe(_ plan: CrossServe) {
         pendingServe = nil
@@ -370,7 +427,7 @@ final class CrossEngine {
         ball.launch(plan.start, plan.height, plan.launch, rebound: plan.rebound)
         if !strokes[seat].active { begin(seat, plan.start, plan.height, left: false) }
         contact(seat, plan.start, plan.height)
-        events.append(.served(seat: seat))
+        emit(.served(seat: seat))
         committed(seat, plan.start, plan.height, serve: true)
     }
     private func stepBall() {
@@ -381,10 +438,10 @@ final class CrossEngine {
         switch e {
         case let .bounce(point, owner):
             bouncePoint = point; bounceAge = 0
-            events.append(.bounce(owner: owner, point: point))
+            emit(.bounce(owner: owner, point: point))
         case let .net(point, height):
             netAge = 0
-            events.append(.net(striker: referee.striker, point: point, height: height))
+            emit(.net(striker: referee.striker, point: point, height: height))
         case .landed: break
         }
         if settled { return }
@@ -411,8 +468,8 @@ final class CrossEngine {
         if let outcome { resolved(outcome) }
     }
     private func resolved(_ outcome: CrossRallyOutcome) {
-        events.append(.rally(outcome))
-        if let winner = outcome.winner { events.append(.victory(seat: winner)) }
+        emit(.rally(outcome))
+        if let winner = outcome.winner { emit(.victory(seat: winner)) }
         pointDelay = CrossEngine.pointDelayTime; grace = nil; serveAt = nil; pendingServe = nil; pendingTap = nil
         houses.values.forEach { $0.plan = nil }
     }
@@ -444,7 +501,23 @@ final class CrossEngine {
         let h = max(s.height, CrossShots.contactHeight)
         let lateral = geometry.toLocal(seat, s.position).u
         let lanes = variation
-        let shot = house.shot(c, from: s.position, height: h, sender: referee.striker) { lanes.due(seat, $0, lateral) }
+        let normal = house.shot(c, from: s.position, height: h, sender: referee.striker) { lanes.due(seat, $0, lateral) }
+        // Team play: a good contact goes to the chosen opponent; every third rally hit (or a lesson's teammate) is raised to the
+        // partner, who smashes it.
+        let mate = teammate(seat)
+        let isSet = teamFlight?.setReceiver == seat
+        let rhythm = (referee.rallyId + referee.hits) % 3 == 0 || (mate != nil && mate == teamLesson)
+        let shouldSet = c.quality >= CrossHouse.good && teams != nil && !isSet && mate != nil && teamFlight?.friendlyHits == 0 && rhythm
+        var receiver: Int?
+        if shouldSet { receiver = mate }
+        else if let others = teams?.opponents(seat), !others.isEmpty { receiver = others[(referee.rallyId + referee.hits) % others.count] }
+        let point = receiver.map { geometry.fromLocal($0, (house.random.nextDouble() - 0.5) * (shouldSet ? 0.16 : 0.45), 0.88) }
+        var shot = normal
+        if let point, c.quality >= CrossHouse.good {
+            shot.launch = teamShot(s.position, h, point, lob: shouldSet, power: isSet ? 1.65 : 1,
+                                   contactPace: max(normal.launch.velocity.length, CrossShots.basePace(physics)))
+        }
+        if shouldSet { teamLift = true }
         if !referee.strike(seat, s.position) { return }
         ball.launch(s.position, h, shot.launch)
         contact(seat, s.position, h)
@@ -453,7 +526,8 @@ final class CrossEngine {
     /// Records a committed contact (exactly once per contact), forecasts its receiver and, on the authority, lets the receiving
     /// house player plan its intercept.
     private func committed(_ seat: Int, _ point: MPPoint, _ height: Double, serve: Bool) {
-        let strike = CrossStrike(seat: seat, point: point, height: height, ball: ball.state, serve: serve, rallyId: referee.rallyId, hitIndex: serve ? 0 : referee.hits)
+        let strike = CrossStrike(seat: seat, point: point, height: height, ball: ball.state, serve: serve, rallyId: referee.rallyId, hitIndex: serve ? 0 : referee.hits,
+                                 raised: teams != nil && !serve && teamLift)
         lastStrike = strike
         if seat == localSeat {
             ownStrike = strike
@@ -462,7 +536,25 @@ final class CrossEngine {
         }
         settled = false
         forecast(seat)
+        updateTeamFlight(strike)
         if !serve { variation.hit(seat, predicted ?? -1, geometry.toLocal(seat, point).u) }
+    }
+    /// The same team transition runs for an accepted remote contact and a local contact. A raise counts only when the physical
+    /// flight reaches this striker's teammate.
+    private func updateTeamFlight(_ strike: CrossStrike) {
+        guard let membership = teams else { return }
+        if strike.serve { return }
+        guard let old = teamFlight else { return }
+        let friend = predicted.map { membership.same(strike.seat, $0) } ?? false
+        let raised = friend && strike.raised
+        var next = old
+        next.setReceiver = raised ? predicted : nil
+        next.passes = old.passes + (friend ? 1 : 0)
+        next.sets = old.sets + (raised ? 1 : 0)
+        next.smashes = old.smashes + (old.setReceiver == strike.seat && !friend ? 1 : 0)
+        next.friendlyHits = friend ? 1 : 0
+        teamFlight = next
+        teamLift = false; teamPass = false
     }
     private func forecast(_ striker: Int) {
         let found = CrossForecast.receiving(geometry, ball, striker: striker)
@@ -488,14 +580,14 @@ final class CrossEngine {
         if seat == localSeat { rest(seat, point) }
         serial += 1
         strokes[seat].start(serial, point, height, left)
-        events.append(.swing(seat: seat, id: strokes[seat].id))
+        emit(.swing(seat: seat, id: strokes[seat].id))
     }
     /// One contact event per stroke: the stroke's `contacted` guards a second one.
     private func contact(_ seat: Int, _ point: MPPoint, _ height: Double) {
         if seat == localSeat { rest(seat, point) }
         if strokes[seat].contacted { return }
         strokes[seat].contact(point, height)
-        events.append(.contact(seat: seat, id: strokes[seat].id, point: point, height: height))
+        emit(.contact(seat: seat, id: strokes[seat].id, point: point, height: height))
     }
     private func rest(_ local: Int, _ point: MPPoint) {
         if !geometry.inStrikeZone(local, point) { return }
@@ -513,7 +605,11 @@ final class CrossEngine {
         let sane: MPPoint? = point.flatMap { $0.length < CrossEngine.touchLimit ? $0 : nil }
         let usable = velocity.length.isFinite
         if sane != point || !usable { touch(sane, drag: drag, velocity: usable ? velocity : .zero, down: down); return }
+        // A tap on another player's court picks where the next return goes (journeys and team tables).
+        if down, tapTargets, let point, let owner = geometry.owner(point), owner != local { selectedAim = point }
         if down {
+            // A team touch holds the automatic return briefly, so a second tap can still arm a raised pass.
+            if teams != nil && !receivingSet && !referee.mayServe(local) { teamHoldUntil = ticks + 34 }
             aimDp = 0; gestureSpeed = 0; gestureLast = point; gestureTravel = 0; gestureCommitted = false
             gestureAnchor = point.flatMap { geometry.inStrikeZone(local, $0) ? $0 : nil }
         } else if drag.x.isFinite { aimDp = drag.x }
@@ -521,7 +617,12 @@ final class CrossEngine {
         lastVelocity = velocity
         if referee.mayServe(local) && pendingServe == nil { serveInput(local, point, velocity, down: down); return }
         if pendingServe != nil { return }
-        if let point, geometry.inStrikeZone(local, point) { movePaddle(local, point) }
+        if let point, geometry.inStrikeZone(local, point) { practicePaddlePlaced = true; movePaddle(local, point) }
+        if receivingSet {
+            if !down, let point { swipe(local, point, velocity) }
+            return
+        }
+        if teams != nil, let point, let owner = geometry.owner(point), owner == teammate(local), teamFlight?.friendlyHits == 0 { teamPass = true }
         switch control {
         case .beginner: break // position alone arms the automatic contact
         case .standard:
@@ -529,7 +630,7 @@ final class CrossEngine {
                 if let point, geometry.inStrikeZone(local, point) { tap(local, point) }
             } else if let point, pendingTap != nil, !strokes[local].contacted, geometry.inStrikeZone(local, point) { pendingTap = point }
         case .pro:
-            if !down, let point { swipe(local, point, velocity) }
+            if !teamLift && !down, let point { swipe(local, point, velocity) }
         }
     }
     func endTouch(cancelled: Bool = false) {
@@ -576,7 +677,7 @@ final class CrossEngine {
         let power = automaticContact ? 0 : gesturePower()
         let aim = aims.aim(local, dragDp: aimDp, power: power, serveLateral: lateral, variation: sway())
         let pace = automaticContact ? CrossShots.basePace(physics) : CrossShots.pace(physics, power: power)
-        queueServe(CrossShots.tapServe(geometry, physics, server: local, start: serveSpot(local), tap: tap, second: aim.point, pace: pace))
+        queueServe(CrossShots.tapServe(geometry, physics, server: local, start: serveSpot(local), tap: tap, second: selectedAim ?? aim.point, pace: pace))
     }
     /// Pro serve: a swipe through the ball (the classic swipe serve); a weak or backward swipe is a bad serve.
     private func commitSwipe(_ local: Int, _ point: MPPoint, _ swipe: MPPoint) {
@@ -590,7 +691,7 @@ final class CrossEngine {
             if !referee.serve(local, start) { return }
             ball.launch(start, CrossShots.contactHeight, CrossLaunch(velocity: .zero, lift: 0))
             contact(local, start, CrossShots.contactHeight)
-            events.append(.served(seat: local))
+            emit(.served(seat: local))
             committed(local, start, CrossShots.contactHeight, serve: true)
             return
         }
@@ -626,15 +727,44 @@ final class CrossEngine {
         let cap = physics.maximumSwipeSpeed * 3
         let swing = speed > cap ? velocity * (cap / speed) : velocity
         let quality = (2 - miss / physics.swipeCollisionForgiveness) / 2
-        strike(local, CrossShots.driven(geometry, physics, striker: local, swipe: swing, height: max(ball.height, CrossShots.contactHeight),
-                                        incoming: ball.velocity, quality: quality))
+        let shot: CrossLaunch
+        if receivingSet && control != .pro, let teams {
+            // Learning controls keep the swipe's chosen opponent, with a safely cleared faster trajectory. The gesture still has
+            // to cross the real bounced ball; it never acts as an automatic hit.
+            let direction = geometry.fromView(local, swing)
+            let others = teams.opponents(local)
+            var receiver = others[0]
+            var best = -Double.greatestFiniteMagnitude
+            for candidate in others {
+                let d = geometry.fromLocal(candidate, 0, 0.87) - at
+                let value = d.dot(direction) / d.length
+                if value > best { best = value; receiver = candidate }
+            }
+            let spot = geometry.fromLocal(receiver, (swing.x * 0.08).mpClamp(-0.18, 0.18), 0.86)
+            shot = teamShot(at, max(ball.height, CrossShots.contactHeight), spot, lob: false, power: 1.45 + 0.35 * gesturePower())
+        } else {
+            shot = CrossShots.driven(geometry, physics, striker: local, swipe: receivingSet ? swing * 1.35 : swing,
+                                     height: max(ball.height, CrossShots.contactHeight), incoming: ball.velocity, quality: quality)
+        }
+        strike(local, shot)
     }
     private func localContact() {
         guard let local = localSeat else { return }
         let s = strokes[local]
-        if pendingTap != nil && s.age > s.windowEnd && !s.contacted { pendingTap = nil }
+        // A journey waits until the player has placed the paddle; a raised pass needs a swipe; a team touch may still become a
+        // double tap.
+        if tapTargets && !practicePaddlePlaced { return }
+        if receivingSet || (teams != nil && ticks < teamHoldUntil && !teamLift) { return }
+        if teams != nil, let tap = pendingTap, s.age > s.windowEnd, !s.contacted, s.age < 0.65 {
+            begin(local, tap, ball.height, left: geometry.toLocal(local, tap).u < 0)
+        } else if pendingTap != nil && s.age > s.windowEnd && !s.contacted { pendingTap = nil }
         if settled || !referee.mayStrike(local) || ball.stopped || !geometry.inStrikeZone(local, ball.position) { return }
         let at = ball.position
+        if teamLift && (paddle ?? restingPaddle).distance(at) <= CrossEngine.autoReach {
+            begin(local, at, ball.height, left: geometry.toLocal(local, at).u < 0)
+            strike(local, assisted(local, power: 0))
+            return
+        }
         switch control {
         case .beginner:
             // Position alone arms Beginner: a held or released paddle meets the legal ball exactly once.
@@ -658,15 +788,26 @@ final class CrossEngine {
         let h = max(s.height, CrossShots.contactHeight)
         ball.launch(s.position, h, shot)
         contact(local, s.position, h)
-        pendingTap = nil; aimDp = 0; gestureSpeed = 0; gestureAnchor = nil
+        pendingTap = nil; aimDp = 0; gestureSpeed = 0; gestureAnchor = nil; practicePaddlePlaced = false
         committed(local, s.position, h, serve: false)
     }
     /// Beginner/Standard: the aim map picks the opponent and spot from the drag; pace is base (+35 % x power for Standard).
     private func assisted(_ local: Int, power: Double) -> CrossLaunch {
         let s = ball.state
+        // Team play: one friendly pass (raised after a double tap) goes to the partner.
+        if let mate = teammate(local), teamLift || teamPass, teamFlight?.friendlyHits == 0 {
+            return teamShot(s.position, max(s.height, CrossShots.contactHeight), geometry.fromLocal(mate, 0, 0.88), lob: teamLift)
+        }
         let aim = aims.aim(local, dragDp: aimDrag(), power: power, sender: referee.striker, variation: sway())
         let pace = automaticContact ? CrossShots.basePace(physics) : CrossShots.pace(physics, power: power)
-        return CrossShots.targeted(geometry, physics, from: s.position, height: max(s.height, CrossShots.contactHeight), target: aim.point, pace: pace)
+        // A tapped court is the target, except the own team's court once the friendly pass is used; a team return never goes
+        // to the partner by the drag alone.
+        var selected = selectedAim
+        if let point = selected, let teams, teamFlight?.friendlyHits == 1, let owner = geometry.owner(point), teams.same(owner, local) { selected = nil }
+        var safe = aim.point
+        if let selected { safe = selected }
+        else if let teams, teams.same(local, aim.opponent), let first = teams.opponents(local).first { safe = geometry.fromLocal(first, 0, 0.88) }
+        return CrossShots.targeted(geometry, physics, from: s.position, height: max(s.height, CrossShots.contactHeight), target: safe, pace: pace)
     }
     /// Beginner aims with the latest sideways swipe (made any time before the hit, kept after the finger lifts), limited so an
     /// automatic return always stays on the table; Standard keeps the full drag (a wide drag may go out).
@@ -677,18 +818,36 @@ final class CrossEngine {
         if control == .pro || paused || predictedReceiver != local { return nil }
         return aims.aim(local, dragDp: aimDrag(), power: 0, sender: referee.striker).opponent
     }
+    /// A deliberate double tap arms one raised pass; the paddle must still meet the live receiving ball.
+    @discardableResult func liftToTeammate() -> Bool {
+        guard let local = localSeat else { return false }
+        if !playable() || teammate(local) == nil || teamFlight?.friendlyHits != 0 || receivingSet || referee.mayServe(local) { return false }
+        if predictedReceiver != local { return false }
+        teamLift = true; teamPass = true; teamHoldUntil = 0; pendingTap = nil
+        return true
+    }
+    /// A team shot to `to`: a normal targeted shot, or (`lob`) a high pass that takes 0.16 s longer than the pace (at most 2.55 s).
+    private func teamShot(_ from: MPPoint, _ height: Double, _ to: MPPoint, lob: Bool, power: Double = 1, contactPace: Double? = nil) -> CrossLaunch {
+        let pace = (contactPace ?? CrossShots.basePace(physics)) * power
+        if !lob { return CrossShots.targeted(geometry, physics, from: from, height: height, target: to, pace: pace) }
+        let time = min(2.55, CrossShots.flightTime(geometry, physics, from: from, height: height, target: to, pace: pace) + 0.16)
+        return CrossLaunch(velocity: (to - from) * (1 / time), lift: (0.5 * physics.gravity * time * time - height) / time)
+    }
     /// Alternating side for assisted placements: consecutive human returns never repeat one spot.
     private func sway() -> Double { (referee.rallyId + referee.hits) % 2 == 0 ? 1 : -1 }
     private func gesturePower() -> Double { (gestureSpeed / physics.maximumSwipeSpeed).mpClamp(0, 1) }
     func exportState() -> CrossState {
         let delay: Double? = serveAt.map { max(0, Double($0 - ticks) * CrossEngine.step) }
         return CrossState(referee: referee.exportState(), ball: ball.state, pointDelay: pointDelay, serveDelay: delay, grace: grace, strike: lastStrike,
-                          motions: motions.map { CrossMotionState(u: $0.racket.u, v: $0.racket.v, toU: $0.destination.u, toV: $0.destination.v, remaining: $0.remaining, left: $0.left) })
+                          motions: motions.map { CrossMotionState(u: $0.racket.u, v: $0.racket.v, toU: $0.destination.u, toV: $0.destination.v, remaining: $0.remaining, left: $0.left) },
+                          team: teamFlight, practiceAim: selectedAim, paddlePlaced: practicePaddlePlaced, reception: CrossWireBox(reception.wire()))
     }
     /// Adopts a checkpoint. With `preserveInput` (live following) a checkpoint that only acknowledges this seat's own predicted
     /// strike never rewinds the ball, a new strike by another seat is animated once, a new outcome is announced and the held
     /// finger survives within the same rally. Throws (changing nothing) for an invalid state.
     func restoreState(_ state: CrossState, preserveInput: Bool = false) throws {
+        guard state.team?.members == teams?.seats else { throw CrossStateError.invalid("Team membership mismatch") }
+        if let aim = state.practiceAim, !(aim.length.isFinite && geometry.onTable(aim)) { throw CrossStateError.invalid("Invalid practice aim") }
         guard state.ball.valid() else { throw CrossStateError.invalid("Invalid ball state") }
         // Checked before anything changes: a NaN timer would freeze the match, an unknown striker would fail halfway through.
         let timers = [state.pointDelay, state.serveDelay, state.grace].compactMap { $0 }
@@ -696,16 +855,25 @@ final class CrossEngine {
         let strikeSeat = state.strike.map { $0.seat >= 0 && $0.seat < players } ?? true
         guard timers.allSatisfy({ $0.isFinite }), motionsFinite, strikeSeat else { throw CrossStateError.invalid("Invalid timers, motions or strike") }
         guard state.motions.isEmpty || state.motions.count == players else { throw CrossStateError.invalid("Seat count mismatch") }
+        try reception.restore(state.reception.value)
         let before = renderBallPosition
         let old = referee.exportState()
         let next = state.referee
         let local = localSeat
         let same = preserveInput && next.rallyId == old.rallyId && next.winner == nil
         if same, let local, next.striker == local, old.striker == local, next.hits == old.hits, next.phase.live, old.phase.live {
+            teamFlight = state.team
             adopt(state, snap: false)
             return
         }
         try referee.restore(next)
+        teamFlight = state.team
+        if !same || next.hits != old.hits || !next.phase.live || state.team?.friendlyHits != 0 { teamLift = false; teamPass = false; teamHoldUntil = 0 }
+        if !same { selectedAim = state.practiceAim; practicePaddlePlaced = state.paddlePlaced }
+        if !preserveInput, let local, state.motions.count == players {
+            let m = state.motions[local]
+            rest(local, geometry.fromLocal(local, m.u, m.v))
+        }
         if !same {
             release()
             if let local { strokes[local].cancel() }
@@ -727,15 +895,15 @@ final class CrossEngine {
                 let left = geometry.toLocal(strike.seat, strike.point).u < 0
                 begin(strike.seat, strike.point, strike.height, left: left)
                 contact(strike.seat, strike.point, strike.height)
-                if strike.serve { events.append(.served(seat: strike.seat)) }
+                if strike.serve { emit(.served(seat: strike.seat)) }
             }
         }
         // Rackets first, so a reopened authority plans its house receiver from where that player really is.
         adopt(state, snap: !preserveInput)
         replan()
         if preserveInput, let outcome = next.lastOutcome, outcome.rallyId != old.lastOutcome?.rallyId {
-            events.append(.rally(outcome))
-            if let winner = outcome.winner { events.append(.victory(seat: winner)) }
+            emit(.rally(outcome))
+            if let winner = outcome.winner { emit(.victory(seat: winner)) }
         }
         reconciliation = before - ball.position
         reconciliationAge = reconciliation.length < 0.4 ? CrossEngine.blend : 0
@@ -770,9 +938,10 @@ final class CrossEngine {
         begin(seat, strike.point, strike.height, left: left)
         contact(seat, strike.point, strike.height)
         motions[seat].approach(geometry.toLocal(seat, strike.point), seconds: CrossEngine.remoteApproach, left: left)
-        if strike.serve { events.append(.served(seat: seat)) }
+        if strike.serve { emit(.served(seat: seat)) }
         lastStrike = strike
         forecast(seat)
+        updateTeamFlight(strike)
         if !strike.serve { variation.hit(seat, predicted ?? -1, geometry.toLocal(seat, strike.point).u) }
         reconciliation = before - ball.position
         reconciliationAge = reconciliation.length < 0.4 ? CrossEngine.blend : 0

@@ -41,6 +41,12 @@ struct LearnView: View {
             }
         }
         .task { await speakOpeningCard() }
+        .mathReadAloud(
+            instruction: nil,
+            exercise: mathSpeechText,
+            id: session.currentCardIndex,
+            player: interfaceSpeechPlayer
+        )
         .onChange(of: scenePhase) { _, phase in
             if phase != .active {
                 stopSpeech()
@@ -139,7 +145,7 @@ struct LearnView: View {
 
         if !wasComplete && session.isComplete {
             onComplete()
-        } else if !session.isComplete {
+        } else if !session.isComplete, mathSpeechText == nil {
             replayCurrentCard()
         }
     }
@@ -212,11 +218,12 @@ struct LearnView: View {
 
     /// Language waits as Android LearnScreen does before the first letter. A Next
     /// tap during the pause has already spoken its own card, and leaving the page
-    /// cancels the pause, so neither is followed by this speech.
+    /// cancels the pause, so neither is followed by this speech. A Math fact is read
+    /// by mathReadAloud instead, which follows the Parent Area's Read aloud switch.
     @MainActor
     private func speakOpeningCard() async {
         guard presentation == .language else {
-            replayCurrentCard()
+            if mathSpeechText == nil { replayCurrentCard() }
             return
         }
         let openingCardIndex = session.currentCardIndex
@@ -229,7 +236,11 @@ struct LearnView: View {
 
     private func replayCurrentCard() {
         if let mathSpeechText {
-            interfaceSpeechPlayer.speak(mathSpeechText, interfaceLocale: interfaceLocaleID)
+            MathReadAloud.say(
+                MathReadAloud.text(instruction: nil, exercise: mathSpeechText),
+                with: interfaceSpeechPlayer,
+                fallback: interfaceLocaleID
+            )
         } else {
             speechPlayer.speak(speechPlan)
         }

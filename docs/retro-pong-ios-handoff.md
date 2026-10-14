@@ -1,5 +1,23 @@
 # Shared 80’s STYLE Pong — 2026-09-28
 
+## 2026-10-13 sync
+
+iOS now matches Android Bounce `506490e` ("Refresh Bounce menus, family messages and current store package", `C:\Projects\MinikPaddleAndLearn`). The web delta since `0f5b85f` is `maze-sky.css`, its link in `index.html` and the family hooks in `minik-monetization.js`; everything else in that commit is Android build, billing or store material.
+
+Ported:
+- `maze-sky.css` (new): Maze-style raised buttons and panels, centered landscape forms and white text fields. Direct copy with LF line endings; `index.html` links it after `pong-layout.css`, as on Android, and `ios-host.css` stays last. Imported by `tools/bounce-refresh/sync-ios.py`; `docs/retro-pong-android-provenance.json` now has 77 entries.
+- Family messages, which Android Bounce now hosts (shared `Family/` code, unchanged): at one eligible ad break in 30 (at most once a day) the card for another Minik app replaces the interstitial, and the game's result shows when the card closes; the remove-ads reminder on the idle setup ("Remove ads" opens the parents page behind its grown-up gate); "More Minik apps & games" first on the parents page. `ios-host.js` sends Android's `menuIdle` signal every second while the setup with "For parents" is idle on screen; `RetroPongView(onMenuIdle:)` passes it to `BounceRootView`. The target bundles the family catalogue and art and sets `MinikFamilyCatalogKey: bounce`.
+- The "For parents" link colour (`#3F8CFF`) already matched.
+
+Deliberate differences:
+- Android Bounce is landscape-only. In iOS portrait the setup is a full-screen page, so `ios-host.css` drops maze-sky's raised-card shadow there.
+- "More Minik apps & games" is a quiet link (`FamilyMenuLink`), not a button, as in every iOS app.
+- Math Plus's Bounce gets the new styles but no family messages: it has no parents link, so it never sends `menuIdle`, and its ads stay Math's.
+
+Skipped: Play Store packages and screenshots, versionCode/versionName, Gradle source sets, the `BounceSkyCaptureTest` device capture, and Android's billing tweak (ownership counts as resolved only once known), which iOS `MinikCommerceController.ownershipResolved` already does.
+
+Checks: 15 host tests and 16 engine checks pass; `audit-retro-pong.py` passes 207 checks. Not compiled (no Swift toolchain here).
+
 **Android sync — 2026-10-07:** the web payload in `Resources/RetroPong` now matches Android Bounce `0f5b85f` ("Polish Pong HUD across mobile and large windows", `C:\Projects\MinikPaddleAndLearn\app\src\main\assets\www`). That commit changed `app.js`, `pong-extras.js` and `pong-layout.css`. iOS already had its `app.js` and `pong-extras.js`: the 2026-10-02 sync took them from the then uncommitted Android files. So only `pong-layout.css` was re-imported, the same way as before: a direct copy with its line endings normalized to LF (Android now commits this file with CRLF), without an iOS adaptation. The new rules apply to the native inset host (`minik-android-inset-host`, which the iOS host also gets through `MinikNativeInsets/1`). They give the desktop court layout (`pong-desktop-active`) a readable, correctly ordered total score, and hide the site footer. On iOS no visible change is expected: the adapted `app.js` treats every iOS device as mobile, so the desktop layout never turns on, and `ios-host.css` already hides the footer. The file's two hashes are updated in `docs/retro-pong-android-provenance.json` (76 entries). Every other Android `www` file still matches its recorded hash; `minik-monetization.js` and `README.md` stay out on purpose. Math's Ping Pong loads the same folder, so it gets the same rules.
 
 **Ads update — 2026-10-01:** as on Android Bounce, the standalone app (`BounceRootView`) now shows an interstitial after a finished game and a "For parents" link on setup that opens the grown-up gate before Remove Ads and Restore. `ios-host.js` implements Android's `MinikMonetization` contract; inside Math, a finished Bounce game is a Math ad opportunity and no parents link is shown. The ad-free statements below describe the earlier implementation.

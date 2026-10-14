@@ -108,3 +108,29 @@ test('Unknown capture scene names change nothing',()=>{
   h.c.localStorage.setItem(key,JSON.stringify({version:1,points:6}));
   assert.equal(h.messages.length,1);
 });
+test('The idle setup with the parents link asks the native host for the family reminder, as Android Bounce does',()=>{
+  const intervals=[], panel={isConnected:true,style:{},append(){},querySelectorAll:()=>[],getClientRects:()=>[{}]};
+  let visibility='visible', playing=false;
+  const h=host({monetization:true,parents:true},false,{
+    setInterval:(fn,ms)=>{intervals.push([fn,ms]);return intervals.length;},
+    getComputedStyle:()=>({position:'relative',visibility}),requestAnimationFrame:()=>0});
+  h.c.document.createElement=()=>({style:{},setAttribute(){}}); h.c.document.hidden=false;
+  h.c.MinikMonetization.track(()=>playing);
+  assert.notEqual(h.c.MinikMonetization.menu(panel,'en'),null);
+  h.c.MinikMonetization.menu(panel,'en');
+  assert.equal(intervals.length,1); assert.equal(intervals[0][1],1000);
+  const idle=()=>{h.messages.length=0;intervals[0][0]();return h.messages.filter(x=>x.type==='menuIdle').length;};
+  assert.equal(idle(),1);
+  playing=true; assert.equal(idle(),0); playing=false;
+  visibility='hidden'; assert.equal(idle(),0); visibility='visible';
+  panel.getClientRects=()=>[]; assert.equal(idle(),0); panel.getClientRects=()=>[{}];
+  h.c.MinikRetroHost.setActive(false); assert.equal(idle(),0); h.c.MinikRetroHost.setActive(true);
+  h.c.MinikMonetization.finish('paddle/3',()=>{}); assert.equal(idle(),0);
+  h.c.MinikMonetization.complete('1'); assert.equal(idle(),1);
+});
+test('Math, with no parents link, never asks for the family reminder',()=>{
+  const intervals=[];
+  const h=host({monetization:true},false,{setInterval:fn=>{intervals.push(fn);return 1;}});
+  assert.equal(h.c.MinikMonetization.menu({style:{}},'en'),null);
+  assert.equal(intervals.length,0);
+});

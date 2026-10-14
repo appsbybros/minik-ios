@@ -1,6 +1,6 @@
 import Foundation
 
-// Android cross/CrossReferee.kt (MinikCrossPong 828c6fc). Wire names are the Kotlin enum names.
+// Android cross/CrossReferee.kt (MinikCrossPong 5c1aa4d). Wire names are the Kotlin enum names.
 
 enum CrossRallyPhase: String, CaseIterable {
     case awaitingServe = "AWAITING_SERVE", serveOwn = "SERVE_OWN", toReceiver = "TO_RECEIVER", receivable = "RECEIVABLE", resolved = "RESOLVED"
@@ -66,6 +66,9 @@ final class CrossReferee {
     let scoring: CrossScoring
     let players: Int
     let firstServer: Int
+    /// Team play (Android `teams`): teammates share every point and nobody loses one; a miss or fault gives the other team the
+    /// point. Only for the multi scoring of a 3/4-seat table.
+    let teams: CrossTeams?
     private var board: [Int]
     private var won: [Int]
     private var faulted: [Int]
@@ -87,16 +90,23 @@ final class CrossReferee {
 
     /// Android requires target >= 1, classic scoring only for two players and start scores in [0, target): invalid values
     /// (only possible from a corrupt checkpoint) are corrected here instead of crashing the court.
-    init(_ geometry: CrossGeometry, target: Int, firstServer: Int = 0, scoring: CrossScoring = .multi, startScores: [Int]? = nil) {
+    init(_ geometry: CrossGeometry, target: Int, firstServer: Int = 0, scoring: CrossScoring = .multi, startScores: [Int]? = nil,
+         teams: CrossTeams? = nil) {
         self.geometry = geometry
         self.target = max(1, target)
-        self.scoring = scoring == .classic && geometry.players != 2 ? .multi : scoring
+        let mode: CrossScoring = scoring == .classic && geometry.players != 2 ? .multi : scoring
+        self.scoring = mode
         players = geometry.players
+        // Android requires a team table to match the seats and use multi scoring; anything else plays individually.
+        var team: CrossTeams?
+        if let teams, teams.seats.count == geometry.players, mode == .multi { team = teams }
+        self.teams = team
         let opening = geometry.wrap(firstServer)
         self.firstServer = opening
         let zeros = Array(repeating: 0, count: geometry.players)
         var start = zeros
-        if let startScores, startScores.count == geometry.players, startScores.allSatisfy({ $0 >= 0 && $0 < max(1, target) }) { start = startScores }
+        if let startScores, startScores.count == geometry.players, startScores.allSatisfy({ $0 >= 0 && $0 < max(1, target) }),
+           CrossReferee.teamScoresAgree(team, startScores) { start = startScores }
         board = start
         won = zeros
         faulted = zeros
@@ -199,18 +209,32 @@ final class CrossReferee {
         let receiverOk = (s.phase != .receivable || s.receiver != nil) && (s.receiver == nil || s.phase == .receivable || s.phase == .resolved)
         let winnerOk = s.winner.map { s.phase == .resolved && s.scores[$0] >= target } ?? true
         guard receiverOk, winnerOk else { throw CrossStateError.invalid("Inconsistent referee state") }
+        guard CrossReferee.teamScoresAgree(teams, s.scores) else { throw CrossStateError.invalid("Team scores differ") }
         board = s.scores; won = s.pointsWon; faulted = s.faults; missed = s.misses
         server = s.server; rallyId = s.rallyId; ralliesPlayed = s.ralliesPlayed; winner = s.winner; phase = s.phase
         striker = s.striker; receiver = s.receiver; hits = s.hits; lastOutcome = s.lastOutcome
     }
+    /// Teammates always have equal scores (Android `require`, "Team scores differ").
+    private static func teamScoresAgree(_ teams: CrossTeams?, _ scores: [Int]) -> Bool {
+        guard let teams, scores.count == teams.seats.count else { return true }
+        for a in scores.indices { for b in scores.indices where teams.same(a, b) && scores[a] != scores[b] { return false } }
+        return true
+    }
     private func resolve(_ kind: CrossRallyKind, _ loser: Int, gainer: Int? = nil) -> CrossRallyOutcome {
         var deltas = Array(repeating: 0, count: players)
         // classic: every error gives the opponent the point and nobody ever loses one.
-        let gain: Int? = scoring == .classic ? (gainer ?? crossMod(loser + 1, players)) : gainer
-        if let gain { deltas[gain] = 1 }
+        // Teams: the other team gains (the striker's team after a miss), every teammate together; nobody loses a point.
+        let gain: Int?
+        if let teams {
+            if let gainer, !teams.same(gainer, loser) { gain = gainer } else { gain = teams.opponents(loser).first }
+        } else if scoring == .classic { gain = gainer ?? crossMod(loser + 1, players) }
+        else { gain = gainer }
+        if let gain {
+            if let teams { for seat in geometry.seats where teams.same(seat, gain) { deltas[seat] = 1 } } else { deltas[gain] = 1 }
+        }
         var floored = false
         var out: Int?
-        if scoring != .classic {
+        if teams == nil && scoring != .classic {
             if board[loser] > 0 { deltas[loser] = -1 }
             else if scoring == .elimination { out = loser } // dropping below zero is out
             else { floored = true }                          // a loss at 0 is forgiven

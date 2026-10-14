@@ -8,6 +8,8 @@ import Foundation
     private var loaded = false, ended = false, busy = false, saving = false, finalQueued = false, finalSaved = false
     private var pending: MPWire?, buffered: [MPWire] = [], lastCheckpoint: Int64 = 0, lastSave: Int64 = 0
     private var lastRallies = -1, lastAwaiting = false
+    /// Android MatchLink (5c1aa4d): both humans' shared "slow motion for my return" choices (uid → slow).
+    private var receptionOptions: [String: Bool] = [:]
     var active = false, networkAvailable = true
     var ready: Bool { loaded && active && networkAvailable && humans.allSatisfy(session.connected) }
     init(repo: any MPRepository, session: MPSession, record: MPFixture, engine: MPEngine, preferences: MPPreferences, message: @escaping (Error) -> Void) {
@@ -18,6 +20,8 @@ import Foundation
         engine.authoritative = authority
     }
     func open() {
+        // A preference that cannot be shared only keeps the normal speed; it is not worth an error dialog here.
+        subscriptions.append(repo.receptionPreferences(Set(humans), { [weak self] values in self?.receptionOptions = values; self?.applyReception() }, { _ in }))
         subscriptions.append(repo.connection { [weak self] in self?.networkAvailable = $0 })
         subscriptions.append(repo.watchLive(record.id, actions: false, { [weak self] w in self?.received(w) }, message))
         if authority && remote != nil {
@@ -48,9 +52,17 @@ import Foundation
         if let flight = try? MPCodec.decode(MPFlight.self, w["flight"]) { engine.remoteStrike(flight.reflected, rallies: Int(MPCodec.number(w, "rallies")), hit: Int(MPCodec.number(w, "hit"))) }
         checkpoint()
     }
+    /// Authority: slow motion runs only once both choices are known; seat 0 is this phone's player.
+    private func applyReception() {
+        guard authority else { return }
+        engine.reception.enabled = humans.allSatisfy { receptionOptions[$0] != nil }
+        engine.reception.slow[0] = receptionOptions[repo.uid] ?? true
+        engine.reception.slow[1] = remote.flatMap { receptionOptions[$0] } ?? true
+    }
     func update(_ session: MPSession) { self.session = session; if session.matches[record.id]?.phase != .playing { pending = nil } }
     func frame(_ events: [MPEvent]) {
         guard !ended, loaded, session.matches[record.id]?.phase == .playing else { return }
+        applyReception()
         let now = MPClock.now
         if !authority && events.contains(where: { if case .contact(.child, _, _, _) = $0 { return true }; return false }), let flight = engine.flight {
             let sequence = preferences.sequence(record.id); latestLocalSequence = sequence; latestLocalAt = now
@@ -67,7 +79,7 @@ import Foundation
             default: return false
             }
         }
-        if authority && (contact || engine.score.rallies != lastRallies || engine.awaitingServe != lastAwaiting || ready && now - lastCheckpoint >= 2000) { checkpoint() }
+        if authority && (contact || engine.score.rallies != lastRallies || engine.awaitingServe != lastAwaiting || ready && now - lastCheckpoint >= (engine.reception.enabled && engine.flight != nil ? 100 : 2000)) { checkpoint() }
         lastRallies = engine.score.rallies; lastAwaiting = engine.awaitingServe
         if authority && engine.score.winner != nil && !finalQueued { checkpoint() }
         if authority && engine.score.winner != nil && finalSaved && !busy && pending == nil && !saving && now - lastSave > 1500 {

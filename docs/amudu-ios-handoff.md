@@ -1,5 +1,38 @@
 # Spud (Minik Amudu / מיניק עמודו) — iOS port handoff
 
+## 2026-10-13 sync
+
+iOS now matches Android `C:/Projects/MinikAmudu` commit **b07097c** ("Improve SPUD skill journeys, camera assistance
+and tournament menus", clean tree) and, for the shared menu look, `C:/Projects/MinikFamilyServices` commit dcfdd13. The
+real change since the 2026-10-12 state was in `AmuduActivity.kt`, `PictureChoices.kt`, `SelectionWidgets.kt`,
+`ui/GameDialogBuilder.kt` and the family classes they now use (the SHA-256 table below is regenerated).
+
+Ported:
+- Hebrew texts: "Daily skill journey" is "אתגר יומי"; "Ball approach zoom" and its two switches say "מיקוד המצלמה …".
+- Private room lobby: when you are the only human (the rest are house players), every line says "Not started" and the
+  Ready button is gone; the host's Start is unchanged. Online protocol untouched.
+- Raised "sky" surfaces (`FamilySkyDrawable`, new `UI/SkySurface.swift`): every page button, section button, setup
+  group toggle, choice field, picture card and result row; pressed controls sink into their edge.
+- Home menu (`FamilyMenu`): sections are pale sky panels outlined in their colour, with dark headings and the 6 dp
+  heading inset; the profile texts use the menu ink; the name field is the white `FamilyFormStyle` input; colour-rank
+  labels (home and rank page) are flat with 8 dp corners; avatar arrows are the raised teal chevrons.
+- "More below ⌄" cue under the home menu (`FamilyMoreFrame`): reserved 48 dp strip, shown while more lies below,
+  bouncing unless Reduce Motion or VoiceOver is on; a tap scrolls 65% of the visible height.
+- Pages use `FamilyReadingPanel` (a centred column of at most 520 dp in landscape, e.g. the landscape result page).
+- App-drawn dialogs (players & scores, return vote, nickname huddle) are white sky panels with 24 dp corners; their
+  Continue is a raised sky-blue button; the huddle word field is the white input.
+- Landscape hint (`FamilyLandscapeHint`): a game that opens in portrait shows "For a wider view, play in landscape."
+  after 0.9 s.
+
+Deliberate differences:
+- The pause, nickname, join, grown-up gate, share and feedback dialogs stay iOS system alerts (not restyled).
+- The home rank label keeps its rank ink; Android paints a Blue/Brown rank label in menu ink until the avatar changes.
+- "More below", its spoken label and the landscape hint come from `FamilyMessages.text`: Hebrew and English now, the
+  other languages once the shared `Family/FamilyText.swift` has those three rows.
+
+Skipped: Play Store material, `BUILD_STATUS.md` notes, Gradle/versionCode, and the new device-QA tests
+(`setupqa/FamilyMenuReviewDeviceTest`, `MenuDiscoveryDeviceTest`, `MenuFormsDeviceTest`, `SkyMenuCaptureTest`).
+
 ## Re-sync of 2026-10-12
 
 iOS matches Android `C:/Projects/MinikAmudu` at HEAD 2749a49 **plus its uncommitted 2026-10-10/11 work** (the daily
@@ -49,6 +82,7 @@ Source: Android project `C:/Projects/MinikAmudu` (read-only; state of 2026-10-12
 | `world/*` (`ArenaCamera`, `LandscapeFraming`, `SpriteSizing`, `StableLabels`, `ArenaWorldView`, `SpudReceptionZoom`) | `Amudu/World/*` | The OpenGL ES world is Metal (same shader math); `onFirstFrame` included. |
 | `localization/GameSupportText.kt`, `SpudJourneyText.kt` | `Amudu/Text/AmuduCatalog.json` | Part of the 959 catalog rows. |
 | `AmuduActivity.kt` | `Amudu/UI/AppModel.swift`, `Amudu/UI/Screens.swift`, `Amudu/UI/GameScreen.swift`, `Amudu/AmuduApp.swift` | Screens, settings, dialogs, saved game, event sounds/speech, lifecycle. |
+| family `FamilySkyDrawable`, `FamilySkyUi.dialog`, `FamilyFormStyle`, `FamilyReadingPanel`, `FamilyMoreFrame`, `FamilyMenu.section/style` | `Amudu/UI/SkySurface.swift`, `Amudu/UI/Widgets.swift` | The Spud-side look only (`SkySurface`, `SkyButtonStyle`, `InputFace`, `ReadingPanel`, `MoreBelowCue`, `MenuSection`); the shared `Family/` module has no surface API. |
 | `OnlineRoom.kt` | `Amudu/Online/OnlineRoom.swift` | Same RTDB paths, transactions, lease/host takeover, 12 Hz snapshots, command queue, huddle protocol. |
 | `AmuduAds.kt`, `monetization/*.java` | — | Not ported (ads and purchases off on iOS). |
 | `res/raw/*` | `Amudu/Audio/*` | Copied unchanged (all 12 files, including the two Hebrew stop calls; `sfx_hit.mp3` is unused on Android too). |
@@ -141,6 +175,7 @@ Source: Android project `C:/Projects/MinikAmudu` (read-only; state of 2026-10-12
 - `DeviceEquivalentTests`: catch pose, back and mirrored frames, the huddle target's neutral pause, Hebrew feedback
   naming the other player, arena command routing, bundled art and audio, localized display names = Android `app_name`.
 - `AmuduAppTests` (existing) kept.
+- 2026-10-13: `SkyMenuTests` (sky palette and blend, reading-panel widths).
 - 2026-10-12 additions: `GameRulesTests` (Android `GameRulesTest`), `RanksVoiceAndCourtTests` (`ProgressRanksTest`,
   `ConnectionRegressionTest`, `StopCallVoiceTest`, the rectangular-court case of `NetworkStateTest`),
   `SpudJourneyTests` (`SpudJourneyTest`, `JourneyLanguageTest`), `SpudReceptionZoomTests`, `WorldTests`
@@ -168,13 +203,16 @@ below.
   `onChange(of:) { old, new in }` form, `confirmationDialog(titleVisibility:)`.
 - `Amudu/Core/AmuduCodec.swift` — `CFGetTypeID(n) == CFBooleanGetTypeID()` on `NSNumber`.
 - `Tests/AmuduTests/DeviceEquivalentTests.swift` — `@MainActor` test methods in a nonisolated `XCTestCase`.
+- `Amudu/UI/SkySurface.swift`, `Amudu/UI/Widgets.swift` (2026-10-13) — `Canvas`/`GraphicsContext` drawing
+  (`Path(roundedRect:cornerRadius:style:)`, `.linearGradient`), the `ScrollFinder` `UIViewRepresentable`, the
+  `onPreferenceChange` + `MainActor.assumeIsolated` pattern, `.coordinateSpace(.named(_:))` with `frame(in: .named(_:))`.
 
 ## SHA-256 of the Android files used (for re-sync)
 
 | Android file | SHA-256 |
 |---|---|
 | `ASSET_MANIFEST.md` | `2b09c9249dfd127d561635c0245f763220d92bdf20c3d24a6e8448791945e83e` |
-| `BUILD_STATUS.md` | `523b6183ff19ccc347b79b7ce63f4b6d3f9e1934b705833ca2b70b872600663b` |
+| `BUILD_STATUS.md` | `58c173345ad9c2b778453a68092f94110acbc43aa57fd0da4bf0fb04cc4c6200` |
 | `DECISIONS.md` | `30c940a08e034a2a22344df42f50b6ba04499a0ee26784d5b3fde7bba13e335c` |
 | `EXTERNAL_ACTIONS_REQUIRED.md` | `681e90f1f8053e65723abf7249caf8f4945382dad27368801f3dba41aa548381` |
 | `README.md` | `404f6709e955dc1279b94b9af8cb7be5c24ec2d534be8f29965db6a2d92301a4` |
@@ -191,6 +229,10 @@ below.
 | `app/src/androidTest/java/com/appsbybros/minik/amudu/StopCallAudioDeviceTest.kt` | `baa68dedfa61b6f03e8be5a3f83186467d7c85c1071de12cf7aff0e6f0b2d9ae` |
 | `app/src/androidTest/java/com/appsbybros/minik/amudu/StoreCaptureTest.kt` | `dca016874de65815d90bd6b68630275af932d64b341106413051976fbd95868e` |
 | `app/src/androidTest/java/com/appsbybros/minik/amudu/VisualRegressionDeviceTest.kt` | `0f69750447fbe5e1e952f9d4aa1692def64b0369bdecf1d525cf7ce3e6a6ac17` |
+| `app/src/androidTest/java/com/appsbybros/minik/setupqa/FamilyMenuReviewDeviceTest.kt` | `c1f18ac45b922aa410710e4fb1cf7d6264c13efb9327e059597d7950374caee0` |
+| `app/src/androidTest/java/com/appsbybros/minik/setupqa/MenuDiscoveryDeviceTest.kt` | `69601d825d2fae89fa594811de0996a7693d231dfb8ace2b82dfe3b0fd115d33` |
+| `app/src/androidTest/java/com/appsbybros/minik/setupqa/MenuFormsDeviceTest.kt` | `1f8ba872322c8b4d741906882b2bc8b76243c4b4da2036258740f5e16c322e8c` |
+| `app/src/androidTest/java/com/appsbybros/minik/setupqa/SkyMenuCaptureTest.kt` | `d89b521b51c93c416ab3fab0362e142668b23c2e42ac434ddd681406de9b72cb` |
 | `app/src/main/AndroidManifest.xml` | `43654689dc872efae282c1b976ab7c5ac1f25a67d6524949cd45bfc693207fca` |
 | `app/src/main/assets/art/amber.webp` | `aafe40ef9fcef4cea3f79bd59782788bd82e70d7530c79848d37a09e1e72ab15` |
 | `app/src/main/assets/art/amber_directions.webp` | `ee8d2aad1ba1c412c208bafa2ea2f222826604c2a5011ba5570f99d30d67bc81` |
@@ -223,7 +265,7 @@ below.
 | `app/src/main/assets/art/neon.webp` | `ddf50eac6667be189a34ab233b2b072e6571eef57b74af2b8aae75ceb1906582` |
 | `app/src/main/assets/art/park.webp` | `312e65bacbeb5a7ad5387c40d71f4ede93fcb47889987bc1944d1fc74fb94259` |
 | `app/src/main/assets/art/tennis.png` | `28dd6f6d70b7bec6d9af9524f7a76326689f9923dfb9900ada258d26fd257595` |
-| `app/src/main/java/com/appsbybros/minik/amudu/AmuduActivity.kt` | `1be3cf063f733247d35f4bec50e33aee519fa77e8e99b2fe9afc222f48b11767` |
+| `app/src/main/java/com/appsbybros/minik/amudu/AmuduActivity.kt` | `7b4a8870b072165f1b32138a089dae4eda8d1d38a66fb0be6bcbaf48479ce6f9` |
 | `app/src/main/java/com/appsbybros/minik/amudu/AmuduAds.kt` | `b7dc9edd55095c3a917f5f8960a41c584757eee6591b9bfb095d71eaa2952f67` |
 | `app/src/main/java/com/appsbybros/minik/amudu/AmuduView.kt` | `3a647a8431043bbe18ada1df003556bb361911414577265e5e4956eef6ee86fd` |
 | `app/src/main/java/com/appsbybros/minik/amudu/ArtStore.kt` | `6c3adf72fb6d74add6e238a49a9b4d566ff0d9e2cb20f8a314d9d772c16c4977` |
@@ -232,9 +274,9 @@ below.
 | `app/src/main/java/com/appsbybros/minik/amudu/HebrewStopCalls.kt` | `3adf7bf6641bad003d2b155e5bad33db1b35fbdb67ce063ae866c0d8f5d7139e` |
 | `app/src/main/java/com/appsbybros/minik/amudu/JourneyCelebration.kt` | `0a9fe3035e531afcd4171b5b5a8bea1d319ed68ae4a86ef1c3dfa48957295a1f` |
 | `app/src/main/java/com/appsbybros/minik/amudu/OnlineRoom.kt` | `3a3456c4b20d58c36a3b685cbba877c285780aaf65848c4ff6f0140ab04bf4b5` |
-| `app/src/main/java/com/appsbybros/minik/amudu/PictureChoices.kt` | `c85dde0318794f0534da76501f3a3721726e5b3ef4a71ca761413a73570577d9` |
+| `app/src/main/java/com/appsbybros/minik/amudu/PictureChoices.kt` | `9a84108a5d154348f052b8c41eb694892a53eb8488ae89f912ab379cf35ce52e` |
 | `app/src/main/java/com/appsbybros/minik/amudu/RuleText.kt` | `942a23a29c84dd9866a08fdd638e7c5431e222520e17188735aeb78fade65127` |
-| `app/src/main/java/com/appsbybros/minik/amudu/SelectionWidgets.kt` | `777b90fcd0149f757e84803169bec3dc9d0c66334e9e839574740449b5cbb489` |
+| `app/src/main/java/com/appsbybros/minik/amudu/SelectionWidgets.kt` | `5645c6076da92cdf79216fa2468501e970b2a13e8b5b0ea6b9afc882ac00d814` |
 | `app/src/main/java/com/appsbybros/minik/amudu/SnapshotGuard.kt` | `d9ad8a39aaf31c92cc189186b3c1e33110248e2dc9aac8a1a82fe4e42447f507` |
 | `app/src/main/java/com/appsbybros/minik/amudu/StopCallVoice.kt` | `a99d7e8729d74bab6869a2bd13d71e3f425b8a3864d71122c231c6eb7cba5b5b` |
 | `app/src/main/java/com/appsbybros/minik/amudu/core/AmuduEngine.kt` | `4a3606f64d4bf6b9615e80f7ef6854959cbb6cdc9113d8cddd422929ecae3fba` |
@@ -250,7 +292,7 @@ below.
 | `app/src/main/java/com/appsbybros/minik/localization/GameSupportText.kt` | `163c3c6d768383ebc310bc1a59dce57d75c1bee241488095c52330c52eaa1bef` |
 | `app/src/main/java/com/appsbybros/minik/localization/SpudJourneyText.kt` | `9da06f1169b5d39dcc0b4b49d30845557eeec0ff92ef3d64729feb7a37ab56c8` |
 | `app/src/main/java/com/appsbybros/minik/ui/CenteredToggleSpan.kt` | `cc417b7c358164293fe5e15dc0374522f54f59d6f05253f48438584507bd7306` |
-| `app/src/main/java/com/appsbybros/minik/ui/GameDialogBuilder.kt` | `d339fba9899bbadbefec08c98ecafaf9278fc3d56d00a03f26be244269f632b8` |
+| `app/src/main/java/com/appsbybros/minik/ui/GameDialogBuilder.kt` | `997d0532c3772aeaee4efc5d380a8b8f40b682a33b13be37dbda23540b4db832` |
 | `app/src/main/java/com/appsbybros/minik/world/ArenaCamera.kt` | `66018165a632cb0ae4988425cff1dc5a1e8dbf9f504c48b9adfd9bc2b884bd61` |
 | `app/src/main/java/com/appsbybros/minik/world/ArenaWorldView.kt` | `f3088a49eb4eff724b9740a5a894a5a238c5738175b5ced0842ad7ca4e5e457a` |
 | `app/src/main/java/com/appsbybros/minik/world/LandscapeFraming.kt` | `4c23f02f50af0036d12f1cbb482ea07080ff581ace1693846d9e6bd1cd6b6763` |

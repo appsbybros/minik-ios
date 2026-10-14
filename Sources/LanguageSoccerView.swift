@@ -1714,8 +1714,11 @@ struct LanguageSoccerView: View {
         ]
     }
 
+    /// What is read aloud: the four lines, then Android's existing closing line (the end of
+    /// game_dialog_speak_text), as SoccerIntroDialog reads them (2df3a2a).
     private var soccerIntroductionText: String {
-        soccerIntroductionLines.joined(separator: "\n")
+        (soccerIntroductionLines + [interfaceLocaleID.text("Tap Start to begin. Good luck!")])
+            .joined(separator: "\n")
     }
 
     /// The rest of the game's rules, under "More Information": how a kick works,

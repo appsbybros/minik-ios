@@ -130,6 +130,11 @@ struct BuildView: View {
             } catch { }
         }
         .task(id: session.currentChallenge.id) { speakCurrentPrompt() }
+        .mathReadAloud(
+            instruction: mathInstruction,
+            exercise: isMath ? MathReadAloud.exercise(session.currentChallenge.prompt.representations) : nil,
+            id: session.currentChallenge.id
+        )
         .onChange(of: scenePhase) { _, phase in
             if phase != .active { stopAudio() }
         }

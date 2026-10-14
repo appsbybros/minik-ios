@@ -1,16 +1,18 @@
 import SwiftUI
 
 /// Android `home()` after `FamilyMenu.organize`: the title, ball and motto, then four sections; "More Minik apps
-/// & games" is a link in Advanced. "Ads & purchases" is not part of the iOS app.
+/// & games" is a link in Advanced. "Ads & purchases" is not part of the iOS app. `FamilyMoreFrame`'s "More below" cue
+/// shows under the menu while more lies below.
 struct HomeScreen: View {
     @ObservedObject var model: AppModel
+    @FocusState private var nameFocused: Bool
 
     var body: some View {
         let learn = model.tr("Start & learn", "מתחילים ולומדים")
         let play = model.tr("Play", "משחקים")
         let saved = model.tr("Saved games", "משחקים שמורים")
         let advanced = model.tr("Advanced", "מתקדם")
-        return AmuduPage(GameText.title(), background: model.art.scene(model.scene)) {
+        return AmuduPage(GameText.title(), background: model.art.scene(model.scene), scrollCue: true) {
             Image(uiImage: model.art.ball(.neon))
                 .resizable()
                 .scaledToFit()
@@ -19,7 +21,7 @@ struct HomeScreen: View {
             AmuduLabel(model.tr("Call. Catch. Freeze. Laugh.", "קוראים. תופסים. עוצרים. צוחקים."), size: 18, color: 0xff9bffe4)
             MenuSection(learn, color: MenuColors.learn, open: model.sectionOpen(learn, true), toggle: { model.toggleSection(learn, true) }) {
                 SectionButton(model.tr("How to play", "איך משחקים"), color: MenuColors.learn) { model.openHelp() }
-                SectionButton(model.tr("Daily skill journey", "מסע המיומנויות היומי"), color: MenuColors.learn) { model.openJourney() }
+                SectionButton(model.tr("Daily skill journey", "אתגר יומי"), color: MenuColors.learn) { model.openJourney() }
                 SectionButton(model.tr("Your colors & progress", "הצבעים וההתקדמות שלכם"), color: MenuColors.learn) { model.openRank() }
                 profile
             }
@@ -59,29 +61,32 @@ struct HomeScreen: View {
         }
     }
 
-    /// The name, avatar and colour rank (Android moves them into the first section).
+    /// The name, avatar and colour rank (Android moves them into the first section, on its pale panel: light texts
+    /// take the menu ink, the name field is `FamilyFormStyle`'s white input and the rank label is flat with 8 dp
+    /// corners).
     private var profile: some View {
         let rank = ProgressRanks.at(model.rankPoints)
         return VStack(spacing: 0) {
-            AmuduLabel(model.tr("Your name", "השם שלכם"), size: 18, color: 0xffb8f3dc)
+            AmuduLabel(model.tr("Your name", "השם שלכם"), size: 18, color: MenuColors.ink)
             TextField("", text: Binding(get: { model.playerName }, set: { model.updateName($0) }),
-                      prompt: Text(model.tr("Your name", "השם שלכם")).foregroundColor(Color(argb: 0xffbbd6de)))
+                      prompt: Text(model.tr("Your name", "השם שלכם")).foregroundColor(Color(argb: SkyInk.hint)))
                 .font(.system(size: 18))
-                .foregroundColor(.white)
+                .foregroundColor(Color(argb: SkyInk.input))
                 .multilineTextAlignment(.center)
                 .textInputAutocapitalization(.words)
                 .autocorrectionDisabled()
                 .submitLabel(.done)
+                .focused($nameFocused)
                 .padding(.horizontal, 12)
                 .frame(height: 55)
-                .background(RoundedRectangle(cornerRadius: 18).fill(Color(argb: 0x55335167)))
+                .background(InputFace(focused: nameFocused))
             Rectangle()
                 .fill(Color(argb: 0xffa8f7df))
                 .frame(height: 3)
-            AmuduLabel(model.tr("Used only when you play with friends in a private room.", "ישמש רק במשחק עם חברים בחדר פרטי."), size: 14, color: 0xffc4dfe8)
+            AmuduLabel(model.tr("Used only when you play with friends in a private room.", "ישמש רק במשחק עם חברים בחדר פרטי."), size: 14, color: MenuColors.ink)
             avatarRow
             AmuduLabel(AmuduCharacters.get(model.avatar).name(hebrew: model.hebrew) + " · " + String(model.rankPoints), size: 16, color: rank.ink)
-                .background(RoundedRectangle(cornerRadius: 18).fill(Color(argb: rank.color)))
+                .background(RoundedRectangle(cornerRadius: 8).fill(Color(argb: rank.color)))
                 .padding(.bottom, 18)
         }
     }
@@ -275,7 +280,7 @@ struct JourneyScreen: View {
         let progress = model.journeyProgress()
         let bot = s.bot(d.cycle, [model.avatar])
         let current = step % 30
-        return AmuduPage(model.tr("Daily skill journey", "מסע המיומנויות היומי"), background: model.art.scene(model.scene)) {
+        return AmuduPage(model.tr("Daily skill journey", "אתגר יומי"), background: model.art.scene(model.scene)) {
             AmuduLabel(model.tr("Challenge \(step % 30 + 1) of 30 · Cycle \(d.cycle + 1)", "אתגר \(step % 30 + 1) מתוך 30 · מסלול \(d.cycle + 1)"), size: 18)
             Image(uiImage: model.art.portrait(bot.id))
                 .resizable()
@@ -341,12 +346,12 @@ struct SupportScreen: View {
             AmuduButton(model.tr("Rate the app", "דירוג האפליקציה")) { model.rateApp() }
             AmuduButton(model.tr("Share the game", "שיתוף המשחק")) { model.openShare() }
             AmuduButton(model.tr("Send feedback", "שליחת משוב")) { model.openFeedback() }
-            AmuduButton(model.tr("Ball approach zoom", "התקרבות המצלמה לכדור"), color: 0xffdfcfff) { zoomOpen.toggle() }
+            AmuduButton(model.tr("Ball approach zoom", "מיקוד המצלמה בכדור"), color: 0xffdfcfff) { zoomOpen.toggle() }
             if zoomOpen {
                 VStack(spacing: 0) {
                     AmuduLabel(model.tr("A closer view as the ball approaches. Game speed stays the same.", "מבט מקרוב כשהכדור מתקרב. מהירות המשחק נשארת ללא שינוי."), size: 16)
-                    SettingSwitch(title: model.tr("Zoom when the ball approaches me", "התקרבות כשהכדור מגיע אליי"), isOn: $model.receptionZoomOwn)
-                    SettingSwitch(title: model.tr("Follow another human's approach zoom", "מעקב אחר התקרבות לשחקן אנושי אחר"), isOn: $model.receptionZoomOthers)
+                    SettingSwitch(title: model.tr("Zoom when the ball approaches me", "מיקוד המצלמה כשהכדור מגיע אליי"), isOn: $model.receptionZoomOwn)
+                    SettingSwitch(title: model.tr("Follow another human's approach zoom", "מיקוד המצלמה כששחקן אחר מקבל את הכדור"), isOn: $model.receptionZoomOthers)
                 }
             }
             SettingSwitch(title: model.tr("Game sounds", "צלילי המשחק"), isOn: $model.gameSounds, minHeight: 52)
@@ -368,7 +373,8 @@ struct SupportScreen: View {
     }
 }
 
-/// Android `rankPage()`: the total and every colour rank with its threshold.
+/// Android `rankPage()`: the total and every colour rank with its threshold (flat labels with 8 dp corners, as
+/// `FamilyFormStyle` leaves them).
 struct RankScreen: View {
     @ObservedObject var model: AppModel
 
@@ -380,7 +386,7 @@ struct RankScreen: View {
             ForEach(ProgressRanks.all, id: \.threshold) { r in
                 AmuduLabel(model.tr(r.en, r.he) + " · " + String(r.threshold), size: 18, color: r.ink)
                     .frame(height: 48)
-                    .background(RoundedRectangle(cornerRadius: 18).fill(Color(argb: r.color)))
+                    .background(RoundedRectangle(cornerRadius: 8).fill(Color(argb: r.color)))
                     .padding(.top, 8)
             }
             AmuduButton(model.tr("Back", "חזרה")) { model.home() }
@@ -400,7 +406,8 @@ struct ConnectingScreen: View {
     }
 }
 
-/// Android `lobby()`.
+/// Android `lobby()`. With no other human in the room there is nothing to be ready for: every line says "Not started"
+/// and only Start is offered.
 struct LobbyScreen: View {
     @ObservedObject var model: AppModel
 
@@ -415,7 +422,9 @@ struct LobbyScreen: View {
                 ForEach(state.lines) { line in
                     AmuduLabel(line.text, size: 18)
                 }
-                AmuduButton(model.tr("Ready", "מוכנים")) { state.onReady() }
+                if !state.houseOnly {
+                    AmuduButton(model.tr("Ready", "מוכנים")) { state.onReady() }
+                }
                 if state.host {
                     AmuduButton(model.tr("Start", "התחלה"), color: 0xffc4e5ff) { state.onStart() }
                 }
@@ -449,7 +458,7 @@ struct ResultScreen: View {
                         .padding(.horizontal, 8)
                         .padding(.vertical, 5)
                         .frame(height: 75)
-                        .background(RoundedRectangle(cornerRadius: 18).fill(Color(argb: row.winner ? 0xb53c7b75 : 0xa51b3e59)))
+                        .background(SkySurface(color: row.winner ? 0xb53c7b75 : 0xa51b3e59, radius: 18))
                     }
                 }
                 .padding(.vertical, 5)

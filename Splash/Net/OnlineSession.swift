@@ -352,7 +352,12 @@ final class OnlineSession {
                     self.cancelStart(self.tr("The player list changed. Adjust the group before starting.", "רשימת השחקנים השתנתה. עדכנו את הקבוצה לפני ההתחלה."))
                     return
                 }
-                if humanIds.contains(where: { !all.node($0).flag("ready") || !all.node($0).flag("connected") }) {
+                // The host as the only real player starts without "Ready" (Android 2026-10-13); everyone
+                // else, and the host when friends have joined, must be ready and connected.
+                let soleHost = humanIds.count == 1
+                if humanIds.contains(where: { id in
+                    (!all.node(id).flag("ready") && !(soleHost && id == hostId)) || !all.node(id).flag("connected")
+                }) {
                     self.cancelStart(self.tr("All human players must be ready.", "כל השחקנים צריכים להיות מוכנים."))
                     return
                 }

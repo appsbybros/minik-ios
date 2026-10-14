@@ -85,11 +85,51 @@ struct MPExercise {
 struct MPState: Codable {
     var score: MPScore; var flight: MPFlight?; var rally: Int; var pointDelay: Double?; var serveDelay: Double?
     var status: String; var pendingFault: MPResolution?; var faultTime: Double
+    /// Android `EngineState.reception` (5c1aa4d): the shared reception clock; absent in older checkpoints (normal speed).
+    var reception: MPReceptionState? = nil
     var reflected: Self { .init(score: score.reflected, flight: flight?.reflected, rally: rally,
         pointDelay: pointDelay, serveDelay: nil, status: status,
-        pendingFault: pendingFault.map { .init(winner: $0.winner.other, fault: $0.fault) }, faultTime: faultTime) }
+        pendingFault: pendingFault.map { .init(winner: $0.winner.other, fault: $0.fault) }, faultTime: faultTime,
+        reception: reception.map { MPReceptionState(wire: CrossReception.reflected($0.wire)) }) }
     var valid: Bool { score.child >= 0 && score.minik >= 0 && score.rallies >= 0 && rally >= 0 &&
-        (flight?.valid ?? true) && faultTime.isFinite && (pointDelay?.isFinite ?? true) }
+        (flight?.valid ?? true) && faultTime.isFinite && (pointDelay?.isFinite ?? true) &&
+        (reception.map { (try? CrossReception.canonical($0.wire)) != nil } ?? true) }
+}
+/// The reception clock as a Codable checkpoint field (Android writes `ReceptionAssist.wire()`; RTDB may return its seat-keyed
+/// `slow` map as a list).
+struct MPReceptionState: Codable {
+    var enabled: Bool?; var scale: Double?; var receiver: Int?; var strength: Double?; var slow: [String: Bool]?
+    enum CodingKeys: String, CodingKey { case enabled, scale, receiver, strength, slow }
+    init(wire w: MPWire) {
+        enabled = w["enabled"] as? Bool; scale = (w["scale"] as? NSNumber)?.doubleValue
+        receiver = (w["receiver"] as? NSNumber).map { Int($0.int64Value) }; strength = (w["strength"] as? NSNumber)?.doubleValue
+        let options = MPCodec.map(w["slow"])
+        var keyed: [String: Bool] = [:]
+        for (key, value) in options { if let flag = value as? Bool { keyed[key] = flag } }
+        slow = w["slow"] == nil ? nil : keyed
+    }
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        enabled = try? c.decodeIfPresent(Bool.self, forKey: .enabled)
+        scale = try? c.decodeIfPresent(Double.self, forKey: .scale)
+        receiver = try? c.decodeIfPresent(Int.self, forKey: .receiver)
+        strength = try? c.decodeIfPresent(Double.self, forKey: .strength)
+        if let keyed = try? c.decodeIfPresent([String: Bool].self, forKey: .slow) { slow = keyed }
+        else if let list = try? c.decodeIfPresent([Bool?].self, forKey: .slow) {
+            var keyed: [String: Bool] = [:]
+            for (i, value) in list.enumerated() { if let value { keyed[String(i)] = value } }
+            slow = keyed
+        } else { slow = nil }
+    }
+    var wire: MPWire {
+        var w: MPWire = [:]
+        if let enabled { w["enabled"] = enabled }
+        if let scale { w["scale"] = scale }
+        if let receiver { w["receiver"] = receiver }
+        if let strength { w["strength"] = strength }
+        if let slow { w["slow"] = slow }
+        return w
+    }
 }
 /// Android `HouseStrategy`: short placement patterns shared by every house player, with skill-scaled width and tempo.
 struct MPHouseStrategy {
@@ -173,6 +213,8 @@ final class MPEngine {
     var paused = false
     /// Set by MPMatchLink. A networked non-authority never awards a speculative point (Android `authoritative`).
     var authoritative = true
+    /// Android `ModernEngine.reception` (5c1aa4d): seat 0 is this phone's player, seat 1 the other side.
+    let reception = CrossReception()
     var automaticContact: Bool { level.automaticContact }
     /// Small decaying racket tilt from lateral paddle movement, in degrees (Android `paddleTilt`).
     private(set) var paddleTilt = 0.0
@@ -269,7 +311,16 @@ final class MPEngine {
     }
     func advance(_ dt: Double) {
         guard !paused else { return }
-        let delta = dt.mpClamp(0, 1.0 / 30); correctionAge = max(0, correctionAge - delta)
+        // Android 5c1aa4d: the reception clock may slow the whole simulation while the ball approaches a human receiver.
+        var seat: Int?, eta: Double?
+        if let incoming = flight, !incoming.resolved {
+            let receiver = incoming.striker.other
+            if receiver == .child || networked {
+                seat = receiver == .child ? 0 : 1
+                eta = CrossReception.eta(incoming.position, incoming.velocity, MPPoint(incoming.position.x, receiver == .child ? 0.84 : 0.16))
+            }
+        }
+        let delta = reception.advance(dt, seat: seat, eta: eta, authority: authoritative); correctionAge = max(0, correctionAge - delta)
         if let fault = pendingFault {
             faultTime -= delta
             if faultTime <= 0 { pendingFault = nil; resolve(fault, striker: flight?.striker ?? fault.winner) }
@@ -469,9 +520,11 @@ final class MPEngine {
         tapAim = 0; tapVelocity = .zero; tapStart = paddle
         planReturn()
     }
-    func snapshot() -> MPState { .init(score: score, flight: flight, rally: rally, pointDelay: pointDelay, serveDelay: serveDelay, status: status, pendingFault: pendingFault, faultTime: faultTime) }
+    func snapshot() -> MPState { .init(score: score, flight: flight, rally: rally, pointDelay: pointDelay, serveDelay: serveDelay, status: status, pendingFault: pendingFault, faultTime: faultTime,
+                                       reception: MPReceptionState(wire: reception.wire())) }
     func restore(_ s: MPState, preserveInput: Bool = false) {
         guard s.valid else { return }
+        try? reception.restore(s.reception?.wire ?? [:])
         let before = ball, samePoint = preserveInput && s.score.rallies == score.rallies && s.score.child == score.child && s.score.minik == score.minik && s.score.winner == nil
         // An acknowledgement of the same point, rally and striker must not rewind the locally
         // predicted flight or replay its contact. A fresh reconnect still restores fully.

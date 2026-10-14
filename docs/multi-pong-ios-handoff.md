@@ -3,7 +3,7 @@
 This document covers the iOS app target `MinikMultiPingPong` (bundle `com.appsbybros.minik.crosspong`, display name
 "Multi Ping Pong"). It is a port of the Android app **Multi Ping Pong** (`C:\Projects\MinikCrossPong`, commit
 `828c6fc094f3afb05d86fea0616704a17976dfaf`, brought up to commit `190871983cb5b72715604d1e48b6dd6bb6c8a22f` by the updates at
-the end of this document): table tennis for 3 or 4 players on a cross-shaped table. Android forked that app
+the end of this document, and to commit `5c1aa4dd4caea09de5e5a76f47199d21c4ba86eb` by the 2026-10-13 sync below): table tennis for 3 or 4 players on a cross-shaped table. Android forked that app
 from **Modern Ping Pong** (`C:\Projects\MinikPingPong`, commit `7f5dd0a844ef8986eacd662f4afbbc34c7e92f56`). The iOS starting
 point was `MultiPong/`, a copy of `Sources/ModernPong` that is compiled only into this target. The port keeps the Modern Ping
 Pong type names (`MPController`, `MPEngine`, `ModernPongView` and so on), so the shared `Sources/**` code still compiles
@@ -15,6 +15,73 @@ unchanged:
 
 The Android repositories were used read-only. Nothing in them was changed.
 
+## 2026-10-13 sync: Android 5c1aa4d
+
+Source: `C:\Projects\MinikCrossPong` at commit `5c1aa4dd4caea09de5e5a76f47199d21c4ba86eb` ("Refine multiplayer teams,
+character animation, menus and current store assets"). Its working tree is clean apart from an untracked `play-store` backup
+folder. `git diff 1908719..5c1aa4d` touches 775 files; most are store listings and screenshots, website pages, QA evidence,
+delivery folders and device tests. Those are not ported. The app files are listed with their hashes in "SHA-256 of the
+Android files used" below. Committed on branch `port/multipong-1013`.
+
+### Ported
+
+| Android | iOS |
+| --- | --- |
+| Team play, 2 v 2 on the cross table: `cross/CrossTeams.kt`; team scoring in `CrossReferee.kt`; raised pass (double tap), set and swipe smash, team lesson, tap targets, practice aim, `localTeam` and `raised` on the wire in `CrossEngine.kt` / `CrossState.kt`; the team lesson card in `CrossTutorial.kt`; `CrossText.kt` | `MultiPong/CrossTeams.swift` (`CrossTeams`, `CrossTeamFlight`), `CrossReferee.swift`, `CrossEngine.swift`, `CrossState.swift`, `CrossTutorial.swift`, `CrossText.swift` |
+| Reception assistance: `ReceptionAssist.kt` (shared slow-motion clock near the receiver), `ReceptionCamera.kt` (zoom); its sync in `CrossLink.kt`, `MatchLink.kt`, `FirebasePongRepository.kt` (`minikCrossPong/receptionPreferences/<uid>`), `PongRepository.kt`; the 2-player game in `ModernGame.kt` / `ModernCourt.kt` | `CrossReception` (`CrossTeams.swift`), `CrossReceptionCamera` (`CrossScene.swift`), `CrossLink.swift`, `MPMatchLink.swift`, `MPRepository.swift`, `MPEngine.swift` (`MPReceptionState`), `MPScene.swift`; settings in `MPXUI.swift` (`MPXReceptionSettings`) |
+| Online team rooms: `cross/CrossTeamRoom.kt`, `CrossOnlineTeamsActivity.kt`, `TeamLineup.kt`, `TeamLobbyCards.kt`, `TeamPlayerIdentity.kt`; `firebase/cross-team.rules.json` | `MultiPong/CrossTeamRoom.swift` (same root `minikCrossTeams`, protocols `cross-teams-v1` and `cross-teams-v1-lobby-v2`, same paths and JSON bodies, host-simulated), `CrossLineup` and `CrossTeamIdentity` in `CrossTeams.swift`, `MPXTeams.swift`; `Tests/MultiPongFirebase/rules/cross-team.json` and two rule tests |
+| Daily skill journey (30 stages, painted territory, stars and receipts) and the team match against house players: `cross/CrossPractice.kt`, `CrossJourney.kt`, `CrossJourneyActivity.kt`, `TeamVictoryView.kt`, `res/values*/journey.xml` | `MultiPong/CrossPractice.swift`, `MPXJourney.swift`, `MPXTeamVictory` in `MPXUI.swift`, `MPText.journeyTexts` |
+| Character animation: `PongPlayerAtlas.kt`, `assets/pong-poses/*` (12-frame front, side and rear sheets, walk sheets, `atlas.json`); whole-body players, the local player from behind, the upper body over the table | `MPXPoseAtlas` and the players in `CrossScene.swift`; assets `mpx_pose_<id>`, `mpx_pose_<id>_walk`, `mpx_pose_atlas` (PNG sheets copied as they are) |
+| Court: `cross/CrossCourt.kt` (sunset table, team territories, mesh nets, action camera, practice overlay, team scoreboard, tags), `MatchSceneLayout.kt` | `CrossScene.swift` (rewritten), `MPXMatchLayout` in `MPXUI.swift` |
+| Tuning: `CrossShots.kt` pace scale 2.2 → 2.45; `CrossHouse.kt` house players wait near the arm end | `CrossShots.swift`, `CrossHouse.swift` |
+| Menus and flows: `PlayActivity.kt`, `PrivateMatchActivity.kt`, `ModernActivity.kt`, `RoomBook.kt`, `KnockoutBracketView.kt`, `SettingSelector.kt`, `BotPicker.kt`, `ReadingPanel.kt`, `PongMenuMusic.kt`, `LocalizedActivity.kt` (sunset backgrounds) | `ModernPongView.swift`, `ModernPongRooms.swift`, `MPController.swift`, `MPPreferences.swift`, `MPXUI.swift`: remembered collapsible menu sections, the settings page (sounds, menu music, ball assistance; rating, sharing and feedback behind the grown-up question), team play in friendly games, the tournament save prompt, the remove button of the tournament list, the camera toggle and landscape hint, pose portraits as avatars |
+| Texts: `AppText.kt`, `values*/strings.xml` | `MPTextCatalog.swift` regenerated (912 rows), `MPText.swift` |
+| Art and sound: `cross_sunset_*.jpg`, `multiplayer_menu_landscape/portrait.png`, `team-celebration/*.webp`, `tournament_remove.webp`, `raw/pong_menu_remix.ogg`, the sunset logo | `mpx_sunset_*`, `mpx_menu_*`, `mpx_team_<id>` and `mpx_tournament_remove` (webp → PNG), `mpx_menu_music` (OGG → MP3, for `AVAudioPlayer`), the app icon (1024 px from `play-store/current/source/sunset-logo/master.png`, the source of Android's launcher icons) |
+| Unit tests: `CrossTeamTest`, `CrossNetworkTeamsTest`, `CrossSetGestureRegressionTest`, `CrossTeamPaceRegressionTest`, `ReceptionAssistTest`, `TeamLineupTest`, `CrossPracticeTest`, `CrossShotsTest` | `Tests/MultiPongTests/CrossTeamTests.swift` (25 tests in three classes), `CrossPracticeTests.swift` (9), `CrossShotsTests.swift` (base pace 0.98) |
+
+### Not ported
+
+- Store listings, screenshots, website pages, QA evidence, delivery folders, `androidTest` device tests, Gradle and manifest
+  changes, `BUILD_STATUS.md`.
+- `AdCoordinator.java` and `MonetizationActivity.java`: Android ads and the family reminders that replace them belong to the
+  Android build and to the shared family code.
+- Code and art that 5c1aa4d no longer uses: `CourtPlayerArt.kt`, `WholePlayerArt.kt`, `JourneyCelebration.kt`,
+  `assets/cross-art/*_directions.webp`, `assets/pong-art/whole-players.png`, `multiplayer_menu_players.png`.
+- `MenuMoreFrame.kt` (the "more below" cue of the menu): it is shared family UI on Android; it was not added to this app.
+- `firebase/tests/lineup.rules.test.cjs`: it reads the rules through absolute Windows paths of the Android machine.
+
+### Deliberate differences
+
+- The home-screen name stays "Multi Ping Pong" (`CFBundleDisplayName`, `project.yml` untouched): "Multiplayer Ping Pong" would
+  be cut off under the icon. Inside the app the title is Android's new "Multiplayer Ping Pong".
+- Online rooms (classic and team) stay off until this app has its `GoogleService-Info.plist`, as before;
+  `CrossTeamRoom.make` returns nil without Firebase.
+- The SpriteKit court draws Android's gradients and shadows with small textures and fills, so colours can differ slightly.
+- On the two-player link a failed read of the reception preferences is ignored, and the match goes on without slow motion.
+- Android's merged rules candidate at 5c1aa4d (`firebase-setup/merged-database-rules.json`) is older than its generator: its
+  `minikCrossPong` has no `receptionPreferences`, although the fragment has it and both apps write there, and its
+  `minikCrossTeams` differs from `cross-team.rules.json` in `lineup/.validate` and `phase/.write`. `rules/merged.json` is
+  still a byte copy of that candidate, and the audit checks `receptionPreferences` in the fragment. Android's README says not
+  to deploy a stale merged file.
+- `Tests/MultiPongFirebase/tests/crosspong.test.cjs`: its isolation test also allows the new `minikCrossTeams` root, as
+  Android's generator does; Android's copy of this test was not updated. Because the candidate is stale, its two `deepEqual`
+  checks fail, here and on Android, until Android regenerates the candidate. The two team-room rule tests load
+  `rules/cross-team.json` itself.
+- The old 828c6fc art (`mpx_bot_*`, `mpx_legs_*`, `mpx_app_icon`) was removed from `MultiPongAssets`: nothing uses it any more.
+  The `project.yml` comment that describes it was left as it is.
+
+### Audit
+
+`ANDROID_COMMIT` is now `5c1aa4dd4caea09de5e5a76f47199d21c4ba86eb`. New checks: the catalog parser follows the Android groups
+in order (912 rows); `values*/journey.xml` against `MPText.journeyTexts`; the `minikCrossTeams` root in the merged rules and
+`receptionPreferences` in the fragment; the team protocol name and root in `CrossTeamRoom.swift`; the 5c1aa4d assets.
+`python Scripts/audit-multi-pong.py` and `python Scripts/audit-multi-pong.py --android C:/Projects/MinikCrossPong` pass (230
+committed hashes at 5c1aa4d, 12 working-tree hashes). Every changed Swift file parses with tree-sitter-swift, and a scan finds
+no line break inside a one-line string literal (tree-sitter accepts those; swiftc does not). A line-by-line compile review of
+the changed Swift against the declarations it uses found four errors (a `camera` property that clashed with `SKScene.camera`,
+two `guard let` rebindings of a local in the same scope, line breaks in a string), all fixed. Nothing has been compiled or
+run: this Windows machine has no Swift toolchain.
+
 ## What changed in this repository (all uncommitted)
 
 | Area | Files |
@@ -25,7 +92,7 @@ The Android repositories were used read-only. Nothing in them was changed.
 | New room UI | `MultiPong/ModernPongRooms.swift` |
 | Rewritten | `MultiPong/MPMultiplayerModels.swift`, `MPKnockout.swift`, `MPController.swift`, `ModernPongView.swift` |
 | Edited | `MultiPong/MPRepository.swift`, `MPMatchLink.swift`, `MPEngine.swift`, `MPPreferences.swift`, `MPAds.swift` |
-| Resources (this app only) | `Resources/MultiPongAssets.xcassets`: `mpx_app_icon` plus the `mpx_legs_*` and `mpx_bot_*` sheets of amber, comet, flare, gaya, june, mia and moshiko, converted from the Android `webp` files to PNG |
+| Resources (this app only) | `Resources/MultiPongAssets.xcassets`: `mpx_app_icon` plus the `mpx_legs_*` and `mpx_bot_*` sheets of amber, comet, flare, gaya, june, mia and moshiko, converted from the Android `webp` files to PNG (all removed by the 2026-10-13 sync: the court now draws the pose sheets) |
 | Project | `project.yml`: one entry in the `MinikMultiPingPong` sources, `Resources/MultiPongAssets.xcassets` (resources build phase) |
 | Unit tests | `Tests/MultiPongTests/*.swift` (`MultiPongAppTests.swift` kept as it was) |
 | Firebase rules mirror | `Tests/MultiPongFirebase/**` |
@@ -315,11 +382,11 @@ npm run test:emulator
 
 ## SHA-256 of the Android files used
 
-Hashes are of the committed blobs at `1908719` (`git show 1908719:<path> | sha256sum`), the Android commit this port matches
-since the 2026-10-07 update; `python3 Scripts/audit-multi-pong.py --android <MinikCrossPong>` re-hashes them at its
-`ANDROID_COMMIT`. The original port read these files at `828c6fc`. 18 of the Kotlin sources below changed between the two
-commits, and all of those changes are ported: the six languages in the 2026-10-04 update, and the name badges of
-`CrossCourt.kt` in the 2026-10-07 update. The files added since `828c6fc` are listed at the end. The working copies on the
+Hashes are of the committed blobs at `5c1aa4d` (`git show 5c1aa4d:<path> | sha256sum`), the Android commit this port matches
+since the 2026-10-13 sync; `python3 Scripts/audit-multi-pong.py --android <MinikCrossPong>` re-hashes them at its
+`ANDROID_COMMIT`. The original port read these files at `828c6fc`, and the 2026-10-07 update at `1908719`. 38 of the files
+below changed between `1908719` and `5c1aa4d`; the 2026-10-13 sync at the top of this document says what was ported from
+them. The files added since `828c6fc` are listed at the end, those added since `1908719` last. The working copies on the
 Android machine have CRLF line endings, so their working-file hashes differ. `MinikPingPong@7f5dd0a` was used only as the diff
 base, to find what the fork changed, and is not listed.
 
@@ -328,68 +395,68 @@ Kotlin sources (all of app/src/main/java/com/appsbybros/minik/pingpong) (57 file
 ```text
 97e6c175c9bcfde4eb07e42150a9b5306e889cca8ed46df5c74446a49947a197  app/src/main/java/com/appsbybros/minik/pingpong/ActorPresentation.kt
 53411f3236c67bf7edfa5ff798e653332114c480b33d2dd4598cbbe14dfa3ca4  app/src/main/java/com/appsbybros/minik/pingpong/BotArt.kt
-f272fd9552687f324e69e45ca3dd15155b6e16181bab0a306ced482e9292ca29  app/src/main/java/com/appsbybros/minik/pingpong/BotPicker.kt
+6316c60e10bdc428d1c08a1898abf466a61fdee18d4652b1fa91a499742074dc  app/src/main/java/com/appsbybros/minik/pingpong/BotPicker.kt
 fdfebcabec8852c833c5532d0d0aab05b6603f42ddd20eca724d8482ce036238  app/src/main/java/com/appsbybros/minik/pingpong/GuideDialog.kt
 a237466a01c684e2af095fbba55c7e29d950eed58640485f6f56236e26de586a  app/src/main/java/com/appsbybros/minik/pingpong/HousePlayerPicker.kt
 b490e3c79d8b28314c6f1c966ea350a744e9bbcfdc92f3d5bae242bac9766989  app/src/main/java/com/appsbybros/minik/pingpong/HouseStrategy.kt
-11d393f2441b68fd6fcc28800dcb17dcf6d7c885ef2bf85a016f536fd4a436dc  app/src/main/java/com/appsbybros/minik/pingpong/LocalizedActivity.kt
+da4ab8e6825bb4b62a3336d4911f8484e914db0fb65050e93285739e37629f78  app/src/main/java/com/appsbybros/minik/pingpong/LocalizedActivity.kt
 f152395827b3e876c91159278332b85023acb71a3a6633cfd2f183af1ee02bec  app/src/main/java/com/appsbybros/minik/pingpong/MinikMotion.kt
-c0e2b0ec7d697a18590bf9eb6bd939967d7931b3ac54393a7fbb421bfdc5bfa1  app/src/main/java/com/appsbybros/minik/pingpong/ModernActivity.kt
+3363065ffdd13048f5c6ceda8555cdb011ba09c8aa503868c2153cc58b504d7e  app/src/main/java/com/appsbybros/minik/pingpong/ModernActivity.kt
 8c3d6bc0c7891ab7143223269b28057106d142cf7c26ceea7bfe4e4d5086ca25  app/src/main/java/com/appsbybros/minik/pingpong/ModernAudio.kt
-d670bf97dff1c82dff8574073e354024315eb40796ae9d363167103790b8654d  app/src/main/java/com/appsbybros/minik/pingpong/ModernCourt.kt
+c1634ba1dfac0b271e9be1a7ae1ed5f2d154b81610aea605593094ac23d9e6f1  app/src/main/java/com/appsbybros/minik/pingpong/ModernCourt.kt
 1dbfeb8393f3eaebc673d566819a1446742302633e85c387491b892a13460e48  app/src/main/java/com/appsbybros/minik/pingpong/ModernEngine.kt
 ba7e218ec5a9bb30448306d90d44ac14808d4648cd02c6f57f5c43962950ab45  app/src/main/java/com/appsbybros/minik/pingpong/ModernEvents.kt
-ba6b2b6fe56196466c7dcaa7d173e46e05f804d625b452cac83dc5f3f5227757  app/src/main/java/com/appsbybros/minik/pingpong/ModernGame.kt
+fd3d0001f76bd05107e332d75ec448704fdbddce900959742f099995954c4fa4  app/src/main/java/com/appsbybros/minik/pingpong/ModernGame.kt
 2dc6e620d4fffe644beff37ec3efc4cc7255b3036db01abd34c4a6c5407cb3e7  app/src/main/java/com/appsbybros/minik/pingpong/ModernTutorial.kt
-5bab7bec089943d870f98aef0daa7a28ecfb7904d0eb308673a826d216680660  app/src/main/java/com/appsbybros/minik/pingpong/NetworkState.kt
+226aa095b7d6b860125859a70e25125b1203789058659d870a58ca1daaf7ac44  app/src/main/java/com/appsbybros/minik/pingpong/NetworkState.kt
 948f4ce9e37c370e52ddfa428ee195aabbf0067aa169a2d0509554cda0370dc0  app/src/main/java/com/appsbybros/minik/pingpong/RallyVariation.kt
-17655c1f408bbf82082fe422606572e2b6f3390b3c67669678f84bee23fb8d2c  app/src/main/java/com/appsbybros/minik/pingpong/SettingSelector.kt
+ce317e516ea428a3c681a41f0653ffe6a58fd6d84450adf8cdad8469740f179a  app/src/main/java/com/appsbybros/minik/pingpong/SettingSelector.kt
 d657d63391fbd3002c38933b847fabb89a1bf0291c3a439a7a7402806782e5ed  app/src/main/java/com/appsbybros/minik/pingpong/SpriteSampling.kt
 d8791489501a20a8f3694bdd901c36b49915e6ac5e233cd767f088d15acb16cb  app/src/main/java/com/appsbybros/minik/pingpong/Tuning.kt
 37be9d496034a3b9aaaac518077d62146996270c88a50fc828d9972547a55d4a  app/src/main/java/com/appsbybros/minik/pingpong/VictoryConfetti.kt
-aab3d5bb11db884ef17c4f89a55cc419ebd1b9a57e40be7ec1c406541872a34a  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossActivity.kt
+9e688d9ce87d723772f6a3bffb5b66b3e23c64477643752476e8643dee95c30d  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossActivity.kt
 ba5bfe0e3638e7b18e753139197b573ed3f495ffa21c2c83bceff0df01acb0b5  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossBall.kt
-c576b74e0c527bf5f8ffa4ba8cbe7161f3be25c887caf2eccb4b4286f8d547e8  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossCourt.kt
-ed7ad7b40b8d38cb34e0ec1d276e8f69d912aaa07da89dfa9d018cffd9a66880  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossEngine.kt
+cf0b61f8125aab1c225154c05980f1a66dbac2c156d8ded13bf59712f49f13ec  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossCourt.kt
+78aafceec5f9563151bc47ba750c9a49be0f1fa45465520f8ad70a1714a8f10c  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossEngine.kt
 ecd8868d326a0d57dc672db01b04d5dc54ec86c62c6e8035a658d09ae8f03dcc  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossEvents.kt
 191f173cbbcb4c5ccb668dfec2dd9e47dd6ee073c233911496fc8ff584d77fa8  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossGeometry.kt
-5e6d5593367aa6eb92fac1c8cfec02c0afdcaef6b0c4efc6ff9bd5127e9e6b05  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossHouse.kt
-0f394b8ec83c3a4b7dbb0cce1a7a857fbc03ac499157686eed5b5206d1a0adfa  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossLink.kt
+fdbb018a560d4ff0f9ea4bf0e05610cc28eb693270d973871092dfa8a37703a0  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossHouse.kt
+e5047b87a691b317f54b625f98e2835371806c8482776d084308d6a42fe3e633  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossLink.kt
 a12f2a0ace4d02acc6fe8d12e8a3f73e7d9e9236db36f00070c66c274347cafd  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossMatch.kt
-6d6032dce2482e7b3f34c84826ba28bd5f8d9fd1b693de3822283be572e37017  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossReferee.kt
-b108a98176700ff7a3849fbfa4a394b7d6474094bd3f9a503f2c369673348f98  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossShots.kt
-b64dbe9ad8ec6f79107a8a7be40a4091bcdd262860ad50d5d97988b37b4686c0  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossState.kt
-880167f955a7cd77efc3e0ad879ea1a927522ea00f164817c71ac2245cb3b38c  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossText.kt
-096d63093ac587c68cbfd29dba68597a7d4ff4981d29a9a04d6eb4e55c70deda  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossTutorial.kt
+13287205caac3dc878c6f6100ff153e61bd6ee874fdc93cc3b8f981d5956255b  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossReferee.kt
+7e79424fbee5ad294e5d05e6d5149b88082634817233ac9007b30c507ec1ed04  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossShots.kt
+5bfb7533c6d8948f0dd6cda0179270da7bf770f1e3a902787adf4b66095541a2  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossState.kt
+7ab7eabcd361731124d839d9d299d47eaa3c7abe4ed803b7d9dd89cdde5cd5aa  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossText.kt
+d6e14e8d5f475287a1de9401385b752ed6bf26711b12ff87ad1794b1309171d8  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossTutorial.kt
 8e1908d4c70eef01554e4f791a682e5a348a3995a4585abbbb89af3fbd51a6cf  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/BotRoster.kt
 d1dee0c8e77dec54ba07f6974fc273b91a68b5e8e5ad3aeef7105614c908030d  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/CompletionText.kt
 4bb38dab3c7ec0ec8c6925a4fbaca0058d75d70cda96af09c707c878a433ae19  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/ControlChoice.kt
 02675891e0d31c9999770178c72b6d41a5271672c11737e73b3d91448ab3289a  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/CrossFixture.kt
 24f8cab6dd3db9d999b810ca7a9cb3537ca794dd164f940eee14e034583facc5  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/ExpandButton.kt
-d7051174bceb3c709b0613b4dec7c90c787a31df4872fcfcc50b6502af411329  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/FirebasePongRepository.kt
+c74bce80caad5be0042566cb90be695c4f9aee4d992ab966344b585f0e5f3fd6  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/FirebasePongRepository.kt
 7cf29d21153a42435b17a5009a1f9c1823be812639d0fe1999e5970f89a631c9  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/GroupMatch.kt
 5d413f5e06594dccdf35f52c2e7e8a1ef0025adc0fb1dd9f2b37aa7e23b57215  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/Knockout.kt
-e2f415768510976623400d941dde279c0752475aeab4781aceb4ab055354c56a  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/KnockoutBracketView.kt
+20faff32b86da634af584ec81d134187d3cb9379d171a679ea086bce6c8d250b  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/KnockoutBracketView.kt
 a06c683dc320e2dc049ffef10cb2c0fcf5b48d1277d8e97c950183958aa4afd2  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/LobbyAudio.kt
 9305c1faca41d216793755116ecd230971e23cf4caa5bc6fe478488120ac60e3  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/LobbyEvents.kt
-338a9ae241843c6d87110ff58d262ae8c5d2f999e6cec7633ce5390488dce874  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/MatchLink.kt
+fbbc314fc4097160a361da29d84180b75f3c379ccf74833b78db471c0b318d70  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/MatchLink.kt
 0bc051ebbbde053c2420ad3170ff5a5faddc4f1ed3e60486c3c5cd60b02a5f6a  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/MatchText.kt
 1558269ac8f2769cbc6cc9710912362a5395b87d39bd20218385700f50e258b3  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/MenuExpansion.kt
 5ba15a361ad0228240d11ccb6a8455ea11c0b18e9a61714b48aa513aa5451320  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/MenuScrollView.kt
 fb11e7c8107f69796da0c88582ff5c33156577596dc5bb3476f11a9cc45c823f  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/Nicknames.kt
-a7bc826e961bd7c84b3041861261daec89c211f8c0ce199bc864f0ba55d5be52  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/PlayActivity.kt
+4e3a90aa9347a2099d409d13a2508f05612682254fa691524a07914ff0077519  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/PlayActivity.kt
 9729c963acd3e00b624e340d25904eac4a34c4f5ef9bc79f54661a92241e4ed8  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/PongCodec.kt
 2035b4a3793920d8e6ee09b3e98cca3eb22367cf236ec4f780c79564d69dd416  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/PongModels.kt
-38fd94419a96512c56a01209ec2c2f2dcee6308a21019df11ac72357fbc57a92  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/PongRepository.kt
-d624c5cd5a2f098741d35ed6b7204764866c528c41bce94dab91e116f25017c0  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/PrivateMatchActivity.kt
-254ad8380f31fb7f494c5d3c24f089199714afd8cb0e02341dbe6b0dec4e2c34  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/RoomBook.kt
+f5f9c92512b0e55d4eca15fc85d15e684d834853120855619b7e65b89041a944  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/PongRepository.kt
+4d80ab957732610014301e744c93b7bb00c1e55cfe8498db851677b6305dbe6d  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/PrivateMatchActivity.kt
+1124fda7d746f636813f3ed6de8d73fbb1b0589551b98c94954b01ba5803d776  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/RoomBook.kt
 ```
 
 Resources (texts and converted art) (17 files):
 
 ```text
-2e5554dcc9f38d99310dbec5d544a1365266e56b09df3a0108613ce99182f8e9  app/src/main/res/values/strings.xml
-df77ba589c4d4bce3c871455bf6dfa37dd1d1a3d38109532fe14cd76bc56f712  app/src/main/res/values-iw/strings.xml
+23bd961ecd0545937beacf91435cea97969289da90cf35fdf6bd5555ef8d2680  app/src/main/res/values/strings.xml
+2f85b71485c1c53743ba49f7a1d30827c6637a9618980c7bba276fe4f8104bde  app/src/main/res/values-iw/strings.xml
 bb61cf126def0c0b2f1af4f34c3171b93770723f694dd42949e25229a97f5085  app/src/main/res/drawable-nodpi/app_icon_cross.webp
 9b18d3c8b42cd646453882eea3204b10c42c82bff4fdf308fc202d48530db90e  app/src/main/res/drawable-nodpi/bot_amber.webp
 e1d069ebd454d1eeb05263f29660b5d5ab22389291e07635e290718acf6b691a  app/src/main/res/drawable-nodpi/legs_amber.webp
@@ -457,7 +524,7 @@ c021b9838c671a06f2936fbda3785e968d86b7e362c465a1d895087a115d7484  app/src/test/j
 e7efabf7323de7155f923df0eb7fac64941eb7f52ee2c289ecd339cdbc76e992  app/src/test/java/com/appsbybros/minik/pingpong/cross/CrossNetworkTest.kt
 76865cedc6b81b0a4888ab3ca7a7b83be30d28bff86eaf0f62fbf7075b02ec4c  app/src/test/java/com/appsbybros/minik/pingpong/cross/CrossRallyTest.kt
 06e2012004d02e00bd6fc660d162e6834061ff414a81b055cbe357e73a014944  app/src/test/java/com/appsbybros/minik/pingpong/cross/CrossRefereeTest.kt
-a405b34c9e73f9910f29e8ebcb8ea8a33af026521452741f0f213b06c86291c5  app/src/test/java/com/appsbybros/minik/pingpong/cross/CrossShotsTest.kt
+378d638be22a47dd0d37b789215cac2005b83b3c65e43839c8285592ffc605c4  app/src/test/java/com/appsbybros/minik/pingpong/cross/CrossShotsTest.kt
 bdbd279ef7eaf6ba02f8ebaa62e669d7a059000caa0db61fde9203b0f55713e9  app/src/test/java/com/appsbybros/minik/pingpong/cross/CrossTestSupport.kt
 279934726be9876962d37b6a8ef63c2ab56a8461b4e8cf7e9cb054fe4b5b8949  app/src/test/java/com/appsbybros/minik/pingpong/multiplayer/GroupMatchAdversarialTest.kt
 0c91635db7026b8429c0a3aa7d18409d212ad4452780ae98028c37b43258d265  app/src/test/java/com/appsbybros/minik/pingpong/multiplayer/GroupMatchModelTest.kt
@@ -469,14 +536,14 @@ bdbd279ef7eaf6ba02f8ebaa62e669d7a059000caa0db61fde9203b0f55713e9  app/src/test/j
 Firebase rules, tests and configuration (9 files):
 
 ```text
-5b679aed52eec99c7704f4bbc6e58fae83dd58958cf626f239791a7958d8a93c  firebase/README.md
-91067b0b5f51b3cd70cf8959f4579037626f538933670b691ccfc03a1691e4b6  firebase/crosspong.rules.fragment.json
+6020a7fc40899509f4709d531f5b298d8cd1a63157705a133440d0270facda97  firebase/README.md
+fd4865faf4b97c2be6ca062ff9901fab59609579a2cbf473a9cd973b3bc8e9f8  firebase/crosspong.rules.fragment.json
 3d44d94a6cad6b9364fd76f6e1b21016e857dd96b54f9be303a0279041d4798f  firebase/package.json
-cdb470a1640237b0bc40eae0cdd688fda0238a2a33220aae5c2224139f3df231  firebase/tests/configuration.test.cjs
+c62426d2d972d7988d9383b0b63ae9506d45acef8733859daf528ca8a54b2199  firebase/tests/configuration.test.cjs
 e0fcfd485ad48079b395d62f6bed296535e4a60a864a28e540b3209d734ef8df  firebase/tests/crosspong.test.cjs
 911482b5e9da99ce3aa4a21a37b50a45f506a31bfc2785ee605c97a936ea9732  firebase/tests/pingpong-regression.test.cjs
 eb60d8c525bf443018dff3c1a420b3646dc323f06cd4240aea6d8c70fa48750b  firebase-setup/current-database-rules.json
-3b5c89c44c5bb4182fa4b6303fd5b4315578c134d0258e1df89a01591a9a27f8  firebase-setup/merged-database-rules.json
+4fa06ac66c97ed98a97d949213c19b241f7bc5d366a401fbeec0fc42078cb3f3  firebase-setup/merged-database-rules.json
 67ee6a435147a9802fce092951a1a5a60934c1ea77536fd34f6d833009371131  firebase.emulator.json
 ```
 
@@ -489,11 +556,11 @@ Design reference (1 files):
 Added since `828c6fc`: the six languages and their tests (used by the 2026-10-04 and 2026-10-07 updates) (7 files):
 
 ```text
-014d028f43646b74540446db9e362b86838bafb5f20cee7b271d737bbf99b9b9  app/src/main/java/com/appsbybros/minik/localization/AppText.kt
-3821a4b7a57dbec13f8aa1c52f8731a8ea80719e1a9358828d3be1e65877859e  app/src/main/res/values-ar/strings.xml
-b600929ea747efc1efc498c0a8a349a4490f71a80cac5e3d5fc1c48c95a79688  app/src/main/res/values-es/strings.xml
-7ac059ece62f176afb92e6987b6c5270c72aebc7d3a032146ca6166aa5a11a5b  app/src/main/res/values-hi/strings.xml
-c022eb62e3ecba2171b7b9577393fe1a630082114613a777cc2e14b41f7e563e  app/src/main/res/values-nl/strings.xml
+78fce8bd16b0b9f1c2faeffff647ef9007cc2eee37044d13595ce12f7031b79e  app/src/main/java/com/appsbybros/minik/localization/AppText.kt
+4bb329f4df53ed0283dffb53d3b2f645990b6f3a27ddfa7716b7afce1bcd9030  app/src/main/res/values-ar/strings.xml
+18383d07348fa27fc1a4eb5ed53cd67a480ce1cbf80ae24b6096b663df513662  app/src/main/res/values-es/strings.xml
+62bb4dff10e41742ce4e35d889d633bc08b8dc52f40cdcd80356c8edd621ff2c  app/src/main/res/values-hi/strings.xml
+dcbbc1c3d0c3b7f20a224f7157ac29d2f71d0fbb514d18319161e5bea8fb7d43  app/src/main/res/values-nl/strings.xml
 c0ecbdbe6f8fe561f99475d8e1b5f704cbfeaa0aaa9abac562a5e41afb07e816  app/src/test/java/com/appsbybros/minik/localization/LanguageTest.kt
 1eb8a56ec0b81aebe996dc239fb4ea20f1a74c0fa71bc78ebc33e13556ab3f30  app/src/androidTest/java/com/appsbybros/minik/pingpong/LanguageDeviceTest.kt
 ```
@@ -501,9 +568,116 @@ c0ecbdbe6f8fe561f99475d8e1b5f704cbfeaa0aaa9abac562a5e41afb07e816  app/src/test/j
 Reviewed and not ported (Android purchases and build, and the QA notes that describe the 2026-10-06 changes) (3 files):
 
 ```text
-e1afbf0d5a71a7c320a5f414c96c218919c9c971e3c6957261fe5a62ca29dcd9  app/src/main/java/com/appsbybros/minik/monetization/MonetizationActivity.java
-d909ad7fd7f08f5d5de6c230efccd09400613c761afd1e205d0998a7a0b76cad  app/build.gradle.kts
+2c163794345244e6bcc34677d0bf8c148da219c0cd9b31c99639e7125b7d984c  app/src/main/java/com/appsbybros/minik/monetization/MonetizationActivity.java
+354d30f1df807d6e72ceb32cf724642ee4c228b22a68708b587ae8c8c10eb2a9  app/build.gradle.kts
 9c48a800a781bb966749a054481e6560552d20294d41f0f94f345d273f16df97  docs/qa-2026-10-06.md
+```
+
+Added since `1908719`: Kotlin sources of team play, reception assistance, the journey, online team rooms, the pose atlas and the menus (2026-10-13 sync) (17 files):
+
+```text
+c61f588ff5321b3f2de7168cb51e16a8716b8f0ec186811b5a60bbe0ba2b6f9b  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossTeams.kt
+859906d9130809ab5ef698b8ee4a75335164f69b79fd8b4cef2d3ae125276113  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossTeamRoom.kt
+4c871645dc170426d707032bd92187f3cf65841ea657ebca5ff5dab938e1cf8c  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossOnlineTeamsActivity.kt
+afb9bd8c2ad1e4c8729c6bac38aa02eda710dbc66446232fbfc025fba94e38c1  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossPractice.kt
+bcddf7fd0bdc9eaa06d28d08c864316f0ae810f596c4b93f415035294271354c  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossJourney.kt
+47ba5530da3a4bab7727b6278ea79fc6a42408029c5bc48f42268eeb18c45d77  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossJourneyActivity.kt
+9ba2733cabd83de432c4a82be580a49fe4a7837256c85f08bfb4a9f049704abe  app/src/main/java/com/appsbybros/minik/pingpong/ReceptionAssist.kt
+4ec3a3d4efae8e6c4ef49b13464a9e8874673351bf55ee56eefc210675e9e00c  app/src/main/java/com/appsbybros/minik/pingpong/ReceptionCamera.kt
+7bbb147f2e0b0efd423184587b8921e8c9bb8c879d2f7036ecd55b22ba771da4  app/src/main/java/com/appsbybros/minik/pingpong/TeamLineup.kt
+530efdf254dd46f0d1ba28c312580a3d8c4c81eddf8bd743e606fc2dc4b2eead  app/src/main/java/com/appsbybros/minik/pingpong/TeamLobbyCards.kt
+1e310e753da895eb76bd2bd32c5ec8067185c91849ae9963148e607a4ff7be38  app/src/main/java/com/appsbybros/minik/pingpong/TeamPlayerIdentity.kt
+7888cf435f57e8f3d5135a1dc4f0025fc4061e203da6d5e7662e024020dc4944  app/src/main/java/com/appsbybros/minik/pingpong/TeamVictoryView.kt
+c7cb5c5d7b9e746ba089b46cfcd60938084db28ae22812cece850a64430c4d96  app/src/main/java/com/appsbybros/minik/pingpong/PongPlayerAtlas.kt
+67684b07b830d98fdd4f2806de0c4bfea5210e320e0ace6b66c35a95d0c320d9  app/src/main/java/com/appsbybros/minik/pingpong/MatchSceneLayout.kt
+7134b64f53f6583b4e635e6641f4ab243bc38b6c110c9f3b902b0f18234e00e5  app/src/main/java/com/appsbybros/minik/pingpong/PongMenuMusic.kt
+1f18b6e83c7151ba07eab66b4d9990482fb71fbeaa25c5423bcc869d089f7354  app/src/main/java/com/appsbybros/minik/pingpong/ReadingPanel.kt
+a612381b5fc6d679f03b87773a70e1b471f4e4b4604f5edcb94aaa6392edc149  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/MenuMoreFrame.kt
+```
+
+Added since `1908719`: texts, art and sound (2026-10-13 sync; the PNG sheets are copied as they are, the webp and OGG files converted) (47 files):
+
+```text
+58a9ff2ecf8e42f76c784aba5fba7bfa1db58883afcf63a9958c578f507bce83  app/src/main/res/values/journey.xml
+6f01d1cbeea8f2ab24bdce84e7116a882244df24e7d1a11a022f785c488895f1  app/src/main/res/values-iw/journey.xml
+af0bd24eed1b55296e27b86b4995ff0ab7ace178ef469fca9f43fffb420112a6  app/src/main/res/values-ar/journey.xml
+9c2df7652815e63e930900712eb34802c10d53500c9d978cd4d077537bf2f783  app/src/main/res/values-es/journey.xml
+527eebe33f86df6d043ed61bc62e4fea929d5d1d12f9cebd26f267a00bc4d469  app/src/main/res/values-hi/journey.xml
+65f206fb094df4a5aad1eb363f0bf69c22008beb9eb629c18395f1bd389ca0fa  app/src/main/res/values-nl/journey.xml
+8dbc200a989971afd225b170dbaec79bf2ca6519de654253282d97f3bb7aef8f  app/src/main/assets/pong-poses/atlas.json
+3c1f5ecad2c94d9f3d64f95b1f4bdb3d79480f64745f6c15e537ff2a82f47713  app/src/main/assets/pong-poses/amber.png
+cc8472c12ab4041e455a14395b5ba1f58211f63be05daea53d640dcc43153409  app/src/main/assets/pong-poses/amber-walk.png
+664985915ce4f036fcac233db6a08c2a7643e16cd6e14ed2726038804041d3ef  app/src/main/assets/pong-poses/coach67.png
+bd71241194b35eb3531175d3f8fe2a65bc93a27760d54b0a750c7490a9dc0195  app/src/main/assets/pong-poses/coach67-walk.png
+479cd285a1cb3fb5274a92e2ed2e746af43033ca413cb5247ca11e8591e1def2  app/src/main/assets/pong-poses/comet.png
+8fd338c73bedf2870514f627fbbae6a7712f1c70273a807a61bc4d8930cabaae  app/src/main/assets/pong-poses/comet-walk.png
+1ecf9039af7f5e1fe8c3c8b030d83d4122b46c54be50e4fa673cd41268672f9c  app/src/main/assets/pong-poses/flare.png
+2da698edc69452f216faa687f960111100bf8833f8def5e9f160bc06b3d580df  app/src/main/assets/pong-poses/flare-walk.png
+d3cf14ffd50a682a4d7fa4a6f1757974ac91d979d0bd3fd147afe9cd2c057acb  app/src/main/assets/pong-poses/gaya.png
+3fa96c08832691db7ca28976b06c54c6d78c13e83efec4f96f03cd72755e25dd  app/src/main/assets/pong-poses/gaya-walk.png
+e5612bd220dec893be1d8968f860cc6232233166e9fcdc0db225c5a867fe8b9c  app/src/main/assets/pong-poses/june.png
+f9d1888c987afce996a2e7ba96f574ffddf5a8b0f3bea9f4d3d98409d209091a  app/src/main/assets/pong-poses/june-walk.png
+eb4b263f6c965055d6e23c9b4c0236dc756610624a2a2fd4d2aaa51293996027  app/src/main/assets/pong-poses/kyra.png
+8f43bf98faa519a9c27bc04af584ae63da2f09d313e377c6caf2cb3dcb0f7dc1  app/src/main/assets/pong-poses/kyra-walk.png
+892d56c0e544cef40919683038386485977f7f1b85e98d3922a30827be80f4be  app/src/main/assets/pong-poses/mia.png
+5b5d1d6af97a454d188f23906ae38fbff5bbe3e2a694050beabdd1b4997eabc5  app/src/main/assets/pong-poses/mia-walk.png
+4a1f00c99ef332ea160d7edba7cfda133d8711b4f3d174f554e181fc3d508e9f  app/src/main/assets/pong-poses/minik.png
+ac4a2fbff3723b32dd5dd0c956859319c6335802dcd3d831ec0d30f87d6ed0be  app/src/main/assets/pong-poses/minik-walk.png
+7948a2f53a70c8b73d94f28a21173ff403ea55586cc73c8b56b8f897aedd3636  app/src/main/assets/pong-poses/miniko.png
+f69ae0daaa57eb3a91c82961017d327987879227525a9a623842f479af83bd65  app/src/main/assets/pong-poses/miniko-walk.png
+0420f1eda907bfd73fd9f03c055c0201feca4f52ca6f052ffd23279d16b85bc7  app/src/main/assets/pong-poses/moshiko.png
+724ea3960799cd506775e84e905c6d2fe12e51159dbc597854ac8d2e8a3a41f2  app/src/main/assets/pong-poses/moshiko-walk.png
+61491ac078dc9cec53fff05302a57a56ba9aba23a53fc6384af5a14a4f722daf  app/src/main/assets/team-celebration/amber.webp
+14de8efc2a86d0ebed5d089dad7b0822efc4789b7210470ff6fbb8471e762cd7  app/src/main/assets/team-celebration/coach67.webp
+cdff140135fcd524b7d6bc839df9e2cbe076468ed1e6517ee55f7cb7c59bd3a5  app/src/main/assets/team-celebration/comet.webp
+4fca70b0916e0bddd3caee74ee5f34810e52ce91422806d9699b9eff24d2fd7c  app/src/main/assets/team-celebration/flare.webp
+11807974e2e073833ccf67ad77a8ff4eb00b5176f0d1a2ab9e1694c4c3fa6dbd  app/src/main/assets/team-celebration/gaya.webp
+23fbe421ea99f8b577fe7b5cfede2d5875b98bcace6259de7d2f041ee9b317c0  app/src/main/assets/team-celebration/june.webp
+2c0619fc335a03a1143e4baec109ea3da1f273784fcf24602b68bd2096e0b262  app/src/main/assets/team-celebration/kyra.webp
+cd44de786acae57914bb68b10c64fe1d15086c138d3dcba8d4332abb2424b043  app/src/main/assets/team-celebration/mia.webp
+ab316eabae11ed208d69a86e8a3f40f76b96026871d40822b8fcd2d0098ae811  app/src/main/assets/team-celebration/minik.webp
+9ddb214fc04ceba95926ef5a583682ab8dc6a13171d4c5b68c57ec45f97857d9  app/src/main/assets/team-celebration/miniko.webp
+10e800ea877fcf85e9b70acb16a72d021ad0c00565943c1cd941cadf76f0cfc6  app/src/main/assets/team-celebration/moshiko.webp
+1ec45c8455648af3e065a04f3d07433a307cf15a7112795e9e4be5c29241d12a  app/src/main/res/drawable-nodpi/cross_sunset_landscape.jpg
+ff9fd477a8ea1244275f5b7944df3597a8abc50dbb38b347fd50f6737c77e750  app/src/main/res/drawable-nodpi/cross_sunset_portrait.jpg
+2c61cde99ba7c12113f7cf5c6ade02aac9de8e9ecd3ac10e8fd889a9cac57f63  app/src/main/res/drawable-nodpi/multiplayer_menu_landscape.png
+6ed964a08e423029fec6bdb00fbb2c549cd3eea558e5cf5b5627b18898be5338  app/src/main/res/drawable-nodpi/multiplayer_menu_portrait.png
+b5c1826926860dd2398f4884fad3b1732473e1c800dcf9aa2257ab4d212888ed  app/src/main/res/drawable-nodpi/tournament_remove.webp
+96b0411395bdde1414b17996319f2eb603c4f7b34dd57cd23ff488636e5b4495  app/src/main/res/raw/pong_menu_remix.ogg
+92b58e57217b3a793d21805e51adad4d8dbada6ab7530c85494c2d502a9ca420  play-store/current/source/sunset-logo/master.png
+```
+
+Added since `1908719`: unit tests (2026-10-13 sync, ported) (7 files):
+
+```text
+bb32734e95113b97f18b556b377571b12c87aab1cee228d76c87898c211c41fa  app/src/test/java/com/appsbybros/minik/pingpong/cross/CrossTeamTest.kt
+4f95f2197e90b98a02f6ab271b9044db7425b2e5d853f8ecbe001e50426e3edc  app/src/test/java/com/appsbybros/minik/pingpong/cross/CrossNetworkTeamsTest.kt
+91ecd036302f753bf74abf63869e864e7616965d64decbfb4b237da78723b63a  app/src/test/java/com/appsbybros/minik/pingpong/cross/CrossPracticeTest.kt
+b5587170669d187637b2022754943a5236473aa51fd162226adb8d77b80387f1  app/src/test/java/com/appsbybros/minik/pingpong/cross/CrossSetGestureRegressionTest.kt
+659c5256f76761753ce254be236a7580dc71404ac0ac9bcc9ac9b7ea5fcee6a1  app/src/test/java/com/appsbybros/minik/pingpong/cross/CrossTeamPaceRegressionTest.kt
+2d348a61ecd97d3a376155938ddf512b6a48026ca3f61b1e3c00bc76aeb855a2  app/src/test/java/com/appsbybros/minik/pingpong/ReceptionAssistTest.kt
+52e606253fe53848c44c2646190d3345115889dacecbafbda8e2d23b3a5bdac7  app/src/test/java/com/appsbybros/minik/pingpong/TeamLineupTest.kt
+```
+
+Added since `1908719`: Firebase team-room rules and tests (2026-10-13 sync; `lineup.rules.test.cjs` reviewed, not mirrored) (4 files):
+
+```text
+deebc153200097b2dda4145019c3d44269318495d1c836924d706e0716229535  firebase/cross-team.rules.json
+a25de0a2742c3aa820a28e3cd5e64de00cae80c0118f62b5a4b77647feb43204  firebase/tests/cross-teams.test.cjs
+1926e12b0287d7ac2c7e5f1ee801bb385a27deec6ed1fd2972a1b673ddbdc4b9  firebase/tests/room-identities.test.cjs
+1cc2f5642212e4d43478504694184a004918b48e5512c7cef66050490560b263  firebase/tests/lineup.rules.test.cjs
+```
+
+Added or changed since `1908719`, reviewed and not ported (unused art code, Android ads and family messages, Android build) (2026-10-13 sync) (7 files):
+
+```text
+7cb19b114fcd93a8964db88630c5b8797ba245090281573ff2211728d57870ce  app/src/main/java/com/appsbybros/minik/pingpong/CourtPlayerArt.kt
+1b17652f5dac7d4d72e08aa3ffbeefdc40ad7728ababbc3cddcadc860e2e451f  app/src/main/java/com/appsbybros/minik/pingpong/WholePlayerArt.kt
+41aa34cfbbbef03fee9a4a61b273a4e69df6f4a9175016e05668dfa97df62f2b  app/src/main/java/com/appsbybros/minik/pingpong/JourneyCelebration.kt
+dc7d18cefe6bde7f0752eefc0ceb8d5ca341093c151fd2304804b63562a4715b  app/src/main/java/com/appsbybros/minik/monetization/AdCoordinator.java
+dcda02812781b23fa8f4c7be866432194826e2b2d766bfbe6ab19bd676408e4a  app/src/main/AndroidManifest.xml
+d550e6adda3d28d21c5844cfe9781a01b0f29dbadf30ecf6cc6c95cd8ff4391d  firebase/generate-rules.cjs
+7ae4c84dd32031070ff5e81a373f376b07fea23723c472159be2335537413796  BUILD_STATUS.md
 ```
 
 ## Update 2026-10-04: six languages (Android working tree on 828c6fc)
@@ -705,16 +879,26 @@ were only read.
 
 Nothing has been compiled or run: this Windows machine has no Swift toolchain.
 
-### SHA-256 of the Android working-tree files used (2026-10-07)
+### Android working-tree files used (2026-10-07)
 
-The files that the audit reads from the Android working tree (the catalog source and the `strings.xml` files it compares), as
-they are on disk, `sha256sum <path>`. All but `values/strings.xml` have CRLF line endings.
+The on-disk hashes that this update recorded were replaced by the 2026-10-13 sync: they are at the end of this document.
+
+## SHA-256 of the Android working-tree files used (2026-10-13)
+
+The files that the audit reads from the Android working tree on `5c1aa4d` (the catalog source, the `strings.xml` files and the
+`journey.xml` files it compares), as they are on disk, `sha256sum <path>`. All have CRLF line endings.
 
 ```text
-7bba0d0c8ee52aaa13f08d8c8a8281381224d7c0a0985c05d6cb5dd89e7b5f94  app/src/main/java/com/appsbybros/minik/localization/AppText.kt
-2e5554dcc9f38d99310dbec5d544a1365266e56b09df3a0108613ce99182f8e9  app/src/main/res/values/strings.xml
-5542d7312af8247dc1bd1cbed881d278b182be69f8c9ac8c31af8b90877937ac  app/src/main/res/values-ar/strings.xml
-64a2f5c5dba04cb74cab39a828bde4923f83f9f7c771abeeb246d707aca89fbc  app/src/main/res/values-es/strings.xml
-485efd28216ebd0699b0b31549f95c11ebff5b7deb6e6864d97eb0216bc4e864  app/src/main/res/values-hi/strings.xml
-9e251cb43c18f3004829b1176332245ba23a3e0c1c9f94550b627ddb13da0da1  app/src/main/res/values-nl/strings.xml
+b29f4ad75c40dfdc0a68f46cba4e49e36e8c25b873f4d242b9f5a98cd2ae27de  app/src/main/java/com/appsbybros/minik/localization/AppText.kt
+645a460fc1dcd1887382e1008e27c0ca52ca0a08bf02d8ad3014abcfbf42c499  app/src/main/res/values/strings.xml
+bc4081936b6ffab846eb9f97fe34e770a76939ead1694f001972aebdaf2300c0  app/src/main/res/values-ar/strings.xml
+f05df446c7442e08358a943618438dbd6ecd26ad0645402a401bada51a64f553  app/src/main/res/values-es/strings.xml
+fa85d402a42b1d09e7cb0bfe6c6097438be919561ecbaadd1457c772a458f533  app/src/main/res/values-hi/strings.xml
+bf69da158d624f8900fcb9897b131d24b8391856a461f55d01e87acb69ab21c1  app/src/main/res/values-nl/strings.xml
+1d697c98905cef94d93a6abf968aa0f7e6cd4a92dbde946c6879f57dbf791186  app/src/main/res/values/journey.xml
+b566fe5cbeb7be75037ac0f763085cee750e4193d9c081e98d4eb58b88d1abb8  app/src/main/res/values-iw/journey.xml
+b87334923e2cfe44492ac5b829cff165157ea9dfff859fcb9b1c8ce282d3c807  app/src/main/res/values-ar/journey.xml
+74b3b3d17ec1fa5667a122612ab18e9c40f95cf8b113eb8c86b13f8bfd5a20ce  app/src/main/res/values-es/journey.xml
+30d0d353e7ba817ea40bfa8abbb1763c948d6e4008459f5371a5804b83a788a3  app/src/main/res/values-hi/journey.xml
+be595abdc338a2f48b75760ed718a42dcbb8843d68e4ee15a8842a932bbcf10e  app/src/main/res/values-nl/journey.xml
 ```

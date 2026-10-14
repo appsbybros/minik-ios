@@ -24,12 +24,15 @@ struct SplashLabel: View {
     }
 }
 
-/// Android `button(text, color)`: 54 high, bold dark text; "Back" is always pink with white text.
+/// Android `button(text, color)`: 54 high, bold dark text on the raised sky face (`FamilySkyDrawable`);
+/// "Back" is always pink with white text. `top` / `bottom` are the margins (5; room actions use 16 / 8).
 @MainActor
 struct SplashButton: View {
     let title: String
     var color: UInt32 = 0xffb4f6e7
     var height: CGFloat = 54
+    var top: CGFloat = 5
+    var bottom: CGFloat = 5
     let action: () -> Void
 
     var body: some View {
@@ -43,22 +46,29 @@ struct SplashButton: View {
                 .minimumScaleFactor(0.8)
                 .padding(.horizontal, 10)
                 .frame(maxWidth: .infinity, minHeight: height, maxHeight: height)
-                .background(RoundedRectangle(cornerRadius: 18).fill(SplashPalette.color(back ? 0xffe91e63 : color)))
-                .shadow(color: Color.black.opacity(0.22), radius: 2, x: 0, y: 1)
+                .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .padding(.vertical, 5)
+        .buttonStyle(SkyButtonStyle(color: back ? 0xffe91e63 : color, radius: 18, shadow: true))
+        .padding(.top, top)
+        .padding(.bottom, bottom)
     }
 }
 
-/// Android `page(title)`: dark blue, the lagoon at 43% opacity, a scrolling padded column.
+/// Android `page(title)`: dark blue, the lagoon at 43% opacity, a scrolling padded column, centred
+/// and narrower in a landscape window (`FamilyReadingPanel`). The home page adds the reserved
+/// "More below" cue of its menu sections (`FamilyMoreFrame`).
 @MainActor
 struct SplashPage<Content: View>: View {
     let title: String
+    let moreCue: Bool
     let content: Content
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var moreBelow = false
+    @State private var scroll = SplashScrollState()
 
-    init(_ title: String, @ViewBuilder content: () -> Content) {
+    init(_ title: String, moreCue: Bool = false, @ViewBuilder content: () -> Content) {
         self.title = title
+        self.moreCue = moreCue
         self.content = content()
     }
 
@@ -75,17 +85,64 @@ struct SplashPage<Content: View>: View {
                         .opacity(0.43)
                 }
             }
-            ScrollView {
+            ScrollViewReader { proxy in
                 VStack(spacing: 0) {
-                    SplashLabel(text: title, size: 28)
-                    content
+                    GeometryReader { geo in
+                        ScrollView {
+                            VStack(spacing: 0) {
+                                SplashLabel(text: title, size: 28)
+                                content
+                            }
+                            .padding(.horizontal, 22)
+                            .padding(.top, 10)
+                            .padding(.bottom, 24)
+                            .frame(width: SplashPageLayout.readingWidth(geo.size))
+                            .frame(maxWidth: .infinity)
+                            .id(SplashPageLayout.contentID)
+                            .background {
+                                if moreCue {
+                                    SplashFrameProbe { rect in
+                                        scroll.content = rect
+                                        measured()
+                                    }
+                                }
+                            }
+                        }
+                        .background {
+                            if moreCue {
+                                SplashFrameProbe { rect in
+                                    scroll.viewport = rect
+                                    measured()
+                                }
+                            }
+                        }
+                    }
+                    if moreCue {
+                        SplashMoreCue(visible: moreBelow) { scrollFurther(proxy) }
+                    }
                 }
-                .padding(.horizontal, 22)
-                .padding(.top, 10)
-                .padding(.bottom, 24)
             }
         }
         .environment(\.layoutDirection, AppText.rtl ? .rightToLeft : .leftToRight)
+    }
+
+    /// Android `canScrollVertically(1)`.
+    private func measured() {
+        let below = scroll.viewport.height > 0 && scroll.content.maxY > scroll.viewport.maxY + 1
+        if below != moreBelow { moreBelow = below }
+    }
+
+    /// Android `smoothScrollBy(0, 65% of the height)`: the content's anchor at `offset / travel`
+    /// lands at the same point of the visible area.
+    private func scrollFurther(_ proxy: ScrollViewProxy) {
+        let viewport = scroll.viewport
+        let content = scroll.content
+        let travel = content.height - viewport.height
+        if travel <= 1 { return }
+        let target = min(travel, max(0, viewport.minY - content.minY + viewport.height * 0.65))
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
+            proxy.scrollTo(SplashPageLayout.contentID, anchor: UnitPoint(x: 0.5, y: target / travel))
+        }
     }
 }
 
@@ -123,7 +180,7 @@ struct SplashDropdown: View {
                 }
                 .frame(minHeight: 54)
                 .frame(maxWidth: .infinity)
-                .background(RoundedRectangle(cornerRadius: 18).fill(SplashPalette.color(0xffcaeaff)))
+                .background(SkySurface(color: 0xffcaeaff, radius: 18))
             }
             .padding(.bottom, 12)
         }
@@ -138,9 +195,18 @@ enum MenuColors {
     static let advanced: UInt32 = 0xffffe082
     static let link: UInt32 = 0xff2869bd
     static let ink: UInt32 = 0xff282d4e
+
+    /// Android `FamilyMenu.readableProfile`: light profile text turns ink on the pale section panel.
+    static func readable(_ color: UInt32) -> UInt32 {
+        let r = Int((color >> 16) & 0xff)
+        let g = Int((color >> 8) & 0xff)
+        let b = Int(color & 0xff)
+        return (r * 299 + g * 587 + b * 114) / 1000 > 170 ? ink : color
+    }
 }
 
-/// Android `FamilyMenu.section`: a bordered home section with a white title and a − / + sign that opens and closes it.
+/// Android `FamilyMenu.section`: a raised pale panel (`FamilySkyDrawable(true)`) with a 2-point border in
+/// the section colour, an ink title and a − / + sign that opens and closes it.
 @MainActor
 struct MenuSection<Content: View>: View {
     let title: String
@@ -163,15 +229,15 @@ struct MenuSection<Content: View>: View {
                 HStack(spacing: 0) {
                     Text(title)
                         .font(.system(size: 19, weight: .bold))
-                        .foregroundColor(.white)
-                        .shadow(color: SplashPalette.color(0xff18243a), radius: 1, x: 0, y: 1)
+                        .foregroundColor(SplashPalette.color(MenuColors.ink))
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Text(open ? "−" : "+")
                         .font(.system(size: 26))
-                        .foregroundColor(.white)
-                        .shadow(color: SplashPalette.color(0xff18243a), radius: 1, x: 0, y: 1)
+                        .foregroundColor(SplashPalette.color(MenuColors.ink))
                         .frame(width: 42, height: 48)
                 }
+                .padding(.horizontal, 6)
+                .padding(.vertical, 4)
                 .frame(minHeight: 54)
                 .contentShape(Rectangle())
             }
@@ -185,12 +251,12 @@ struct MenuSection<Content: View>: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 4)
-        .overlay(RoundedRectangle(cornerRadius: 18).stroke(SplashPalette.color(color), lineWidth: 2))
+        .background(SkySurface(color: color, radius: 18, panel: true, strokeWidth: 2, strokeColor: color))
         .padding(.bottom, 14)
     }
 }
 
-/// Android `FamilyMenu.style`: a section's button in the section colour with dark ink and 15 dp corners.
+/// Android `FamilyMenu.style`: a section's button, raised in the section colour, with dark ink and 15 dp corners.
 @MainActor
 struct SectionButton: View {
     let title: String
@@ -211,10 +277,9 @@ struct SectionButton: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 12)
                 .frame(maxWidth: .infinity, minHeight: 54)
-                .background(RoundedRectangle(cornerRadius: 15).fill(SplashPalette.color(color)))
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(SkyButtonStyle(color: color, radius: 15))
         .padding(.top, 4)
         .padding(.bottom, 8)
     }
@@ -283,6 +348,9 @@ struct SplashRootView: View {
             if controller.pausePresented {
                 PauseDialog(controller: controller)
             }
+            if controller.cupExitPresented {
+                CupExitDialog(controller: controller)
+            }
             // Under the toasts: a wrong grown-up answer for a card link shows its toast above the card.
             FamilyOverlay()
             ToastOverlay(controller: controller)
@@ -328,6 +396,7 @@ struct SplashRootView: View {
         case .progress: ProgressPage(controller: controller)
         case .ranks: RanksPage(controller: controller)
         case .play: PlayPage(controller: controller)
+        case .playOptions: PlayOptionsPage(controller: controller)
         case .wallOptions: WallOptionsPage(controller: controller)
         case .journey: JourneyPage(controller: controller)
         case .journeyResult: JourneyResultPage(controller: controller)
@@ -378,7 +447,8 @@ struct ToastOverlay: View {
     }
 }
 
-/// Android `pauseMenu()`: a GameDialogBuilder list (Continue / Return to menu); cancelling continues.
+/// Android `pauseMenu()`: a GameDialogBuilder list (Continue / Return to menu) on the white sky dialog
+/// panel (`FamilySkyUi.dialog`, 24 dp corners); cancelling continues.
 @MainActor
 struct PauseDialog: View {
     @ObservedObject var controller: SplashController
@@ -398,7 +468,7 @@ struct PauseDialog: View {
                 item(tr("Return to menu", "חזרה לתפריט")) { controller.returnFromPause() }
             }
             .padding(16)
-            .background(RoundedRectangle(cornerRadius: 12).fill(SplashPalette.color(0xfff7fafc)))
+            .background(SkySurface(color: 0xffffffff, radius: 24, panel: true))
             .padding(.horizontal, 22)
         }
         .environment(\.layoutDirection, AppText.rtl ? .rightToLeft : .leftToRight)
@@ -427,7 +497,7 @@ struct HomePage: View {
         let learn = tr("Start & learn", "מתחילים ולומדים")
         let play = tr("Play", "משחקים")
         let advanced = tr("Advanced", "מתקדם")
-        SplashPage("MINIK SPLASH") {
+        SplashPage("MINIK SPLASH", moreCue: true) {
             if let logo = ArtStore.shared.logo {
                 Image(uiImage: logo)
                     .resizable()
@@ -441,8 +511,8 @@ struct HomePage: View {
             MenuSection(learn, color: MenuColors.learn, open: c.sectionOpen(learn, 0), toggle: { c.toggleSection(learn, 0) }) {
                 SectionButton(SplashLaunch.proEdition ? tr("Learn to play with Mia", "ללמוד לשחק עם מיה") : tr("Learn to play with Minik", "ללמוד לשחק עם מיניק"),
                               color: MenuColors.learn) { c.startGame(true) }
-                SectionButton(tr("Daily paint journey", "מסע הצבע היומי"), color: MenuColors.learn) { c.challengePage() }
-                SplashLabel(text: tr("Your avatar", "הדמות שלכם"), size: 18, color: 0xff9cfff1)
+                SectionButton(tr("Daily paint journey", "אתגר יומי"), color: MenuColors.learn) { c.challengePage() }
+                SplashLabel(text: tr("Your avatar", "הדמות שלכם"), size: 18, color: MenuColors.readable(0xff9cfff1))
                 AvatarPicker(controller: c)
             }
             MenuSection(play, color: MenuColors.play, open: c.sectionOpen(play, 1), toggle: { c.toggleSection(play, 1) }) {
@@ -475,18 +545,28 @@ private struct ChevronShape: Shape {
     }
 }
 
-/// Android `AvatarArrow`: a thick rounded chevron in a 64x72 touch target.
+/// Android `AvatarArrow`: a thick rounded teal chevron with a darker shadow 2 points below and a thin
+/// light highlight 1 point above, in a 64x72 touch target.
 @MainActor
 struct AvatarArrow: View {
     let right: Bool
     let action: () -> Void
 
     var body: some View {
+        let thick = StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round)
         Button(action: action) {
-            ChevronShape(right: right)
-                .stroke(SplashPalette.color(0xffb8f3dc), style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round))
-                .frame(width: 64, height: 72)
-                .contentShape(Rectangle())
+            ZStack {
+                ChevronShape(right: right)
+                    .stroke(SplashPalette.color(0xff1d6d64), style: thick)
+                    .offset(y: 2)
+                ChevronShape(right: right)
+                    .stroke(SplashPalette.color(0xff3ab5a0), style: thick)
+                ChevronShape(right: right)
+                    .stroke(SplashPalette.color(0xffb1eddb), style: StrokeStyle(lineWidth: 1.4, lineCap: .round, lineJoin: .round))
+                    .offset(y: -1)
+            }
+            .frame(width: 64, height: 72)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(AppText.t(right ? "Next avatar" : "Previous avatar"))
@@ -494,7 +574,7 @@ struct AvatarArrow: View {
 }
 
 /// Android `avatarPicker`: arrows (always left to right), the normalised portrait (swipe to change)
-/// and the name in the colour of the player's rank.
+/// and the name in the colour of the player's rank (ink when that colour is too light for the panel).
 @MainActor
 struct AvatarPicker: View {
     @ObservedObject var controller: SplashController
@@ -537,7 +617,7 @@ struct AvatarPicker: View {
             .environment(\.layoutDirection, .leftToRight)
             Text(name)
                 .font(.system(size: 20, weight: .bold))
-                .foregroundColor(SplashPalette.color(SplashRanks.at(controller.rankPoints()).color))
+                .foregroundColor(SplashPalette.color(MenuColors.readable(SplashRanks.at(controller.rankPoints()).color)))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 8)
                 .padding(.bottom, 4)
@@ -646,7 +726,7 @@ struct SettingsPage: View {
         }
         .padding(6)
         .frame(maxWidth: .infinity, minHeight: 120, alignment: .top)
-        .background(RoundedRectangle(cornerRadius: 18).fill(SplashPalette.color(chosen ? 0xff214f60 : 0xff233e59)))
+        .background(SkySurface(color: chosen ? 0xff214f60 : 0xff233e59, radius: 18))
         .dropDestination(for: String.self) { items, _ in
             for raw in items {
                 if let topic = Topic(rawValue: raw) { controller.dropSubject(topic, intoChosen: chosen) }
@@ -743,7 +823,8 @@ struct RanksPage: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 12)
                     .frame(maxWidth: .infinity, minHeight: 48, maxHeight: 48)
-                    .background(RoundedRectangle(cornerRadius: 18).fill(SplashPalette.color(rank.color)))
+                    // FamilyFormStyle: a coloured label stays flat, with 8 dp corners.
+                    .background(RoundedRectangle(cornerRadius: 8).fill(SplashPalette.color(rank.color)))
                     .padding(.bottom, 8)
             }
             SplashButton(title: tr("Back", "חזרה"), color: 0xffe91e63) { controller.openSettings() }
@@ -753,23 +834,45 @@ struct RanksPage: View {
 
 // MARK: Play
 
+/// Android `playMenu()`: saved games, then "Create room" apart from joining (a dashed line), house
+/// players and paint walls. Every action has 16 dp above and 8 below (`spaceRoomActions`).
 @MainActor
 struct PlayPage: View {
     @ObservedObject var controller: SplashController
 
     var body: some View {
         let c = controller
-        let counts = c.playerCounts
         SplashPage(tr("Play", "לשחק")) {
             Color.clear.frame(height: 22)
             if c.hasSavedBattle {
-                SplashButton(title: tr("Continue your battle", "להמשיך בקרב")) { c.continueBattle() }
+                SplashButton(title: tr("Continue your battle", "להמשיך בקרב"), top: 16, bottom: 8) { c.continueBattle() }
             } else if c.hasSavedCup {
-                SplashButton(title: tr("Continue your cup", "להמשיך בגביע")) { c.continueCup() }
+                SplashButton(title: tr("Continue your cup", "להמשיך בגביע"), top: 16, bottom: 8) { c.continueCup() }
             }
             if let code = c.savedRoom {
-                SplashButton(title: tr("Return to \(code)", "חזרה לחדר \(code)")) { c.returnToRoom(code) }
+                SplashButton(title: tr("Return to \(code)", "חזרה לחדר \(code)"), top: 16, bottom: 8) { c.returnToRoom(code) }
             }
+            SplashButton(title: tr("Create room", "יצירת חדר"), top: 16, bottom: 8) { c.playOptions(false) }
+            RoomDivider()
+            SplashButton(title: tr("Join room", "הצטרפות לחדר"), color: 0xffafdbff, top: 16, bottom: 8) { c.joinPage(false) }
+            SplashButton(title: tr("House players only", "שחקני הבית בלבד"), color: 0xffd1c4ff, top: 16, bottom: 8) { c.playOptions(true) }
+            SplashButton(title: tr("Paint walls · teams", "צביעת קירות · קבוצות"), color: 0xffffdca8, top: 16, bottom: 8) { c.wallOptions() }
+            SplashButton(title: tr("Back", "חזרה"), color: 0xffe91e63, top: 16, bottom: 8) { c.home() }
+        }
+    }
+}
+
+/// Android `playOptions(house)`: the host's settings for the next game only ("Create room" or
+/// "House players only"), then create the room or choose the house players; Cancel returns to Play.
+@MainActor
+struct PlayOptionsPage: View {
+    @ObservedObject var controller: SplashController
+
+    var body: some View {
+        let c = controller
+        let counts = c.playerCounts
+        let house = c.optionsHouse
+        SplashPage(house ? tr("House players only", "שחקני הבית בלבד") : tr("Create room", "יצירת חדר")) {
             SplashLabel(text: tr("For this game only · your saved settings stay the same", "למשחק הקרוב בלבד · ההגדרות השמורות נשארות ללא שינוי"), size: 15)
             SplashDropdown(title: tr("Arena", "זירה"), items: [tr("Beach", "חוף"), tr("Park", "פארק"), tr("Andromeda", "אנדרומדה")],
                            selected: (c.upcomingArena ?? c.settings.arena).ordinal) { c.setUpcomingArena($0) }
@@ -782,11 +885,12 @@ struct PlayPage: View {
             SplashDropdown(title: tr("Difficulty", "רמת קושי"),
                            items: [tr("Easy · time to learn", "קלה · זמן ללמוד"), tr("Standard", "רגילה"), tr("Pro", "מקצועית")],
                            selected: c.settings.difficulty.ordinal) { c.setDifficulty($0) }
-            SplashButton(title: tr("Paint walls · teams", "צביעת קירות · קבוצות"), color: 0xffffdca8) { c.wallOptions() }
-            SplashButton(title: tr("Create room", "יצירת חדר")) { c.createRoom() }
-            SplashButton(title: tr("Join room", "הצטרפות לחדר"), color: 0xffafdbff) { c.joinPage(c.upcomingRounds > 1) }
-            SplashButton(title: tr("House players only", "שחקני הבית בלבד"), color: 0xffd1c4ff) { c.houseGame(c.upcomingRounds > 1) }
-            SplashButton(title: tr("Back", "חזרה"), color: 0xffe91e63) { c.home() }
+            if house {
+                SplashButton(title: tr("Choose players", "בחירת שחקנים"), top: 16, bottom: 8) { c.houseGame(c.upcomingRounds > 1) }
+            } else {
+                SplashButton(title: tr("Create room", "יצירת חדר"), top: 16, bottom: 8) { c.createRoom() }
+            }
+            SplashButton(title: tr("Cancel", "ביטול"), color: 0xffe91e63, top: 16, bottom: 8) { c.playMenu() }
         }
     }
 }
@@ -813,21 +917,28 @@ struct WallOptionsPage: View {
     }
 }
 
+/// Android `joinPage`: the room code in the shared form field (`FamilyFormStyle`: white, 8 dp corners,
+/// a grey border that turns blue while typing, dark text).
 @MainActor
 struct JoinPage: View {
     @ObservedObject var controller: SplashController
+    @FocusState private var typing: Bool
 
     var body: some View {
         let c = controller
         SplashPage(tr("Join room", "הצטרפות לחדר")) {
-            TextField("", text: $controller.roomCode, prompt: Text(tr("Room code", "קוד חדר")).foregroundColor(SplashPalette.color(0xffc9ddeb)))
+            TextField("", text: $controller.roomCode, prompt: Text(tr("Room code", "קוד חדר")).foregroundColor(SplashPalette.color(0xff536b7b)))
                 .font(.system(size: 18))
-                .foregroundColor(.white)
+                .foregroundColor(SplashPalette.color(0xff17384d))
+                .tint(SplashPalette.color(0xff2587d6))
                 .multilineTextAlignment(.center)
                 .textInputAutocapitalization(.characters)
                 .autocorrectionDisabled(true)
+                .focused($typing)
+                .padding(.horizontal, 12)
                 .frame(height: 58)
-                .overlay(Rectangle().frame(height: 1).foregroundColor(SplashPalette.color(0xffc9ddeb)), alignment: .bottom)
+                .background(RoundedRectangle(cornerRadius: 8).fill(Color.white))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(SplashPalette.color(typing ? 0xff2587d6 : 0xff879baa), lineWidth: 1))
                 .onChange(of: controller.roomCode) { _, value in
                     // Android LengthFilter(6).
                     if value.count > 6 { controller.roomCode = String(value.prefix(6)) }
@@ -979,7 +1090,7 @@ struct HouseChoices: View {
             .padding(.horizontal, 12)
             .padding(.top, 8)
             .padding(.bottom, 10)
-            .background(RoundedRectangle(cornerRadius: 18).fill(SplashPalette.color(0xe622405a)))
+            .background(SkySurface(color: 0xe622405a, radius: 18))
             .padding(.vertical, 7)
         }
     }
@@ -1072,7 +1183,7 @@ struct JourneyPage: View {
 
     var body: some View {
         let c = controller
-        SplashPage(tr("Daily paint journey", "מסע הצבע היומי")) {
+        SplashPage(tr("Daily paint journey", "אתגר יומי")) {
             if let j = c.journey {
                 Group {
                     if let portrait = ArtStore.shared.portrait(j.opponent) {
@@ -1096,7 +1207,8 @@ struct JourneyPage: View {
                     .padding(.horizontal, 18)
                     .padding(.vertical, 16)
                     .frame(maxWidth: .infinity)
-                    .background(RoundedRectangle(cornerRadius: 18).fill(SplashPalette.color(0xee173f55)))
+                    // FamilyFormStyle: a coloured label stays flat, with 8 dp corners.
+                    .background(RoundedRectangle(cornerRadius: 8).fill(SplashPalette.color(0xee173f55)))
                 SplashLabel(text: j.qualities, size: 15, color: 0xffffe5a4)
                 SplashButton(title: tr("Start challenge", "התחלת אתגר")) { c.startChallenge(j.step) }
                 ForEach(j.steps.indices, id: \.self) { i in
@@ -1162,11 +1274,14 @@ struct LobbyPage: View {
                     }
                 }
                 SplashLabel(text: c.selectionMessage(model.humans.count, model.house.count, model.limit), size: 18)
-                SplashButton(title: model.readyIds.contains(model.selfId) ? tr("Ready ✓", "מוכנים ✓") : tr("Ready", "מוכנים")) { c.lobbyMarkReady() }
+                // The only real player (the owner) starts without "Ready"; house players never need it.
+                if model.humans.count > 1 {
+                    SplashButton(title: model.readyIds.contains(model.selfId) ? tr("Ready ✓", "מוכנים ✓") : tr("Ready", "מוכנים")) { c.lobbyMarkReady() }
+                }
                 if model.hosted {
                     SplashButton(title: tr("Start", "התחלה"), color: 0xffafdbff) { c.lobbyStartGame() }
                 }
-                SplashButton(title: tr("Back", "חזרה"), color: 0xffe91e63) { c.home() }
+                SplashButton(title: tr("Back", "חזרה"), color: 0xffe91e63) { c.leaveCupScreen() }
                 if model.hosted {
                     HouseChoices(excluded: Set(model.humans.map { $0.character }), selected: model.house,
                                  capacity: max(model.limit - model.humans.count, 0)) { c.lobbyChangeHouse($0) }
@@ -1199,7 +1314,7 @@ struct ResultsPage: View {
                         ForEach(panel.rows) { row in PlayerRow(row: row) }
                     }
                     .padding(12)
-                    .background(RoundedRectangle(cornerRadius: 18).fill(SplashPalette.color(panel.color)))
+                    .background(SkySurface(color: panel.color, radius: 18))
                     .padding(.vertical, 8)
                 }
                 ForEach(model.rows) { row in PlayerRow(row: row) }
@@ -1218,7 +1333,8 @@ struct ResultsPage: View {
                 if model.playAgain {
                     SplashButton(title: tr("Play again", "לשחק שוב")) { controller.resultsPlayAgain() }
                 }
-                SplashButton(title: tr("Main menu", "תפריט ראשי"), color: 0xffc6dfff) { controller.home() }
+                // A cup (local or online) asks whether to keep it before leaving.
+                SplashButton(title: tr("Main menu", "תפריט ראשי"), color: 0xffc6dfff) { controller.leaveCupScreen() }
             }
         } else {
             SplashPage("") {
@@ -1252,7 +1368,61 @@ struct PlayerRow: View {
         }
         .padding(.horizontal, 6)
         .padding(.vertical, 4)
-        .background(RoundedRectangle(cornerRadius: 18).fill(SplashPalette.color(0x44214760)))
+        .background(SkySurface(color: 0x44214760, radius: 18))
         .padding(.vertical, 3)
+    }
+}
+
+/// Android `leaveCupScreen()` with `FamilyTournamentUi.confirmSave`: leaving a cup's results or room
+/// offers Save, Don't save and Cancel on a pale sky panel; a tap outside does not close it.
+@MainActor
+struct CupExitDialog: View {
+    @ObservedObject var controller: SplashController
+
+    var body: some View {
+        let ink: UInt32 = 0xff282d4e
+        ZStack {
+            Color.black.opacity(0.45)
+                .ignoresSafeArea()
+            VStack(spacing: 0) {
+                Text(tr("Save this tournament?", "לשמור את הטורניר?"))
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundColor(SplashPalette.color(ink))
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                Text(tr("Save to continue later. Don't save removes this cup from saved games on this device; other players can continue.",
+                        "שמרו כדי להמשיך מאוחר יותר. ללא שמירה, הגביע יוסר מהמשחקים השמורים במכשיר הזה; שחקנים אחרים יוכלו להמשיך."))
+                    .font(.system(size: 17))
+                    .foregroundColor(SplashPalette.color(ink))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 16)
+                    .padding(.bottom, 12)
+                choice(tr("Save", "שמירה"), fill: 0xffb8d9ff, text: ink) { controller.cupExitSave() }
+                choice(tr("Don't save", "לא לשמור"), fill: 0xffe91e63, text: 0xffffffff) { controller.cupExitDiscard() }
+                choice(tr("Cancel", "ביטול"), fill: 0xffe8e0ff, text: ink) { controller.cupExitCancel() }
+            }
+            .padding(24)
+            .background(SkySurface(color: 0xfff6f8ff, radius: 24, panel: true))
+            .frame(maxWidth: 560)
+            .padding(.horizontal, 22)
+        }
+        .environment(\.layoutDirection, AppText.rtl ? .rightToLeft : .leftToRight)
+    }
+
+    private func choice(_ title: String, fill: UInt32, text: UInt32, _ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 17, weight: .bold))
+                .foregroundColor(SplashPalette.color(text))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .frame(maxWidth: .infinity, minHeight: 64, maxHeight: 64)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(SkyButtonStyle(color: fill, radius: 16))
+        .padding(.top, 18)
     }
 }

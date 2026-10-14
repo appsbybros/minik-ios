@@ -243,7 +243,9 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
     settings:
       base:
-        MINIK_APP_ICON_NAME: MinikPlusAppIcon
+        # Android plus-english-only keeps the former launcher (minik_plus_logo_small over
+        # bg_colorful_back_for_logo); only the plus flavour moved to the rainbow icon (8b1b1d6).
+        MINIK_APP_ICON_NAME: MinikPlusEnglishAppIcon
         MINIK_PLUS_ENGLISH_BUNDLE_IDENTIFIER: com.appsbybros.minik.plus.english
         PRODUCT_BUNDLE_IDENTIFIER: $(MINIK_PLUS_ENGLISH_BUNDLE_IDENTIFIER)
         # App Store product IDs are unique per developer account.
@@ -353,12 +355,13 @@ targets:
         PRODUCT_NAME: MinikMathPlus
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) MINIK_MATH"
         OTHER_LDFLAGS: "$(inherited) -ObjC"
-        # Release shows child-directed, non-personalized interstitials; Debug keeps
-        # Google's sample app ID, which MinikAdsConfiguration treats as ads off.
+        # Release shows child-directed, non-personalized interstitials from the iOS Minik Math Plus
+        # AdMob app (owner-supplied IDs, 2026-10-14); Debug keeps Google's sample app ID, which
+        # MinikAdsConfiguration treats as ads off.
         MINIK_ADS_ENABLED: YES
         MINIK_ADS_POLICY_APPROVED: YES
-        MINIK_ADS_APPLICATION_IDENTIFIER: "ca-app-pub-6728099379581161~7244879780"
-        MINIK_INTERSTITIAL_AD_UNIT_IDENTIFIER: "ca-app-pub-6728099379581161/4754447817"
+        MINIK_ADS_APPLICATION_IDENTIFIER: "ca-app-pub-6728099379581161~4538162680"
+        MINIK_INTERSTITIAL_AD_UNIT_IDENTIFIER: "ca-app-pub-6728099379581161/6011026452"
       configs:
         Debug:
           MINIK_ADS_APPLICATION_IDENTIFIER: "ca-app-pub-3940256099942544~1458002511"
@@ -399,8 +402,8 @@ targets:
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) MINIK_MATH_WEB"
         OTHER_LDFLAGS: "$(inherited) -ObjC"
         # Child-directed, non-personalized interstitials on Android's schedule
-        # (MinikMathAdPolicy). Until Minik Math Plus has its own AdMob app, both Math
-        # apps use these IDs. Debug keeps Google's sample app ID (ads off).
+        # (MinikMathAdPolicy), from the iOS Minik Math AdMob app; Minik Math Plus has its own.
+        # Debug keeps Google's sample app ID (ads off).
         MINIK_ADS_ENABLED: YES
         MINIK_ADS_POLICY_APPROVED: YES
         MINIK_ADS_APPLICATION_IDENTIFIER: "ca-app-pub-6728099379581161~7244879780"
@@ -433,6 +436,11 @@ targets:
       - path: Resources/ModernPongAssets.xcassets
         buildPhase: resources
       - path: Resources/ModernPongAudio
+        buildPhase: resources
+      # Android 739f2f8 art for the daily journey and team table (pong-poses atlases, team celebration, the
+      # tournament remove mark) and the menu music. Standalone app only; Math Plus and Multi do not bundle it.
+      - path: Resources/ModernPongArt
+        type: folder
         buildPhase: resources
       - path: Config/Firebase/MinikPingPong/GoogleService-Info.plist
         buildPhase: resources
@@ -497,9 +505,16 @@ targets:
         buildPhase: resources
       - path: Resources/Privacy/LocalOnly/PrivacyInfo.xcprivacy
         buildPhase: resources
+      # Android Bounce hosts the Minik family messages (card, ad-break promotion, reminder).
+      - path: Family/FamilyArt.xcassets
+        buildPhase: resources
+      - path: Family/minik-family-catalog.json
+        buildPhase: resources
     info:
       properties:
         CFBundleDisplayName: Minik Bounce
+        # This app's family catalogue key: the "More Minik apps & games" card never promotes the app itself.
+        MinikFamilyCatalogKey: bounce
         CFBundleLocalizations: [en, he]
     settings:
       base:
@@ -778,7 +793,7 @@ targets:
     info:
       path: GeneratedInfoPlists/MinikBeachVolley-Info.plist
       properties:
-        CFBundleDisplayName: Minik Beach Volley
+        CFBundleDisplayName: Minik Beach Volleyball
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleLocalizations: [en, he, ar, es, hi, nl]

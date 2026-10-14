@@ -2,10 +2,15 @@ import Foundation
 import Combine
 
 struct ModernPongResult: Codable, Equatable { var playerPoints: Int; var opponentPoints: Int; var won: Bool }
-/// `cross`: the local 3/4-player match and its guide (Android CrossActivity).
-enum MPRoute { case menu, lobby, game, guide, result, cross }
+/// `cross`: the local 3/4-player match and its guide (Android CrossActivity). `journey`: the daily skill journey, the team game
+/// with house players and Settings (CrossJourneyActivity). `teams`: online team rooms (CrossOnlineTeamsActivity).
+enum MPRoute { case menu, lobby, game, guide, result, cross, journey, teams }
 /// A card of the cross guide (Android CrossActivity.showGuideCard).
-struct CrossTourCard: Equatable { var title: String; var message: String; var phase: CrossTutorial.Phase; var canGoBack: Bool }
+struct CrossTourCard: Equatable {
+    var title: String; var message: String; var phase: CrossTutorial.Phase; var canGoBack: Bool
+    /// The team and scoring cards offer the team game (Android 5c1aa4d, R.string.guide_team_practice).
+    var teamPractice = false
+}
 /// The local cross match's result (Android CrossActivity.showResult).
 struct CrossLocalResult: Equatable { var title: String; var lines: [String]; var won: Bool }
 
@@ -14,7 +19,17 @@ struct CrossLocalResult: Equatable { var title: String; var lines: [String]; var
 /// 828c6fc. The Simple experience keeps the classic single-player game and guide.
 @MainActor final class MPController: ObservableObject {
     let experience: ModernPongExperience, preferences: MPPreferences, audio = MPAudio(), ads: MPAds
-    @Published var route = MPRoute.menu
+    @Published var route = MPRoute.menu { didSet { syncMusic() } }
+    /// Android CrossJourneyActivity and CrossOnlineTeamsActivity, opened over the home (or the local cross match).
+    @Published var journey: CrossJourneyModel?
+    @Published var teams: CrossTeamsModel?
+    /// A short message (Android Toast).
+    @Published var toast: String?
+    /// Back from an unfinished tournament asks whether to keep it (Android confirmTournamentExit).
+    @Published var tournamentExitPrompt = false
+    private var journeyReturn = MPRoute.menu, teamsReturn = MPRoute.menu
+    /// Android PongMenuMusic: the quiet menu remix on the home and room screens.
+    private let menuMusic = MPXMenuMusic()
     @Published var scene: MPScene?
     @Published var crossScene: CrossScene?
     @Published var session: MPSession?
@@ -49,8 +64,8 @@ struct CrossLocalResult: Equatable { var title: String; var lines: [String]; var
     @Published var crossStatus = ""
     @Published var crossHeader = ""
     @Published var crossPaused = false
-    /// Android `cross_local/full_screen`: remembered for every cross court.
-    @Published var crossFullScreen: Bool { didSet { preferences.crossFullScreen = crossFullScreen; crossScene?.fullScreen = crossFullScreen } }
+    /// Android `cross/action_camera` (5c1aa4d): the landscape action camera of the local cross court, remembered.
+    @Published var actionCamera: Bool { didSet { preferences.crossActionCamera = actionCamera; if crossMatch == nil { crossScene?.fullScreen = actionCamera } } }
     @Published var tourCard: CrossTourCard?
     @Published var crossResult: CrossLocalResult?
     @Published var crossTourActive = false
@@ -77,7 +92,7 @@ struct CrossLocalResult: Equatable { var title: String; var lines: [String]; var
     init(experience: ModernPongExperience, preferences: MPPreferences = .init(), repository: (any MPRepository)? = nil, onClose: @escaping (ModernPongResult?) -> Void) {
         self.experience = experience; self.preferences = preferences; completion = onClose; ads = .init(preferences: preferences, experience: experience)
         level = preferences.control; target = preferences.control.target(preferences.target); skipGuide = preferences.skipGuide; identity = preferences.identity
-        crossFullScreen = preferences.crossFullScreen
+        actionCamera = preferences.crossActionCamera
         // Android's local level defaults to Beginner (ModernActivity getInt("difficulty", 4)).
         let savedPractice = preferences.defaults.object(forKey: MPController.practiceLevelKey) as? Int
         practiceLevel = savedPractice.flatMap { MPLevel(rawValue: $0) } ?? .beginner
@@ -100,6 +115,8 @@ struct CrossLocalResult: Equatable { var title: String; var lines: [String]; var
     func text(_ english: String, _ hebrew: String) -> String { MPText.t(english, hebrew, self.hebrew) }
     func start(hebrew: Bool, removeAds: Bool) async {
         self.hebrew = hebrew; guard !started else { return }; started = true
+        // Android PlayActivity.onResume: the menu music starts with the home screen (route and lifecycle changes follow).
+        syncMusic()
         ads.start(removeAds: removeAds)
         ads.willPresent = { [weak self] in self?.audio.stop() }
         guard experience.online else { return }
@@ -313,11 +330,23 @@ struct CrossLocalResult: Equatable { var title: String; var lines: [String]; var
     /// A tournament's house player; characters may repeat ("Kyra 2").
     func addHouse(_ player: MPHousePlayer) async {
         let uid = repo.uid, bot = MPRules.housePlayer(player)
-        await change { try MPRules.addBot($0, actor: uid, bot: bot) }
+        // Android 5c1aa4d: checked again against the latest room; a full or started room stays as it is.
+        await change { room in
+            if room.state != "WAITING" || room.host != uid || room.participants.count >= room.capacity || room.participants[bot.id] != nil { return room }
+            return try MPRules.addBot(room, actor: uid, bot: bot)
+        }
     }
     func fillWithHouse() async {
         let uid = repo.uid
-        await change { try MPRules.fillWithBots($0, actor: uid) }
+        await change { room in
+            if room.state != "WAITING" || room.host != uid { return room }
+            return try MPRules.fillWithBots(room, actor: uid)
+        }
+    }
+    /// Android 5c1aa4d: a fixture whose only human is this player starts with "Start" (Ready on its own).
+    func startHouseMatch(_ match: MPFixture) async {
+        let uid = repo.uid
+        await change { try MPRules.ready($0, match: match.id, uid: uid, value: true) }
     }
     /// Host removes a house player before the start (Android PlayActivity).
     func removeHouse(_ id: String) async {
@@ -353,7 +382,7 @@ struct CrossLocalResult: Equatable { var title: String; var lines: [String]; var
         guard let s = session else { return }
         await perform {
             self.closing = true; self.closeObservers()
-            do { try await self.repo.leave(s, delete: delete); self.preferences.removed(s); self.rooms = self.preferences.rooms; self.session = nil; self.scene = nil; self.clearCross(); self.route = .menu }
+            do { try await self.repo.leave(s, delete: delete); self.preferences.closed(s); self.rooms = self.preferences.rooms; self.session = nil; self.scene = nil; self.clearCross(); self.route = .menu }
             catch { self.enter(s); throw error }
         }
     }
@@ -421,7 +450,9 @@ struct CrossLocalResult: Equatable { var title: String; var lines: [String]; var
             match.advance(dt)
         }
         court.onFrame = { [weak self] in self?.crossFrame() }
-        court.fullScreen = crossFullScreen
+        court.preferences = preferences
+        // Android PrivateMatchActivity reads the old `cross_local/full_screen` (default off) and offers no camera button.
+        court.fullScreen = preferences.crossFullScreen
         crossMatch = match; crossScene = court; crossStage = nil; crossOutcome = nil; crossAudioOn = false
         localCross = nil; tour = nil; tourCard = nil; crossResult = nil
         syncStage(s, m)
@@ -440,6 +471,8 @@ struct CrossLocalResult: Equatable { var title: String; var lines: [String]; var
         case .version: crossWarning = text("This match needs the same app version on every phone.", "המשחק הזה צריך את אותה גרסת אפליקציה בכל הטלפונים.")
         case .interrupted: crossWarning = text("Connection interrupted. Reopen this match to resume.", "החיבור נקטע. פתחו שוב את המשחק כדי להמשיך.")
         case .failed: crossWarning = text("Connection interrupted. Reopen this match to resume.", "החיבור נקטע. פתחו שוב את המשחק כדי להמשיך.")
+        // Android passes the link's English message through unchanged.
+        case .reception: crossWarning = "Ball assistance could not be shared. The match uses normal speed until it connects."
         }
     }
     /// Names in fixture (roster) order.
@@ -587,10 +620,9 @@ struct CrossLocalResult: Equatable { var title: String; var lines: [String]; var
             goHome()
         case .lobby:
             audio.stop()
-            if let s = session, s.kind == .tournament, s.state == "WAITING", s.participants[repo.uid] != nil {
-                // Android navigateBack: Back cancels a waiting tournament (the host deletes it, others leave).
-                let delete = MPRules.canDelete(s, actor: repo.uid)
-                Task { await leave(delete: delete) }
+            if let s = session, s.kind == .tournament, !s.complete, s.human(repo.uid) {
+                // Android 5c1aa4d confirmTournamentExit: Save keeps it for later; Don't save deletes or leaves it.
+                tournamentExitPrompt = true
                 return
             }
             if let s = session, s.complete { dismissCompleted(); return }
@@ -603,6 +635,10 @@ struct CrossLocalResult: Equatable { var title: String; var lines: [String]; var
             if tour != nil { endTour(); return }
             audio.stop()
             goHome()
+        case .journey:
+            journey?.back()
+        case .teams:
+            teams?.back()
         case .guide:
             audio.stop()
             preferences.skipGuide = skipGuide; scene = nil
@@ -618,9 +654,16 @@ struct CrossLocalResult: Equatable { var title: String; var lines: [String]; var
         rooms = preferences.rooms
         if experience.closesAfterMatch { completion(nil) }
     }
-    func close() { foreground = false; audio.stop(); scene?.setActive(false); crossScene?.setActive(false); closeObservers() }
+    func close() { foreground = false; audio.stop(); menuMusic.stop(); scene?.setActive(false); crossScene?.setActive(false); journey?.lifecycle(active: false); teams?.lifecycle(active: false); closeObservers() }
+    /// Android PlayActivity onResume/onPause: the menu music plays on the home and room screens only.
+    func syncMusic() {
+        menuMusic.set(experience == .full && foreground && (route == .menu || route == .lobby) && preferences.menuMusic)
+    }
     func lifecycle(active: Bool) {
         guard foreground != active else { return }; foreground = active
+        defer { syncMusic() }
+        if route == .journey { journey?.lifecycle(active: active); return }
+        if route == .teams { teams?.lifecycle(active: active); return }
         if !active {
             audio.stop(); scene?.setActive(false)
             if route == .cross { pauseLocalCross() } else { crossScene?.setActive(false); crossMatch?.paused = true }
@@ -691,6 +734,55 @@ struct CrossLocalResult: Equatable { var title: String; var lines: [String]; var
         }
     }
 
+    // ---- journey, team games and online team rooms (Android CrossJourneyActivity, CrossOnlineTeamsActivity) ---------------------
+    /// Opens the journey page (`teams` with `players` 3 or 4), over the current screen.
+    func openJourney(_ page: CrossJourneyModel.Page, players: Int = 4) {
+        audio.stop()
+        if route == .cross { pauseLocalCross() }
+        if route != .journey && route != .teams { journeyReturn = route }
+        journey = CrossJourneyModel(page: page, players: players, preferences: preferences, hebrew: hebrew, audio: audio,
+                                    onClose: { [weak self] in self?.closeJourney() }, onOnlineTeams: { [weak self] n in self?.openTeams(players: n) })
+        route = .journey
+    }
+    private func closeJourney() {
+        journey = nil
+        route = journeyReturn
+        if route == .cross { crossScene?.setActive(false) }
+        rooms = preferences.rooms
+    }
+    func openTeams(players: Int) {
+        audio.stop()
+        if route == .cross { pauseLocalCross() }
+        if route == .journey { journey?.lifecycle(active: false) }
+        teamsReturn = route == .journey ? .journey : (route == .teams ? teamsReturn : route)
+        teams = CrossTeamsModel(players: players, preferences: preferences, hebrew: hebrew, audio: audio, onClose: { [weak self] in self?.closeTeams() })
+        route = .teams
+    }
+    private func closeTeams() {
+        teams = nil
+        route = teamsReturn
+        if route == .journey { journey?.lifecycle(active: foreground) }
+    }
+    /// The tour's "Learn team play" action (Android guide_team_practice): the team game page over the local match.
+    func tourTeamPractice() {
+        endTour()
+        openJourney(.teams)
+    }
+    /// Android toggleCamera on the local court: the landscape action camera or every player in view.
+    func toggleActionCamera() {
+        actionCamera.toggle()
+        toast = hebrew ? (actionCamera ? "מצלמת פעולה" : "כל השחקנים במסך") : (actionCamera ? "Action camera" : "Fit all players")
+    }
+    /// Android confirmTournamentExit: Save keeps the tournament for later; Don't save deletes it (no other connected player) or
+    /// leaves it.
+    func keepTournament() { tournamentExitPrompt = false; saveForLater() }
+    func discardTournament() {
+        tournamentExitPrompt = false
+        guard let s = session else { return }
+        let delete = MPRules.canDelete(s, actor: repo.uid)
+        Task { await leave(delete: delete) }
+    }
+
     // ---- local cross match and its guide (Android CrossActivity) ------------------------------------------------------------
     var crossControl: CrossControl { CrossControl.fromChoice(preferences.control.rawValue) }
     /// Android "Learn how to play with Minik": the cross table's tour, then a local match with house players.
@@ -725,7 +817,8 @@ struct CrossLocalResult: Equatable { var title: String; var lines: [String]; var
         }
         court.step = nil
         court.names = localNames(engine); court.tutorialTarget = nil; court.acceptsInput = true; court.avatarIcons = [:]
-        court.fullScreen = crossFullScreen
+        court.preferences = preferences
+        court.fullScreen = actionCamera
         engine.paused = false; crossPaused = false
         court.setActive(foreground)
         crossStatus = CrossText.status(engine, names: localNames(engine), last: nil, hebrew: hebrew)
@@ -835,7 +928,8 @@ struct CrossLocalResult: Equatable { var title: String; var lines: [String]; var
         if t.phase == .demo || t.phase == .attempt { tourCard = nil; useTourEngine(); return }
         crossScene?.setActive(false)
         let card = t.card(hebrew)
-        tourCard = CrossTourCard(title: card.title, message: card.message, phase: t.phase, canGoBack: t.canGoBack)
+        tourCard = CrossTourCard(title: card.title, message: card.message, phase: t.phase, canGoBack: t.canGoBack,
+                                 teamPractice: t.phase == .info && (t.lesson.kind == .team || t.lesson.kind == .scoring))
         crossStatus = t.statusText(hebrew)
     }
     private func useTourEngine() {
@@ -875,7 +969,13 @@ struct CrossLocalResult: Equatable { var title: String; var lines: [String]; var
     private func tutorialFrame() {
         guard let engine = scene?.engine else { return }
         if !tutorialStep.serve { scene?.guidePoint = engine.flight?.receiver == true ? engine.ball : nil }
-        if let success = engine.trainingResult { tutorialSuccess = success; tutorialPhase = .feedback; scene?.setActive(false); audio.guideMusic(foreground); return }
+        if let success = engine.trainingResult {
+            // Android ModernTutorial: a demonstration returns to the lesson card; only the child's own try is
+            // judged. Owner report 2026-10-14: "Well done!" showed after Minik's demo, before the child had hit.
+            if tutorialPhase == .demonstration { tutorialPhase = .explanation }
+            else { tutorialSuccess = success; tutorialPhase = .feedback }
+            scene?.setActive(false); audio.guideMusic(foreground); return
+        }
         guard tutorialPhase == .demonstration else { return }
         if tutorialStep.serve && engine.awaitingServe && engine.trainingTime > 0.7 { engine.touch(tutorialStep.servePoint); engine.endTouch() }
         else if !tutorialStep.serve, let flight = engine.flight, flight.striker == .minik, flight.receiver, flight.position.y >= 0.78, !demoGesture {
@@ -891,7 +991,6 @@ struct CrossLocalResult: Equatable { var title: String; var lines: [String]; var
         }
     }
     func tutorialNext() {
-        guard tutorialSuccess else { return }
         if let next = MPTutorialStep(rawValue: tutorialStep.rawValue + 1) { tutorialStep = next; tutorialPhase = .explanation; scene = nil }
         else { guideToGame() }
     }

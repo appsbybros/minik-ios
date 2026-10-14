@@ -56,6 +56,15 @@ final class MPSubscription {
     func action(_ id: String, _ sequence: Int64, _ value: MPWire) async throws
     func leave(_ session: MPSession, delete: Bool) async throws
     func cleanup() async throws
+    /// Android `PongRepository.receptionPreferences`: publishes this player's slow-motion choice and follows the
+    /// other humans' choices (`minikPingPong/receptionPreferences/<uid>` = {version: 1, slow}).
+    func receptionPreferences(_ players: Set<String>, _ changed: @escaping ([String: Bool]) -> Void, _ failed: @escaping (Error) -> Void) -> MPSubscription
+}
+extension MPRepository {
+    /// Local rooms share no preferences (Android's default implementation).
+    func receptionPreferences(_ players: Set<String>, _ changed: @escaping ([String: Bool]) -> Void, _ failed: @escaping (Error) -> Void) -> MPSubscription {
+        changed([:]); return MPSubscription()
+    }
 }
 
 /// Local sessions have their own storage. A Firebase outage never overwrites a cloud room.
@@ -226,6 +235,24 @@ import FirebaseDatabase
         let r = database.reference(withPath: ".info/connected"), handle = r.observe(.value) { changed(($0.value as? Bool) == true) }
         return .init { r.removeObserver(withHandle: handle) }
     }
+    func receptionPreferences(_ players: Set<String>, _ changed: @escaping ([String: Bool]) -> Void, _ failed: @escaping (Error) -> Void) -> MPSubscription {
+        var values: [String: Bool] = [:]
+        var watches: [(DatabaseReference, DatabaseHandle)] = []
+        if players.contains(uid) {
+            let own: [String: Any] = ["version": 1, "slow": MPReceptionSettings.slow]
+            root.child("receptionPreferences").child(uid).setValue(own) { error, _ in if error != nil { failed(MPError.assistance) } }
+        }
+        for player in players.sorted() {
+            let ref = root.child("receptionPreferences").child(player)
+            let handle = ref.observe(.value, with: { snapshot in
+                let w = MPCodec.map(snapshot.value)
+                if (w["version"] as? NSNumber)?.intValue == 1, let slow = MPReceptionAssist.flag(w["slow"]) { values[player] = slow } else { values[player] = nil }
+                changed(values)
+            }, withCancel: { _ in values[player] = nil; changed(values); failed(MPError.assistance) })
+            watches.append((ref, handle))
+        }
+        return .init { for (ref, handle) in watches { ref.removeObserver(withHandle: handle) } }
+    }
     func presence(_ kind: MPSessionKind, _ code: String) -> MPSubscription {
         let r = ref(kind, code).child("connections").child(uid).child(String(presenceSlot % 16)); presenceSlot += 1
         ref(kind, code).child("lastActivityAt").setValue(ServerValue.timestamp())
@@ -243,7 +270,8 @@ import FirebaseDatabase
         let owner = uid
         if let path = value["kind"] as? String, MPSessionKind.allCases.contains(where: { $0.path == path }), let code = value["code"] as? String {
             let key = path + "/" + code, now = MPClock.now
-            if now - (touched[key] ?? 0) >= 60_000 { touched[key] = now; try await root.child(key).child("lastActivityAt").setValue(ServerValue.timestamp()) }
+            // Android FirebasePongRepository.touch is fire-and-forget: a failed activity stamp never fails the checkpoint.
+            if now - (touched[key] ?? 0) >= 60_000 { touched[key] = now; try? await root.child(key).child("lastActivityAt").setValue(ServerValue.timestamp()) }
         }
         _ = try await transaction(root.child("live").child(id).child("checkpoint")) { old in
             var w = value; w["revision"] = MPCodec.number(MPCodec.map(old), "revision") + 1; w["serverAt"] = ServerValue.timestamp(); w["authority"] = owner; return w

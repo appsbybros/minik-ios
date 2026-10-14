@@ -54,23 +54,39 @@ struct ParentalGateView: View {
                         .font(.headline)
                     Text("Solve this to continue.")
                         .foregroundStyle(.secondary)
-                    Text(String(
-                        format: String(localized: "%lld + %lld"),
-                        Int64(challenge.left),
-                        Int64(challenge.right)
-                    ))
-                    .font(.largeTitle.monospacedDigit().bold())
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .accessibilityLabel(String(
-                        format: String(localized: "%lld plus %lld"),
-                        Int64(challenge.left),
-                        Int64(challenge.right)
-                    ))
+                    // The answer is typed beside the exercise, in the same large digits. As a
+                    // row of its own under a half-height sheet it was cut off behind the
+                    // number pad on the owner's iPad (14 October 2026), so nothing typed showed.
+                    HStack(spacing: 12) {
+                        Text(String(
+                            format: String(localized: "%lld + %lld"),
+                            Int64(challenge.left),
+                            Int64(challenge.right)
+                        ) + " =")
+                        .accessibilityLabel(String(
+                            format: String(localized: "%lld plus %lld"),
+                            Int64(challenge.left),
+                            Int64(challenge.right)
+                        ))
 
-                    TextField("Answer", text: $response)
+                        TextField(text: $response, prompt: Text(verbatim: "?")) {
+                            Text("Answer")
+                        }
                         .keyboardType(.numberPad)
+                        .multilineTextAlignment(.center)
+                        .frame(width: 120)
+                        .padding(.vertical, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .strokeBorder(Color.accentColor, lineWidth: 2)
+                        )
                         .focused($answerFocused)
                         .onSubmit(validate)
+                    }
+                    .font(.largeTitle.monospacedDigit().bold())
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    // An exercise reads left to right in Hebrew and Arabic too.
+                    .environment(\.layoutDirection, .leftToRight)
 
                     if showsError {
                         Text("Not quite. Try again.")
@@ -90,7 +106,8 @@ struct ParentalGateView: View {
             }
             .onAppear { answerFocused = true }
         }
-        .presentationDetents([.medium])
+        // Full height, so the exercise and the answer stay above the keyboard on iPhone too.
+        .presentationDetents([.large])
         .interactiveDismissDisabled()
     }
 

@@ -52,6 +52,16 @@ host = text('Sources/RetroPong/RetroPongView.swift')
 check('experience:' not in host and 'Commerce' not in host and 'AdMob' not in host, 'Retro must have one feature set and no ads hook')
 for contract in ['loadFileURL', 'allowingReadAccessTo: directory', '.atDocumentStart', 'isMainFrame', 'RetroPongNavigation.isBundled', 'removeScriptMessageHandler', 'func dismantleUIView', 'webViewWebContentProcessDidTerminate', 'storage.bootstrap', 'numberOfLoops = -1']:
     check(contract in host, 'Native host contract missing: '+contract)
+# Android Bounce 506490e: the family messages. Ad-break card and idle-setup reminder in the
+# standalone app only; Math's Bounce has no parents link, so it never asks for the reminder.
+check('FamilyOverlay()' in bounce and 'family: familyBreak.adBreak()' in bounce and 'onMenuIdle: menuIdle' in bounce
+      and 'showMoreApps(gate: nil)' in bounce and 'FamilyMessages.shared.remind(' in bounce, 'Standalone Bounce must host the family messages like Android Bounce')
+check('MinikFamilyCatalogKey: bounce' in retro and 'Family/minik-family-catalog.json' in retro and 'Family/FamilyArt.xcassets' in retro, 'Bounce needs its family catalogue key, catalogue and art')
+check('case "menuIdle": if active { onMenuIdle?() }' in host, 'Native host must forward the idle-setup signal')
+ios_host = text('Resources/RetroPong/ios-host.js')
+check('send({type: "menuIdle"})' in ios_host and 'menuRoot = parent;' in ios_host, 'ios-host.js must signal the idle setup only once the parents link exists')
+index = text('Resources/RetroPong/index.html')
+check('maze-sky.css' in index and index.index('maze-sky.css') < index.index('ios-host.css'), 'ios-host.css must stay the last stylesheet, after Android maze-sky.css')
 check('frame-src \'none\'' in text('Resources/RetroPong/index.html'), 'Offline CSP missing')
 check('connect-src \'none\'' in text('Resources/RetroPong/index.html'), 'Offline network boundary missing')
 for asset in ['minik_kick', 'minik_kick2', 'success_sound', 'success_in_a_raw_sound', 'failure_answer_sound', 'failure_sound', 'balloon_explode', 'ball_hit', 'car_hit', 'train_hit', 'train_horn', 'game_start']:

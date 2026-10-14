@@ -1,5 +1,47 @@
 # Minik Splash — iOS port handoff
 
+## 2026-10-13 sync
+
+iOS now matches Android `C:\Projects\MinikSplash` at e235e64 ("Improve Splash challenges, multiplayer
+flows and responsive sky menus") and the shared family UI it now compiles from
+`C:\Projects\MinikFamilyServices` (dcfdd13). Most of e235e64 is the journey work already ported on
+2026-10-12; the new part is in `SplashActivity.kt`, `OnlineSession.kt`, `SelectionWidgets.kt`,
+`ui/GameDialogBuilder.kt` and the family sky UI.
+
+Ported:
+- Play: the entry page keeps the saved games, then "Create room", a dashed line, "Join room", "House
+  players only" and "Paint walls"; every action has 16 pt above and 8 below. "Create room" and
+  "House players only" open a separate options page (arena, players, single battle or cup,
+  difficulty) ending in "Create room" or "Choose players" and a pink "Cancel". Joining no longer
+  carries a cup choice.
+- Cups: "Main menu" on the results and "Back" in a room ask "Save this tournament?" (Save / Don't
+  save / Cancel) for a local or online cup. Don't save deletes the local cup and its saved battle,
+  or only this device's room bookmark; the shared room goes on.
+- Rooms: the owner as the only real player has no "Ready" button, and the host's start check lets a
+  sole human start without "ready" (same rule as Android, so mixed rooms agree).
+- Daily journey: the Hebrew title is now "אתגר יומי".
+- Look (Android `FamilySkyDrawable` and friends, in `Splash/App/SplashSky.swift`): raised, glossy
+  surfaces with Android's palette mapping, edge lip, face gradient, rim, shine and pressed state on
+  buttons, dropdowns, house cards, team panels, result rows and subject lists; home sections are
+  pale raised panels with ink titles and ink profile text when the colour is too light; coloured
+  labels are flat with 8 pt corners; the pause and cup dialogs sit on sky panels; the room-code
+  field is a white form field; the avatar arrows are 3D teal.
+- Home: Android's "More below ⌄" cue under the menu while it can scroll; a tap scrolls on by 65%.
+- Pages: a centred reading column (52% of the width, 300 to 520 pt) in a landscape window.
+- Battles: a portrait battle suggests "For a wider view, play in landscape." after 0.9 s.
+
+Not ported: the ad-break family promotion and remove-ads reminder (`SplashAds.kt`, no ads on iOS);
+GameDialogBuilder's sky buttons and LTR math line (those dialogs are system alerts on iOS);
+Gradle, manifest, androidTest QA and Play Store material.
+
+Differences: the cup dialog closes when the app moves to another page or a battle (an Android
+dialog would stay over it). The cue and landscape texts come from `FamilyMessages.text`; their
+other-language rows belong to `Family/FamilyText.swift`.
+
+Checks: `Scripts/audit-splash.py` passes (catalog 1001 rows, 225 text pairs with 0 unmatched, art,
+files, 48 Swift files LF); tree-sitter parse clean; the Android hash table below is refreshed. Not
+compiled here (no macOS).
+
 ## Re-sync of 2026-10-12
 
 Brought up to the current Android app: `C:\Projects\MinikSplash` at a9fc598 plus its uncommitted
@@ -96,6 +138,7 @@ sources under `Splash/`, tests under `Tests/SplashTests/` (scheme `MinikSplash`,
 | `SplashActivity.kt` | `Splash/App/SplashController.swift`, `Splash/App/SplashViews.swift`, `Splash/SplashApp.swift`, `Splash/App/SplashOrientation.swift` (`requestedOrientation`) |
 | `JourneyCelebration.kt`, `SelectionWidgets.kt` (`SkillStars`, `AvatarArrow`), `ui/GameDialogBuilder.kt`, family `FamilyMenu` | `Splash/App/SplashViews.swift` (`JourneyCelebration`, `SkillStars`, `AvatarArrow`, `PauseDialog`, `MenuSection`, `SectionButton`, `FamilyLink`) |
 | `LocalBattleStore.kt`, SharedPreferences | `Splash/App/SplashStore.swift` |
+| MinikFamilyServices `FamilySkyDrawable`, `FamilyMenu` (section look), `FamilyMoreFrame`, `FamilyReadingPanel`, `FamilyTournamentUi`, `FamilyFormStyle`, `FamilyLandscapeHint` | `Splash/App/SplashSky.swift`; `SplashViews.swift` (`MenuSection`, `CupExitDialog`, `JoinPage`); `SplashController.present` |
 | `WorldCodec.kt` (with the `Node` helpers) | `Splash/Net/WorldCodec.swift`, `Splash/Net/Node.swift` |
 | `ReplicaEvents.kt`, `ReplicaTimeline.kt` | `Splash/Net/ReplicaEvents.swift`, `Splash/Net/ReplicaTimeline.swift` |
 | `OnlineSession.kt` | `Splash/Net/OnlineSession.swift`, `Splash/Net/SplashDatabase.swift`, `Splash/Net/FirebaseSplashDatabase.swift` |
@@ -258,12 +301,17 @@ sources under `Splash/`, tests under `Tests/SplashTests/` (scheme `MinikSplash`,
 | File | SHA-256 |
 | --- | --- |
 | `ASSET_MANIFEST.md` | `4b29f2ac2769fcec372b8404487a18ee17f3528e4b233fe67b57a0b241d16a5e` |
-| `BUILD_STATUS.md` | `e020d36e534a0ee348b48b487e3e5d9a095e3815edd9f55af990b1a135aa121e` |
+| `BUILD_STATUS.md` | `92d24948e276edd4e38dd69133214385ac3bdd00132c57f48e20e49c40ea6d83` |
 | `DECISIONS.md` | `b1d31ad304c1d395322047d42a6925c40db2a8f2b8782fcedc91093d3c37ac85` |
 | `EXTERNAL_ACTIONS_REQUIRED.md` | `4fb3e94a132ce9a88e6a024cb99712e625e8b84caff66d1c95e684e6e9107ad2` |
 | `NEXT_GAME_BRIEF.md` | `83aad9be1aa26eb97a9c10ab6188086e2b8ea73e99004065743a9163deb95c4d` |
 | `README.md` | `07a9ee298cdc99b39b5bcc3e37b53dd794bb4cce8420841cd2c0294b9b8a05a3` |
 | `app/build.gradle.kts` | `46bddaa81da7175d772c8d1876ce28c100c7d3c51fcfecc247ba57afbd5653e9` |
+| `app/src/androidTest/java/com/appsbybros/minik/setupqa/FamilyMenuReviewDeviceTest.kt` | `15753c6b83eaaf276aac3bd359742d2ce9fa8751903ca951c1ac952a5370989d` |
+| `app/src/androidTest/java/com/appsbybros/minik/setupqa/MenuDiscoveryDeviceTest.kt` | `69601d825d2fae89fa594811de0996a7693d231dfb8ace2b82dfe3b0fd115d33` |
+| `app/src/androidTest/java/com/appsbybros/minik/setupqa/MenuFormsDeviceTest.kt` | `1f8ba872322c8b4d741906882b2bc8b76243c4b4da2036258740f5e16c322e8c` |
+| `app/src/androidTest/java/com/appsbybros/minik/setupqa/RoomEntryDeviceTest.kt` | `4f448b4364bc96f9d8415a1b67aefecb37e0b3d9c2fa4a597a86a28a1bfa84c3` |
+| `app/src/androidTest/java/com/appsbybros/minik/setupqa/SkyMenuCaptureTest.kt` | `d89b521b51c93c416ab3fab0362e142668b23c2e42ac434ddd681406de9b72cb` |
 | `app/src/androidTest/java/com/appsbybros/minik/splash/CupAndRanksDeviceTest.kt` | `15118105bd5ae4e84a9eadafd114444ebe702a28c3d24a68f1e1351f39535288` |
 | `app/src/androidTest/java/com/appsbybros/minik/splash/DeviceInteractionTest.kt` | `9a0574fb0038b8e6db09c20a335c6172d973beb3797dde1b62bd731ef6ae5c47` |
 | `app/src/androidTest/java/com/appsbybros/minik/splash/FeedbackDeviceTest.kt` | `6a10d5bcfe865a0e90dbf5bd9162a37b12149d7045016744e195ac2a8c530d42` |
@@ -373,11 +421,11 @@ sources under `Splash/`, tests under `Tests/SplashTests/` (scheme `MinikSplash`,
 | `app/src/main/java/com/appsbybros/minik/splash/JourneyCelebration.kt` | `945a79f64983f04ca7091f30216bbdad3dc019e86a46000a7d9249df4c65d578` |
 | `app/src/main/java/com/appsbybros/minik/splash/LocalBattleStore.kt` | `2996c06e2801ad67c69695fa600d4eca64b3fc7443aa27a5b755c44ef086beee` |
 | `app/src/main/java/com/appsbybros/minik/splash/MenuMusic.kt` | `337f60ec6aa501d7d4d150348972a920999f6d1a70d454359c66cfe43fedc55f` |
-| `app/src/main/java/com/appsbybros/minik/splash/OnlineSession.kt` | `c28fba623542c33b24bcdc20c6c8415554ef26f6dd5fc51b222e65132b98ed89` |
+| `app/src/main/java/com/appsbybros/minik/splash/OnlineSession.kt` | `97062ced7a7fcda1eb10b94253d352a662167d6598b03b6d2556ff64e9ac86d9` |
 | `app/src/main/java/com/appsbybros/minik/splash/ReplicaEvents.kt` | `34afbaf8992f72aa67d98000d6190c2c6615e1c5a6aafdf62c61d948b4aaf129` |
 | `app/src/main/java/com/appsbybros/minik/splash/ReplicaTimeline.kt` | `268b5779cd608b48fe5dd116c79cc51c5a33585e5bfa57a4902235eeba60a39f` |
-| `app/src/main/java/com/appsbybros/minik/splash/SelectionWidgets.kt` | `099c9238d38c79f69f65fdf043a18256cf454217c87b35ce47a0321bee4304c3` |
-| `app/src/main/java/com/appsbybros/minik/splash/SplashActivity.kt` | `264a67e9ac2897133256ae4d9f5f30735244688384557e7027eed54f71c2aeda` |
+| `app/src/main/java/com/appsbybros/minik/splash/SelectionWidgets.kt` | `9c953c63c96780a308207e90111719f7b6cf3d45fbc88a8cbd347c931c84cc6f` |
+| `app/src/main/java/com/appsbybros/minik/splash/SplashActivity.kt` | `4e8282b9f63e8032772a8226b8359e528595b36ae56bbd71fec7e495bdc45f8a` |
 | `app/src/main/java/com/appsbybros/minik/splash/SplashAds.kt` | `d1f0f8a7e4ed71d7083bf12449062bf4f4149cd1e506b187f28ec22e8b3a573e` |
 | `app/src/main/java/com/appsbybros/minik/splash/SplashView.kt` | `9ea500933d6781b422406f1bb1beb8c8a7ccc85eeae88b0a799d2ef16cceb7d0` |
 | `app/src/main/java/com/appsbybros/minik/splash/WorldCodec.kt` | `6cba39deb45f57fff791665bdea4c90a50c3b95665496edc8a3f002a35926ffa` |
@@ -399,7 +447,7 @@ sources under `Splash/`, tests under `Tests/SplashTests/` (scheme `MinikSplash`,
 | `app/src/main/java/com/appsbybros/minik/splash/monetization/MonetizationConfig.java` | `03ba5e6aa163ade0b26926cb0b9cff12384de14a89a0beec7e95a9c809a836ea` |
 | `app/src/main/java/com/appsbybros/minik/splash/monetization/RemoveAdsBilling.java` | `e2b5ae94b78d1d3a1928865bbe997dad78d1108bf1e37029e48cfcc4664de4d6` |
 | `app/src/main/java/com/appsbybros/minik/ui/CenteredToggleSpan.kt` | `cc417b7c358164293fe5e15dc0374522f54f59d6f05253f48438584507bd7306` |
-| `app/src/main/java/com/appsbybros/minik/ui/GameDialogBuilder.kt` | `687b4ad92ae83247a4e8face51bcb8ee4527f480cc6a59e1efb52719d15d3536` |
+| `app/src/main/java/com/appsbybros/minik/ui/GameDialogBuilder.kt` | `43411f796174652156065d6a42ee2f9c59442f44a33053cb19b91ceb5bc531b8` |
 | `app/src/main/java/com/appsbybros/minik/world/ArenaCamera.kt` | `ca6227e0d8aae45127851b2d0f7c60d7c00e1d69a07e79feaf357e8553c61ea8` |
 | `app/src/main/java/com/appsbybros/minik/world/ArenaWorldView.kt` | `ece7d350dc7440f31681734b4927d1e95ead98d5fca0c85f75e7eeb49dcf3fe6` |
 | `app/src/main/java/com/appsbybros/minik/world/SpriteSizing.kt` | `a8cd963751ecd9345f4bd8fea589bb0a2dc1e6c3ccb3932b01573a88f4e9a2bb` |

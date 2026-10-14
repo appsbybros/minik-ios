@@ -173,6 +173,16 @@ struct SoccerView: View {
             }
         }
         .onAppear(perform: handleAppearance)
+        // Android MathSoccerScreen: the instruction before the first kick, then each exercise.
+        .mathReadAloud(
+            instruction: mathActivityFamily != nil && session.currentTargetIndex == 0
+                ? String(localized: "Kick the right answer")
+                : nil,
+            exercise: mathActivityFamily == nil
+                ? nil
+                : MathReadAloud.exercise(session.promptRepresentations),
+            id: session.currentTargetIndex
+        )
         .onChange(of: scenePhase) { _, phase in
             if phase != .active {
                 speechPlayer.stop()

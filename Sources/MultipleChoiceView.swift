@@ -143,6 +143,13 @@ struct MultipleChoiceView: View {
         }
         .task(id: feedbackStartedAt) { await clearReactionWhenPlayed() }
         .task(id: session.currentChallenge.id) { speakCurrentPrompt() }
+        .mathReadAloud(
+            instruction: mathActivityFamily == nil ? nil : mathChoiceInstruction,
+            exercise: mathActivityFamily == nil
+                ? nil
+                : MathReadAloud.exercise(session.currentChallenge.prompt.representations),
+            id: session.currentChallenge.id
+        )
         .onChange(of: scenePhase) { _, phase in
             if phase != .active { stopAudio() }
         }

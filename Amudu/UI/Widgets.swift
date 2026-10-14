@@ -51,7 +51,7 @@ struct FieldTitle: View {
     }
 }
 
-/// Android `button(s, color)`: 54 dp, 18 dp corners, dark bold text.
+/// Android `button(s, color)`: 54 dp, 18 dp corners, dark bold text on a raised sky surface (`bg(color)`).
 struct AmuduButton: View {
     let title: String
     var color: UInt32 = 0xffb8f3dc
@@ -71,24 +71,40 @@ struct AmuduButton: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 12)
                 .frame(maxWidth: .infinity, minHeight: 54)
-                .background(RoundedRectangle(cornerRadius: 18).fill(Color(argb: color)))
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(SkyButtonStyle(color: color, panel: SkyPalette.isPanelFill(color)))
         .padding(.vertical, 6)
     }
 }
 
-/// Android `page(title)`: the arena picture at 40% over navy, a scrolling column and a 28 sp title.
+/// Android `page(title)`: the arena picture at 40% over navy, a scrolling column and a 28 sp title. The column sits
+/// in a `FamilyReadingPanel` (narrower and centred in landscape). The home page adds `FamilyMoreFrame`'s scroll cue
+/// below the scrolling area.
 struct AmuduPage<Content: View>: View {
     let title: String
     let background: UIImage
+    let scrollCue: Bool
     let content: Content
+    @State private var scrollHandle = ScrollHandle()
+    @State private var moreBelow = false
+    /// The whole window (Android `displayMetrics`), which the keyboard does not shrink.
+    @State private var windowSize = CGSize.zero
+    private let space = "amuduPageScroll"
+    private let endID = "amuduPageEnd"
 
-    init(_ title: String, background: UIImage, @ViewBuilder content: () -> Content) {
+    init(_ title: String, background: UIImage, scrollCue: Bool = false, @ViewBuilder content: () -> Content) {
         self.title = title
         self.background = background
+        self.scrollCue = scrollCue
         self.content = content()
+    }
+
+    /// Android `canScrollVertically(1)`; the measures live in the handle, so scrolling redraws nothing until the
+    /// answer changes.
+    private func refreshMoreBelow() {
+        let more = scrollHandle.viewportHeight > 0 && scrollHandle.contentBottom > scrollHandle.viewportHeight + 1
+        if more != moreBelow { moreBelow = more }
     }
 
     var body: some View {
@@ -101,16 +117,121 @@ struct AmuduPage<Content: View>: View {
                     .frame(width: geo.size.width, height: geo.size.height)
                     .clipped()
                     .opacity(0.40)
+                    .onAppear { windowSize = geo.size }
+                    .onChange(of: geo.size) { _, size in windowSize = size }
             }
             .ignoresSafeArea()
-            ScrollView {
-                VStack(spacing: 0) {
-                    AmuduLabel(title, size: 28)
-                    content
+            GeometryReader { geo in
+                ScrollViewReader { proxy in
+                    VStack(spacing: 0) {
+                        ScrollView {
+                            VStack(spacing: 0) {
+                                AmuduLabel(title, size: 28)
+                                content
+                                if scrollCue {
+                                    Color.clear
+                                        .frame(height: 0)
+                                        .id(endID)
+                                }
+                            }
+                            .padding(EdgeInsets(top: 12, leading: 20, bottom: 24, trailing: 20))
+                            .frame(width: ReadingPanel.width(available: geo.size.width, window: windowSize))
+                            .frame(maxWidth: .infinity)
+                            .background {
+                                if scrollCue {
+                                    GeometryReader { inner in
+                                        Color.clear.preference(key: PageContentBottom.self, value: inner.frame(in: .named(space)).maxY)
+                                    }
+                                    ScrollFinder(handle: scrollHandle)
+                                        .frame(width: 1, height: 1)
+                                }
+                            }
+                        }
+                        .coordinateSpace(.named(space))
+                        .background {
+                            if scrollCue {
+                                GeometryReader { outer in
+                                    Color.clear.preference(key: PageViewportHeight.self, value: outer.size.height)
+                                }
+                            }
+                        }
+                        if scrollCue {
+                            MoreBelowCue(visible: moreBelow) {
+                                // Without the UIKit scroll view (not expected), the cue still reaches the end.
+                                if !scrollHandle.scrollDown(0.65) {
+                                    withAnimation(.easeInOut(duration: 0.4)) { proxy.scrollTo(endID, anchor: .bottom) }
+                                }
+                            }
+                        }
+                    }
                 }
-                .padding(EdgeInsets(top: 12, leading: 20, bottom: 24, trailing: 20))
             }
         }
+        .onPreferenceChange(PageContentBottom.self) { value in
+            MainActor.assumeIsolated {
+                scrollHandle.contentBottom = value
+                refreshMoreBelow()
+            }
+        }
+        .onPreferenceChange(PageViewportHeight.self) { value in
+            MainActor.assumeIsolated {
+                scrollHandle.viewportHeight = value
+                refreshMoreBelow()
+            }
+        }
+    }
+}
+
+private struct PageContentBottom: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
+}
+
+private struct PageViewportHeight: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
+}
+
+/// Android `FamilyMoreFrame`'s cue: a reserved 48 dp strip under the menu; while more lies below it shows "More below"
+/// and a gently bouncing ⌄ (still with VoiceOver or Reduce Motion), and a tap scrolls 65% of the visible height.
+struct MoreBelowCue: View {
+    let visible: Bool
+    let action: () -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var bounce = false
+
+    var body: some View {
+        ZStack {
+            if visible {
+                Button(action: action) {
+                    HStack(spacing: 0) {
+                        Text(FamilyMessages.text("More below", "עוד למטה"))
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(Color(argb: 0xfff7fbff))
+                            .shadow(color: Color(argb: 0xff102039), radius: 1, x: 0, y: 1)
+                        Text(verbatim: "⌄")
+                            .font(.system(size: 30, weight: .bold))
+                            .foregroundColor(Color(argb: 0xffffdf77))
+                            .shadow(color: Color.black, radius: 1, x: 0, y: 1)
+                            .frame(width: 38, height: 44)
+                            .offset(y: bounce ? 4 : 0)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 48)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(FamilyMessages.text("More options below. Tap to scroll", "עוד אפשרויות למטה. הקישו לגלילה"))
+                .accessibilityAddTraits(.isButton)
+                .onAppear {
+                    guard !reduceMotion && !UIAccessibility.isVoiceOverRunning else { return }
+                    withAnimation(.easeInOut(duration: 0.85).repeatForever(autoreverses: true)) { bounce = true }
+                }
+                .onDisappear { bounce = false }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 48)
     }
 }
 
@@ -123,7 +244,8 @@ enum MenuColors {
     static let ink: UInt32 = 0xff282d4e
 }
 
-/// Android `FamilyMenu.section`: a bordered home section with a white title and a − / + sign that opens and closes it.
+/// Android `FamilyMenu.section`: a raised pale sky panel outlined in the section colour, with a dark title and a − / +
+/// sign that opens and closes it.
 struct MenuSection<Content: View>: View {
     let title: String
     let color: UInt32
@@ -145,15 +267,16 @@ struct MenuSection<Content: View>: View {
                 HStack(spacing: 0) {
                     Text(title)
                         .font(.system(size: 19, weight: .bold))
-                        .foregroundColor(.white)
-                        .shadow(color: Color(argb: 0xff18243a), radius: 1, x: 0, y: 1)
+                        .foregroundColor(Color(argb: MenuColors.ink))
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Text(open ? "−" : "+")
                         .font(.system(size: 26))
-                        .foregroundColor(.white)
-                        .shadow(color: Color(argb: 0xff18243a), radius: 1, x: 0, y: 1)
+                        .foregroundColor(Color(argb: MenuColors.ink))
                         .frame(width: 42, height: 48)
                 }
+                // Android: the common 6/4 dp heading inset on the start and end.
+                .padding(.horizontal, 6)
+                .padding(.vertical, 4)
                 .frame(minHeight: 54)
                 .contentShape(Rectangle())
             }
@@ -167,7 +290,7 @@ struct MenuSection<Content: View>: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 4)
-        .overlay(RoundedRectangle(cornerRadius: 18).stroke(Color(argb: color), lineWidth: 2))
+        .background(SkySurface(color: color, radius: 18, panel: true, strokeWidth: 2, strokeColor: color))
         .padding(.bottom, 14)
     }
 }
@@ -194,7 +317,7 @@ struct MenuLink: View {
     }
 }
 
-/// Android `FamilyMenu.style`: a section's button in the section colour with dark ink and 15 dp corners.
+/// Android `FamilyMenu.style`: a section's raised button in the section colour with dark ink and 15 dp corners.
 struct SectionButton: View {
     let title: String
     let color: UInt32
@@ -214,10 +337,9 @@ struct SectionButton: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 12)
                 .frame(maxWidth: .infinity, minHeight: 54)
-                .background(RoundedRectangle(cornerRadius: 15).fill(Color(argb: color)))
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(SkyButtonStyle(color: color, radius: 15))
         .padding(.top, 4)
         .padding(.bottom, 8)
     }
@@ -261,10 +383,9 @@ struct GroupToggle: View {
             }
             .padding(.horizontal, 12)
             .frame(maxWidth: .infinity, minHeight: 54)
-            .background(RoundedRectangle(cornerRadius: 18).fill(Color(argb: 0xffdfcfff)))
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(SkyButtonStyle(color: 0xffdfcfff))
         .padding(.top, 24)
         .padding(.bottom, 8)
         .accessibilityLabel((expanded ? "−  " : "+  ") + title)
@@ -336,12 +457,11 @@ struct PictureChoices: View {
                     .frame(maxWidth: .infinity, minHeight: 43)
             }
             .padding(EdgeInsets(top: 6, leading: 5, bottom: 5, trailing: 5))
-            .background(RoundedRectangle(cornerRadius: 15).fill(Color(argb: isSelected ? 0xffc5ecff : 0xff153c54)))
-            .clipShape(RoundedRectangle(cornerRadius: 15))
-            .overlay(RoundedRectangle(cornerRadius: 15).stroke(Color(argb: isSelected ? 0xff72d4ff : 0xff4e748a), lineWidth: isSelected ? 3 : 1))
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        // Android: a raised sky card (selected pale blue, otherwise dark navy) outlined 3 or 1 dp, clipped to its outline.
+        .buttonStyle(SkyButtonStyle(color: isSelected ? 0xffc5ecff : 0xff153c54, radius: 15, strokeWidth: isSelected ? 3 : 1,
+                                    strokeColor: isSelected ? 0xff72d4ff : 0xff4e748a, clips: true))
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(option.name)
@@ -366,7 +486,8 @@ struct SettingSwitch: View {
     }
 }
 
-/// Android `GameDialogBuilder`: a light dialog (#F7FAFC) with dark text, used for dialogs that update while open.
+/// Android `GameDialogBuilder` with `FamilySkyUi.dialog`: a white sky panel with 24 dp corners and dark text, used for
+/// dialogs that update while open.
 struct DialogCard<Content: View>: View {
     let title: String
     let content: Content
@@ -388,13 +509,14 @@ struct DialogCard<Content: View>: View {
                 content
             }
             .padding(16)
-            .background(RoundedRectangle(cornerRadius: 12).fill(Color(argb: 0xfff7fafc)))
+            .background(SkySurface(color: 0xffffffff, radius: 24, panel: true))
             .padding(.horizontal, 22)
         }
     }
 }
 
-/// Android dialog button (positive or neutral): bold #174963 text at the end of the dialog.
+/// Android dialog button (positive or neutral) after `FamilySkyUi.dialog`: bold #174963 text on a raised sky-blue
+/// button at the end of the dialog.
 struct DialogTextButton: View {
     let title: String
     let action: () -> Void
@@ -407,9 +529,10 @@ struct DialogTextButton: View {
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(Color(argb: 0xff174963))
                     .padding(.horizontal, 8)
-                    .frame(minHeight: 48)
+                    .frame(minWidth: 88, minHeight: 48)
+                    .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(SkyButtonStyle(color: 0xffa6dcff))
         }
     }
 }
@@ -530,17 +653,26 @@ private struct ChevronShape: Shape {
     }
 }
 
-/// Android `AvatarArrow`: a thick rounded chevron in a 64x72 touch target.
+/// Android `AvatarArrow`: a thick rounded teal chevron in a 64x72 touch target, raised like the sky controls (a dark
+/// shadow 2 dp below, the face, and a thin light highlight 1 dp above).
 struct AvatarArrow: View {
     let right: Bool
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            ChevronShape(right: right)
-                .stroke(Color(argb: 0xffb8f3dc), style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round))
-                .frame(width: 64, height: 72)
-                .contentShape(Rectangle())
+            ZStack {
+                ChevronShape(right: right)
+                    .stroke(Color(argb: 0xff1d6d64), style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round))
+                    .offset(y: 2)
+                ChevronShape(right: right)
+                    .stroke(Color(argb: 0xff3ab5a0), style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round))
+                ChevronShape(right: right)
+                    .stroke(Color(argb: 0xffb1eddb), style: StrokeStyle(lineWidth: 1.4, lineCap: .round, lineJoin: .round))
+                    .offset(y: -1)
+            }
+            .frame(width: 64, height: 72)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(AppText.t(right ? "Next avatar" : "Previous avatar"))
@@ -565,7 +697,7 @@ private struct DropdownShape: Shape {
     }
 }
 
-/// Android setup `choice()`: a field title above a light rounded field with a dropdown chevron.
+/// Android setup `choice()`: a field title above a light raised field (`bg(0xffe3f4ff)`) with a dropdown chevron.
 struct ChoiceMenu: View {
     let title: String
     let items: [String]
@@ -602,7 +734,7 @@ struct ChoiceMenu: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
                 .frame(maxWidth: .infinity, minHeight: items.contains(where: { $0.count > 44 }) ? 82 : 54)
-                .background(RoundedRectangle(cornerRadius: 18).fill(Color(argb: 0xffe3f4ff)))
+                .background(SkySurface(color: 0xffe3f4ff, radius: 18))
                 .contentShape(Rectangle())
             }
         }

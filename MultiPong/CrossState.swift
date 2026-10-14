@@ -1,6 +1,6 @@
 import Foundation
 
-// Android cross/CrossState.kt (MinikCrossPong 828c6fc): the protocol-2 checkpoint/action wire format, field for field. Absent
+// Android cross/CrossState.kt (MinikCrossPong 5c1aa4d): the protocol-2 checkpoint/action wire format, field for field. Absent
 // (nil) values are omitted, as RTDB drops nulls; RTDB lists may arrive as arrays or index-keyed maps and read back in index
 // order.
 
@@ -34,13 +34,17 @@ struct CrossStrike: Equatable {
     var serve: Bool
     var rallyId = 0
     var hitIndex = 0
+    /// Team play: a raised pass to the striker's teammate. Only written when true, so individual strikes keep their shape.
+    var raised = false
     func wire() -> MPWire {
-        ["seat": seat, "point": CrossWire.point(point), "height": height, "ball": ball.wire(), "serve": serve, "rally": rallyId, "hit": hitIndex]
+        var w: MPWire = ["seat": seat, "point": CrossWire.point(point), "height": height, "ball": ball.wire(), "serve": serve, "rally": rallyId, "hit": hitIndex]
+        if raised { w["raised"] = true }
+        return w
     }
     static func read(_ w: MPWire) -> CrossStrike {
         CrossStrike(seat: CrossWire.int(w, "seat", -1), point: CrossWire.vector(MPCodec.map(w["point"])), height: CrossWire.decimal(w, "height"),
                     ball: CrossBallState.read(MPCodec.map(w["ball"])), serve: CrossWire.flag(w, "serve"),
-                    rallyId: CrossWire.int(w, "rally"), hitIndex: CrossWire.int(w, "hit"))
+                    rallyId: CrossWire.int(w, "rally"), hitIndex: CrossWire.int(w, "hit"), raised: CrossWire.flag(w, "raised"))
     }
 }
 
@@ -59,8 +63,17 @@ struct CrossMotionState: Equatable {
     }
 }
 
+/// A wire map compared by value, for Equatable states that carry one.
+struct CrossWireBox: Equatable {
+    var value: MPWire
+    init(_ value: MPWire = [:]) { self.value = value }
+    static func == (a: CrossWireBox, b: CrossWireBox) -> Bool { NSDictionary(dictionary: a.value).isEqual(to: b.value) }
+}
+
 /// Authoritative match state for checkpoints (protocol 2): referee, ball, phase timers (point delay, house serve delay), the
-/// pending remote-receiver grace, the last strike (peers animate it once) and every seat's racket motion.
+/// pending remote-receiver grace, the last strike (peers animate it once) and every seat's racket motion. 5c1aa4d adds the team
+/// rally ("localTeam", team tables only), the practice aim and placed paddle (journeys only) and the shared reception pace
+/// (always written, empty when unused; absent in old checkpoints).
 struct CrossState: Equatable {
     static let protocolVersion = 2
     var referee: CrossRefereeState
@@ -70,22 +83,35 @@ struct CrossState: Equatable {
     var grace: Double? = nil
     var strike: CrossStrike? = nil
     var motions: [CrossMotionState] = []
+    var team: CrossTeamFlight? = nil
+    var practiceAim: MPPoint? = nil
+    var paddlePlaced = false
+    var reception = CrossWireBox()
     func wire() -> MPWire {
-        var w: MPWire = ["protocol": CrossState.protocolVersion, "referee": referee.wire(), "ball": ball.wire(), "motions": motions.map { $0.wire() }]
+        var w: MPWire = ["reception": reception.value, "protocol": CrossState.protocolVersion, "referee": referee.wire(), "ball": ball.wire(),
+                         "motions": motions.map { $0.wire() }]
         if let pointDelay { w["pointDelay"] = pointDelay }
         if let serveDelay { w["serveDelay"] = serveDelay }
         if let grace { w["grace"] = grace }
         if let strike { w["strike"] = strike.wire() }
+        if let team { w["localTeam"] = team.wire() }
+        if let practiceAim { w["practiceAim"] = CrossWire.point(practiceAim); w["paddlePlaced"] = paddlePlaced }
         return w
     }
     static func read(_ w: MPWire) throws -> CrossState {
         guard CrossWire.number(w, "protocol") == Int64(protocolVersion) else { throw CrossStateError.invalid("Unsupported cross match protocol") }
         let strikeWire = MPCodec.map(w["strike"])
         let referee = try CrossRefereeState.read(MPCodec.map(w["referee"]))
+        let teamWire = MPCodec.map(w["localTeam"]), aimWire = MPCodec.map(w["practiceAim"])
+        var team: CrossTeamFlight?
+        if !teamWire.isEmpty { team = try CrossTeamFlight.read(teamWire) }
+        let reception = try CrossReception.canonical(MPCodec.map(w["reception"]))
         return CrossState(referee: referee, ball: CrossBallState.read(MPCodec.map(w["ball"])),
                           pointDelay: CrossWire.optional(w, "pointDelay"), serveDelay: CrossWire.optional(w, "serveDelay"), grace: CrossWire.optional(w, "grace"),
                           strike: strikeWire.isEmpty ? nil : CrossStrike.read(strikeWire),
-                          motions: CrossWire.entries(w["motions"]).map { CrossMotionState.read(MPCodec.map($0)) })
+                          motions: CrossWire.entries(w["motions"]).map { CrossMotionState.read(MPCodec.map($0)) },
+                          team: team, practiceAim: aimWire.isEmpty ? nil : CrossWire.vector(aimWire), paddlePlaced: CrossWire.flag(w, "paddlePlaced"),
+                          reception: CrossWireBox(reception))
     }
 }
 

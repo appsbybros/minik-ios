@@ -1067,7 +1067,7 @@ private struct LanguagePrettyMetrics {
 
     // The logo row on the sky.
     var logoHeight: CGFloat { value(82, 120) }
-    var logoWidth: CGFloat { logoHeight * MinikPretty.Art.plusLogoAspect }
+    var logoWidth: CGFloat { logoHeight * MinikPretty.Art.languageLogoAspect }
     var screenMargin: CGFloat { value(14, 32) }
     var topMargin: CGFloat { value(6, 16) }
     var roundButton: CGFloat { value(58, 84) }
@@ -1514,13 +1514,12 @@ enum LanguagePalette {
     )
 }
 
-/// The new MINIK+plus logo (Android minik_logo_pretty_plus, a white sticker outline
-/// around it) used by the Intro, the menu and the activity screens. Android English
-/// Only shows the same logo in the pretty design. It is wider than the former
-/// minik_plus_logo and fits whatever box it is given.
+/// The logo of the Intro, the menu and the activity screens: the MINIK+plus badge
+/// (Android minik_logo_pretty_plus), and in English Only the former logo with its white
+/// sticker outline (Android minik_logo_pretty). It fits whatever box it is given.
 struct MinikLanguageLogo: View {
     var body: some View {
-        MinikArtworkImage(name: MinikPretty.Art.plusLogo)
+        MinikArtworkImage(name: MinikPretty.Art.languageLogo)
             .accessibilityHidden(true)
     }
 }

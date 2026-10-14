@@ -80,6 +80,7 @@ struct PairsView: View {
         .task(id: LanguagePairTaskKey(transition: pendingLanguagePair, active: scenePhase == .active)) {
             await performLanguagePairTransition()
         }
+        .mathReadAloud(instruction: mathReadAloudInstruction, exercise: nil, id: 0)
         .onChange(of: scenePhase) { _, phase in
             if phase != .active {
                 languagePairFeedbackVisible = false
@@ -411,6 +412,17 @@ struct PairsView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity)
+    }
+
+    /// headerInstruction, read aloud when a Math board opens (Android MatchScreen).
+    private var mathReadAloudInstruction: String? {
+        guard mathActivityFamily != nil else { return nil }
+        switch session.selectionStyle {
+        case .opposingColumns:
+            return String(localized: "Choose one tile from each side that belongs together.")
+        case .anyTwoTiles:
+            return String(localized: "Match words with their starters")
+        }
     }
 
     private var headerInstruction: LocalizedStringKey {

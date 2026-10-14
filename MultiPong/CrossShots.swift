@@ -1,6 +1,6 @@
 import Foundation
 
-// Android cross/CrossShots.kt (MinikCrossPong 828c6fc).
+// Android cross/CrossShots.kt (MinikCrossPong 5c1aa4d).
 
 /// A two-bounce serve: `launch` from `start`/`height` lands at `first` in the server's own serve zone, where the ball takes
 /// `rebound`. `second` is the planned receiving bounce (nil for a driven Pro serve).
@@ -18,8 +18,8 @@ enum CrossShots {
     static let clearance = 0.03
     static let minTime = 0.45
     static let maxTime = 2.4
-    /// Classic pace → world units/s for targeted shots (Standard/Beginner base 0.40 → 0.88).
-    static let paceScale = 2.2
+    /// Classic pace → world units/s for targeted shots (Standard/Beginner base 0.40 → 0.98; 5c1aa4d raised it from 2.2).
+    static let paceScale = 2.45
     /// Classic table length (1.66 W) → world units for the driven impulse.
     static let drivenScale = 1.66
     static let maxAngle = 70 * Double.pi / 180

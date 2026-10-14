@@ -1,17 +1,49 @@
 # Minik Squash and Minik Beach Volley — iOS port handoff
 
-## Port of 2026-10-13
+## 2026-10-13 sync
+
+iOS now matches Android `C:\Projects\MinikSports` at **a1ece5b** ("Add skill journeys and polish Squash
+and Beach Volleyball presentation") together with the shared `MinikFamilyServices` UI it uses (dcfdd13).
+The engine, journeys, texts tables and golden traces were already at that state (the earlier port
+included the then-uncommitted work), so `android-golden.txt` is unchanged. Ported in this round:
+
+- Tournament save flow: Back from the local cup table or a room lobby asks "Save this tournament?"
+  (Save / Don't save / Cancel) when a cup is in progress; "Finish tournament" is now the pink
+  "Delete tournament".
+- Rooms: Create and Join are separated by a dashed line; the host's match format has its own page
+  ("Create room" / "Create public tournament", with Cancel). A host alone in a room sees "Not started",
+  has no Ready button and may start (`SportsOnline.start`, as on Android).
+- Menus and art: the full Minik/Mia (Squash) and Minik-and-friends (Beach Volleyball) menu pictures
+  (`Assets.xcassets/Menu`, byte-identical to Android's `*_menu_clean.png`); raised, glossy buttons,
+  section panels, spinners, cards and dialogs (FamilySkyDrawable, drawn in `Sports/App/SportsSky.swift`);
+  flat 8 point colour labels and a white room-code field (FamilyFormStyle); the three-stroke back
+  arrow; a centred column of about half the width in landscape (FamilyReadingPanel); the "More below"
+  cue under the home menu (FamilyMoreFrame).
+- Squash pages are portrait and matches follow the device; every match that starts in portrait
+  suggests landscape once ("For a wider view, play in landscape.").
+- Texts: "Daily skill journey" is "אתגר יומי"; the reception switches' new Hebrew; the app is
+  "Minik Beach Volleyball" (title, share text, feedback subject, home-screen name); the new blue
+  volleyball app icon (`volley/art/launcher/volley-blue-master.png`, resized to 1024).
+
+Deliberate differences: the home avatar label keeps its rank ink (Android's `readableProfile` turns
+the white ink of the Blue and Brown ranks dark on a dark label); "More Minik apps & games" stays the
+Advanced link in every language (Android's organizer misses it outside English and Hebrew); spinners
+use the column width in landscape (Android's keep the portrait width and are clipped). The family texts
+"More below", "More options below. Tap to scroll" and the landscape hint come from `FamilyText` and
+fall back to English until that table has their rows.
+
+## Port of 2026-10-13 (first port)
 
 Both apps are one Android project, `C:\Projects\MinikSports` (the `sports` library module with the
 `squash` and `volley` app modules; the working tree at 0b77b1e with its uncommitted changes). On
 iOS they are two targets built from the same `Sports/` sources; the Info.plist key `SportsGame`
 (`SQUASH` or `VOLLEY`) picks the game, like the Android manifest's `sports.game` meta-data.
 
-| | Minik Squash | Minik Beach Volley |
+| | Minik Squash | Minik Beach Volleyball |
 | --- | --- | --- |
 | Target / scheme | `MinikSquash` (tests: `SportsTests`) | `MinikBeachVolley` |
 | Bundle ID | `com.appsbybros.minik.squash` | `com.appsbybros.minik.beachvolley` |
-| App icon | `SquashIcon` (from `art/squash-icon-source.png`) | `VolleyIcon` (from `art/volley-refinement/launcher-berry-source.png`) |
+| App icon | `SquashIcon` (from `art/squash-icon-source.png`) | `VolleyIcon` (from `volley/art/launcher/volley-blue-master.png`) |
 | RTDB root | `minikSquash/` | `minikBeachVolley/` |
 
 Nothing was compiled on this machine (no `swiftc`): everything was written and checked by reading,

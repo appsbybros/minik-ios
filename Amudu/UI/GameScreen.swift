@@ -126,9 +126,11 @@ struct ReturnVoteCard: View {
     }
 }
 
-/// Android nickname huddle dialog: never shown to the target; the countdown refreshes every 350 ms.
+/// Android nickname huddle dialog: never shown to the target; the countdown refreshes every 350 ms. Like every
+/// `GameDialogBuilder` dialog it is a white sky panel, and its word field is `FamilyFormStyle`'s white input.
 struct HuddleCard: View {
     @ObservedObject var model: AppModel
+    @FocusState private var inputFocused: Bool
 
     var body: some View {
         ZStack {
@@ -141,13 +143,14 @@ struct HuddleCard: View {
                 AmuduLabel(model.tr("Choose one word, then vote. At three penalties it replaces the name; later words are added.", "בוחרים מילה אחת ומצביעים. בשלוש נקודות היא מחליפה את השם; בהמשך מוסיפים מילה."), size: 16, color: 0xff163650)
                 TextField("", text: $model.huddleInput)
                     .font(.system(size: 18))
-                    .foregroundColor(Color(argb: 0xff163650))
+                    .foregroundColor(Color(argb: SkyInk.input))
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
-                    .padding(.vertical, 8)
-                    .overlay(alignment: .bottom) {
-                        Rectangle().fill(Color(argb: 0xff00a5b8)).frame(height: 2)
-                    }
+                    .focused($inputFocused)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .frame(minHeight: 50)
+                    .background(InputFace(focused: inputFocused))
                     .onChange(of: model.huddleInput) { _, value in model.limitHuddleInput(value) }
                 AmuduLabel(model.tr("\(model.huddle?.seconds ?? 0) seconds left", "נותרו \(model.huddle?.seconds ?? 0) שניות"), size: 19, color: 0xff163650)
                 AmuduButton(model.tr("Suggest this nickname", "הצעת הכינוי")) { model.suggestNickname() }
@@ -162,7 +165,7 @@ struct HuddleCard: View {
                 .frame(height: 200)
             }
             .padding(16)
-            .background(RoundedRectangle(cornerRadius: 12).fill(Color.white))
+            .background(SkySurface(color: 0xffffffff, radius: 24, panel: true))
             .padding(.horizontal, 22)
             .confirmationDialog(model.tr("Funny-word list", "רשימת מילים מצחיקות"), isPresented: $model.wordListVisible, titleVisibility: .hidden) {
                 ForEach(0..<model.funnyWords.count, id: \.self) { i in

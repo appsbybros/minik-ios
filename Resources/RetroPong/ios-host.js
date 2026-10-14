@@ -57,11 +57,20 @@
   // the saved result shows after the host's ad boundary, and "For parents" opens the native gate.
   const monetization = config.monetization === true, parents = config.parents === true;
   const pendingResults = new Map();
-  let resultSequence = 0;
+  let resultSequence = 0, playing = () => false, menuRoot = null, idleTimer = 0;
   const showResult = token => {
     const callback = pendingResults.get(String(token));
     if (!callback) return;
     pendingResults.delete(String(token)); callback();
+  };
+  // Android Bounce (minik-monetization.js `menuIdle`): every second the setup with the "For parents"
+  // link is idle on screen, the native host may show the family remove-ads reminder.
+  const menuIdle = () => {
+    if (!active || document.hidden || pendingResults.size || !menuRoot || !menuRoot.isConnected) return;
+    let busy = true;
+    try { busy = !!playing(); } catch (_) {}
+    if (busy || !menuRoot.getClientRects().length || getComputedStyle(menuRoot).visibility === "hidden") return;
+    send({type: "menuIdle"});
   };
   window.MinikMonetization = Object.freeze({
     begin(kind) { return String(kind) + "/" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2); },
@@ -75,9 +84,11 @@
       setTimeout(() => showResult(token), 20000); // Never strand the result if the host does not answer.
     },
     complete(token) { showResult(token); },
-    track() {},
+    track(getter) { if (typeof getter === "function") playing = getter; },
     menu(parent, lang) {
       if (!parents || !parent) return null;
+      menuRoot = parent;
+      if (!idleTimer) idleTimer = setInterval(menuIdle, 1000);
       const button = document.createElement("button");
       button.type = "button"; button.className = "minik-parent-entry";
       button.textContent = lang === "he" ? "להורים" : "For parents";

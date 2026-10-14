@@ -104,6 +104,14 @@ struct MemoryView: View {
             await performLanguageTransition()
         }
         .onAppear(perform: speakLanguageIntroductionIfNeeded)
+        // Android MatchScreen reads the memory instruction when a Math board opens.
+        .mathReadAloud(
+            instruction: mathActivityFamily == nil
+                ? nil
+                : String(localized: "Turn over two cards to find a match."),
+            exercise: nil,
+            id: 0
+        )
         .onChange(of: scenePhase) { _, phase in
             if phase != .active {
                 cancelLanguageTransitionForBackground()

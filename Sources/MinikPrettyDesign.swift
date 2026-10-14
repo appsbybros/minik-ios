@@ -67,9 +67,27 @@ extension MinikPretty {
         static let sky = "minik_pretty_sky"
         /// drawable-sw600dp-nodpi/minik_sky_background: the wider tablet sky (1600 x 2240).
         static let skyTablet = "minik_pretty_sky_tablet"
-        /// minik_logo_pretty_plus: the MINIK+plus logo (749 x 520).
+        /// minik_logo_pretty_plus: the MINIK+plus badge of the rainbow branding (Android 8b1b1d6,
+        /// 1254 x 1254, kept here at 600 x 600).
         static let plusLogo = "minik_pretty_logo_plus"
-        static let plusLogoAspect: CGFloat = 749.0 / 520.0
+        /// minik_logo_pretty: the former MINIK+plus logo, which English Only keeps (749 x 520).
+        static let englishOnlyLogo = "minik_pretty_logo_english"
+        /// The logo of the Intro, the menu and the activity screens: Android IntroScreen and
+        /// ButtonsMenuFragment show minik_logo_pretty in English Only, minik_logo_pretty_plus otherwise.
+        static let languageLogo: String = {
+            #if MINIK_PLUS_ENGLISH
+            return Art.englishOnlyLogo
+            #else
+            return Art.plusLogo
+            #endif
+        }()
+        static let languageLogoAspect: CGFloat = {
+            #if MINIK_PLUS_ENGLISH
+            return 749.0 / 520.0
+            #else
+            return 1
+            #endif
+        }()
         /// Android Minik Math Plus math_plus_logo: the Minik Math icon (404 x 405).
         static let mathLogo = "minik_pretty_logo_math"
         /// minik_plus_welcome_sky: Minik on a cloud in front of a rainbow (899 x 430).

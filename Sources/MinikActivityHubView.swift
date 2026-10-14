@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct MinikActivityHubView: View {
     private enum Route {
@@ -10,6 +11,8 @@ struct MinikActivityHubView: View {
         case progress
         case records(returnToParentArea: Bool)
         case recordsLeaderboard([RemoteRecordPlacement])
+        /// Android Minik Math Plus MathDailyScreen: the daily math journey's page.
+        case mathDaily
     }
 
     let configuration: ProductConfiguration
@@ -21,6 +24,7 @@ struct MinikActivityHubView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.interfaceLocaleID) private var interfaceLocaleID
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// The Math hub's card and level text follow Dynamic Type, within what the cards hold.
     @ScaledMetric(relativeTo: .body) private var hubTextPercent: CGFloat = 100
     @State private var selectedLanguage: LanguageIdentifier
@@ -46,6 +50,17 @@ struct MinikActivityHubView: View {
     @State private var publicLeaderboardController: PublicLeaderboardController
     /// The children on this device and whose progress is in place (Android IntroScreen).
     @StateObject private var childProfiles: ChildProfileStore
+    /// Android DailyLearning's toast when today's fifth little win is earned.
+    @State private var dailyLearningToast: String?
+    /// The daily math journey (Android Math Plus AppState's daily route): the saved journey,
+    /// whether its activity is being played now, and whether a stage was just completed
+    /// (Android dailyActive and dailyFinished, kept while the app runs).
+    @State private var mathDailyJourney = MathDailyJourneyRepository().load()
+    @State private var mathDailyIsPlaying = false
+    @State private var mathDailyFinished = false
+    /// Where the Math hub's board and rows are while it scrolls, for its "More below" cue.
+    @State private var hubScrollTracker = MinikHubScrollTracker()
+    @State private var mathHubContinuesBelow = false
 
     private let mathFactory: MathActivitySessionFactory
     private let mathM1Factory: MathM1ActivitySessionFactory?
@@ -213,6 +228,7 @@ struct MinikActivityHubView: View {
                 .environment(\.languageRewardState, languageRewards)
                 .environment(\.languageWordBonusRun, languageWordBonusRun)
                 .environment(\.languageEncouragementEnabled, EncouragementPreferenceRepository().load(for: configuration.variant))
+                .environment(\.mathReadAloudEnabled, MathReadAloudPreferenceRepository().load())
         }
         .overlay {
             if configuration.contentDomain == .language, case .parentArea = route {
@@ -242,6 +258,12 @@ struct MinikActivityHubView: View {
                 publicAliasPrompt
             } else if pendingPublicationNoticeIsPresented {
                 pendingPublicationNotice
+            }
+        }
+        .overlay(alignment: .bottom) {
+            if let dailyLearningToast {
+                dailyLearningToastView(dailyLearningToast)
+                    .transition(.opacity)
             }
         }
         .sheet(isPresented: parentAreaPresented) {
@@ -356,6 +378,20 @@ struct MinikActivityHubView: View {
         case .math(let activity, let levelID, let launchID):
             mathDestination(for: activity, levelID: levelID)
                 .id(launchID)
+                // Android MathDailyScreen: the journey's progress line above the day's activity.
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    if mathDailyIsPlaying {
+                        mathDailyProgressLine
+                    }
+                }
+        case .mathDaily:
+            MathDailyJourneyView(
+                state: mathDailyJourney,
+                isFinished: mathDailyFinished,
+                onStart: startMathDailyActivity,
+                onNext: acknowledgeMathDaily,
+                onClose: closeMathDaily
+            )
         case .ticTacToe(let launchID):
             TicTacToeView(
                 onResolvedRound: recordLanguageTicTacToeCompletion,
@@ -512,22 +548,37 @@ struct MinikActivityHubView: View {
             let metrics = MinikHubMetrics(size: geometry.size)
             let panelWidth = max(1, min(metrics.panelMaxWidth, geometry.size.width - 2 * metrics.panelMargin))
             let contentWidth = max(1, panelWidth - 2 * metrics.panelPadding)
-            VStack(spacing: 0) {
-                hubHeader(metrics)
-                MinikGlassPanel(padding: 0, cornerRadius: metrics.panelRadius) {
-                    ScrollView {
-                        hubBoard(metrics: metrics, contentWidth: contentWidth)
+            let showsMoreBelowRow = configuration.contentDomain == .math
+            ScrollViewReader { proxy in
+                VStack(spacing: 0) {
+                    hubHeader(metrics)
+                    MinikGlassPanel(padding: 0, cornerRadius: metrics.panelRadius) {
+                        ScrollView {
+                            hubBoard(metrics: metrics, contentWidth: contentWidth)
+                        }
+                        .scrollBounceBehavior(.basedOnSize)
+                        .scrollIndicators(.hidden)
+                        .background {
+                            MinikHubPositionProbe { rect in
+                                hubScrollTracker.viewport = rect
+                                refreshMathHubContinuation()
+                            }
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: metrics.panelRadius, style: .continuous))
                     }
-                    .scrollBounceBehavior(.basedOnSize)
-                    .scrollIndicators(.hidden)
-                    .clipShape(RoundedRectangle(cornerRadius: metrics.panelRadius, style: .continuous))
+                    .frame(width: panelWidth)
+                    .frame(maxHeight: .infinity)
+                    .padding(.top, metrics.panelTopMargin)
+                    .padding(.bottom, showsMoreBelowRow ? 0 : metrics.panelBottomMargin)
+
+                    // Android Math Plus HubScreen (menu discovery, 2026-10-13): a row of its own
+                    // under the panel, so the cue never covers a card.
+                    if showsMoreBelowRow {
+                        mathMoreBelowRow(metrics, proxy: proxy)
+                    }
                 }
-                .frame(width: panelWidth)
-                .frame(maxHeight: .infinity)
-                .padding(.top, metrics.panelTopMargin)
-                .padding(.bottom, metrics.panelBottomMargin)
+                .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)
             }
-            .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)
         }
         // A background never sizes the layout (see MinikHomeScreen).
         .background {
@@ -584,35 +635,169 @@ struct MinikActivityHubView: View {
         let columns = hubColumnCount(metrics, contentWidth: contentWidth)
         let cardWidth = max(1, (contentWidth - metrics.cardGap * CGFloat(columns - 1)) / CGFloat(columns))
         return VStack(spacing: 0) {
-            if configuration.contentDomain == .math {
-                mathLevelCard(metrics)
+            VStack(spacing: 0) {
+                if configuration.contentDomain == .math {
+                    // Android Math Plus HubScreen (7682b75): the daily math journey first.
+                    mathDailyButton(metrics)
+                        .padding(.bottom, metrics.sectionGap)
+                        .id(MinikHubScrollID.daily)
+                        .background { hubScrollTargetProbe(MinikHubScrollID.daily) }
+                    mathLevelCard(metrics)
+                        .padding(.bottom, metrics.sectionTopGap)
+                        .id(MinikHubScrollID.level)
+                        .background { hubScrollTargetProbe(MinikHubScrollID.level) }
+                }
+
+                ForEach(ActivityCatalog.mathSections(
+                    for: configuration,
+                    levelID: selectedMathLevelID
+                )) { section in
+                    VStack(spacing: 0) {
+                        hubSectionBanner(id: section.id, title: section.title, metrics: metrics)
+                            .padding(.bottom, metrics.sectionGap)
+                            .id(MinikHubScrollID.banner(section.id))
+                            .background { hubScrollTargetProbe(MinikHubScrollID.banner(section.id)) }
+                        mathCardRows(
+                            section.activities,
+                            sectionID: section.id,
+                            columns: columns,
+                            cardWidth: cardWidth,
+                            metrics: metrics
+                        )
+                    }
                     .padding(.bottom, metrics.sectionTopGap)
-            }
-
-            ForEach(ActivityCatalog.mathSections(
-                for: configuration,
-                levelID: selectedMathLevelID
-            )) { section in
-                VStack(spacing: 0) {
-                    hubSectionBanner(id: section.id, title: section.title, metrics: metrics)
-                        .padding(.bottom, metrics.sectionGap)
-                    mathCardRows(section.activities, columns: columns, cardWidth: cardWidth, metrics: metrics)
                 }
-                .padding(.bottom, metrics.sectionTopGap)
-            }
 
-            ForEach(ActivityCatalog.productGameSections(for: configuration)) { section in
-                VStack(spacing: 0) {
-                    hubSectionBanner(id: section.id, title: section.title, metrics: metrics)
-                        .padding(.bottom, metrics.sectionGap)
-                    gameCardRows(section.activities, columns: columns, cardWidth: cardWidth, metrics: metrics)
+                ForEach(ActivityCatalog.productGameSections(for: configuration)) { section in
+                    VStack(spacing: 0) {
+                        hubSectionBanner(id: section.id, title: section.title, metrics: metrics)
+                            .padding(.bottom, metrics.sectionGap)
+                            .id(MinikHubScrollID.banner(section.id))
+                            .background { hubScrollTargetProbe(MinikHubScrollID.banner(section.id)) }
+                        gameCardRows(
+                            section.activities,
+                            sectionID: section.id,
+                            columns: columns,
+                            cardWidth: cardWidth,
+                            metrics: metrics
+                        )
+                    }
+                    .padding(.bottom, metrics.sectionTopGap)
                 }
-                .padding(.bottom, metrics.sectionTopGap)
+            }
+            .padding(.horizontal, metrics.panelPadding)
+            .padding(.top, metrics.panelPaddingTop)
+            .padding(.bottom, max(0, metrics.panelPaddingBottom - metrics.sectionTopGap))
+
+            // The end of the board: once it is in view, "More below" goes away.
+            Color.clear
+                .frame(height: 1)
+                .id(MinikHubScrollID.end)
+                .background {
+                    MinikHubPositionProbe { rect in
+                        hubScrollTracker.endMinY = rect.minY
+                        refreshMathHubContinuation()
+                    }
+                }
+        }
+    }
+
+    /// Android's daily journey entry in every app: the yellow #FFE082 button with #282D4E ink.
+    private func mathDailyButton(_ metrics: MinikHubMetrics) -> some View {
+        Button {
+            route = .mathDaily
+        } label: {
+            Text(verbatim: String(localized: "Daily math journey"))
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(MinikPretty.HeroButtonStyle(
+            look: Self.mathDailyLook,
+            fontSize: metrics.levelTitleSize * hubTextScale,
+            minHeight: metrics.parentButtonHeight + 4
+        ))
+    }
+
+    private static let mathDailyLook = MinikPretty.PillLook(
+        top: MinikPretty.color(0xFFE082),
+        bottom: MinikPretty.color(0xFFE082),
+        lip: MinikPretty.color(0xDEC067),
+        rim: Color.white,
+        ink: MinikPretty.color(0x282D4E),
+        inkShadow: Color.clear
+    )
+
+    private func hubScrollTargetProbe(_ id: String) -> some View {
+        MinikHubPositionProbe { rect in
+            hubScrollTracker.targetMinY[id] = rect.minY
+        }
+    }
+
+    /// Android Math Plus's "More below ⌄" (menu discovery): shown while the board goes on
+    /// below the panel; a tap moves the board on by about two thirds of the panel.
+    private func mathMoreBelowRow(_ metrics: MinikHubMetrics, proxy: ScrollViewProxy) -> some View {
+        ZStack {
+            if mathHubContinuesBelow {
+                Button {
+                    scrollMathHubFurther(using: proxy)
+                } label: {
+                    Text(verbatim: String(localized: "More below") + "  ⌄")
+                        .font(MinikPretty.titleFont((metrics.tablet ? 19 : 16) * hubTextScale))
+                        .foregroundStyle(MinikPretty.color(0x233B5C))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .padding(.horizontal, 16)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text(verbatim: String(localized: "More below")))
+                .transition(.opacity)
             }
         }
-        .padding(.horizontal, metrics.panelPadding)
-        .padding(.top, metrics.panelPaddingTop)
-        .padding(.bottom, max(0, metrics.panelPaddingBottom - metrics.sectionTopGap))
+        .frame(maxWidth: .infinity)
+        .frame(height: metrics.tablet ? 52 : 46)
+        .padding(.bottom, metrics.tablet ? 6 : 2)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: mathHubContinuesBelow)
+    }
+
+    private func refreshMathHubContinuation() {
+        let viewport = hubScrollTracker.viewport
+        guard configuration.contentDomain == .math, viewport.height > 0 else { return }
+        let continues = hubScrollTracker.endMinY > viewport.maxY + 1
+        if continues != mathHubContinuesBelow {
+            mathHubContinuesBelow = continues
+        }
+    }
+
+    /// Android scrolls 65% of the board's height per tap. Here the furthest row that starts
+    /// within that distance moves to the top, so nothing is skipped (as in the Language menu).
+    private func scrollMathHubFurther(using proxy: ScrollViewProxy) {
+        let viewport = hubScrollTracker.viewport
+        guard viewport.height > 0 else { return }
+        let distance = viewport.height * 0.65
+        var target: String?
+        var anchor = UnitPoint.top
+        let ordered = hubScrollTracker.targetMinY.sorted { $0.value < $1.value }
+        for entry in ordered {
+            let distanceFromTop = entry.value - viewport.minY
+            if distanceFromTop <= 1 { continue }
+            if distanceFromTop <= distance {
+                target = entry.key
+                continue
+            }
+            if target == nil {
+                target = entry.key
+                anchor = distanceFromTop <= viewport.height ? .top : .bottom
+            }
+            break
+        }
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.4)) {
+            if let target {
+                proxy.scrollTo(target, anchor: anchor)
+            } else {
+                proxy.scrollTo(MinikHubScrollID.end, anchor: .bottom)
+            }
+        }
     }
 
     /// The current level, as Android Math Plus's level card: Minik on the rainbow,
@@ -676,13 +861,14 @@ struct MinikActivityHubView: View {
 
     private func mathCardRows(
         _ activities: [MathProductionActivityID],
+        sectionID: String,
         columns: Int,
         cardWidth: CGFloat,
         metrics: MinikHubMetrics
     ) -> some View {
         let rows = Self.rowsOf(activities, columns: columns)
         return VStack(spacing: metrics.cardGap) {
-            ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+            ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
                 HStack(alignment: .top, spacing: metrics.cardGap) {
                     ForEach(row) { activity in
                         hubCard(
@@ -704,19 +890,22 @@ struct MinikActivityHubView: View {
                 // The cards of a row are as tall as the tallest; a short last row is centred.
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity)
+                .id(MinikHubScrollID.row(sectionID, index))
+                .background { hubScrollTargetProbe(MinikHubScrollID.row(sectionID, index)) }
             }
         }
     }
 
     private func gameCardRows(
         _ games: [ProductGameKind],
+        sectionID: String,
         columns: Int,
         cardWidth: CGFloat,
         metrics: MinikHubMetrics
     ) -> some View {
         let rows = Self.rowsOf(games, columns: columns)
         return VStack(spacing: metrics.cardGap) {
-            ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+            ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
                 HStack(alignment: .top, spacing: metrics.cardGap) {
                     ForEach(row) { game in
                         hubCard(
@@ -737,6 +926,8 @@ struct MinikActivityHubView: View {
                 }
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity)
+                .id(MinikHubScrollID.row(sectionID, index))
+                .background { hubScrollTargetProbe(MinikHubScrollID.row(sectionID, index)) }
             }
         }
     }
@@ -1316,6 +1507,20 @@ struct MinikActivityHubView: View {
     }
 
     private func returnToHub() {
+        // The stage's celebration page has already replaced the day's activity; a late
+        // completion from that activity must not leave it. Only its own Close does.
+        if case .mathDaily = route {
+            return
+        }
+        // Android MathDailyScreen: leaving the day's activity, or finishing its round, goes
+        // back to the daily page; the answers counted so far stay.
+        if mathDailyIsPlaying {
+            mathDailyIsPlaying = false
+            if case .math = route {
+                route = .mathDaily
+                return
+            }
+        }
         if configuration.contentDomain == .language {
             languageMenuIsPresented = true
             switch route {
@@ -1570,6 +1775,133 @@ struct MinikActivityHubView: View {
         }
         mathLevelController.record(attempt)
         LocalMathLevelRepository().save(mathLevelController.state)
+        recordMathDailyAnswer(attempt, activity: activity)
+    }
+
+    // MARK: - Daily math journey (Android Minik Math Plus MathDailyScreen)
+
+    /// Let's start!: the activity of the day at the learner's current level.
+    private func startMathDailyActivity() {
+        mathDailyFinished = false
+        mathDailyIsPlaying = true
+        route = .math(mathDailyJourney.activity, selectedMathLevelID, UUID())
+        mathActivitySessionID = ActivitySessionID()
+    }
+
+    /// Android MathDailyScreen (64da76d): leaving the stage's celebration ends a round, so it is
+    /// an ad opportunity like the end of a practice round; the ad covers the daily page.
+    private func acknowledgeMathDaily() {
+        recordLanguageAdOpportunity(.mathRound)
+        mathDailyFinished = false
+    }
+
+    private func closeMathDaily() {
+        mathDailyIsPlaying = false
+        route = nil
+    }
+
+    /// Android AppState.recordDaily: only answers in the day's activity, played from the
+    /// daily page, count. The answer that reaches the goal completes the stage and shows the
+    /// celebration at once, as Android does.
+    private func recordMathDailyAnswer(_ attempt: ActivityAttemptData, activity: MathProductionActivityID) {
+        guard mathDailyIsPlaying,
+              !mathDailyFinished,
+              activity == mathDailyJourney.activity,
+              MathDailyJourneyPolicy.counts(attempt) else { return }
+        var journey = mathDailyJourney
+        let completed = journey.recordCountedAnswer(on: MinikLearningDay.string())
+        mathDailyJourney = journey
+        MathDailyJourneyRepository().save(journey)
+        guard completed else { return }
+        mathDailyIsPlaying = false
+        mathDailyFinished = true
+        route = .mathDaily
+    }
+
+    /// Android ActivityFrame's daily line (LocalDailyProgress) under the activity's header.
+    private var mathDailyProgressLine: some View {
+        Text(verbatim: String(
+            format: String(localized: "Correct answers: %lld of %lld"),
+            Int64(mathDailyJourney.answers),
+            Int64(mathDailyJourney.goal)
+        ))
+        .font(MinikPretty.titleFont(16))
+        .foregroundStyle(MinikPretty.navy)
+        .multilineTextAlignment(.center)
+        .lineLimit(2)
+        .minimumScaleFactor(0.8)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 5)
+        .background {
+            Capsule(style: .continuous)
+                .fill(Color.white.opacity(0.94))
+        }
+        .overlay {
+            Capsule(style: .continuous)
+                .strokeBorder(MinikPretty.lavenderRim, lineWidth: 1.5)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 3)
+        .frame(maxWidth: .infinity)
+        .accessibilityAddTraits(.updatesFrequently)
+    }
+
+    // MARK: - Daily learning (Android Minik DailyLearning)
+
+    /// Android AppSharedPreferencesCache.savePoints and DailyLearning.record: a play that
+    /// raised the playing child's points is one of today's little wins in the learned
+    /// language, and the fifth shows Android's toast. Choosing another child changes the
+    /// points shown without play, so learnerDidChange refreshes them without this.
+    private func refreshLanguageRewardsAfterPlay() {
+        let previousPoints = languageRewards.points
+        let updated = ((try? rewardRepository.loadLedger()) ?? RewardLedger()).state(
+            for: RewardScope(ownerID: .localDefault, product: configuration.variant)
+        )
+        languageRewards = updated
+        guard configuration.contentDomain == .language else { return }
+        let completed = MinikDailyLearningRepository(product: configuration.variant).record(
+            language: selectedLanguage,
+            previousPoints: previousPoints,
+            nextPoints: updated.points
+        )
+        if completed {
+            showDailyLearningToast()
+        }
+    }
+
+    /// Android Toast.LENGTH_LONG: three and a half seconds, then it fades.
+    private func showDailyLearningToast() {
+        let message = interfaceLocaleID.text("Five little wins today. Well done!")
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
+            dailyLearningToast = message
+        }
+        UIAccessibility.post(notification: .announcement, argument: message)
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 3_500_000_000)
+            guard dailyLearningToast == message else { return }
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.3)) {
+                dailyLearningToast = nil
+            }
+        }
+    }
+
+    private func dailyLearningToastView(_ message: String) -> some View {
+        Text(verbatim: message)
+            .font(MinikPretty.titleFont(17))
+            .foregroundStyle(Color.white)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            .background {
+                Capsule(style: .continuous)
+                    .fill(MinikPretty.navy.opacity(0.92))
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 32)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+            .environment(\.layoutDirection, interfaceLocaleID.layoutDirection)
     }
 
     private func recordLanguageAttempt(
@@ -1606,9 +1938,7 @@ struct MinikActivityHubView: View {
             languageAutoRepository.save(languageAutoState)
         }
         languageWordBonusRun = wordRewardService.cleanWordRun
-        languageRewards = ((try? rewardRepository.loadLedger()) ?? RewardLedger()).state(
-            for: RewardScope(ownerID: .localDefault, product: configuration.variant)
-        )
+        refreshLanguageRewardsAfterPlay()
     }
 
     private func recordLanguageWordCompletion(_ completion: LanguageWordCompletion, activity: LanguageActivityKind) {
@@ -1636,9 +1966,7 @@ struct MinikActivityHubView: View {
             try? outcomeDispatcher.dispatch(event)
         }
         languageWordBonusRun = wordRewardService.cleanWordRun
-        languageRewards = ((try? rewardRepository.loadLedger()) ?? RewardLedger()).state(
-            for: RewardScope(ownerID: .localDefault, product: configuration.variant)
-        )
+        refreshLanguageRewardsAfterPlay()
     }
 
     private func setLanguageLevels(_ settings: LanguageParentLevelSettings) {
@@ -1678,9 +2006,7 @@ struct MinikActivityHubView: View {
         )
         guard let event else { return }
         try? outcomeDispatcher.dispatch(event)
-        languageRewards = ((try? rewardRepository.loadLedger()) ?? RewardLedger()).state(
-            for: RewardScope(ownerID: .localDefault, product: configuration.variant)
-        )
+        refreshLanguageRewardsAfterPlay()
     }
 
     private func recordLanguagePictureMemoryCompletion(eventID: UUID) {
@@ -1697,7 +2023,7 @@ struct MinikActivityHubView: View {
         )
         guard let event else { return }
         try? outcomeDispatcher.dispatch(event)
-        refreshLanguageRewards()
+        refreshLanguageRewardsAfterPlay()
     }
 
     private func recordLanguageSoccerCompletion(_ outcome: LanguageSoccerMatchOutcome) {
@@ -1711,7 +2037,7 @@ struct MinikActivityHubView: View {
         ) {
             _ = try? rewardService.process(reward, policy: .androidSoccerReference)
         }
-        refreshLanguageRewards()
+        refreshLanguageRewardsAfterPlay()
     }
 
     private func recordLanguageTicTacToeCompletion(_ outcome: TicTacToeOutcome) {
@@ -1725,7 +2051,7 @@ struct MinikActivityHubView: View {
         ) {
             _ = try? rewardService.process(reward, policy: .androidTicTacToeReference)
         }
-        refreshLanguageRewards()
+        refreshLanguageRewardsAfterPlay()
     }
 
     private func refreshLanguageRewards() {
@@ -1837,4 +2163,43 @@ private struct MinikHubCardVisual {
     var objectName: String? = nil
     var objectCount: Int = 0
     var trailingGlyph: String? = nil
+}
+
+/// Where the Math hub's board, its rows and its end are while it scrolls. A plain class, so
+/// recording positions as the board moves does not redraw the hub.
+private final class MinikHubScrollTracker {
+    var viewport: CGRect = .zero
+    var endMinY: CGFloat = 0
+    var targetMinY: [String: CGFloat] = [:]
+}
+
+/// The scroll targets of the Math hub's board.
+private enum MinikHubScrollID {
+    static let daily = "math-hub.daily"
+    static let level = "math-hub.level"
+    static let end = "math-hub.end"
+
+    static func banner(_ sectionID: String) -> String {
+        "math-hub.banner." + sectionID
+    }
+
+    static func row(_ sectionID: String, _ index: Int) -> String {
+        "math-hub.row.\(sectionID).\(index)"
+    }
+}
+
+/// Reports a view's frame in global coordinates when it appears and whenever it moves, as
+/// scrolling does (as LanguageMenuPositionProbe does for the Language menu).
+private struct MinikHubPositionProbe: View {
+    let report: (CGRect) -> Void
+
+    var body: some View {
+        GeometryReader { proxy in
+            Color.clear
+                .onAppear { report(proxy.frame(in: .global)) }
+                .onChange(of: proxy.frame(in: .global)) { _, rect in
+                    report(rect)
+                }
+        }
+    }
 }

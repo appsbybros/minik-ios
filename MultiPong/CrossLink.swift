@@ -7,9 +7,11 @@ enum CrossLinkIssue: Equatable {
     /// "Connection interrupted. Reopen this match to resume."
     case interrupted
     case failed(String)
+    /// "Ball assistance could not be shared. The match uses normal speed until it connects." (5c1aa4d)
+    case reception
 }
 
-/// Android cross/CrossLink.kt (MinikCrossPong 828c6fc). Online play of one 3/4-player fixture (CROSS_DESIGN §8): the classic
+/// Android cross/CrossLink.kt (MinikCrossPong 5c1aa4d). Online play of one 3/4-player fixture (CROSS_DESIGN §8): the classic
 /// match link for N seats in the shared world frame, no mirroring. Seat i is `record.players[i]`. The authority (smallest human
 /// uid) runs the referee and the house players, applies every other human's completed strikes once (gated per sender) and writes
 /// protocol-2 checkpoints and, once, the result. Every other human publishes each of its own committed strikes and follows the
@@ -40,6 +42,8 @@ enum CrossLinkIssue: Equatable {
     private var gate = MPSequenceGate()
     private var buffered: [String: MPWire] = [:]
     private var revision: Int64 = 0
+    /// Every human's shared "slow motion for my return" choice (uid → slow); the authority drives the shared clock from it.
+    private var receptionOptions: [String: Bool] = [:]
     private var loaded = false
     private var ended = false
     private var busy = false
@@ -81,6 +85,8 @@ enum CrossLinkIssue: Equatable {
         match.authoritative = authorityId == repo.uid
     }
     func open() {
+        subscriptions.append(repo.receptionPreferences(Set(humans), { [weak self] values in self?.receptionOptions = values; self?.applyReception() },
+                                                       { [weak self] _ in self?.message(.reception) }))
         subscriptions.append(repo.connection { [weak self] connected in self?.networkAvailable = connected })
         subscriptions.append(repo.watchLive(record.id, actions: false, { [weak self] w in self?.received(w) },
                                             { [weak self] error in self?.message(.failed(error.localizedDescription)) }))
@@ -151,6 +157,12 @@ enum CrossLinkIssue: Equatable {
         }
         checkpoint() // Acknowledges stale or invalid actions without applying them again.
     }
+    /// Authority: the slow-motion assistance runs only once every human's choice is known; each seat follows its own player's.
+    private func applyReception() {
+        if !authority { return }
+        engine.reception.enabled = humans.allSatisfy { receptionOptions[$0] != nil }
+        for (uid, fixture) in seatOf { if let seat = match.stageSeat(fixture) { engine.reception.slow[seat] = receptionOptions[uid] ?? true } }
+    }
     func update(_ s: MPSession) {
         session = s
         if !playing { pending = nil }
@@ -158,6 +170,7 @@ enum CrossLinkIssue: Equatable {
     /// Once per frame with the drained match events.
     func frame(_ events: [CrossEvent]) {
         if ended || !loaded || !playing { return }
+        applyReception()
         let now = clock()
         if !authority {
             // Each committed strike goes out once. One repeated after the authority refused it is a new strike.
@@ -171,7 +184,7 @@ enum CrossLinkIssue: Equatable {
         let live = ready
         // A pause or resume is checkpointed too: a reopened phone resumes from exactly where play stopped.
         if events.contains(where: { checkpointed($0) }) || referee.rallyId != lastRally || referee.phase != lastPhase || match.stage != lastStage ||
-            live != wasReady || (live && now - lastCheckpoint >= CrossLink.period) { checkpoint() }
+            live != wasReady || (live && now - lastCheckpoint >= (engine.reception.enabled && !engine.ballState.stopped ? 100 : CrossLink.period)) { checkpoint() }
         lastRally = referee.rallyId; lastPhase = referee.phase; lastStage = match.stage; wasReady = live
         if !match.finished { return }
         if !finalCheckpointQueued { checkpoint() }

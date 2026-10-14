@@ -305,7 +305,9 @@ final class FamilyMessages: ObservableObject {
 
 /// Shown above a host's root view, and above a sheet that can open the card: the family card, the
 /// remove-ads reminder, the grown-up gate and the "No browser" note. Only the overlay that appeared
-/// last draws them, so a card opened in a sheet is shown once, above the sheet.
+/// last draws them, so a card opened in a sheet is shown once, above the sheet. As on Android (every
+/// family dialog goes through `FamilyDialogStyle.apply`, which defaults to `FamilySkyUi.dialog`), the
+/// dialogs are light sky panels with raised buttons.
 @MainActor
 struct FamilyOverlay: View {
     @ObservedObject private var messages = FamilyMessages.shared
@@ -320,38 +322,22 @@ struct FamilyOverlay: View {
             if topmost, let card = messages.card {
                 FamilyCardView(card: card)
             }
+            if topmost && messages.reminderVisible {
+                FamilyReminderView()
+            }
             if topmost, let request = messages.gateRequest {
                 FamilyGateView(request: request)
             }
             if topmost, let toast = messages.toast {
-                VStack {
-                    Spacer()
-                    Text(toast)
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                        .background(Capsule().fill(Color(white: 0.2).opacity(0.92)))
-                        .padding(.bottom, 64)
-                }
-                .allowsHitTesting(false)
-                .task(id: toast) {
-                    try? await Task.sleep(nanoseconds: 2_000_000_000)
-                    if messages.toast == toast { messages.toast = nil }
-                }
+                FamilyKit.Toast(toast)
+                    .task(id: toast) {
+                        try? await Task.sleep(nanoseconds: 2_000_000_000)
+                        if messages.toast == toast { messages.toast = nil }
+                    }
             }
         }
         .onAppear { messages.attach(host) }
         .onDisappear { messages.detach(host) }
-        .alert(messages.text("Ad-free play", "משחק ללא פרסומות"), isPresented: Binding(get: { topmost && messages.reminderVisible }, set: { shown in
-            if !shown && messages.reminderVisible { messages.reminderLater() }
-        })) {
-            Button(messages.text("Remove ads", "הסרת פרסומות")) { messages.reminderRemoveAds() }
-            Button(messages.text("Remind me later", "להזכיר לי בהמשך"), role: .cancel) { messages.reminderLater() }
-            Button(messages.text("Don't show again", "לא להציג שוב")) { messages.reminderNever() }
-        } message: {
-            Text(messages.text("Would you like to remove the ads? You can keep playing either way.", "רוצים להסיר את הפרסומות? אפשר להמשיך לשחק גם בלי לרכוש."))
-        }
     }
 }
 
@@ -369,7 +355,8 @@ private struct FamilyContentHeight: PreferenceKey {
 }
 
 /// Android `show(a, entry, ...)`: eyebrow, artwork, title, body, the directory note and the link
-/// buttons in a light dialog at most 650 points wide that wraps its content; "Keep playing" closes it.
+/// buttons on the card's lilac box, in a sky dialog at most 650 points wide that wraps its content;
+/// "Keep playing" (a raised blue dialog button) closes it, as does a tap outside.
 @MainActor
 private struct FamilyCardView: View {
     let card: FamilyCard
@@ -380,11 +367,7 @@ private struct FamilyCardView: View {
         let e = card.entry
         let locale = card.locale
         GeometryReader { geo in
-            let width = min(geo.size.width - 24, 650)
-            ZStack {
-                Color.black.opacity(0.45)
-                    .ignoresSafeArea()
-                    .onTapGesture { messages.dismissCard() }
+            FamilyKit.SkyDialog(maxWidth: 650, margin: 12, onBackdropTap: { messages.dismissCard() }) {
                 VStack(spacing: 0) {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 0) {
@@ -412,31 +395,26 @@ private struct FamilyCardView: View {
                             Color.clear.preference(key: FamilyContentHeight.self, value: inner.size.height)
                         })
                     }
-                    .frame(height: max(min(contentHeight, geo.size.height - 112), 1))
+                    // The dialog's 24-point margins and the button row take the rest of the height.
+                    .frame(height: max(min(contentHeight, geo.size.height - 128), 1))
+                    .background(familyColor(0xfff7f5ff))
+                    .clipShape(UnevenRoundedRectangle(topLeadingRadius: FamilyKit.Sky.dialogCornerRadius,
+                                                      topTrailingRadius: FamilyKit.Sky.dialogCornerRadius, style: .circular))
                     .onPreferenceChange(FamilyContentHeight.self) { height in
                         MainActor.assumeIsolated { contentHeight = height }
                     }
-                    HStack {
-                        Spacer()
-                        // Android's dialog button (mixed case after `tint`): 14 pt medium, 48 pt tall.
-                        Button { messages.dismissCard() } label: {
-                            Text(messages.text("Keep playing", "ממשיכים לשחק"))
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(familyColor(0xff244e85))
-                                .padding(.horizontal, 18)
-                                .frame(minHeight: 48)
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
+                    HStack(spacing: 0) {
+                        Spacer(minLength: 0)
+                        FamilyKit.SkyDialogButton(messages.text("Keep playing", "ממשיכים לשחק")) { messages.dismissCard() }
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                    .padding(.bottom, 16)
                 }
-                .background(RoundedRectangle(cornerRadius: 12).fill(familyColor(0xfff7f5ff)))
-                .frame(width: max(width, 1))
                 .environment(\.layoutDirection, messages.rtl ? .rightToLeft : .leftToRight)
             }
             .frame(width: geo.size.width, height: geo.size.height)
         }
-        .environment(\.colorScheme, .light)
     }
 
     private func label(_ text: String, _ size: CGFloat, _ color: UInt32, bold: Bool = false) -> some View {
@@ -463,17 +441,76 @@ private struct FamilyCardView: View {
     }
 }
 
-/// Android `FamilyAdultGate.open`: "For a grown-up", "x × y = ?" read left to right, a number field.
+/// Android `FamilyMessages.remind`: "Ad-free play" with Remove ads (raised blue), Remind me later
+/// (pink) and Don't show again (blue, at the start of the row) in a sky dialog. The buttons stack,
+/// Remove ads on top, when the row does not fit. A tap outside is "Remind me later".
+@MainActor
+private struct FamilyReminderView: View {
+    @ObservedObject private var messages = FamilyMessages.shared
+
+    var body: some View {
+        FamilyKit.SkyDialog(maxWidth: 480, onBackdropTap: { messages.reminderLater() }) {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(messages.text("Ad-free play", "משחק ללא פרסומות"))
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundColor(familyColor(0xff17364a))
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(messages.text("Would you like to remove the ads? You can keep playing either way.", "רוצים להסיר את הפרסומות? אפשר להמשיך לשחק גם בלי לרכוש."))
+                    .font(.system(size: 16))
+                    .foregroundColor(familyColor(0xff263d5b))
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 12)
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 8) {
+                        never
+                        Spacer(minLength: 8)
+                        later
+                        remove
+                    }
+                    VStack(alignment: .trailing, spacing: 8) {
+                        remove
+                        later
+                        never
+                    }
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                }
+                .padding(.top, 20)
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 22)
+            .padding(.bottom, 18)
+            .environment(\.layoutDirection, messages.rtl ? .rightToLeft : .leftToRight)
+        }
+    }
+
+    private var remove: some View {
+        FamilyKit.SkyDialogButton(messages.text("Remove ads", "הסרת פרסומות")) { messages.reminderRemoveAds() }
+    }
+
+    private var later: some View {
+        FamilyKit.SkyDialogButton(messages.text("Remind me later", "להזכיר לי בהמשך"), role: .negative) { messages.reminderLater() }
+    }
+
+    private var never: some View {
+        FamilyKit.SkyDialogButton(messages.text("Don't show again", "לא להציג שוב"), role: .neutral) { messages.reminderNever() }
+    }
+}
+
+/// Android `FamilyAdultGate.open`: "For a grown-up", "x × y = ?" read left to right and a number field
+/// (styled by `FamilyFormStyle`), in a sky dialog with raised Cancel (pink) and Continue (blue)
+/// buttons. A tap outside cancels.
 @MainActor
 private struct FamilyGateView: View {
     let request: FamilyGateRequest
     @ObservedObject private var messages = FamilyMessages.shared
+    @FocusState private var answerFocused: Bool
 
     var body: some View {
-        ZStack {
-            Color.black.opacity(0.45)
-                .ignoresSafeArea()
-                .onTapGesture { messages.cancelGate() }
+        FamilyKit.SkyDialog(onBackdropTap: { messages.cancelGate() }) {
             VStack(alignment: .leading, spacing: 12) {
                 Text(messages.text("For a grown-up", "למבוגר אחראי"))
                     .font(.system(size: 20, weight: .bold))
@@ -484,10 +521,8 @@ private struct FamilyGateView: View {
                 TextField("", text: $messages.gateAnswer)
                     .keyboardType(.asciiCapableNumberPad)
                     .font(.system(size: 18))
-                    .foregroundColor(familyColor(0xff17364a))
-                    .padding(.horizontal, 12)
-                    .frame(minHeight: 56)
-                    .background(familyColor(0xffedf4ff))
+                    .focused($answerFocused)
+                    .modifier(FamilyKit.FormField(focused: answerFocused, minHeight: 56))
                     .environment(\.layoutDirection, .leftToRight)
                     .accessibilityLabel(messages.text("Answer", "תשובה"))
                 if messages.gateError {
@@ -496,31 +531,21 @@ private struct FamilyGateView: View {
                         .foregroundColor(familyColor(0xffb3261e))
                 }
                 HStack(spacing: 8) {
-                    Spacer()
-                    button(messages.text("Cancel", "ביטול")) { messages.cancelGate() }
-                    button(messages.text("Continue", "המשך")) { messages.confirmGate() }
+                    Spacer(minLength: 0)
+                    // The gate's Material buttons keep their capitals.
+                    FamilyKit.SkyDialogButton(messages.text("Cancel", "ביטול"), role: .negative, textColor: 0xff245785, uppercase: true) {
+                        messages.cancelGate()
+                    }
+                    FamilyKit.SkyDialogButton(messages.text("Continue", "המשך"), textColor: 0xff245785, uppercase: true) {
+                        messages.confirmGate()
+                    }
                 }
+                .padding(.top, 4)
             }
-            .padding(20)
-            .background(RoundedRectangle(cornerRadius: 12).fill(Color.white))
-            .frame(maxWidth: 420)
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
+            .padding(.bottom, 18)
             .environment(\.layoutDirection, messages.rtl ? .rightToLeft : .leftToRight)
         }
-        .environment(\.colorScheme, .light)
-    }
-
-    /// Android's Material dialog button (the gate keeps its capitals): 14 pt medium, at least 64 x 48 pt.
-    private func button(_ title: String, _ action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 14, weight: .medium))
-                .textCase(.uppercase)
-                .foregroundColor(familyColor(0xff245785))
-                .padding(.horizontal, 8)
-                .frame(minWidth: 64, minHeight: 48)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
     }
 }

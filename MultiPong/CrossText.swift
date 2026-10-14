@@ -1,8 +1,41 @@
 import Foundation
 
-/// Android cross/CrossText.kt (MinikCrossPong working tree on 828c6fc, 2026-10-04): status and rally explanations from the local
+/// Android cross/CrossText.kt (MinikCrossPong 5c1aa4d; working tree on 828c6fc, 2026-10-04): status and rally explanations from the local
 /// seat's point of view (EN/HE verbatim, gender-neutral Hebrew plural; Spanish, Arabic, Hindi and Dutch through `MPText`).
 enum CrossText {
+    // ---- team play (Android CrossText, 5c1aa4d) ----
+    static func setTitle(_ he: Bool) -> String { MPText.t("Team play: set up a smash", "משחק קבוצתי: מכינים הנחתה", he) }
+    static func setButton(_ he: Bool) -> String { MPText.t("Set up teammate", "הרמה לחבר", he) }
+    static func setHelp(_ he: Bool) -> String {
+        MPText.t("In team play, tap twice quickly near the approaching ball to send a high pass to your teammate. Keep your paddle in the ball's path: you still need to make contact.\n\nYour teammate waits for the bounce, then swipes through the ball toward an opponent to smash.\n\nThis double-tap works in every control mode and applies to this return only. Only one teammate pass is allowed before sending the ball to the other team. This is a return move, not a serve. In landscape, the camera icon switches between a larger action view and fitting all players.",
+                 "במשחק קבוצתי, הקישו פעמיים במהירות ליד הכדור המתקרב כדי למסור כדור גבוה לחבר הקבוצה. השאירו את המחבט במסלול הכדור: עדיין צריך לפגוע בו.\n\nחבר הקבוצה מחכה לקפיצה, ואז מחליק דרך הכדור לכיוון יריב כדי להנחית.\n\nהקשה כפולה פועלת בכל סוגי השליטה ורק להחזרה הזאת. מותרת רק מסירה אחת לחבר לפני שמחזירים לקבוצה היריבה. זו פעולת החזרה, לא הגשה. במצב אופקי, סמל המצלמה מחליף בין תצוגת פעולה גדולה לתצוגה של כל השחקנים.", he)
+    }
+    /// The double-tap hint while the ball comes to the local player and the one friendly pass is still free.
+    static func setTip(_ e: CrossEngine, _ he: Bool) -> String? {
+        guard let local = e.localSeat else { return nil }
+        if e.paused || e.teammate(local) == nil || e.receivingSet || e.teamFlight?.friendlyHits != 0 ||
+            e.predictedReceiver != local || e.referee.phase == .resolved || e.referee.mayServe(local) { return nil }
+        if e.setArmed { return MPText.t("Set ready! Meet the ball to lift it to your teammate", "ההרמה מוכנה! פגשו את הכדור כדי להרים לחבר", he) }
+        return MPText.t("Double-tap near the ball to set up your teammate's smash", "הקישו פעמיים ליד הכדור להרמה לחבר שינחית", he)
+    }
+    /// Why the rally ended and which team scored (Android: English or Hebrew only).
+    static func teamOutcome(_ e: CrossEngine, local: Int, _ he: Bool) -> String? {
+        if e.referee.phase != .resolved { return nil }
+        guard let o = e.referee.lastOutcome else { return nil }
+        func tr(_ en: String, _ h: String) -> String { he ? h : en }
+        let why: String
+        switch o.kind {
+        case .net: why = tr("Ball hit the net", "הכדור פגע ברשת")
+        case .out: why = tr("Ball went out", "הכדור יצא מחוץ לשולחן")
+        case .badServe: why = tr("Serve fault", "הגשה לא חוקית")
+        case .ownSide: why = tr("Ball returned to the striker's side", "הכדור חזר לצד החובט")
+        case .missed: why = tr("Ball was not returned", "הכדור לא הוחזר")
+        }
+        guard let scored = e.geometry.seats.first(where: { $0 < o.deltas.count && o.deltas[$0] > 0 }) else { return why }
+        let point = e.teams?.same(scored, local) == true ? tr("Your team's point", "נקודה לקבוצה שלכם") : tr("Other team's point", "נקודה לקבוצה היריבה")
+        return why + " · " + point
+    }
+
     private static func name(_ names: [String], _ seat: Int?) -> String {
         guard let seat, seat >= 0, seat < names.count else { return "?" }
         return names[seat]

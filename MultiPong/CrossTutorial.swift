@@ -1,11 +1,11 @@
 import Foundation
 
-/// Android cross/CrossTutorial.kt (MinikCrossPong working tree on 828c6fc, 2026-10-04): the interactive guide for the 3/4-player
+/// Android cross/CrossTutorial.kt (MinikCrossPong 5c1aa4d): the interactive guide for the 3/4-player
 /// table. Real input, contact and landing rules decide success; nothing scores. Show me / Try it yourself / Try again, like the
 /// classic guide. EN/HE texts verbatim; the other languages through `MPText`, call by call as on Android.
 final class CrossTutorial {
     enum Phase { case intro, info, explain, demo, attempt, result }
-    enum Kind { case table, serve, returning, scoring }
+    enum Kind { case table, serve, returning, team, scoring }
     struct Lesson {
         var kind: Kind
         var expected: Int? = nil
@@ -48,6 +48,7 @@ final class CrossTutorial {
         var built: [Lesson] = [Lesson(kind: .table), Lesson(kind: .serve, expected: rightSeat),
                                Lesson(kind: .returning, expected: leftSeat, server: rightSeat), Lesson(kind: .returning, expected: rightSeat, server: leftSeat)]
         if let aheadSeat { built.append(Lesson(kind: .returning, expected: aheadSeat, server: leftSeat)) }
+        built.append(Lesson(kind: .team))
         built.append(Lesson(kind: .scoring))
         lessons = built
         let allNames = [baseNames.first ?? "You"] + CrossTutorial.characters.prefix(n - 1).map { CrossTutorial.character($0).name(hebrew: hebrew) }
@@ -65,14 +66,14 @@ final class CrossTutorial {
         switch lesson.kind {
         case .serve: exercise = CrossExercise(drill: .serve, expected: lesson.expected)
         case .returning: exercise = CrossExercise(drill: .returning, expected: lesson.expected, server: lesson.server)
-        case .table, .scoring: exercise = CrossExercise(drill: .serve)
+        case .table, .team, .scoring: exercise = CrossExercise(drill: .serve)
         }
         let engine = CrossEngine(seats: seats, control: control, target: 5, seed: 42, exercise: exercise)
         engine.paused = true
         return engine
     }
     private func make() -> CrossEngine { CrossTutorial.make(players: players, control: control, names: names, hebrew: hebrew, lesson: lesson) }
-    private var firstPhase: Phase { lesson.kind == .table || lesson.kind == .scoring ? .info : .explain }
+    private var firstPhase: Phase { [Kind.table, .team, .scoring].contains(lesson.kind) ? .info : .explain }
     @discardableResult func next() -> Bool {
         if phase != .intro {
             if index == lessons.count - 1 { return false }
@@ -161,7 +162,7 @@ final class CrossTutorial {
                 e.touch(path, drag: MPPoint(drag(lesson.expected), 0), down: false)
                 e.endTouch()
             }
-        case .table, .scoring: break
+        case .table, .team, .scoring: break
         }
     }
     private func who(_ seat: Int?) -> String {
@@ -189,14 +190,17 @@ final class CrossTutorial {
         var message = ""
         switch phase {
         case .intro:
-            title = tr("Let's play Multi Ping Pong!", "בואו נשחק מולטי פינג פונג!")
+            title = tr("Let's play Multiplayer Ping Pong!", "בואו נשחק פינג פונג מרובה משתתפים!")
             message = tr("\(players) players share one table and one ball. You are always at the bottom. Send the ball to ANY other player — everybody plays until someone reaches the target score.",
                          "\(players) שחקנים חולקים שולחן אחד וכדור אחד. אתם תמיד למטה. שלחו את הכדור לכל שחקן אחר — כולם משחקים עד שמישהו מגיע לניקוד היעד.")
         case .info:
-            if lesson.kind == .table {
+            if lesson.kind == .team {
+                title = CrossText.setTitle(he)
+                message = CrossText.setHelp(he)
+            } else if lesson.kind == .table {
                 title = tr("Your table", "השולחן שלכם")
                 message = tr("Each player owns one colored arm of the \(players == 4 ? "cross" : "Y") table. The nets run between the arms. A shot must clear the net and land on ANOTHER player's color. The yellow outline shows who the ball is going to.",
-                             "לכל שחקן זרוע צבעונית משלו בשולחן ה־\(players == 4 ? "צלב" : "Y"). הרשתות עוברות בין הזרועות. החבטה צריכה לעבור מעל הרשת ולנחות בצבע של שחקן אחר. המסגרת הצהובה מראה אל מי הכדור בדרך.")
+                             "לכל שחקן זרוע צבעונית משלו בשולחן המשותף. הרשתות עוברות בין הזרועות. החבטה צריכה לעבור מעל הרשת ולנחות בצבע של שחקן אחר. המסגרת הצהובה מראה אל מי הכדור בדרך.")
             } else {
                 title = tr("How points work", "איך סופרים נקודות")
                 message = tr("If someone misses your good shot: you +1, they −1.\nIf your shot hits the net, lands out or on your own side: you −1, nobody else changes.\nScores never go below 0 — at 0 a mistake just ends the rally.\nThe serve moves to the next player after every rally. First to the target wins!",

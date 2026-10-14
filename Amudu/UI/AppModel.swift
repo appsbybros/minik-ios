@@ -11,6 +11,9 @@ struct LobbyState {
     let code: String
     let lines: [LobbyLine]
     let host: Bool
+    /// Android `houseOnly`: the only human in the room is this player (the rest are house players), so nobody needs
+    /// to be Ready.
+    let houseOnly: Bool
     /// Android `lobby(..., gameConfig)`: the room's rule set is shown under the code.
     let mode: String?
     let onReady: @MainActor () -> Void
@@ -704,6 +707,13 @@ struct ShareText: Identifiable {
         gameView = view
         network?.attach(view)
         screen = .game
+        // Android `FamilyLandscapeHint.show`: a passing reminder when a game opens in portrait; it never covers the HUD
+        // for long or moves it.
+        _ = afterDelay(0.9) { [weak self, weak view] in
+            guard let self, let view, self.gameView === view, self.screen == .game, view.window != nil,
+                  view.bounds.height > view.bounds.width else { return }
+            self.status(FamilyMessages.text("For a wider view, play in landscape.", "לתצוגה רחבה יותר, שחקו במצב אופקי."))
+        }
         if e.practice != nil {
             // Android shows a spinner until the world's first frame, then starts the practice.
             sceneLoading = true
@@ -1064,15 +1074,20 @@ struct ShareText: Identifiable {
                onReady: @escaping @MainActor () -> Void, onStart: @escaping @MainActor () -> Void, gameConfig: GameConfig? = nil) {
         defaults.set(code, forKey: Keys.room)
         savedRoom = code
+        let houseOnly = players.filter { !$0.bot }.count == 1
         var lines: [LobbyLine] = []
         for m in players {
             var text = m.displayName(hebrew: hebrew)
             if m.id == uid { text += tr(" · You", " · אתם") }
-            text += ready.contains(m.id) ? " ✓" : tr(" · Not ready", " · עדיין לא מוכנים")
+            if houseOnly {
+                text += tr(" · Not started", " · טרם התחיל")
+            } else {
+                text += ready.contains(m.id) ? " ✓" : tr(" · Not ready", " · עדיין לא מוכנים")
+            }
             lines.append(LobbyLine(id: m.id, text: text))
         }
-        lobbyState = LobbyState(code: code, lines: lines, host: host, mode: gameConfig.map { RuleText.mode($0.rules) }, onReady: onReady,
-                                onStart: onStart)
+        lobbyState = LobbyState(code: code, lines: lines, host: host, houseOnly: houseOnly, mode: gameConfig.map { RuleText.mode($0.rules) },
+                                onReady: onReady, onStart: onStart)
         if screen != .lobby { screen = .lobby }
     }
 

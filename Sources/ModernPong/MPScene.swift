@@ -24,6 +24,10 @@ final class MPScene: SKScene {
     /// net (Android ModernCourt), so the reason for a point is visible on the table.
     private let faultNode = SKShapeNode(), netNode = SKShapeNode()
     private var textures: [String: SKTexture] = [:]
+    /// Android ModernCourt.receptionCamera (2026-10): an optional zoom toward the receiver. The backdrop is a child of
+    /// the camera so the illustrated setting stays still while the court zooms.
+    private let cameraNode = SKCameraNode()
+    private var receptionCamera = MPReceptionCamera()
     init(engine: MPEngine) {
         self.engine = engine
         super.init(size: CGSize(width: 430, height: 760))
@@ -45,8 +49,10 @@ final class MPScene: SKScene {
         bodyCrop.maskNode = bodyMask; bodyCrop.addChild(bodyNode); bodyCrop.zPosition = 0.8
         frontCrop.maskNode = frontMask; frontCrop.addChild(armCrop); armCrop.maskNode = armMask; armCrop.addChild(armNode); frontCrop.zPosition = 1.2
         [actorMask, bodyMask, frontMask, armMask].forEach { $0.fillColor = .white; $0.strokeColor = .clear; $0.lineWidth = 0 }
-        let nodes: [SKNode] = [backdropNode, floorNode, bodyCrop, actorCrop, frontCrop, bounceNode, faultNode, shadowNode, paddleNode, ballNode, netNode, guideNode, iconNode]
+        let nodes: [SKNode] = [floorNode, bodyCrop, actorCrop, frontCrop, bounceNode, faultNode, shadowNode, paddleNode, ballNode, netNode, guideNode, iconNode]
         nodes.forEach(addChild)
+        cameraNode.addChild(backdropNode); addChild(cameraNode); camera = cameraNode
+        cameraNode.position = CGPoint(x: size.width / 2, y: size.height / 2)
     }
     required init?(coder: NSCoder) { return nil }
     override func didMove(to view: SKView) { view.isMultipleTouchEnabled = false; layoutCourt() }
@@ -63,7 +69,8 @@ final class MPScene: SKScene {
         // Cover the whole scene, as Android's full-screen setting does, keeping the art's proportions.
         let cover = max(Double(size.width) / 841, Double(size.height) / 1870)
         backdropNode.size = CGSize(width: 841 * cover, height: 1870 * cover)
-        backdropNode.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        backdropNode.position = .zero
+        placeCamera()
         arenaOrigin = CGPoint(x: (Double(size.width) - 941 * worldScale) / 2, y: 1437 * worldScale + 24)
         floorNode.position = arenaOrigin; floorNode.size = CGSize(width: 941 * worldScale, height: 1672 * worldScale)
         render()
@@ -78,10 +85,30 @@ final class MPScene: SKScene {
             MPProjection.tableY((arenaOrigin.y - point.y) / worldScale + h * (MPProjection.bottom - MPProjection.top) * 0.075))
     }
     override func update(_ currentTime: TimeInterval) {
-        let elapsed = previousTime == 0 ? 0 : min(1.0 / 30, max(0, currentTime - previousTime)); previousTime = currentTime
+        let raw = previousTime == 0 ? 0 : max(0, currentTime - previousTime)
+        let elapsed = min(1.0 / 30, raw); previousTime = currentTime
+        // Android ModernCourt.doFrame: a local match always offers this player's own slow-motion choice; online the
+        // match link sets the shared clock.
+        if !engine.networked { engine.reception.enabled = true; engine.reception.slow[0] = MPReceptionSettings.slow }
         accumulator += elapsed
         while accumulator >= 1.0 / 120 { engine.advance(1.0 / 120); accumulator -= 1.0 / 120 }
+        updateCamera(min(raw, 0.1))
         onFrame?(engine.drainEvents()); render()
+    }
+    /// Android ModernCourt: the camera centres between the receiving paddle (or the far server) and the ball.
+    private func updateCamera(_ dt: Double) {
+        let at = engine.reception.receiver == 1 ? MPPoint(0.5, 0.13) : (engine.paddle ?? engine.restingPaddle)
+        let a = screen(at), b = screen(engine.renderedBall, height: engine.renderedHeight)
+        let focus = CGPoint(x: (a.x + b.x) / 2, y: size.height - (a.y + b.y) / 2)
+        receptionCamera.update(dt, assist: engine.reception, local: 0, focus: focus, size: size, holding: activeTouch != nil, reduceMotion: UIAccessibility.isReduceMotionEnabled)
+        placeCamera()
+    }
+    /// The view centre in the court's top-left coordinates, converted to the scene's y-up coordinates.
+    private func placeCamera() {
+        let c = receptionCamera, zoom = max(c.zoom, 0.01)
+        let centre = CGPoint(x: c.x + (size.width / 2 - c.x - c.tx) / zoom, y: c.y + (size.height / 2 - c.y - c.ty) / zoom)
+        cameraNode.position = c.amount == 0 ? CGPoint(x: size.width / 2, y: size.height / 2) : CGPoint(x: centre.x, y: size.height - centre.y)
+        cameraNode.setScale(1 / zoom)
     }
     private func render() {
         let p = engine.renderedBall, height = engine.renderedHeight

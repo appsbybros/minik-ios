@@ -8,6 +8,10 @@ final class MPScene: SKScene {
     var remoteIcon = "🐱"
     var guidePoint: MPPoint?
     var guideDirection: Double?
+    /// Ball assistance (Android `reception_assistance`): slow motion for this player's return and the reception zoom.
+    var preferences = MPPreferences()
+    private var receptionView = CrossReceptionCamera()
+    private let cameraNode = SKCameraNode()
     private var previousTime: TimeInterval = 0, accumulator = 0.0
     private var activeTouch: UITouch?, previousTouch: MPPoint?, previousTouchTime = 0.0
     private var arenaOrigin = CGPoint.zero, worldScale = 1.0
@@ -25,7 +29,8 @@ final class MPScene: SKScene {
         self.engine = engine
         super.init(size: CGSize(width: 430, height: 760))
         scaleMode = .resizeFill; backgroundColor = UIColor(red: 0.92, green: 0.68, blue: 0.45, alpha: 1)
-        backdropNode.texture = texture("modern_surround"); backdropNode.zPosition = -1
+        // Android 5c1aa4d: the evening terrace (SunsetTerrace) is the setting around the classic table too.
+        backdropNode.texture = SKTexture(imageNamed: "mpx_sunset_portrait"); backdropNode.zPosition = -1
         // Android ModernCourt fades the arena's decorative outer floor into that setting; the fade is baked into this texture.
         floorNode.anchorPoint = CGPoint(x: 0, y: 1); floorNode.texture = texture("ping_pong_arena_faded")
         floorNode.zPosition = 0; actorNode.zPosition = 1; bounceNode.zPosition = 2; shadowNode.zPosition = 3; paddleNode.zPosition = 4; ballNode.zPosition = 5; guideNode.zPosition = 6; iconNode.zPosition = 2
@@ -41,6 +46,8 @@ final class MPScene: SKScene {
         [actorMask, bodyMask, frontMask, armMask].forEach { $0.fillColor = .white; $0.strokeColor = .clear; $0.lineWidth = 0 }
         let nodes: [SKNode] = [backdropNode, floorNode, bodyCrop, actorCrop, frontCrop, bounceNode, shadowNode, paddleNode, ballNode, guideNode, iconNode]
         nodes.forEach(addChild)
+        // Android ReceptionCamera: a camera that zooms toward the receiving paddle and the ball; touches map back through it.
+        addChild(cameraNode); camera = cameraNode
     }
     required init?(coder: NSCoder) { return nil }
     override func didMove(to view: SKView) { view.isMultipleTouchEnabled = false; layoutCourt() }
@@ -54,10 +61,14 @@ final class MPScene: SKScene {
     private func layoutCourt() {
         let scale = min((Double(size.width) - 16) / MPProjection.tableWidth, (Double(size.height) - 32) / (340 + 1437))
         worldScale = max(scale, 0.01)
-        // Cover the whole scene, as Android's full-screen setting does, keeping the art's proportions.
-        let cover = max(Double(size.width) / 841, Double(size.height) / 1870)
-        backdropNode.size = CGSize(width: 841 * cover, height: 1870 * cover)
-        backdropNode.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        // Cover the whole scene, top aligned, keeping the art's proportions (Android SunsetTerrace).
+        let landscape = size.width > size.height
+        let art = landscape ? (width: 1794.0, height: 877.0) : (width: 941.0, height: 1672.0)
+        backdropNode.texture = SKTexture(imageNamed: landscape ? "mpx_sunset_landscape" : "mpx_sunset_portrait")
+        let cover = max(Double(size.width) / art.width, Double(size.height) / art.height)
+        backdropNode.size = CGSize(width: art.width * cover, height: art.height * cover)
+        backdropNode.position = CGPoint(x: Double(size.width) / 2, y: Double(size.height) - art.height * cover / 2)
+        placeCamera()
         arenaOrigin = CGPoint(x: (Double(size.width) - 941 * worldScale) / 2, y: 1437 * worldScale + 24)
         floorNode.position = arenaOrigin; floorNode.size = CGSize(width: 941 * worldScale, height: 1672 * worldScale)
         render()
@@ -72,10 +83,29 @@ final class MPScene: SKScene {
             MPProjection.tableY((arenaOrigin.y - point.y) / worldScale + h * (MPProjection.bottom - MPProjection.top) * 0.075))
     }
     override func update(_ currentTime: TimeInterval) {
+        let cameraElapsed = previousTime == 0 ? 0 : min(0.1, max(0, currentTime - previousTime))
         let elapsed = previousTime == 0 ? 0 : min(1.0 / 30, max(0, currentTime - previousTime)); previousTime = currentTime
+        if !engine.networked { engine.reception.enabled = true; engine.reception.slow[0] = preferences.receptionSlow }
         accumulator += elapsed
         while accumulator >= 1.0 / 120 { engine.advance(1.0 / 120); accumulator -= 1.0 / 120 }
+        // The focus between the receiving paddle and the ball, in view coordinates (y down).
+        // Android ModernCourt: the other side's receiver is focused at Minik's serve point (ActorPresentation.servePoint).
+        let at = engine.reception.receiver == 1 ? MPPoint(0.5, 0.13) : (engine.paddle ?? engine.restingPaddle)
+        let a = screen(at), b = screen(engine.renderedBall, height: max(0, engine.flight?.height ?? 0.055))
+        receptionView.update(cameraElapsed, assist: engine.reception, local: 0, focus: CGPoint(x: (a.x + b.x) / 2, y: size.height - (a.y + b.y) / 2),
+                             width: Double(size.width), height: Double(size.height), holding: activeTouch != nil,
+                             zoomOwn: preferences.receptionZoom, follow: preferences.receptionFollow)
+        placeCamera()
         onFrame?(engine.drainEvents()); render()
+    }
+    /// The camera shows the scene at the reception zoom: a point p appears at focus + (p − focus) × zoom + shift.
+    private func placeCamera() {
+        let z = receptionView.zoom, focus = receptionView.focus, shift = receptionView.shift
+        let fx = Double(focus.x), fy = Double(size.height) - Double(focus.y)
+        let cx = (Double(size.width) / 2 - fx * (1 - z) - Double(shift.x)) / z
+        let cy = (Double(size.height) / 2 - fy * (1 - z) + Double(shift.y)) / z
+        cameraNode.setScale(CGFloat(1 / z))
+        cameraNode.position = receptionView.amount == 0 ? CGPoint(x: size.width / 2, y: size.height / 2) : CGPoint(x: cx, y: cy)
     }
     private func render() {
         let p = engine.renderedBall, height = max(0, engine.flight?.height ?? 0.055)

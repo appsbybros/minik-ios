@@ -22,6 +22,8 @@ html.minik-ios-standalone .pong-setup-nav .pong-exit-btn { display:none !importa
     padding:20px max(18px,env(safe-area-inset-right)) 24px max(18px,env(safe-area-inset-left));
     background:linear-gradient(155deg,#302054,#170d32); color:white;
     overflow:auto; border-radius:0;
+    /* maze-sky.css raises Android's landscape setup card; this full-screen page has no card edges. */
+    box-shadow:none;
   }
   .pong-setup-header {
     display:grid; grid-template-columns:52px minmax(0,1fr) 52px;

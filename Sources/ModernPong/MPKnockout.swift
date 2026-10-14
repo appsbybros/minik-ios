@@ -216,6 +216,11 @@ struct MPKotlinRandom {
         } while bits &- value &+ (n &- 1) < 0
         return value
     }
+    /// Kotlin `Random.nextDouble()`: the upper 26 and 27 bits of two `nextInt()` values (`doubleFromParts`).
+    mutating func nextDouble() -> Double {
+        let hi = Int64(UInt32(bitPattern: nextInt()) >> 6), lo = Int64(UInt32(bitPattern: nextInt()) >> 5)
+        return Double((hi << 27) + lo) / 9007199254740992.0
+    }
     /// Kotlin `MutableList.shuffle(random)`: swaps from the last index down to 1.
     mutating func shuffled<T>(_ input: [T]) -> [T] {
         var list = input

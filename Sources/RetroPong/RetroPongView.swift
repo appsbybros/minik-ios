@@ -14,6 +14,9 @@ struct RetroPongView: View {
     var onMatchFinished: ((@escaping () -> Void) -> Void)? = nil
     /// Opens the host's grown-up gate and purchases; nil hides the "For parents" link.
     var onParents: (() -> Void)? = nil
+    /// Android Bounce `menuIdle`: called about every second while the setup with the "For parents"
+    /// link is idle on screen, so the host can show its family reminder.
+    var onMenuIdle: (() -> Void)? = nil
     private var hebrew: Bool { locale.language.languageCode?.identifier == "he" }
     var body: some View {
         ZStack {
@@ -27,7 +30,7 @@ struct RetroPongView: View {
             } else {
                 RetroPongWebView(language: hebrew ? "he" : "en", active: phase == .active,
                                  onExit: onExit, onMatchFinished: onMatchFinished, onParents: onParents,
-                                 onFailure: { failure = true }).id(reload)
+                                 onMenuIdle: onMenuIdle, onFailure: { failure = true }).id(reload)
                 // UIKit/WebKit receives the usable safe-area size; no double CSS notch padding.
             }
         }.preferredColorScheme(.light)
@@ -39,10 +42,11 @@ private struct RetroPongWebView: UIViewRepresentable {
     let onExit: (() -> Void)?
     let onMatchFinished: ((@escaping () -> Void) -> Void)?
     let onParents: (() -> Void)?
+    let onMenuIdle: (() -> Void)?
     let onFailure: () -> Void
     func makeCoordinator() -> Coordinator {
         Coordinator(language: language, active: active, onExit: onExit, onMatchFinished: onMatchFinished,
-                    onParents: onParents, onFailure: onFailure)
+                    onParents: onParents, onMenuIdle: onMenuIdle, onFailure: onFailure)
     }
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
@@ -67,6 +71,7 @@ private struct RetroPongWebView: UIViewRepresentable {
         let coordinator = context.coordinator
         coordinator.onExit = onExit; coordinator.onFailure = onFailure
         coordinator.onMatchFinished = onMatchFinished; coordinator.onParents = onParents
+        coordinator.onMenuIdle = onMenuIdle
         coordinator.setActive(active)
         if coordinator.language != language {
             coordinator.language = language
@@ -86,12 +91,14 @@ private struct RetroPongWebView: UIViewRepresentable {
         var onExit: (() -> Void)?, onFailure: () -> Void
         var onMatchFinished: ((@escaping () -> Void) -> Void)?
         var onParents: (() -> Void)?
+        var onMenuIdle: (() -> Void)?
         private var music: AVAudioPlayer?, musicRequested = false, closed = false, exitSent = false
         private let directory = Bundle.main.url(forResource: "RetroPong", withExtension: nil)
         init(language: String, active: Bool, onExit: (() -> Void)?, onMatchFinished: ((@escaping () -> Void) -> Void)?,
-             onParents: (() -> Void)?, onFailure: @escaping () -> Void) {
+             onParents: (() -> Void)?, onMenuIdle: (() -> Void)?, onFailure: @escaping () -> Void) {
             self.language = language; self.active = active; self.onExit = onExit
-            self.onMatchFinished = onMatchFinished; self.onParents = onParents; self.onFailure = onFailure
+            self.onMatchFinished = onMatchFinished; self.onParents = onParents
+            self.onMenuIdle = onMenuIdle; self.onFailure = onFailure
         }
         func load() {
             guard let directory else { onFailure(); return }
@@ -143,6 +150,7 @@ private struct RetroPongWebView: UIViewRepresentable {
                 }
                 if let onMatchFinished { onMatchFinished(complete) } else { complete() }
             case "parents": onParents?()
+            case "menuIdle": if active { onMenuIdle?() }
             default: break
             }
         }
