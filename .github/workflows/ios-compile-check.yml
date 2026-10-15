@@ -1,7 +1,14 @@
 name: iOS Compile Check
+# The release script (public-export/release_ios.py on the owner's PC) finds its run by the request id.
+run-name: ${{ inputs.request && format('iOS Compile Check ({0})', inputs.request) || 'iOS Compile Check' }}
 
 on:
   workflow_dispatch:
+    inputs:
+      request:
+        description: Set by the release script to follow this run; leave empty
+        required: false
+        default: ""
 
 permissions:
   contents: read

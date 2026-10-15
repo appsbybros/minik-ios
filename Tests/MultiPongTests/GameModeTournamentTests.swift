@@ -1233,7 +1233,7 @@ final class GameModeTournamentTests: XCTestCase {
         XCTAssertTrue(MPCompletionText.won(done, "host"))
         for uid in ["b", "c", "d"] { XCTAssertFalse(MPCompletionText.won(done, uid)) }
         XCTAssertEqual("You won the match!", MPCompletionText.headline(done, "host", hebrew: false))
-        XCTAssertTrue(MPCompletionText.headline(done, "b", hebrew: false).hasSuffix(" won the match"))
+        XCTAssertTrue(MPCompletionText.headline(done, "b", hebrew: false).hasSuffix(" won this match!"))
         XCTAssertEqual("You won the match!", MPCompletionText.matchHeadline(done, duel, "host", hebrew: false))
         let finalDecoded = try decodeSession(try encodeSession(done))
         XCTAssertEqual(plainSession(done), plainSession(finalDecoded))
@@ -1331,7 +1331,7 @@ final class GameModeTournamentTests: XCTestCase {
         XCTAssertTrue(MPCompletionText.won(s, houseDuel.winner))
         XCTAssertFalse(MPCompletionText.won(s, host))
         let tableAfterHouseDuel = try XCTUnwrap(s.matches[m.id])
-        XCTAssertTrue(MPCompletionText.matchHeadline(s, tableAfterHouseDuel, host, hebrew: false).hasSuffix(" won the match"))
+        XCTAssertTrue(MPCompletionText.matchHeadline(s, tableAfterHouseDuel, host, hebrew: false).hasSuffix(" won this match!"))
         XCTAssertEqual(s, MPRules.friendlyHouseReady(s, actor: "host"))
         // The host survives: the duel against a house player waits for the host's Start, and the room only finishes with it.
         s = try MPRules.finish(playing, match: m.id, actor: "host", scores: [4, 1, 3], placement: [host, b2, b1])
@@ -1753,6 +1753,6 @@ final class GameModeTournamentTests: XCTestCase {
         let fdone = try MPRules.finish(fStarted.session, match: fm.id, actor: fStarted.authority, scores: [1, 5, 0], placement: ["b", "host", fHouse])
         let fTable = try XCTUnwrap(fdone.matches[fm.id])
         XCTAssertEqual("You won the match!", MPCompletionText.matchHeadline(fdone, fTable, "b", hebrew: false))
-        XCTAssertTrue(MPCompletionText.matchHeadline(fdone, fTable, "host", hebrew: true).hasPrefix("הניצחון ל־"))
+        XCTAssertTrue(MPCompletionText.matchHeadline(fdone, fTable, "host", hebrew: true).hasPrefix("כל הכבוד ל־"))
     }
 }

@@ -69,7 +69,8 @@ import SpriteKit
     private var ownBar: Bool {
         switch model.route {
         case .cross, .journey, .teams: return true
-        case .game: return model.crossScene != nil
+        // Android 1dbfe33: a room match's result shows over its own match screen.
+        case .game, .result: return model.crossScene != nil
         default: return false
         }
     }
@@ -80,17 +81,21 @@ import SpriteKit
             else { MPXSunsetBackground(menu: model.route == .menu && !creatingTournament).ignoresSafeArea() }
             VStack(spacing: 0) {
                 if !ownBar { header }
-                switch model.route {
-                case .menu: if creatingTournament { tournamentOptions } else { menu }
-                case .lobby: lobby
-                case .game: game
-                case .guide: guide
-                case .result: result
-                case .cross: crossGame
-                case .journey: if let journey = model.journey { MPXJourneyView(model: journey) }
-                case .teams: if let teams = model.teams { MPXTeamsView(model: teams) }
+                // Android 1dbfe33: a room match's result card shows over its court, which stays the same view.
+                if model.route == .game || roomResult != nil { game }
+                else {
+                    switch model.route {
+                    case .menu: if creatingTournament { tournamentOptions } else { menu }
+                    case .lobby: lobby
+                    case .guide: guide
+                    case .game, .result: result
+                    case .cross: crossGame
+                    case .journey: if let journey = model.journey { MPXJourneyView(model: journey) }
+                    case .teams: if let teams = model.teams { MPXTeamsView(model: teams) }
+                    }
                 }
             }
+            if let room = roomResult { roomResultCard(room.0, room.1) }
             if let toast = model.toast {
                 VStack { Spacer(); Text(toast).font(.callout.bold()).foregroundStyle(.white).multilineTextAlignment(.center).padding(12)
                     .background(Color.black.opacity(0.75), in: Capsule()).padding(.bottom, 36) }
@@ -138,13 +143,22 @@ import SpriteKit
         case .lobby: return model.session?.kind == .tournament ? t("Tournament", "טורניר") : t("Friendly game", "משחק ידידות")
         case .game: return model.session?.kind == .tournament ? t("Tournament match", "משחק בטורניר") : t("Ping Pong", "פינג פונג")
         case .guide: return t("Learn with Minik", "לומדים עם מיניק")
-        case .result: return t("Match result", "תוצאת המשחק")
+        case .result:
+            if model.session != nil { return model.session?.kind == .tournament ? t("Tournament match", "משחק בטורניר") : t("Ping Pong", "פינג פונג") }
+            return t("Match result", "תוצאת המשחק")
         case .cross, .journey, .teams: return ""
         }
     }
     private var header: some View {
-        ZStack {
-            Text(caption).font(.system(size: 24, weight: .bold, design: .rounded)).multilineTextAlignment(.center).padding(.horizontal, 58)
+        // Android PlayActivity.page(mainMenu) (18cd99d, a247226): the home title sits on the painted sky, without a bar, on one
+        // line above the illustrated players (24 pt, shrinking to 16 pt on narrow screens), with a navy edge so the sunrise
+        // cannot wash it out.
+        let home = model.route == .menu && model.experience != .simple && !creatingTournament
+        return ZStack {
+            Text(caption).font(.system(size: 24, weight: .bold, design: .rounded)).multilineTextAlignment(.center)
+                .lineLimit(home ? 1 : nil).minimumScaleFactor(home ? 16 / 24 : 1)
+                .shadow(color: home ? Color(red: 20 / 255, green: 45 / 255, blue: 92 / 255) : .clear, radius: 2)
+                .padding(.horizontal, 58)
             HStack {
                 if creatingTournament && model.route == .menu {
                     backButton { creatingTournament = false; section = "tournament" }
@@ -162,7 +176,7 @@ import SpriteKit
         }.frame(minHeight: 60).padding(.horizontal, 8)
         // Android ModernActivity's screen bar: white text on a dark rounded bar, readable over the artwork.
         .foregroundStyle(.white)
-        .background(MPStyle.bar, in: RoundedRectangle(cornerRadius: 15))
+        .background(home ? Color.clear : MPStyle.bar, in: RoundedRectangle(cornerRadius: 15))
         .padding(.horizontal, 8).padding(.top, 4)
     }
 
@@ -687,33 +701,42 @@ import SpriteKit
     // ---- results ----------------------------------------------------------------------------------------------------------
     private var result: some View {
         ScrollView { VStack(spacing: 24) {
+            // A room match shows its result card over the court instead (roomResultCard).
             if let result = model.result {
                 Image(systemName: result.won ? "trophy.fill" : "hand.thumbsup.fill").font(.system(size: 72)).foregroundStyle(result.won ? .orange : MPStyle.pink).padding(.top, 32)
-                if let s = model.session, let m = model.fixture {
-                    // Android PrivateMatchActivity result dialog (828c6fc): headline, players and scores, one action.
-                    Text(MPCompletionText.matchHeadline(s, m, model.userID, hebrew: he)).font(.title.bold()).multilineTextAlignment(.center)
-                    Text(resultMessage(s, s.matches[m.id] ?? m)).font(.title3.bold()).multilineTextAlignment(.center)
-                    let close = s.complete ? (s.knockout ? t("View bracket", "לעץ הטורניר") : t("Done", "סיום")) : t("Continue", "המשך")
-                    action(close, color: MPStyle.mint) { model.closeResult() }
-                } else {
-                    Text(result.won ? t("You won!", "ניצחתם!") : t("Good game!", "משחק טוב!")).font(.largeTitle.bold())
-                    Text("\(result.playerPoints) – \(result.opponentPoints)").font(.system(size: 46, weight: .bold, design: .rounded)).environment(\.layoutDirection, .leftToRight)
-                    action(t("Back", "חזרה"), color: MPStyle.mint) { model.back() }
-                }
+                Text(result.won ? t("You won!", "ניצחתם!") : t("Good game!", "משחק טוב!")).font(.largeTitle.bold())
+                Text("\(result.playerPoints) – \(result.opponentPoints)").font(.system(size: 46, weight: .bold, design: .rounded)).environment(\.layoutDirection, .leftToRight)
+                action(t("Back", "חזרה"), color: MPStyle.mint) { model.back() }
             }
         }.frame(maxWidth: 540).padding(24).frame(maxWidth: .infinity) }
     }
-    /// A pair's score, or every player of a table with their score in finishing order, then the table's final duel.
-    private func resultMessage(_ s: MPSession, _ m: MPFixture) -> String {
+    /// A finished room match: its room and fixture while the result shows.
+    private var roomResult: (MPSession, MPFixture)? {
+        guard model.route == .result, let s = model.session, let m = model.fixture else { return nil }
+        return (s, m)
+    }
+    /// Android PrivateMatchActivity result (1dbfe33 MatchResultDialog) over the court: the headline, every player with their
+    /// score in finishing order, the table's final duel, and one action.
+    private func roomResultCard(_ s: MPSession, _ fixture: MPFixture) -> some View {
+        let m = s.matches[fixture.id] ?? fixture
         func name(_ id: String) -> String { s.participants[id]?.name(hebrew: he) ?? "?" }
-        if m.players.count == 2 { return MPMatchText.result(name(m.a), m.scoreA, m.scoreB, name(m.b)) }
-        let order = m.placement.isEmpty ? m.players : m.placement
-        var lines = order.enumerated().map { "\($0.offset + 1). \(name($0.element)) — \(m.scoreOf($0.element))" }.joined(separator: "\n")
-        if let duel = s.matches[MPRules.duelId(m.id)] {
-            let shown = duel.phase == .finished ? MPMatchText.result(name(duel.a), duel.scoreA, duel.scoreB, name(duel.b)) : MPMatchText.pair(name(duel.a), name(duel.b))
-            lines += "\n\n" + t("Final duel: ", "קרב גמר: ") + shown
+        // Android `placement.ifEmpty { players.sortedByDescending(scoreOf) }`: a stable sort, so equal scores keep seat order.
+        var order = m.placement
+        if order.isEmpty {
+            order = m.players.enumerated().sorted { a, b in
+                let left = m.scoreOf(a.element), right = m.scoreOf(b.element)
+                return left != right ? left > right : a.offset < b.offset
+            }.map(\.element)
         }
-        return lines
+        var note = ""
+        if let duel = s.matches[MPRules.duelId(m.id)] {
+            note = t("Final duel: ", "קרב גמר: ") + (duel.phase == .finished ? MPMatchText.result(name(duel.a), duel.scoreA, duel.scoreB, name(duel.b))
+                                                                       : MPMatchText.pair(name(duel.a), name(duel.b)))
+        }
+        let close = s.complete ? (s.knockout ? t("View bracket", "לעץ הטורניר") : t("Done", "סיום")) : t("Continue", "המשך")
+        return MPXResultCard(title: MPCompletionText.matchHeadline(s, fixture, model.userID, hebrew: he),
+                             rows: order.map { MPXResultRow(name: name($0), score: m.scoreOf($0), winner: $0 == m.winner) },
+                             primary: .init(title: close) { model.closeResult() }, note: note)
     }
 }
 

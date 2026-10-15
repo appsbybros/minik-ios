@@ -379,7 +379,7 @@ final class GroupMatchModelTests: XCTestCase {
         XCTAssertTrue(MPCompletionText.won(done, "b"))
         XCTAssertFalse(MPCompletionText.won(done, "host"))
         XCTAssertEqual("You won the match!", MPCompletionText.headline(done, "b", hebrew: false))
-        XCTAssertTrue(MPCompletionText.headline(done, "host", hebrew: false).hasSuffix(" won the match"))
+        XCTAssertTrue(MPCompletionText.headline(done, "host", hebrew: false).hasSuffix(" won this match!"))
         var rows: [String: MPStanding] = [:]
         for row in MPRules.standings(done) { rows[row.id] = row }
         XCTAssertEqual(MPStanding(id: "b", played: 1, wins: 1, pointsFor: 5), rows["b"])               // no invented placement points

@@ -1,4 +1,6 @@
 name: TestFlight upload
+# The release script (public-export/release_ios.py on the owner's PC) starts one run per app and finds it by its request id.
+run-name: ${{ inputs.request && format('TestFlight upload {0} ({1})', inputs.products, inputs.request) || format('TestFlight upload {0}', inputs.products) }}
 
 on:
   workflow_dispatch:
@@ -7,6 +9,10 @@ on:
         description: Schemes to upload, separated by spaces. MinikMath is Minik Math (com.appsbybros.minik.math); MinikMathPlus is Minik Math Plus and needs its own App Store Connect record first
         required: true
         default: MinikPlus MinikPlusEnglish MinikMath MinikPingPong MinikRetroPingPong
+      request:
+        description: Set by the release script to follow this run; leave empty
+        required: false
+        default: ""
 
 permissions:
   contents: read

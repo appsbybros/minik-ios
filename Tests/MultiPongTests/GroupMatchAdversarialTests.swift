@@ -1507,8 +1507,8 @@ final class GroupMatchAdversarialTests: XCTestCase {
         for uid in ["host", "c", gmaBot(0).id, "outsider"] { XCTAssertFalse(MPCompletionText.won(done, uid)) }
         XCTAssertEqual(MPCompletionText.headline(done, "b", hebrew: false), "You won the match!")
         XCTAssertEqual(MPCompletionText.headline(done, "b", hebrew: true), "ניצחתם במשחק!")
-        XCTAssertTrue(MPCompletionText.headline(done, "c", hebrew: false).hasSuffix(" won the match"))
-        XCTAssertTrue(MPCompletionText.headline(done, "host", hebrew: true).hasPrefix("הניצחון ל־"))
+        XCTAssertTrue(MPCompletionText.headline(done, "c", hebrew: false).hasSuffix(" won this match!"))
+        XCTAssertTrue(MPCompletionText.headline(done, "host", hebrew: true).hasPrefix("כל הכבוד ל־"))
         // A completed friendly is never kept as an open entry, and a stale cached copy cannot revive it.
         book.remember(done)
         XCTAssertTrue(book.completionKnown(done))

@@ -42,7 +42,7 @@ import unicodedata
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DOC = ROOT / 'docs' / 'multi-pong-ios-handoff.md'
 CATALOG = ROOT / 'MultiPong' / 'MPTextCatalog.swift'
-ANDROID_COMMIT = '5c1aa4dd4caea09de5e5a76f47199d21c4ba86eb'
+ANDROID_COMMIT = '1dbfe336d39da5cf8a6e396541ff60378303d210'
 APP_TEXT = 'app/src/main/java/com/appsbybros/minik/localization/AppText.kt'
 STRINGS = 'app/src/main/res/values{}/strings.xml'
 JOURNEY = 'app/src/main/res/values{}/journey.xml'
@@ -503,9 +503,11 @@ def main():
     check(rules.get('.read') is False and rules.get('.write') is False, 'merged rules open the root')
     check('minikCrossPong' in rules and 'minikPingPong' in rules and 'tripleShot' in rules, 'merged rules lack a subtree')
     check('minikCrossTeams' in rules, 'merged rules lack the team-room root minikCrossTeams (5c1aa4d)')
-    # 5c1aa4d: the fragment adds minikCrossPong/receptionPreferences; Android's merged candidate predates it (reported).
+    # 5c1aa4d: the fragment adds minikCrossPong/receptionPreferences (in the merged candidate since Android cae4ee6).
     fragment = json.loads((ROOT / 'Tests' / 'MultiPongFirebase' / 'rules' / 'crosspong.fragment.json').read_text(encoding='utf-8'))['rules']
     check('receptionPreferences' in fragment.get('minikCrossPong', {}), 'the minikCrossPong fragment lacks receptionPreferences (5c1aa4d)')
+    for name in ('minikPingPong', 'minikCrossPong', 'minikPongTeams', 'minikCrossTeams'):
+        check('slow' in rules.get(name, {}).get('receptionPreferences', {}).get('$uid', {}), f'merged rules lack {name}/receptionPreferences (cae4ee6)')
     check('leaderboard' not in rules.get('minikCrossPong', {}), 'minikCrossPong has a leaderboard rule')
     committed, worktree = documented_hashes()
     # Hashed with LF line endings: a Windows checkout (core.autocrlf) writes CRLF into the working file.

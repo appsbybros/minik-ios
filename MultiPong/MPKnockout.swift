@@ -341,8 +341,9 @@ enum MPCompletionText {
         }
         if s.kind == .friendly {
             if won(s, uid) { return MPText.t("You won the match!", "ניצחתם במשחק!", he) }
-            if let winner = friendlyWinner(s), let name = s.participants[winner]?.name(hebrew: he) {
-                return MPText.t("\(name) won the match", "הניצחון ל־\(name)", he)
+            // Android 1dbfe33 MatchResultWords: a house character's sentence agrees with the character; a person's is neutral.
+            if let winner = friendlyWinner(s), let player = s.participants[winner] {
+                return MPResultWords.winner(player.name(hebrew: he), houseCharacter: player.bot?.characterId, language: he ? "he" : MPText.language)
             }
             return MPText.t("Match finished", "המשחק הסתיים", he)
         }

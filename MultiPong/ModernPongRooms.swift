@@ -524,9 +524,10 @@ extension ModernPongView {
                         } })
                 }
                 if let tourCard = model.tourCard { tourCardView(tourCard) }
-                if let outcome = model.crossResult { crossResultView(outcome) }
             }
         }
+        // Android 1dbfe33 MatchResultDialog: the result card over the whole match screen.
+        .overlay { if let outcome = model.crossResult { crossResultView(outcome) } }
     }
     private func tourCardView(_ tourCard: CrossTourCard) -> some View {
         VStack(spacing: 10) {
@@ -560,15 +561,10 @@ extension ModernPongView {
         action(t("To the game", "למשחק"), color: mint) { model.endTour() }
     }
     private func crossResultView(_ outcome: CrossLocalResult) -> some View {
-        VStack(spacing: 12) {
-            Text(outcome.title).font(.title.bold()).multilineTextAlignment(.center)
-            Text(outcome.lines.joined(separator: "\n")).font(.title3).multilineTextAlignment(.center)
-            Text(t("Completed games are not saved.", "משחקים שהסתיימו אינם נשמרים.")).font(.callout).multilineTextAlignment(.center)
-            action(t("Play again", "לשחק שוב"), color: MPStyle.mint) { model.closeCrossResult(playAgain: true) }
-            action(t("Menu", "תפריט"), color: MPStyle.lilac) { model.closeCrossResult(playAgain: false) }
-        }
-        .padding(20).frame(maxWidth: 480)
-        .background(.white, in: RoundedRectangle(cornerRadius: 22)).shadow(radius: 10).padding(16)
+        MPXResultCard(title: outcome.title, rows: outcome.rows,
+                      primary: .init(title: t("Play again", "לשחק שוב")) { model.closeCrossResult(playAgain: true) },
+                      secondary: .init(title: t("Menu", "תפריט")) { model.closeCrossResult(playAgain: false) },
+                      note: t("Completed games are not saved.", "משחקים שהסתיימו אינם נשמרים."))
     }
     /// Android CrossActivity.showSettings: players, control level, points to win and the three house players.
     var crossSettings: some View {

@@ -902,3 +902,49 @@ b87334923e2cfe44492ac5b829cff165157ea9dfff859fcb9b1c8ce282d3c807  app/src/main/r
 30d0d353e7ba817ea40bfa8abbb1763c948d6e4008459f5371a5804b83a788a3  app/src/main/res/values-hi/journey.xml
 be595abdc338a2f48b75760ed718a42dcbb8843d68e4ee15a8842a932bbcf10e  app/src/main/res/values-nl/journey.xml
 ```
+
+## Update 2026-10-14: Android 1dbfe33, 18cd99d, a247226
+
+Source: `C:\Projects\MinikCrossPong` after `5c1aa4d`: `6d529a1` (version and store files), `cae4ee6` (rules and rules tests),
+`1dbfe33` (results over the court), `18cd99d` and `a247226` (the home title). Only the last three change the app.
+
+| Android | iOS |
+| --- | --- |
+| `MatchResultWords.kt`: the winner sentence in the six languages. In Hebrew and Arabic, a house character's sentence agrees with the character; a person's is neutral. Names are isolated (U+2068/U+2069). | `MPResultWords` in `MultiPong/MPXResult.swift`, with the same texts |
+| `MatchResultDialog.kt`: a translucent card over the court ("★ Match results", the title, rank/name/score columns, the winner's row highlighted, a note, sky buttons), on a dimmed and (Android 12+) blurred window | `MPXResultCard` in `MultiPong/MPXResult.swift`. The court is dimmed but not blurred, so the live SpriteKit view never renders through a filter. |
+| `CrossActivity.showResult`: the card replaces the dialog | `MPController.showLocalCrossResult` (rows instead of text lines) and `ModernPongRooms.crossResultView`, now over the whole match screen |
+| `PrivateMatchActivity`: the room result card over the court, rows in placement order (or by score), the final duel as the note | `ModernPongView.roomResultCard`. The `.result` route of a room match keeps its court on screen, as the same view, under the card. |
+| `CompletionText`: a friendly room's winner through `MatchResultWords.winner` | `MPCompletionText.headline` |
+| `LocalizedActivity.screenBar`: the caption sets the bar's height | Already so on iOS (the header grows with its text) |
+| `PlayActivity.page(mainMenu)`: the home title on one line, 24 to 16 sp, with a navy edge (rgb 20, 45, 92) over the sunrise | `ModernPongView.header`: on the home, no dark bar, one line, 24 pt shrinking to 16 pt, navy shadow |
+| Unit tests: `MatchResultWordsTest`, and "won this match!" / "כל הכבוד ל־" in three test files | `Tests/MultiPongTests/MatchResultWordsTests.swift` and the same three assertions in `GameModeTournamentTests`, `GroupMatchAdversarialTests` and `GroupMatchModelTests` |
+| `ResultPopupDeviceTest.kt` (device screenshots) | Not ported: an instrumentation test |
+
+`AppText.kt` did not change, so the catalog is unchanged. The rules commit (`cae4ee6`) regenerated the merged candidate from
+the live rules: `Tests/MultiPongFirebase/rules/current.json` and `merged.json` are its copies, its two tests are mirrored
+(`reception-preferences.test.cjs`, one test in `configuration.test.cjs`), and the two `crosspong.test.cjs` checks that
+failed on the old candidate hold again. iOS already writes `receptionPreferences` as `{version: 1, slow}`.
+
+### SHA-256 of the Android files used at 1dbfe33
+
+The audit now checks the committed files at `1dbfe33`. These are the files that changed since `5c1aa4d`, or were added;
+every other committed hash above is unchanged at `1dbfe33`. Tests/MultiPongFirebase/rules/current.json and merged.json
+are copies of the two rules files below.
+
+```
+b5d0d1fff5e13f18de8279331d25bf1f278e5ede1266b89d16cc387166e7ed93  BUILD_STATUS.md
+17e53b3730ec26bac4f7c42ea74078c1d0073c3c0db6240a22accc2fff54101c  app/build.gradle.kts
+d68e3d490000331e814d34f417438067f4c080ae7db10525689a43b6f29a09f0  app/src/main/java/com/appsbybros/minik/pingpong/MatchResultDialog.kt
+b720186c451db52bd4d202e2a65bb8ac490618a1df99b9b2f50ceb0cc251064f  app/src/main/java/com/appsbybros/minik/pingpong/MatchResultWords.kt
+eb9f9bae29ee826e5b34c6251dbadeffb835048453c4cd402228c637abbfb6f5  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossActivity.kt
+ed36ca7110d2001942ef11ddd250d19d3959f49089cecc3994e53aaae5e8c67d  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/CompletionText.kt
+70e6213db3633fb49c130d20282dfba9bd8a1140850df0e62496fa4c299ca95c  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/PrivateMatchActivity.kt
+d10a48598614a574a3f28de8a7268bd33c7d86358f61c27da2cf063f2a7e3fbe  app/src/test/java/com/appsbybros/minik/pingpong/GameModeTournamentTest.kt
+7b5aaa9b80ed5fb7dbb7006f888e84dc26f84df709aaf6c89d017f3818ada33f  app/src/test/java/com/appsbybros/minik/pingpong/MatchResultWordsTest.kt
+a6b3f5e85b4f708e16206ceed4eac994e3b0b2583f066b4222f417620f709ff6  app/src/test/java/com/appsbybros/minik/pingpong/multiplayer/GroupMatchAdversarialTest.kt
+7f89b6a806aca0806604dd710e541fe4dbbde5b02bc4492550a14091c512cf0e  app/src/test/java/com/appsbybros/minik/pingpong/multiplayer/GroupMatchModelTest.kt
+3e886fa49520eb6aadfe7ad8edc423309ceb89bc04264d122fa2e1eec01f4b35  firebase-setup/current-database-rules.json
+0e5870834036b86ad5cce5482f1b87d6c0e9543039d3d5adb9e48750e19df460  firebase-setup/merged-database-rules.json
+785cf61bb55eb5552fc8195dfc469d5471a9f1c44cdfe269976dd02b45381a7a  firebase/tests/configuration.test.cjs
+5c4a348cbcdaff548222a868910cb270c54fc1d0c154d3c57a3507bc6e28d0e2  firebase/tests/reception-preferences.test.cjs
+```

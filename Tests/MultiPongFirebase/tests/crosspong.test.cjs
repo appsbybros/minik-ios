@@ -193,9 +193,8 @@ const others=(r,...ids)=>{const out=clone(r);for(const id of ids)delete out.matc
 // ---- isolation and structure ----
 // iOS mirror (5c1aa4d): Android's generate-rules.cjs now also merges the separate team root (minikCrossTeams, from
 // cross-team.json); Android's own copy of this test was not updated for it. Both roots are excluded here.
-// Android's committed merged candidate at 5c1aa4d is older than its generator: its minikCrossPong has no
-// receptionPreferences and its minikCrossTeams differs from cross-team.json. So the two deepEqual checks below fail, here
-// and on Android, until Android regenerates merged-database-rules.json and rules/merged.json is copied again.
+// Android cae4ee6 regenerated the merged candidate from the live rules (rules/current.json and rules/merged.json are its
+// copies), so minikCrossPong has its receptionPreferences and minikCrossTeams equals cross-team.json again.
 const TEAMS='minikCrossTeams';
 test('merge adds only minikCrossPong and minikCrossTeams to the live rules; every other subtree is byte-for-byte unchanged',()=>{
   const current=JSON.parse(fs.readFileSync(path.resolve(__dirname,'../rules/current.json'),'utf8'));

@@ -12,7 +12,7 @@ struct CrossTourCard: Equatable {
     var teamPractice = false
 }
 /// The local cross match's result (Android CrossActivity.showResult).
-struct CrossLocalResult: Equatable { var title: String; var lines: [String]; var won: Bool }
+struct CrossLocalResult: Equatable { var title: String; var rows: [MPXResultRow]; var won: Bool }
 
 /// Multi Ping Pong's screen state and flows: Android PlayActivity (home, forms, rooms, tournaments), PrivateMatchActivity (a
 /// room fixture on the classic or the cross table) and CrossActivity (the local cross match and its guide), MinikCrossPong
@@ -864,12 +864,11 @@ struct CrossLocalResult: Equatable { var title: String; var lines: [String]; var
         let won = ref.winner != nil && ref.winner == engine.localSeat
         let winner = ref.winner ?? 0
         let winnerName = winner < names.count ? names[winner] : ""
-        let title = won ? text("You win! 🎉", "ניצחתם! 🎉") : text("\(winnerName) wins", "ניצחון ל־\(winnerName)")
-        let lines = order.enumerated().map { item -> String in
-            let seat = item.element.offset
-            return "\(item.offset + 1). \(seat < names.count ? names[seat] : "") — \(item.element.element)"
-        }
-        crossResult = CrossLocalResult(title: title, lines: lines, won: won)
+        // Android 1dbfe33: a house character's win is told in agreement with the character (MatchResultWords).
+        let house = winner < engine.seats.count && engine.seats[winner].kind == .house ? engine.seats[winner].characterId : nil
+        let title = won ? MPResultWords.youWon() : MPResultWords.winner(winnerName, houseCharacter: house)
+        let rows = order.map { MPXResultRow(name: $0.offset < names.count ? names[$0.offset] : "", score: $0.element, winner: $0.offset == winner) }
+        crossResult = CrossLocalResult(title: title, rows: rows, won: won)
         if won { celebration = UUID() }
     }
     private func pauseLocalCross() {

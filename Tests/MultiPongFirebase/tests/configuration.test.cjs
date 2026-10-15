@@ -25,3 +25,10 @@ test('the emulator configuration loads the exact merged candidate on 127.0.0.1 u
   assert.equal(emulator.emulators.database.host,'127.0.0.1');
   assert.ok(JSON.parse(local('package.json')).scripts['test:emulator'].includes('--project demo-minik-crosspong'));
 });
+// Android cae4ee6.
+test('combined candidate includes both games and both teams ball-assistance preferences',()=>{
+ const rules=JSON.parse(local('rules/merged.json')).rules;
+ for(const name of ['minikPingPong','minikCrossPong','minikPongTeams','minikCrossTeams']){
+  assert.ok(rules[name].receptionPreferences?.$uid?.slow,name+' missing preference validation');
+ }
+});

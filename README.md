@@ -1,10 +1,11 @@
-# Minik Plus (iOS)
+# Minik iOS apps
 
-This repository builds the **Minik Plus** app: Xcode target and scheme `MinikPlus`, and its English-only flavour `MinikPlusEnglish` (same code, a build setting).
-It contains the whole shared Minik iOS code base, because the Minik apps share their sources.
+This repository holds **all** the Minik iOS apps. They are one Xcode project (`project.yml`) and share code and
+resources: Minik Plus (with its English-only flavour), Minik Math, Minik Math Plus, Minik Ping Pong, Minik Retro
+Ping Pong, Minik Multi Ping Pong, Minik Spud, Minik Splash, Minik Squash and Minik Beach Volley.
 
-Build: on macOS run `xcodegen generate`, then build the `MinikPlus` scheme.
-In GitHub Actions every workflow is started by hand (Actions tab, Run workflow); choose the `MinikPlus` app where a workflow asks.
+Build: on macOS run `xcodegen generate`, then build the app's scheme. Every GitHub workflow here is started by
+hand or by the owner's release script; a push starts nothing.
 
 ---
 
