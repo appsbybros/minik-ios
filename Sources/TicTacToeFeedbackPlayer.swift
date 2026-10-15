@@ -70,6 +70,7 @@ final class TicTacToeFeedbackPlayer: NSObject, ObservableObject {
         for message in nonemptyMessages {
             let utterance = AVSpeechUtterance(string: message)
             utterance.voice = hostingVoice(for: interfaceLocale)
+            utterance.rate = SpeechVoicePreference.selectedRate(for: interfaceLocale.rawValue)
             synthesizer.speak(utterance)
         }
     }
@@ -92,9 +93,8 @@ final class TicTacToeFeedbackPlayer: NSObject, ObservableObject {
 
     private func hostingVoice(for interfaceLocale: InterfaceLocaleID) -> AVSpeechSynthesisVoice? {
         let preferredIdentifier = interfaceLocale.rawValue
-        return AVSpeechSynthesisVoice(language: preferredIdentifier)
-            ?? AVSpeechSynthesisVoice(language: interfaceLocale.locale.language.languageCode?.identifier)
-            ?? AVSpeechSynthesisVoice(language: "en-US")
+        return MinikSpeechVoice.voice(for: preferredIdentifier)
+            ?? interfaceLocale.locale.language.languageCode.flatMap { MinikSpeechVoice.voice(for: $0.identifier) }
     }
 
     private func makeAudioPlayer(named name: String) -> AVAudioPlayer? {

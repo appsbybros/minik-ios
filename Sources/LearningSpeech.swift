@@ -98,7 +98,8 @@ final class LearningSpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesize
         stop()
         for item in utterances where !item.text.isEmpty {
             let utterance = AVSpeechUtterance(string: LearningSpeechLetterName.spokenText(item.text))
-            utterance.voice = AVSpeechSynthesisVoice(language: LearningSpeechVoiceLocale.identifier(for: item.language))
+            utterance.voice = MinikSpeechVoice.voice(for: LearningSpeechVoiceLocale.identifier(for: item.language))
+            utterance.rate = SpeechVoicePreference.selectedRate(for: LearningSpeechVoiceLocale.identifier(for: item.language))
             enqueue(utterance)
         }
     }
@@ -110,9 +111,9 @@ final class LearningSpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesize
         let utterance = AVSpeechUtterance(string: LearningSpeechLetterName.spokenText(
             interfaceLocale.spokenText(for: text)
         ))
-        utterance.voice = AVSpeechSynthesisVoice(language: interfaceLocale.rawValue)
-            ?? AVSpeechSynthesisVoice(language: interfaceLocale.locale.language.languageCode?.identifier)
-            ?? AVSpeechSynthesisVoice(language: "en-US")
+        utterance.voice = MinikSpeechVoice.voice(for: interfaceLocale.rawValue)
+            ?? interfaceLocale.locale.language.languageCode.flatMap { MinikSpeechVoice.voice(for: $0.identifier) }
+        utterance.rate = SpeechVoicePreference.selectedRate(for: interfaceLocale.rawValue)
         enqueue(utterance)
     }
 

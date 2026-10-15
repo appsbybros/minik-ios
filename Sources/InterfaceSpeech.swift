@@ -12,9 +12,9 @@ final class InterfaceSpeechPlayer: ObservableObject {
         let utterance = AVSpeechUtterance(string: text)
         let localeIdentifier = interfaceLocale.rawValue
         let languageCode = Locale(identifier: localeIdentifier).language.languageCode?.identifier
-        utterance.voice = AVSpeechSynthesisVoice(language: localeIdentifier)
-            ?? languageCode.flatMap { AVSpeechSynthesisVoice(language: $0) }
-            ?? AVSpeechSynthesisVoice(language: "en-US")
+        utterance.voice = MinikSpeechVoice.voice(for: localeIdentifier)
+            ?? languageCode.flatMap { MinikSpeechVoice.voice(for: $0) }
+        utterance.rate = SpeechVoicePreference.selectedRate(for: localeIdentifier)
         synthesizer.speak(utterance)
     }
 
