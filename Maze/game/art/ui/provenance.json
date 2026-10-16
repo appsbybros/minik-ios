@@ -1,0 +1,5 @@
+{
+  "fonts": "Existing MinikMathPlus Fredoka font assets",
+  "reference": "Downloads/sky_advanture_design.png",
+  "surfaces": "Original SVG gradients and shapes authored in sky_ui.gd; no reference screenshot used as UI texture"
+}

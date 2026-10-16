@@ -1,0 +1,90 @@
+{
+  "source": "Read-only reuse of TripleShot question banks; no TripleShot source modified.",
+  "files": {
+    "C:\\Projects\\TripleShotGame\\app\\src\\main\\assets\\question_banks\\en\\arithmetic.xml": {
+      "sha256": "840621bc2fcfe58ee27e1e428c83055538d7bd1e0470fc32719edc81374de67a",
+      "questions": 439
+    },
+    "C:\\Projects\\TripleShotGame\\app\\src\\main\\assets\\question_banks\\en\\artificial_intelligence.xml": {
+      "sha256": "ec049933839bef37ec02bbf6c4e9011cf74abf94812578c2b57c63f31a4c753f",
+      "questions": 12
+    },
+    "C:\\Projects\\TripleShotGame\\app\\src\\main\\assets\\question_banks\\en\\astronomy.xml": {
+      "sha256": "5b030f25ed85d2846d1d01ae44fae76eb64d24409ec5772e2123f43ff9979775",
+      "questions": 12
+    },
+    "C:\\Projects\\TripleShotGame\\app\\src\\main\\assets\\question_banks\\en\\bagrut_mathematics.xml": {
+      "sha256": "34148ee5b66e46a8f1f2e2207ef6b81dea23a9ebff4e5a0062163daad05295d5",
+      "questions": 64
+    },
+    "C:\\Projects\\TripleShotGame\\app\\src\\main\\assets\\question_banks\\en\\english.xml": {
+      "sha256": "c1b88ecd1dd80070fb8c1fe4a624299c59d54784e164862208dcdbf5a8167f35",
+      "questions": 20
+    },
+    "C:\\Projects\\TripleShotGame\\app\\src\\main\\assets\\question_banks\\en\\general_knowledge.xml": {
+      "sha256": "179cc616a94214829133df94ff6a09f2f38e08c92f9d3c534c0a5c506840f6de",
+      "questions": 20
+    },
+    "C:\\Projects\\TripleShotGame\\app\\src\\main\\assets\\question_banks\\en\\history.xml": {
+      "sha256": "828d4f710559a83d9631304350f6318916e8918c7948db77fee2d11ae700c012",
+      "questions": 10
+    },
+    "C:\\Projects\\TripleShotGame\\app\\src\\main\\assets\\question_banks\\en\\mathematics.xml": {
+      "sha256": "2688dd3b67d0e87a4f1639d47dbbc4cce7655a07b3fa3aea83954844550851ee",
+      "questions": 117
+    },
+    "C:\\Projects\\TripleShotGame\\app\\src\\main\\assets\\question_banks\\en\\paradoxes.xml": {
+      "sha256": "8dc2f6c6aac6ca1978df2b44de3798b8098b7c272ed95f671b63610b7fc8770a",
+      "questions": 10
+    },
+    "C:\\Projects\\TripleShotGame\\app\\src\\main\\assets\\question_banks\\en\\programming.xml": {
+      "sha256": "2144f3c222807bf4c7b3301f6457094344391e2c24cd7c2a4a1eba8641dc822a",
+      "questions": 12
+    },
+    "C:\\Projects\\TripleShotGame\\app\\src\\main\\assets\\question_banks\\en\\science.xml": {
+      "sha256": "cbd337b4b80d742fbf8b9369dd733c67237d0beab449103b42819c46d4b04ff1",
+      "questions": 15
+    },
+    "C:\\Projects\\TripleShotGame\\app\\src\\main\\assets\\question_banks\\arithmetic.xml": {
+      "sha256": "17c527a7ced23563d5aeeb43a04f0c7838ad22b7b30db967ce6d677e559a48b9",
+      "questions": 439
+    },
+    "C:\\Projects\\TripleShotGame\\app\\src\\main\\assets\\question_banks\\artificial_intelligence.xml": {
+      "sha256": "3b1e106cdf983f7155f44013fedf44950a82c06c526c85cace927b13b66c0cc1",
+      "questions": 12
+    },
+    "C:\\Projects\\TripleShotGame\\app\\src\\main\\assets\\question_banks\\astronomy.xml": {
+      "sha256": "7e40bfee8b5f35acee2d091722b6f12bfc463608f8f1b70b453b070bdecb7214",
+      "questions": 12
+    },
+    "C:\\Projects\\TripleShotGame\\app\\src\\main\\assets\\question_banks\\bagrut_mathematics.xml": {
+      "sha256": "d3f781eb423eb2020f441b1f801cc6d0a5224f450ad0fbfedbcd28774754c5c6",
+      "questions": 64
+    },
+    "C:\\Projects\\TripleShotGame\\app\\src\\main\\assets\\question_banks\\general_knowledge.xml": {
+      "sha256": "65e855ce99cbe075b6ce600c6ac8ad770cb93cdfe185413c4316cec4351efd31",
+      "questions": 20
+    },
+    "C:\\Projects\\TripleShotGame\\app\\src\\main\\assets\\question_banks\\history.xml": {
+      "sha256": "39629c81989802eaefc973fad50d55ce0e744eec241a790eb4fa0f3db9ebf8c7",
+      "questions": 10
+    },
+    "C:\\Projects\\TripleShotGame\\app\\src\\main\\assets\\question_banks\\mathematics.xml": {
+      "sha256": "cbe08d467e9699c0d3b5a7d020918af1091f9df5dd8ae6a6b56b8b46d18150e3",
+      "questions": 117
+    },
+    "C:\\Projects\\TripleShotGame\\app\\src\\main\\assets\\question_banks\\paradoxes.xml": {
+      "sha256": "bb3e340d2406bdb516997aa544e4e8a42a3fb1e0f2f72a20d2583018ee1bc65c",
+      "questions": 10
+    },
+    "C:\\Projects\\TripleShotGame\\app\\src\\main\\assets\\question_banks\\programming.xml": {
+      "sha256": "3ce07e0b6a05f59c25f5ca0c3c3c6c5376115ce05d70eb5a8e5459df69dd8d19",
+      "questions": 12
+    },
+    "C:\\Projects\\TripleShotGame\\app\\src\\main\\assets\\question_banks\\science.xml": {
+      "sha256": "e2d58e2b3a625366dd679973f60567c30ef230c30258cbb4a223dad02a9472b3",
+      "questions": 15
+    }
+  },
+  "words": 834
+}

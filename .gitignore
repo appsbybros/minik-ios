@@ -35,3 +35,7 @@ website.zip
 docs/*.zip
 rollout-*
 /%USERPROFILE%/
+
+# Minik Maze for iOS: Godot editor cache and the exported Xcode project
+Maze/game/.godot/
+/build/

@@ -154,3 +154,50 @@ jobs:
           path: build/logs
           if-no-files-found: ignore
           retention-days: 3
+
+  maze:
+    # Minik Maze is a Godot game: Godot exports its own Xcode project (Maze/README.md). It runs beside
+    # the other apps, and any failure names MinikMaze, so the release script holds back only Minik Maze.
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Cache Godot for Minik Maze
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/minik-maze
+          key: minik-maze-godot-4.7.2-godot-cpp-4.5-scons-4.9.1
+
+      - name: Export and compile Minik Maze
+        shell: bash
+        run: |
+          set +e
+          set -uo pipefail
+          mkdir -p build/logs
+          status=0
+          # Any ten-character team ID lets Godot write the project; nothing is signed here.
+          bash Maze/build-ios-project.sh AAAAAAAAAA 1 > build/logs/MinikMaze-godot.log 2>&1 || status=$?
+          if (( status == 0 )); then
+            xcodebuild build -project build/maze/MinikMaze.xcodeproj -scheme MinikMaze -configuration Release \
+              -destination "generic/platform=iOS" -derivedDataPath build/DerivedData/Maze \
+              CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO \
+              > build/logs/MinikMaze.log 2>&1 || status=$?
+          fi
+          if (( status != 0 )); then
+            echo "::error::Compile failed for MinikMaze"
+            grep -hE "error|ERROR" build/logs/MinikMaze-godot.log build/logs/MinikMaze.log 2>/dev/null | sort -u | head -40
+            echo "--- last Godot export log lines ---"
+            tail -30 build/logs/MinikMaze-godot.log
+          fi
+          exit $status
+
+      - name: Upload Minik Maze logs
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: Compile-check-maze-logs
+          path: build/logs
+          if-no-files-found: ignore
+          retention-days: 3

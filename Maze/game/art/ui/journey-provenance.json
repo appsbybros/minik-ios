@@ -1,0 +1,13 @@
+{
+  "reference": "C:/Users/User/Downloads/minik_maze_stages.jpg",
+  "oldLevelsReference": "C:/Users/User/Downloads/levels.jpeg",
+  "method": "Built-in image generation/editing from the supplied reference; dynamic path, labels and current-level positioning drawn by journey.gd.",
+  "editIntent": [
+    "Preserve the colorful landscape while removing fixed title, path, numbered circles and cat, allowing genuine saved-progress rendering.",
+    "Derive an isolated transparent Minik cat sprite matching the supplied illustration."
+  ],
+  "assets": {
+    "app/src/main/assets/art/ui/stages-background.png": "2cda2d17abf472fa35bbf7312b182dabdceac98b0ed279448e927cff3f540360",
+    "app/src/main/assets/art/ui/journey-minik.png": "14d892ef3faaf2ac2b4c38183efeeb3325036b2365567651e3cfec521e76803a"
+  }
+}

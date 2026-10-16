@@ -1,0 +1,492 @@
+{
+  "schema": 1,
+  "version": 20261010,
+  "enabled": true,
+  "apps": {
+    "minik": {
+      "applicationId": "com.minik.minik.plus",
+      "enabled": true,
+      "weight": 1,
+      "title": {
+        "en": "Minik",
+        "he": "מיניק"
+      },
+      "body": {
+        "en": "Words, pictures and playful discoveries. Learn something new together.",
+        "he": "מילים, תמונות וגילויים משמחים. לומדים משהו חדש ביחד.",
+        "es": "Palabras, imágenes y descubrimientos. Aprended algo nuevo juntos.",
+        "ar": "كلمات وصور واكتشافات مرحة. تعلموا شيئًا جديدًا معًا.",
+        "hi": "शब्द, चित्र और मज़ेदार खोजें। साथ में कुछ नया सीखें।",
+        "nl": "Woorden, plaatjes en speelse ontdekkingen. Leer samen iets nieuws.",
+        "fr": "Des mots, des images et de joyeuses découvertes. Apprenez ensemble.",
+        "de": "Wörter, Bilder und spielerische Entdeckungen. Gemeinsam Neues lernen.",
+        "ru": "Слова, картинки и весёлые открытия. Учитесь новому вместе.",
+        "pt": "Palavras, imagens e descobertas divertidas. Aprendam juntos.",
+        "uk": "Слова, малюнки й веселі відкриття. Навчайтеся нового разом.",
+        "am": "ቃላት፣ ምስሎች እና አስደሳች ግኝቶች። አዲስ ነገር አብረው ይማሩ።"
+      },
+      "aliases": [
+        "com.minik.minik",
+        "com.minik.minik.english.only",
+        "com.minik.minik.games",
+        "com.minik.minik.plus.english"
+      ],
+      "landingUrl": "https://miniklearn.com/apps/minik-plus/",
+      "playUrl": "https://play.google.com/store/apps/details?id=com.minik.minik.plus",
+      "playAvailable": false,
+      "webUrl": "https://miniklearn.com/minik-language/index.html",
+      "iosUrl": "",
+      "artUrl": "",
+      "artAsset": {
+        "en": "minik-family/art/minik-en.png",
+        "he": "minik-family/art/minik-he.png"
+      }
+    },
+    "math-plus": {
+      "applicationId": "com.appsbybros.minik.math.plus",
+      "enabled": true,
+      "weight": 1,
+      "title": {
+        "en": "Minik Math Plus",
+        "he": "מיניק חשבון פלוס"
+      },
+      "body": {
+        "en": "Make numbers part of the adventure, with hands-on maths games.",
+        "he": "המספרים מצטרפים להרפתקה, עם משחקי חשבון שמזמינים לנסות.",
+        "es": "Los números se suman a la aventura con juegos para experimentar.",
+        "ar": "اجعل الأرقام جزءًا من المغامرة مع ألعاب حساب ممتعة.",
+        "hi": "अंकों को रोमांच का हिस्सा बनाएँ, मज़ेदार गणित के खेलों के साथ।",
+        "nl": "Maak getallen deel van het avontuur met actieve rekenspelletjes.",
+        "fr": "Les nombres deviennent une aventure avec des jeux de calcul interactifs.",
+        "de": "Mit praktischen Rechenspielen werden Zahlen zum Abenteuer.",
+        "ru": "Превратите числа в приключение с увлекательными математическими играми.",
+        "pt": "Os números entram na aventura com jogos de matemática interativos.",
+        "uk": "Перетворіть числа на пригоду з цікавими математичними іграми.",
+        "am": "በአስደሳች የሂሳብ ጨዋታዎች ቁጥሮችን የጀብዱ አካል ያድርጉ።"
+      },
+      "aliases": [],
+      "landingUrl": "https://miniklearn.com/apps/minik-math-plus/",
+      "playUrl": "https://play.google.com/store/apps/details?id=com.appsbybros.minik.math.plus",
+      "playAvailable": false,
+      "webUrl": "",
+      "iosUrl": "",
+      "artUrl": "",
+      "artAsset": {
+        "en": "minik-family/art/math-plus-en.png",
+        "he": "minik-family/art/math-plus-he.png"
+      }
+    },
+    "pong": {
+      "applicationId": "com.appsbybros.minik.pingpong.modern",
+      "enabled": true,
+      "weight": 1,
+      "title": {
+        "en": "Minik Ping Pong",
+        "he": "מיניק פינג פונג"
+      },
+      "body": {
+        "en": "Meet your favourite house players at the table. Aim, rally and enjoy the next point.",
+        "he": "פוגשים את שחקני הבית ליד השולחן. מכוונים, מחזירים ונהנים מכל נקודה.",
+        "es": "Juega con tus personajes favoritos. Apunta, devuelve y disfruta cada punto.",
+        "ar": "العب مع شخصياتك المفضلة. صوب وأعد الكرة واستمتع بكل نقطة.",
+        "hi": "अपने पसंदीदा खिलाड़ियों से खेलें। निशाना लगाएँ, गेंद लौटाएँ और हर अंक का मज़ा लें।",
+        "nl": "Speel met je favoriete huisgenoten. Mik, sla terug en geniet van elk punt.",
+        "fr": "Retrouvez vos joueurs préférés. Visez, échangez et savourez chaque point.",
+        "de": "Spiele mit deinen Lieblingsfiguren. Zielen, zurückspielen und jeden Punkt genießen.",
+        "ru": "Играйте с любимыми героями. Цельтесь, отбивайте и радуйтесь каждому очку.",
+        "pt": "Jogue com as suas personagens favoritas. Mire, devolva e aproveite cada ponto.",
+        "uk": "Грайте з улюбленими героями. Цільтеся, відбивайте й радійте кожному очку.",
+        "am": "ከሚወዷቸው ተጫዋቾች ጋር ይጫወቱ። ያነጣጥሩ፣ ይመልሱ እና በእያንዳንዱ ነጥብ ይደሰቱ።"
+      },
+      "aliases": [],
+      "landingUrl": "https://miniklearn.com/apps/minik-ping-pong/",
+      "playUrl": "https://play.google.com/store/apps/details?id=com.appsbybros.minik.pingpong.modern",
+      "playAvailable": false,
+      "webUrl": "",
+      "iosUrl": "",
+      "artUrl": "",
+      "artAsset": {
+        "en": "minik-family/art/pong-en.png",
+        "he": "minik-family/art/pong-he.png"
+      }
+    },
+    "multiplayer": {
+      "applicationId": "com.appsbybros.pingpong.multiplayer",
+      "enabled": true,
+      "weight": 1,
+      "title": {
+        "en": "Multiplayer Ping Pong",
+        "he": "פינג פונג מרובה משתתפים"
+      },
+      "body": {
+        "en": "More players. More angles. Keep the rally going around one lively table.",
+        "he": "יותר שחקנים, יותר כיוונים. ממשיכים להחזיר סביב שולחן מלא חיים.",
+        "es": "Más jugadores, más ángulos. ¡Que la pelota no pare en esta mesa llena de acción!",
+        "ar": "لاعبون أكثر وزوايا أكثر. واصلوا تبادل الكرة حول طاولة مليئة بالحركة.",
+        "hi": "ज़्यादा खिलाड़ी, ज़्यादा दिशाएँ। एक ही मेज़ पर रैली जारी रखें।",
+        "nl": "Meer spelers, meer hoeken. Houd de rally gaande rond één levendige tafel.",
+        "fr": "Plus de joueurs, plus d'angles. Faites durer l'échange autour d'une même table.",
+        "de": "Mehr Spieler, mehr Winkel. Haltet den Ball rund um einen Tisch im Spiel.",
+        "ru": "Больше игроков, больше направлений. Продолжайте розыгрыш за одним столом.",
+        "pt": "Mais jogadores, mais ângulos. Mantenham a bola em jogo à volta da mesma mesa.",
+        "uk": "Більше гравців, більше напрямків. Продовжуйте розіграш за одним столом.",
+        "am": "ብዙ ተጫዋቾች፣ ብዙ አቅጣጫዎች። በአንድ ጠረጴዛ ዙሪያ ኳሱን መመላለስ ይቀጥሉ።"
+      },
+      "aliases": [],
+      "landingUrl": "https://miniklearn.com/apps/multiplayer-ping-pong/",
+      "playUrl": "https://play.google.com/store/apps/details?id=com.appsbybros.pingpong.multiplayer",
+      "playAvailable": false,
+      "webUrl": "",
+      "iosUrl": "",
+      "artUrl": "",
+      "artAsset": {
+        "en": "minik-family/art/multiplayer-en.png",
+        "he": "minik-family/art/multiplayer-he.png"
+      }
+    },
+    "splash": {
+      "applicationId": "com.appsbybros.minik.splash",
+      "enabled": true,
+      "weight": 1,
+      "title": {
+        "en": "Minik Splash",
+        "he": "מיניק ספלאש"
+      },
+      "body": {
+        "en": "Water balloons, quick catches and sunny playground fun.",
+        "he": "בלוני מים, תפיסות זריזות וכיף במגרש שטוף שמש.",
+        "es": "Globos de agua, atrapadas rápidas y diversión bajo el sol.",
+        "ar": "بالونات ماء والتقاطات سريعة ومتعة تحت الشمس.",
+        "hi": "पानी के गुब्बारे, फुर्तीले कैच और धूप में खेल का मज़ा।",
+        "nl": "Waterballonnen, snelle vangsten en zonnig speelplezier.",
+        "fr": "Des ballons d'eau, des réflexes et du plaisir au soleil.",
+        "de": "Wasserballons, flinke Fänge und sonniger Spielplatzspaß.",
+        "ru": "Водяные шарики, ловкие перехваты и весёлые игры на солнце.",
+        "pt": "Balões de água, apanhadas rápidas e diversão ao sol.",
+        "uk": "Водяні кульки, спритні перехоплення й веселі ігри на сонці.",
+        "am": "የውሃ ፊኛዎች፣ ፈጣን ቅልጥፍና እና በፀሐይ ውስጥ አስደሳች ጨዋታ።"
+      },
+      "aliases": [],
+      "landingUrl": "https://miniklearn.com/apps/minik-splash/",
+      "playUrl": "https://play.google.com/store/apps/details?id=com.appsbybros.minik.splash",
+      "playAvailable": false,
+      "webUrl": "",
+      "iosUrl": "",
+      "artUrl": "",
+      "artAsset": {
+        "en": "minik-family/art/splash-en.png",
+        "he": "minik-family/art/splash-he.png"
+      }
+    },
+    "spud": {
+      "applicationId": "com.appsbybros.minik.spud",
+      "enabled": true,
+      "weight": 1,
+      "title": {
+        "en": "Minik SPUD",
+        "he": "מיניק עמודו"
+      },
+      "body": {
+        "en": "Run, dodge, catch! Rediscover a playground favourite with the Minik crew.",
+        "he": "רצים, מתחמקים ותופסים! משחק החצר האהוב חוזר עם החבורה של מיניק.",
+        "es": "¡Corre, esquiva y atrapa! Un clásico del patio con la pandilla Minik.",
+        "ar": "اركض وتفادَ والتقط! استمتع بلعبة الساحة مع أصدقاء مينيك.",
+        "hi": "दौड़ें, बचें और पकड़ें! Minik के दोस्तों के साथ मैदान का मज़ा।",
+        "nl": "Rennen, ontwijken, vangen! Een geliefd buitenspel met de Minik-bende.",
+        "fr": "Cours, esquive et attrape ! Un jeu de cour avec la bande Minik.",
+        "de": "Laufen, ausweichen, fangen! Ein Spielplatzklassiker mit der Minik-Crew.",
+        "ru": "Бегайте, уворачивайтесь, ловите! Дворовая игра с командой Minik.",
+        "pt": "Corra, desvie e apanhe! Um clássico do recreio com a turma Minik.",
+        "uk": "Бігайте, ухиляйтеся, ловіть! Дворова гра з командою Minik.",
+        "am": "ሩጡ፣ ያምልጡ፣ ይያዙ! ከሚኒክ ጓደኞች ጋር የሜዳ ጨዋታ።"
+      },
+      "aliases": [],
+      "landingUrl": "https://miniklearn.com/apps/amodu/",
+      "playUrl": "https://play.google.com/store/apps/details?id=com.appsbybros.minik.spud",
+      "playAvailable": false,
+      "webUrl": "",
+      "iosUrl": "",
+      "artUrl": "",
+      "artAsset": {
+        "en": "minik-family/art/spud-en.png",
+        "he": "minik-family/art/spud-he.png"
+      }
+    },
+    "squash": {
+      "applicationId": "com.appsbybros.minik.squash",
+      "enabled": true,
+      "weight": 1,
+      "title": {
+        "en": "Minik Squash",
+        "he": "מיניק סקווש"
+      },
+      "body": {
+        "en": "Pick your target on the wall and build your next brilliant rally.",
+        "he": "בוחרים מטרה על הקיר ומתחילים רצף חבטות נהדר.",
+        "es": "Elige tu objetivo en la pared y encadena grandes golpes.",
+        "ar": "اختر هدفك على الحائط وابدأ سلسلة من الضربات الرائعة.",
+        "hi": "दीवार पर निशाना चुनें और शानदार रैली बनाएँ।",
+        "nl": "Kies je doel op de muur en bouw een geweldige rally op.",
+        "fr": "Vise une cible sur le mur et enchaîne les échanges.",
+        "de": "Wähle dein Ziel an der Wand und starte einen tollen Ballwechsel.",
+        "ru": "Выберите цель на стене и начните отличный розыгрыш.",
+        "pt": "Escolha o alvo na parede e construa uma grande troca de bola.",
+        "uk": "Виберіть ціль на стіні й почніть чудовий розіграш.",
+        "am": "በግድግዳው ላይ ኢላማዎን ይምረጡ እና ኳሱን በተከታታይ ይመልሱ።"
+      },
+      "aliases": [],
+      "landingUrl": "https://miniklearn.com/apps/minik-squash/",
+      "playUrl": "https://play.google.com/store/apps/details?id=com.appsbybros.minik.squash",
+      "playAvailable": false,
+      "webUrl": "",
+      "iosUrl": "",
+      "artUrl": "",
+      "artAsset": {
+        "en": "minik-family/art/squash-en.png",
+        "he": "minik-family/art/squash-he.png"
+      }
+    },
+    "volley": {
+      "applicationId": "com.appsbybros.minik.beachvolley",
+      "enabled": true,
+      "weight": 1,
+      "title": {
+        "en": "Minik Beach Volley",
+        "he": "מיניק כדורעף חופים"
+      },
+      "body": {
+        "en": "Set it up, leap and spike. Bring your favourite team to the beach.",
+        "he": "מרימים, קופצים ומנחיתים. מביאים את הקבוצה האהובה לחוף.",
+        "es": "Coloca, salta y remata. Lleva tu equipo favorito a la playa.",
+        "ar": "مرر وارفع واقفز واضرب. اصطحب فريقك المفضل إلى الشاطئ.",
+        "hi": "सेट करें, कूदें और स्मैश करें। अपनी पसंदीदा टीम को समुद्र तट पर लाएँ।",
+        "nl": "Zet op, spring en smash. Neem je favoriete team mee naar het strand.",
+        "fr": "Place, saute et smashe. Emmène ton équipe préférée à la plage.",
+        "de": "Vorlegen, springen, schmettern. Bring dein Lieblingsteam an den Strand.",
+        "ru": "Пасуйте, прыгайте и атакуйте. Соберите любимую команду на пляже.",
+        "pt": "Prepare, salte e remate. Leve a sua equipa favorita à praia.",
+        "uk": "Пасуйте, стрибайте й атакуйте. Зберіть улюблену команду на пляжі.",
+        "am": "አንሱ፣ ዝለሉ እና ይምቱ። የሚወዱትን ቡድን ወደ ባሕር ዳርቻ ይውሰዱ።"
+      },
+      "aliases": [],
+      "landingUrl": "https://miniklearn.com/apps/minik-beach-volley/",
+      "playUrl": "https://play.google.com/store/apps/details?id=com.appsbybros.minik.beachvolley",
+      "playAvailable": false,
+      "webUrl": "",
+      "iosUrl": "",
+      "artUrl": "",
+      "artAsset": {
+        "en": "minik-family/art/volley-en.png",
+        "he": "minik-family/art/volley-he.png"
+      }
+    },
+    "bounce": {
+      "applicationId": "com.appsbybros.minik.bouncelearn",
+      "enabled": true,
+      "weight": 1,
+      "title": {
+        "en": "Minik Bounce & Learn",
+        "he": "מיניק קופצים ולומדים"
+      },
+      "body": {
+        "en": "A colourful bounce, a clever answer and one more reason to play.",
+        "he": "קפיצה צבעונית, תשובה חכמה ועוד סיבה לשחק.",
+        "es": "Un rebote de color, una buena respuesta y otra razón para jugar.",
+        "ar": "قفزة ملونة وإجابة ذكية وسبب آخر للعب.",
+        "hi": "रंगीन उछाल, समझदार जवाब और खेलने की एक और वजह।",
+        "nl": "Een kleurrijke stuiter, een slim antwoord en nog een reden om te spelen.",
+        "fr": "Un rebond coloré, une bonne réponse et une raison de plus de jouer.",
+        "de": "Ein bunter Sprung, eine kluge Antwort und noch ein Grund zu spielen.",
+        "ru": "Яркий отскок, верный ответ и ещё один повод поиграть.",
+        "pt": "Um salto colorido, uma boa resposta e mais uma razão para jogar.",
+        "uk": "Яскравий відскок, правильна відповідь і ще одна нагода пограти.",
+        "am": "ባለቀለም ዝላይ፣ ብልህ መልስ እና ሌላ የመጫወቻ ምክንያት።"
+      },
+      "aliases": [],
+      "landingUrl": "https://miniklearn.com/apps/minik-bounce-and-learn/",
+      "playUrl": "https://play.google.com/store/apps/details?id=com.appsbybros.minik.bouncelearn",
+      "playAvailable": false,
+      "webUrl": "",
+      "iosUrl": "",
+      "artUrl": "",
+      "artAsset": {
+        "en": "minik-family/art/bounce-en.png",
+        "he": "minik-family/art/bounce-he.png"
+      }
+    },
+    "spud-pro": {
+      "applicationId": "com.appsbybros.minik.spudpro",
+      "enabled": true,
+      "weight": 1,
+      "title": {
+        "en": "SPUD Pro",
+        "he": "עמודו פרו"
+      },
+      "body": {
+        "en": "Take your dodges, throws and catches into a bigger playground adventure.",
+        "he": "לוקחים את ההתחמקויות, הזריקות והתפיסות להרפתקה גדולה במגרש.",
+        "es": "Lleva tus esquivas, lanzamientos y atrapadas a una aventura más grande.",
+        "ar": "انطلق بتفاديك ورمياتك والتقاطاتك في مغامرة أكبر.",
+        "hi": "बचने, फेंकने और पकड़ने के कौशल से बड़े रोमांच में उतरें।",
+        "nl": "Neem je ontwijkingen, worpen en vangsten mee op een groter avontuur.",
+        "fr": "Esquive, lance et attrape dans une aventure encore plus grande.",
+        "de": "Ausweichen, werfen und fangen in einem noch größeren Abenteuer.",
+        "ru": "Уворачивайтесь, бросайте и ловите в большом игровом приключении.",
+        "pt": "Desvie, lance e apanhe numa aventura ainda maior.",
+        "uk": "Ухиляйтеся, кидайте й ловіть у великій ігровій пригоді.",
+        "am": "በትልቅ ጀብዱ ውስጥ ያምልጡ፣ ይወርውሩ እና ይያዙ።"
+      },
+      "aliases": [],
+      "landingUrl": "https://miniklearn.com/apps/index.html",
+      "playUrl": "https://play.google.com/store/apps/details?id=com.appsbybros.minik.spudpro",
+      "playAvailable": false,
+      "webUrl": "",
+      "iosUrl": "",
+      "artUrl": "",
+      "artAsset": {
+        "en": "minik-family/art/spud-pro-en.png",
+        "he": "minik-family/art/spud-pro-he.png"
+      }
+    },
+    "splash-pro": {
+      "applicationId": "com.appsbybros.minik.splashpro",
+      "enabled": true,
+      "weight": 1,
+      "title": {
+        "en": "Splash Pro",
+        "he": "ספלאש פרו"
+      },
+      "body": {
+        "en": "More balloon action with the familiar Minik crew.",
+        "he": "עוד אקשן של בלוני מים עם החבורה המוכרת של מיניק.",
+        "es": "Más acción con globos y la pandilla Minik de siempre.",
+        "ar": "المزيد من حركة البالونات مع أصدقاء مينيك المألوفين.",
+        "hi": "Minik के परिचित दोस्तों के साथ और भी गुब्बारों का मज़ा।",
+        "nl": "Meer ballonactie met de vertrouwde Minik-bende.",
+        "fr": "Encore plus de ballons avec la fidèle bande Minik.",
+        "de": "Noch mehr Ballonspaß mit der vertrauten Minik-Crew.",
+        "ru": "Ещё больше игр с шариками и знакомой командой Minik.",
+        "pt": "Mais ação com balões e a conhecida turma Minik.",
+        "uk": "Ще більше ігор із кульками й знайомою командою Minik.",
+        "am": "ከሚያውቋቸው የሚኒክ ጓደኞች ጋር ተጨማሪ የፊኛ ጨዋታ።"
+      },
+      "aliases": [],
+      "landingUrl": "https://miniklearn.com/apps/index.html",
+      "playUrl": "https://play.google.com/store/apps/details?id=com.appsbybros.minik.splashpro",
+      "playAvailable": false,
+      "webUrl": "",
+      "iosUrl": "",
+      "artUrl": "",
+      "artAsset": {
+        "en": "minik-family/art/splash-pro-en.png",
+        "he": "minik-family/art/splash-pro-he.png"
+      }
+    },
+    "tripleshot": {
+      "applicationId": "com.appsbybros.minik.swish",
+      "enabled": true,
+      "weight": 1,
+      "title": {
+        "en": "TripleShot",
+        "he": "טריפל שוט"
+      },
+      "body": {
+        "en": "Build your basketball team and light up the court.",
+        "he": "מרכיבים קבוצת כדורסל ומדליקים את המגרש.",
+        "es": "Crea tu equipo de baloncesto y brilla en la cancha.",
+        "ar": "كوّن فريق كرة السلة الخاص بك وتألق في الملعب.",
+        "hi": "अपनी बास्केटबॉल टीम बनाएँ और कोर्ट पर चमकें।",
+        "nl": "Stel je basketbalteam samen en schitter op het veld.",
+        "fr": "Crée ton équipe de basket et fais vibrer le terrain.",
+        "de": "Stell dein Basketballteam zusammen und bring den Platz zum Leuchten.",
+        "ru": "Соберите баскетбольную команду и зажгите на площадке.",
+        "pt": "Forme a sua equipa de basquetebol e brilhe no campo.",
+        "uk": "Зберіть баскетбольну команду й запаліть на майданчику.",
+        "am": "የቅርጫት ኳስ ቡድንዎን ይመስርቱ እና በሜዳው ላይ ያብሩ።"
+      },
+      "aliases": [],
+      "landingUrl": "https://miniklearn.com/apps/index.html",
+      "playUrl": "https://play.google.com/store/apps/details?id=com.appsbybros.minik.swish",
+      "playAvailable": false,
+      "webUrl": "",
+      "iosUrl": "",
+      "artUrl": "",
+      "artAsset": {
+        "en": "minik-family/art/tripleshot-en.png",
+        "he": "minik-family/art/tripleshot-he.png"
+      }
+    },
+    "ivrit": {
+      "applicationId": "com.appsbybros.ivrittogether",
+      "enabled": true,
+      "weight": 1,
+      "title": {
+        "en": "Ivrit Together",
+        "he": "עברית ביחד"
+      },
+      "body": {
+        "en": "Useful Hebrew for a new beginning, one friendly practice at a time.",
+        "he": "עברית שימושית להתחלה חדשה, תרגול נעים אחד בכל פעם.",
+        "es": "Hebreo útil para empezar una nueva etapa, con prácticas amables.",
+        "ar": "عبرية مفيدة لبداية جديدة، مع تدريبات مريحة خطوة بخطوة.",
+        "hi": "नई शुरुआत के लिए उपयोगी हिब्रू, आसान अभ्यास के साथ।",
+        "nl": "Praktisch Hebreeuws voor een nieuw begin, met prettige oefeningen.",
+        "fr": "Un hébreu utile pour un nouveau départ, avec des exercices accueillants.",
+        "de": "Nützliches Hebräisch für einen neuen Anfang, mit angenehmen Übungen.",
+        "ru": "Полезный иврит для новой жизни, с понятными и дружелюбными упражнениями.",
+        "pt": "Hebraico útil para um novo começo, com exercícios acolhedores.",
+        "uk": "Корисний іврит для нового початку, зі зрозумілими й дружніми вправами.",
+        "am": "ለአዲስ ጅማሬ ጠቃሚ ዕብራይስጥ፣ በቀላል ልምምዶች።"
+      },
+      "aliases": [],
+      "landingUrl": "https://miniklearn.com/apps/index.html",
+      "playUrl": "https://play.google.com/store/apps/details?id=com.appsbybros.ivrittogether",
+      "playAvailable": false,
+      "webUrl": "",
+      "iosUrl": "",
+      "artUrl": "",
+      "artAsset": {
+        "en": "minik-family/art/ivrit-en.png",
+        "he": "minik-family/art/ivrit-he.png"
+      }
+    },
+    "easy-call": {
+      "applicationId": "com.minik.easycallandanswer.premium",
+      "enabled": true,
+      "weight": 1,
+      "title": {
+        "en": "Easy Call & Answer",
+        "he": "שיחות פשוטות"
+      },
+      "body": {
+        "en": "A thoughtful idea for grandparents: clearer, bigger calling controls.",
+        "he": "רעיון מתחשב לסבא ולסבתא: כפתורי שיחה גדולים וברורים.",
+        "es": "Una buena idea para los abuelos: controles de llamada más grandes y claros.",
+        "ar": "فكرة لطيفة للأجداد: أزرار اتصال أكبر وأوضح.",
+        "hi": "दादा-दादी के लिए अच्छा विचार: कॉल के बड़े और साफ़ बटन।",
+        "nl": "Een attent idee voor grootouders: grotere, duidelijkere belknoppen.",
+        "fr": "Une belle idée pour les grands-parents : des commandes d'appel plus grandes et claires.",
+        "de": "Eine aufmerksame Idee für Großeltern: größere, klarere Telefontasten.",
+        "ru": "Хорошая идея для бабушек и дедушек: крупные и понятные кнопки звонка.",
+        "pt": "Uma boa ideia para os avós: botões de chamada maiores e mais claros.",
+        "uk": "Гарна ідея для бабусь і дідусів: великі та зрозумілі кнопки дзвінка.",
+        "am": "ለአያቶች ጥሩ ሀሳብ፦ ትልቅ እና ግልጽ የጥሪ አዝራሮች።"
+      },
+      "aliases": [
+        "com.minik.easycallandanswer",
+        "com.minik.easycallandanswer.standard",
+        "com.minik.easycallandanswer.voice"
+      ],
+      "landingUrl": "https://easycallandanswer.com/",
+      "playUrl": "https://play.google.com/store/apps/details?id=com.minik.easycallandanswer.premium",
+      "playAvailable": false,
+      "webUrl": "",
+      "iosUrl": "",
+      "artUrl": "",
+      "artAsset": {
+        "en": "minik-family/art/easy-call.png",
+        "he": "minik-family/art/easy-call.png"
+      }
+    }
+  }
+}

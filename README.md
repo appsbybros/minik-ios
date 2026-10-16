@@ -2,7 +2,8 @@
 
 This repository holds **all** the Minik iOS apps. They are one Xcode project (`project.yml`) and share code and
 resources: Minik Plus (with its English-only flavour), Minik Math, Minik Math Plus, Minik Ping Pong, Minik Retro
-Ping Pong, Minik Multi Ping Pong, Minik Spud, Minik Splash, Minik Squash and Minik Beach Volley.
+Ping Pong, Minik Multi Ping Pong, Minik Spud, Minik Splash, Minik Squash and Minik Beach Volley. Minik Maze is a
+Godot game in Maze/ (see Maze/README.md).
 
 Build: on macOS run `xcodegen generate`, then build the app's scheme. Every GitHub workflow here is started by
 hand or by the owner's release script; a push starts nothing.

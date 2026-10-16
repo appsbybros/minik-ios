@@ -1,0 +1,21 @@
+#!/usr/bin/env python
+# The App Store library of Minik Maze for iOS (src/maze_storekit.mm), built with godot-cpp.
+# Maze/build-ios-project.sh puts godot-cpp (tag godot-4.5-stable) in godot-cpp/ and runs, on macOS:
+#   scons platform=ios arch=arm64 target=template_release
+# The result, bin/libmazestorekit.ios.template_release.arm64.dylib, goes to Maze/game/ios/bin/, where
+# ios/maze_storekit.gdextension expects it; Godot's iOS export turns it into a framework.
+env = SConscript("godot-cpp/SConstruct")
+
+store = env.Clone()
+store.Append(CPPPATH=["src/"])
+store.Append(CCFLAGS=["-fobjc-arc"])
+store.Append(LINKFLAGS=["-framework", "Foundation", "-framework", "StoreKit"])
+# Godot's export makes the dylib a framework and sets its install name to the framework path, ignoring
+# failures. Linking with that final name (and room for a longer one) keeps the app from loading "bin/...".
+name = "libmazestorekit{}".format(env["suffix"])
+store.Append(LINKFLAGS=["-Wl,-install_name,@rpath/{0}.framework/{0}".format(name), "-Wl,-headerpad_max_install_names"])
+library = store.SharedLibrary(
+    "bin/{}{}".format(name, env["SHLIBSUFFIX"]),
+    source=Glob("src/*.mm"),
+)
+Default(library)

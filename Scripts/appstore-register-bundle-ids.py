@@ -32,6 +32,7 @@ APPS = [
     ("com.appsbybros.minik.splash", "Minik Splash", False),
     ("com.appsbybros.minik.squash", "Minik Squash", False),
     ("com.appsbybros.minik.beachvolley", "Minik Beach Volley", False),
+    ("com.appsbybros.minik.maze", "Minik Maze", False),
 ]
 # The App Store Connect API has no App Attest capability type: it can neither read
 # nor set it, so it is ticked by hand on the App ID.
@@ -146,6 +147,8 @@ SCHEME_BUNDLES = {
     "MinikSplash": "com.appsbybros.minik.splash",
     "MinikSquash": "com.appsbybros.minik.squash",
     "MinikBeachVolley": "com.appsbybros.minik.beachvolley",
+    # The Godot game, built from Maze/ (Maze/README.md); the same ID as on Google Play.
+    "MinikMaze": "com.appsbybros.minik.maze",
 }
 
 

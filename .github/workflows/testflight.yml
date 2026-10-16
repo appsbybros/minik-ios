@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       products:
-        description: Schemes to upload, separated by spaces. MinikMath is Minik Math (com.appsbybros.minik.math); MinikMathPlus is Minik Math Plus and needs its own App Store Connect record first
+        description: Schemes to upload, separated by spaces. MinikMath is Minik Math (com.appsbybros.minik.math); MinikMathPlus is Minik Math Plus and needs its own App Store Connect record first; MinikMaze is the Godot game Minik Maze (Maze/README.md)
         required: true
         default: MinikPlus MinikPlusEnglish MinikMath MinikPingPong MinikRetroPingPong
       request:
@@ -94,6 +94,13 @@ jobs:
           "$RUNNER_TEMP/asc-venv/bin/pip" install --quiet "pyjwt[crypto]"
           echo "ASC_PYTHON=$RUNNER_TEMP/asc-venv/bin/python" >> "$GITHUB_ENV"
 
+      - name: Cache Godot for Minik Maze
+        if: ${{ contains(inputs.products, 'MinikMaze') }}
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/minik-maze
+          key: minik-maze-godot-4.7.2-godot-cpp-4.5-scons-4.9.1
+
       - name: Generate project
         shell: bash
         run: |
@@ -135,11 +142,25 @@ jobs:
           failed=""
           for SCHEME in $PRODUCTS; do
             ARCHIVE="build/archives/$SCHEME.xcarchive"
+            PROJECT="Minik.xcodeproj"
+            # Minik Maze is a Godot game: Godot exports its own Xcode project, which is archived
+            # and signed below like the other apps (Maze/README.md).
+            if [ "$SCHEME" = "MinikMaze" ]; then
+              if ! bash Maze/build-ios-project.sh "$APPLE_TEAM_ID" "$BUILD_NUMBER" > "build/logs/MinikMaze-godot.log" 2>&1; then
+                echo "::error::Godot export failed for MinikMaze"
+                grep -E "error|ERROR" "build/logs/MinikMaze-godot.log" | sort -u | head -40 || true
+                echo "--- last Godot export log lines ---"
+                tail -25 "build/logs/MinikMaze-godot.log" || true
+                failed="$failed $SCHEME"
+                continue
+              fi
+              PROJECT="build/maze/MinikMaze.xcodeproj"
+            fi
             # Archive unsigned: a fresh runner has no Apple Development certificate or
             # profile. Export below signs for distribution with Apple's cloud-managed
             # certificate through the App Store Connect API key.
             if ! xcodebuild archive \
-              -project Minik.xcodeproj \
+              -project "$PROJECT" \
               -scheme "$SCHEME" \
               -configuration Release \
               -destination "generic/platform=iOS" \
@@ -161,6 +182,11 @@ jobs:
             # Mobile Ads frameworks, which export leaves in place and Apple rejects
             # (ITMS-90035). Replacing it lets export sign them for the App Store.
             APP="$ARCHIVE/Products/Applications/$SCHEME.app"
+            # Godot also copies its converted frameworks into the app's dylibs folder. The engine loads
+            # them from Frameworks, and that second, unsigned copy would fail App Store validation.
+            if [ "$SCHEME" = "MinikMaze" ]; then
+              rm -rf "$APP/dylibs"
+            fi
             framework_failed=""
             for framework in "$APP"/Frameworks/*.framework "$APP"/Frameworks/*.dylib; do
               [ -e "$framework" ] || continue

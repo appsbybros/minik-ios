@@ -1,0 +1,11 @@
+; The App Store purchase for iOS (Maze/native, built by Maze/build-ios-project.sh). Other platforms have
+; no library, so ios/maze_services_ios.gd reports "Purchase unavailable" there.
+[configuration]
+
+entry_symbol = "maze_storekit_init"
+compatibility_minimum = "4.5"
+reloadable = false
+
+[libraries]
+
+ios = "res://ios/bin/libmazestorekit.ios.template_release.arm64.dylib"

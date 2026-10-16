@@ -1,0 +1,8 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: he\n"
+
+# The Home Screen name on Hebrew devices (Android values-iw/strings.xml app_name).
+msgid "Minik Maze"
+msgstr "מיניק במבוך"
