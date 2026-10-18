@@ -1,12 +1,12 @@
 {
  "android": {
   "repository": "MinikMaze",
-  "commit": "3be535a03a69ae9c6fe36d20954216fa87dd77b2",
+  "commit": "2fdac59cbd1e3432e61e26ec12f869a3784e3daa",
   "path": "app/src/main/assets/"
  },
  "family": {
   "repository": "MinikFamilyServices",
-  "commit": "2f75e9842b8b9fde842ca51c0ec5840d67770d3c",
+  "commit": "6a27708707e153235383dc2494253cc72a39a265",
   "path": "android/src/main/assets/minik-family/"
  },
  "ios_changes": [
@@ -103,6 +103,8 @@
   "audio/Pixel_Parade_Arcade_Full.mp3.import": "c7d129df259feb5addb132a77ded322a6d94840a35e6112510cf7ff731f474bb",
   "audio/Pixel_Parade_Arcade_Game_Loop.wav": "b6a112ede60806027fda1ffbfdeb896e00c1386c1a5157158b490d46b3b566a9",
   "audio/Pixel_Parade_Arcade_Game_Loop.wav.import": "c7d129df259feb5addb132a77ded322a6d94840a35e6112510cf7ff731f474bb",
+  "audio/jelly.mp3": "704ca36a4e270dc57fdb10df4f043d6954aa127a4eca7a78dac3f8f9fbf25985",
+  "audio/jelly.mp3.import": "c7d129df259feb5addb132a77ded322a6d94840a35e6112510cf7ff731f474bb",
   "audio/rival-chirpy-laugh.wav": "ae06e26ccd7dade6065c33f231ba97961cd71244cfa06b1ec01bb546596927ac",
   "audio/rival-chirpy-laugh.wav.import": "c7d129df259feb5addb132a77ded322a6d94840a35e6112510cf7ff731f474bb",
   "curriculum.gd": "105be531f4af22be4afbe48da776a4359eac32789ff2e397c171c7521f2a4fd9",
@@ -226,7 +228,7 @@
   "validate_variants.gd.uid": "72a9b8bbccf30e7da537cae6ca6d42a409b1312aefe090375844e451e2b12f9c",
   "words.gd": "313a64af785bdcf95180ffaccf9d2bc531a0629171dd58c42ed3a6426905bf10",
   "words.gd.uid": "19505223c3885a2f0178a0fec172a480754d9575848988bfd9026745c3bb1085",
-  "world.gd": "5f6c1e115f76912b98601983f70200656bead00fae14bea70da24c30293109eb",
+  "world.gd": "6d3ab944e9cf561b16f07c50f51593b7e0626a8f181f10c4c8b535095f10572b",
   "world.gd.uid": "85f0b149e1fa2dafc82312c8a20a9f074b6a73476991d8645bf92f8ba7107fc0"
  }
 }

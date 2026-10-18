@@ -60,6 +60,8 @@ var sounds:Dictionary={}
 var audio:AudioStreamPlayer
 var rival_audio:=AudioStreamPlayer.new()
 var rival_laughs:=0
+var jelly_audio:=AudioStreamPlayer.new()
+var jelly_sounds:=0
 var music:=preload("res://menu_music.gd").new()
 var session_live:=false
 var saved_at:=0.0
@@ -139,6 +141,9 @@ func _ready()->void:
 	audio.volume_db=-12
 	add_child(audio)
 	rival_audio.stream=AudioStreamWAV.load_from_file("res://audio/rival-chirpy-laugh.wav");rival_audio.volume_db=-18;add_child(rival_audio)
+	var jelly:=AudioStreamMP3.new()
+	jelly.data=FileAccess.get_file_as_bytes("res://audio/jelly.mp3");jelly.loop=false
+	jelly_audio.stream=jelly;jelly_audio.volume_db=-10;add_child(jelly_audio)
 	make_sounds()
 	add_child(music)
 	var layer:=CanvasLayer.new()
@@ -171,6 +176,7 @@ func _ready()->void:
 
 func load_level(number:int,saved:Dictionary={},start_playing:bool=true)->void:
 	if start_playing and not can_play(number):unlock_screen();return
+	jelly_audio.stop()
 	if scene!=null:scene.queue_free()
 	scene=Node3D.new()
 	add_child(scene)
@@ -299,6 +305,7 @@ func _physics_process(dt:float)->void:
 	time+=dt
 	if paused or not profile.data.sound or not music.foreground or not music.focused:rival_audio.stop()
 	music.update_music(dt,paused and menu!=null,bool(profile.data.sound),pending_action.is_valid())
+	if paused or not profile.data.sound or not music.foreground or not music.focused or run==null or run.glue_left<=0 or run.state!="playing":jelly_audio.stop()
 	if run==null:return
 	var direction:=Vector2.ZERO
 	if not paused:
@@ -445,6 +452,7 @@ func clear_menu()->void:
 	home_scroll=null;home_more=null
 	if menu!=null:menu.queue_free();menu=null
 func screen()->VBoxContainer:
+	jelly_audio.stop()
 	clear_menu();paused=true
 	menu=Control.new();ui.add_child(menu);menu.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	MazeSkyUI.backdrop(menu)
@@ -766,6 +774,7 @@ func _unhandled_input(event:InputEvent)->void:
 		if event.physical_keycode==KEY_SPACE and not paused:run.throw_water()
 		if event.physical_keycode==KEY_ESCAPE:pause_screen() if not paused else home()
 func _notification(what:int)->void:
+	if what==NOTIFICATION_APPLICATION_PAUSED or what==NOTIFICATION_APPLICATION_FOCUS_OUT:jelly_audio.stop()
 	if what==NOTIFICATION_APPLICATION_PAUSED and run!=null and not paused:pause_screen()
 func refresh_question_art()->void:
 	for g in stage.gates:
@@ -795,6 +804,9 @@ func make_sounds()->void:
 			bytes.append(sample&255);bytes.append((sample>>8)&255)
 		var stream:=AudioStreamWAV.new();stream.format=AudioStreamWAV.FORMAT_16_BITS;stream.mix_rate=22050;stream.data=bytes;sounds[types[i]]=stream
 func play_sound(kind:String)->void:
+	# Only the trap-entry event plays this one-shot; movement and resume never replay it.
+	if kind=="glued" and profile.data.sound and not paused and music.foreground and music.focused and run.glue_left>0 and run.state=="playing":
+		jelly_audio.play();jelly_sounds+=1
 	if kind=="rival_laugh" and profile.data.sound and not paused and music.foreground and music.focused:
 		rival_audio.play();rival_laughs+=1
 	if profile.data.sound and sounds.has(kind):audio.stream=sounds[kind];audio.play()
@@ -816,6 +828,7 @@ func write_qa()->void:
 		for child in question_row.get_children():
 			if child is Button and child.text==str(gate.answer):var p:Vector2=child.global_position+child.size/2;state.correctButton=[p.x,p.y]
 	state["buttons"]=qa_buttons(ui)
+	state["jellySoundsPlayed"]=jelly_sounds;state["jellySoundPlaying"]=jelly_audio.playing;state["jellySoundLength"]=jelly_audio.stream.get_length()
 	state["rivalLaughsPlayed"]=rival_laughs;state["rivalLaughPlaying"]=rival_audio.playing;state["soundEnabled"]=profile.data.sound
 	state["learning"]=run.learning;state["questionAuto"]=profile.data.question_auto;state["questionManualLevels"]=profile.data.question_manual_levels
 	state["testMode"]=test_mode;state["profilePath"]=profile.path
