@@ -1,0 +1,123 @@
+<?xml version='1.0' encoding='utf-8'?>
+<question-bank version="1" mode="SCIENCE" language="en">
+  <question id="science_001" level="1">
+    <prompt lang="en">What process lets plants use light to produce sugars?</prompt>
+    <answer correct="false">Fermentation</answer>
+    <answer correct="false">Osmosis</answer>
+    <answer correct="true">Photosynthesis</answer>
+    <answer correct="false">Cellular respiration</answer>
+    <explanation lang="en">Photosynthesis converts light energy into chemical energy.</explanation>
+  </question>
+  <question id="science_002" level="2">
+    <prompt lang="en">Which gas makes up most of Earth's atmosphere?</prompt>
+    <answer correct="true">Nitrogen</answer>
+    <answer correct="false">Argon</answer>
+    <answer correct="false">Carbon dioxide</answer>
+    <answer correct="false">Oxygen</answer>
+    <explanation lang="en">About 78% of the atmosphere is nitrogen.</explanation>
+  </question>
+  <question id="science_003" level="2">
+    <prompt lang="en">What is the SI unit of force?</prompt>
+    <answer correct="false">Pascal</answer>
+    <answer correct="false">Watt</answer>
+    <answer correct="true">Newton</answer>
+    <answer correct="false">Joule</answer>
+    <explanation lang="en">A newton is a kilogram-meter per second squared.</explanation>
+  </question>
+  <question id="science_004" level="2">
+    <prompt lang="en">Which organelle is often called the powerhouse of the cell?</prompt>
+    <answer correct="false">Ribosome</answer>
+    <answer correct="false">Lysosome</answer>
+    <answer correct="false">Nucleus</answer>
+    <answer correct="true">Mitochondrion</answer>
+    <explanation lang="en">Mitochondria produce much of the ATP in eukaryotic cells.</explanation>
+  </question>
+  <question id="science_005" level="1">
+    <prompt lang="en">What is the approximate pH of a neutral solution at room temperature?</prompt>
+    <answer correct="true">7</answer>
+    <answer correct="false">0</answer>
+    <answer correct="false">5</answer>
+    <answer correct="false">14</answer>
+    <explanation lang="en">Pure water is neutral at approximately pH 7.</explanation>
+  </question>
+  <question id="science_006" level="1">
+    <prompt lang="en">Which particle carries negative electric charge?</prompt>
+    <answer correct="false">Photon</answer>
+    <answer correct="false">Proton</answer>
+    <answer correct="false">Neutron</answer>
+    <answer correct="true">Electron</answer>
+    <explanation lang="en">An electron carries one negative elementary charge.</explanation>
+  </question>
+  <question id="science_007" level="3">
+    <prompt lang="en">What is the approximate speed of light in a vacuum?</prompt>
+    <answer correct="false">30,000 km per second</answer>
+    <answer correct="true">300,000 km per second</answer>
+    <answer correct="false">3,000 km per second</answer>
+    <answer correct="false">3,000,000 km per second</answer>
+    <explanation lang="en">Light travels at about 299,792 km per second in a vacuum.</explanation>
+  </question>
+  <question id="science_008" level="3">
+    <prompt lang="en">Which law relates voltage, current and resistance?</prompt>
+    <answer correct="false">Boyle's law</answer>
+    <answer correct="false">Hooke's law</answer>
+    <answer correct="true">Ohm's law</answer>
+    <answer correct="false">Pascal's law</answer>
+    <explanation lang="en">V=IR is Ohm's law.</explanation>
+  </question>
+  <question id="science_009" level="1">
+    <prompt lang="en">Which molecule carries most hereditary information in cells?</prompt>
+    <answer correct="false">Cholesterol</answer>
+    <answer correct="false">Glucose</answer>
+    <answer correct="false">ATP</answer>
+    <answer correct="true">DNA</answer>
+    <explanation lang="en">DNA stores genetic information in most organisms.</explanation>
+  </question>
+  <question id="science_010" level="3">
+    <prompt lang="en">What type of bond typically joins sodium and chlorine in table salt?</prompt>
+    <answer correct="true">Ionic bond</answer>
+    <answer correct="false">Hydrogen bond</answer>
+    <answer correct="false">Metallic bond</answer>
+    <answer correct="false">Peptide bond</answer>
+    <explanation lang="en">NaCl consists of sodium and chloride ions.</explanation>
+  </question>
+  <question id="science_011" level="3">
+    <prompt lang="en">What happens to water's boiling point as atmospheric pressure decreases?</prompt>
+    <answer correct="false">It always remains 100 degrees C</answer>
+    <answer correct="false">Water stops boiling</answer>
+    <answer correct="true">It decreases</answer>
+    <answer correct="false">It increases</answer>
+    <explanation lang="en">At lower pressure, vapor pressure matches the surroundings at a lower temperature.</explanation>
+  </question>
+  <question id="science_012" level="4">
+    <prompt lang="en">What kind of wave is sound in air?</prompt>
+    <answer correct="false">Only a transverse mechanical wave</answer>
+    <answer correct="false">An electromagnetic wave</answer>
+    <answer correct="true">A longitudinal mechanical wave</answer>
+    <answer correct="false">A gravitational wave</answer>
+    <explanation lang="en">Sound in air travels through compressions and rarefactions along its direction of travel.</explanation>
+  </question>
+  <question id="science_013" level="2">
+    <prompt lang="en">What is the main function of ribosomes?</prompt>
+    <answer correct="false">Replicating DNA</answer>
+    <answer correct="false">Only producing fats</answer>
+    <answer correct="false">Breaking down glucose</answer>
+    <answer correct="true">Building proteins</answer>
+    <explanation lang="en">Ribosomes translate mRNA into protein chains.</explanation>
+  </question>
+  <question id="science_014" level="1">
+    <prompt lang="en">Which chemical element has the symbol O?</prompt>
+    <answer correct="false">Gold</answer>
+    <answer correct="false">Osmium</answer>
+    <answer correct="true">Oxygen</answer>
+    <answer correct="false">Silver</answer>
+    <explanation lang="en">O is the symbol for oxygen.</explanation>
+  </question>
+  <question id="science_015" level="3">
+    <prompt lang="en">What is inertia?</prompt>
+    <answer correct="false">The speed of light in a material</answer>
+    <answer correct="false">Energy created by friction</answer>
+    <answer correct="false">A force that always pulls downward</answer>
+    <answer correct="true">An object's tendency to resist a change in its state of motion</answer>
+    <explanation lang="en">Newton's first law describes inertia.</explanation>
+  </question>
+</question-bank>

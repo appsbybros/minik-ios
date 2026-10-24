@@ -899,3 +899,96 @@ final class SportsController: ObservableObject, SportsOnlineHost {
         sounds.setPaused(false)
     }
 }
+
+// MARK: App Store screenshots
+
+extension SportsController {
+    /// App Store captures only (SportsScreenshot): opens one screen at launch. Matches are local, seeded and offline
+    /// (house players only); the points and the cup a page shows are staged in this capture's settings, which the
+    /// next capture removes (SportsScreenshot.prepare).
+    func applyStoreScreenshotScene() {
+        guard let scene = SportsScreenshot.value(after: sport == .squash ? "squash" : "volley"), screen == .home, view == nil else { return }
+        switch (sport, scene) {
+        case (_, "home"):
+            SportsPrefs.setInt(260, "colourPoints")
+            revision += 1
+        case (.squash, "rally"):
+            storeMatch(you: "kyra", mates: [], rivals: ["minik"], arena: "squash", ball: "classic", demo: true)
+        case (.squash, "question"):
+            storeMatch(you: "miniko", mates: [], rivals: ["mia"], arena: "squash", ball: "classic", demo: false)
+        case (.volley, "rally"):
+            storeMatch(you: "miniko", mates: ["june", "comet"], rivals: ["minik", "mia", "gaya"], arena: "beach", ball: "rainbow", demo: true)
+        case (.volley, "park"):
+            storeMatch(you: "skye", mates: ["flare"], rivals: ["kyra", "minik"], arena: "park", ball: "berry", demo: true,
+                       colors: ["aqua", "berry"])
+        case (.volley, "beach"):
+            storeMatch(you: "flash", mates: ["gaya"], rivals: ["minik", "june"], arena: "beach", ball: "cyan", demo: true)
+        case (_, "learn"):
+            storeLesson(stage: sport == .squash ? 1 : 6)
+        case (_, "colors"):
+            SportsPrefs.setInt(340, "colourPoints")
+            avatar = sport == .squash ? "kyra" : "kai"
+            avatars()
+        case (_, "team"):
+            setup()
+        case (_, "cup"):
+            cup = ["round": 1, "wins": 1, "losses": 0, "results": ["11 : 7"]]
+            persistCup()
+            tournament()
+        default:
+            break
+        }
+    }
+
+    /// A seeded local match. With `demo` the player is a house player too, so the rally plays itself; otherwise the
+    /// player waits at the serve with the question window open.
+    private func storeMatch(you: String, mates: [String], rivals: [String], arena court: String, ball: String, demo: Bool,
+                            colors: [String] = ["aqua", "gold"]) {
+        online?.close()
+        online = nil
+        playingCup = false
+        avatar = you
+        var c = config()
+        c.seed = SportsScreenshot.seed
+        c.arena = sport == .squash ? "squash" : court
+        c.teamSize = max(rivals.count, 2)
+        c.control = .beginner
+        c.serveControl = .beginner
+        c.ballStyle = ball
+        c.teamColors = colors
+        c.questionsEnabled = sport == .squash
+        c.serveQuestions = .fullTime
+        c.answerSeconds = 30
+        c.houseRoster = mates + rivals
+        var members = [Participant("you", you, 0, demo, tr("You", "אתם"), points())]
+        if sport == .squash {
+            members.append(Participant("house-0", rivals[0], 1, true))
+        } else {
+            for (i, id) in mates.enumerated() { members.append(Participant("teammate-\(i)", id, 0, true)) }
+            for (i, id) in rivals.enumerated() { members.append(Participant("opponent-\(i)", id, 1, true)) }
+        }
+        guard c.isValid, SportsEngine.validRoster(members, c) else { return }
+        let e = SportsEngine(c, members, matchId: "store-\(SportsScreenshot.seed)")
+        if !demo { e.newQuestion() }
+        present(e, "you", nil)
+        if SportsScreenshot.wantsLandscape { SportsOrientation.apply(.landscapeRight) }
+    }
+
+    /// The interactive lesson with Minik, opened at one of its steps (Squash: the serve with an answer circle;
+    /// Beach Volleyball: blocking at the net).
+    private func storeLesson(stage: Int) {
+        online?.close()
+        online = nil
+        playingCup = false
+        var c = config(true)
+        c.seed = SportsScreenshot.seed
+        let members = sport == .squash
+            ? [Participant("you", avatar, 0, false, tr("You", "אתם"), points()), Participant("house-0", "minik", 1, true)]
+            : roster()
+        guard SportsEngine.validRoster(members, c) else { return }
+        let e = SportsEngine(c, members, matchId: "store-lesson")
+        e.tutorialStage = stage
+        present(e, "you", nil)
+        if SportsScreenshot.wantsLandscape { SportsOrientation.apply(.landscapeRight) }
+    }
+}

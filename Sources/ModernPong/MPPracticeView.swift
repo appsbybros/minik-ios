@@ -1,104 +1,17 @@
 import SwiftUI
 import UIKit
 
-/// The Ping Pong art that only the standalone app bundles (`Resources/ModernPongArt`, a folder reference):
-/// Android `assets/pong-poses`, `assets/team-celebration`, `tournament_remove` and the menu music.
-enum MPArtFiles {
-    static var directory: URL? { Bundle.main.url(forResource: "ModernPongArt", withExtension: nil) }
-    static func url(_ path: String) -> URL? {
-        guard let directory else { return nil }
-        let url = directory.appendingPathComponent(path)
-        return FileManager.default.fileExists(atPath: url.path) ? url : nil
-    }
-    static func image(_ path: String) -> UIImage? { url(path).flatMap { UIImage(contentsOfFile: $0.path) } }
-}
+// MPArtFiles, MPPoseAtlas and the shared table layout/art live in MPPracticeTable.swift.
 
-/// Android `PongPlayerAtlas`: complete authored paddle poses (front, side and rear; four phases each), anchored at
-/// the feet. Atlases are decoded on demand and released with the court that uses them.
-final class MPPoseAtlas {
-    enum Facing: Int { case front, side, rear }
-    struct Geometry { let bounds: CGRect; let racket: CGPoint; let radius: CGFloat; let frame: Int }
-    private struct Frame { let source: CGRect; let visible: CGRect; let foot: CGPoint; let paddle: CGPoint; let radius: CGFloat }
-    private struct Sheet { let image: CGImage; let frames: [Frame]; let heights: [CGFloat] }
-    private var sheets: [String: Sheet] = [:]
-    private var crops: [String: UIImage] = [:]
-    private static var manifestCache: [String: Any]?
-    private static var portraits: [String: UIImage] = [:]
-    private static func manifest() -> [String: Any]? {
-        if let manifestCache { return manifestCache }
-        guard let url = MPArtFiles.url("pong-poses/atlas.json"), let data = try? Data(contentsOf: url),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
-        manifestCache = json; return json
-    }
-    private static func frames(_ id: String) -> [Frame]? {
-        guard let entry = manifest()?[id] as? [String: Any], let list = entry["frames"] as? [[String: Any]], list.count >= 12 else { return nil }
-        func numbers(_ value: Any?) -> [CGFloat] { ((value as? [Any]) ?? []).compactMap { ($0 as? NSNumber).map { CGFloat($0.doubleValue) } } }
-        var out: [Frame] = []
-        for item in list {
-            let r = numbers(item["rect"]), b = numbers(item["bounds"]), f = numbers(item["foot"]), p = numbers(item["paddle"])
-            guard r.count == 4, b.count == 4, f.count == 2, p.count == 2 else { return nil }
-            out.append(Frame(source: CGRect(x: r[0], y: r[1], width: r[2] - r[0], height: r[3] - r[1]),
-                             visible: CGRect(x: b[0], y: b[1], width: b[2] - b[0], height: b[3] - b[1]),
-                             foot: CGPoint(x: f[0], y: f[1]), paddle: CGPoint(x: p[0], y: p[1]),
-                             radius: CGFloat((item["radius"] as? NSNumber)?.doubleValue ?? 20)))
-        }
-        return out
-    }
-    static var available: Bool { manifest() != nil }
-    private func sheet(_ id: String) -> Sheet? {
-        if let sheet = sheets[id] { return sheet }
-        guard let frames = MPPoseAtlas.frames(id), let image = MPArtFiles.image("pong-poses/" + id + ".png")?.cgImage else { return nil }
-        let sheet = Sheet(image: image, frames: frames, heights: (0..<3).map { frames[$0 * 4].visible.height })
-        sheets[id] = sheet; return sheet
-    }
-    private func parts(_ id: String, _ facing: Facing, _ phase: Int) -> (Sheet, Frame, Int)? {
-        guard let sheet = sheet(id) else { return nil }
-        let index = facing.rawValue * 4 + min(max(phase, 0), 3)
-        return (sheet, sheet.frames[index], index)
-    }
-    func geometry(_ id: String, _ facing: Facing, foot: CGPoint, height: CGFloat, phase: Int) -> Geometry? {
-        guard let (sheet, f, index) = parts(id, facing, phase) else { return nil }
-        let scale = height / max(sheet.heights[facing.rawValue], 1)
-        func x(_ v: CGFloat) -> CGFloat { foot.x + (v - f.foot.x) * scale }
-        func y(_ v: CGFloat) -> CGFloat { foot.y + (v - f.foot.y) * scale }
-        return Geometry(bounds: CGRect(x: x(f.visible.minX), y: y(f.visible.minY), width: (f.visible.width) * scale, height: f.visible.height * scale),
-                        racket: CGPoint(x: x(f.paddle.x), y: y(f.paddle.y)), radius: f.radius * scale, frame: index)
-    }
-    @discardableResult func draw(_ id: String, _ facing: Facing, foot: CGPoint, height: CGFloat, phase: Int) -> Geometry? {
-        guard let (sheet, f, index) = parts(id, facing, phase) else { return nil }
-        let key = id + "/" + String(index)
-        let crop: UIImage
-        if let cached = crops[key] { crop = cached }
-        else {
-            guard let cg = sheet.image.cropping(to: f.source) else { return nil }
-            crop = UIImage(cgImage: cg); crops[key] = crop
-        }
-        let scale = height / max(sheet.heights[facing.rawValue], 1)
-        crop.draw(in: CGRect(x: foot.x - f.foot.x * scale, y: foot.y - f.foot.y * scale, width: f.source.width * scale, height: f.source.height * scale))
-        return geometry(id, facing, foot: foot, height: height, phase: phase)
-    }
-    /// Android `BotPortrait`: the first front pose cropped to its visible body, kept as a small image so the large
-    /// atlas is not held in memory for a menu.
-    static func portrait(_ id: String) -> UIImage? {
-        if let cached = portraits[id] { return cached }
-        guard let frames = frames(id), let atlas = MPArtFiles.image("pong-poses/" + id + ".png")?.cgImage else { return nil }
-        let f = frames[0]
-        let rect = CGRect(x: f.source.minX + f.visible.minX, y: f.source.minY + f.visible.minY, width: f.visible.width, height: f.visible.height)
-        guard let cropped = atlas.cropping(to: rect) else { return nil }
-        let scale = min(1, 320 / max(rect.height, 1)), size = CGSize(width: rect.width * scale, height: rect.height * scale)
-        let format = UIGraphicsImageRendererFormat(); format.scale = 1
-        let small = UIGraphicsImageRenderer(size: size, format: format).image { _ in UIImage(cgImage: cropped).draw(in: CGRect(origin: .zero, size: size)) }
-        portraits[id] = small; return small
-    }
-}
-
-/// Android `PongPracticeView`: the daily-journey and team table. The far players stand behind the table, the near
-/// players in front of it; the visible ball end is blended into the intact ready paddle. Online friends only draw
-/// the authority's snapshots (`simulate = false`) and send moves and taps.
+/// Android `PongPracticeView` (29f5dc7): the daily-journey and team table. The far players stand behind the table, the
+/// near players in front of it, drawn larger. The ball's flight is never warped toward a paddle: the whole-body pose
+/// that reaches the real contact is chosen instead (`reachPose`), and in team play that rendered racket decides the
+/// contact (`MPPlay.contactReach`). Online friends only draw the authority's snapshots (`simulate = false`) and send
+/// moves, taps and strokes.
 final class MPPracticeCourtView: UIView {
     /// Online friends receive a new restored table with every snapshot; its event serial continues the authority's,
     /// so a changed serial still plays the hit sounds (Android `heardEvent`).
-    var game: MPPlay { didSet { if game !== oldValue { attachSound() } } }
+    var game: MPPlay { didSet { if game !== oldValue { attachSound(); oldValue.contactReach = nil } } }
     var hebrew = false
     var names: [Int: String] = [:]
     var localSeat = 0
@@ -106,18 +19,32 @@ final class MPPracticeCourtView: UIView {
     var soundsEnabled: () -> Bool = { true }
     var onMove: ((MPPoint) -> Void)?
     var onTap: ((MPPoint) -> Void)?
+    /// Android `onStroke`: online friends send Standard/Pro strokes to the host instead of playing them locally.
+    var onStroke: ((MPPongStroke) -> Void)?
+    /// Android `controlOverride`: the online player's chosen control (the friend's snapshot may lag behind it).
+    var controlOverride: Int?
     var onFrame: (() -> Void)?
+    private var control: Int { controlOverride ?? (game.controls.indices.contains(localSeat) ? game.controls[localSeat] : 0) }
     private let atlas = MPPoseAtlas()
+    private let tableArt = MPPracticeTableArt()
+    private(set) var layout = MPPracticeTableLayout.fit(1, 1)
     private let audio = MPAudio()
     private var camera = MPReceptionCamera()
     private var link: CADisplayLink?
     private var stamp: CFTimeInterval = 0, drawn = false, heardEvent = 0
-    private var lastX: [Int: Double] = [:], walked: [Int: Double] = [:], stepAt: [Int: CFTimeInterval] = [:]
-    private var bodyBoxes: [Int: CGRect] = [:]
+    private var lastAt: [Int: MPPoint] = [:], walked: [Int: Double] = [:], stepAt: [Int: CFTimeInterval] = [:]
+    private var bodyBoxes: [Int: CGRect] = [:], racketPoints: [Int: CGPoint] = [:], racketRadii: [Int: CGFloat] = [:]
+    private struct ReachPose { let phase: Int; let mirrored: Bool; let lean: CGFloat; let gap: CGFloat }
+    private var impactPoses: [Int: (Double, ReachPose)] = [:]
     private var labelRequests: [(Int, CGPoint, Bool)] = []
+    private var labels: [Int: CGRect] = [:]
     private var actorHeight: CGFloat = 1, floorDrop: CGFloat = 1, lift: CGFloat = 1, left: CGFloat = 0, top: CGFloat = 0, tw: CGFloat = 1, depth: CGFloat = 1
-    private var down = CGPoint.zero, holding = false, dragging = false
-    private var lastFlightOffset = CGPoint.zero, endingSeen: MPRallyEnding?, endingOffset = CGPoint.zero
+    private var down = CGPoint.zero, downAt: CFTimeInterval = 0, dragging = false
+    private var dragStart = MPPoint(0.5, 0.88), dragOrigin = MPPoint(0.5, 0.88)
+    private var strokePath: [CGPoint] = [], tapSent = false, playerDrag = false
+    /// Android `VelocityTracker`: recent finger samples (time, point) for the swipe velocity in points per second.
+    private var samples: [(CFTimeInterval, CGPoint)] = []
+    private var laidOut: (CGSize, Bool) = (.zero, false)
     private let ink = UIColor(red: 0x17 / 255, green: 0x3e / 255, blue: 0x56 / 255, alpha: 1)
 
     init(game: MPPlay) {
@@ -145,12 +72,18 @@ final class MPPracticeCourtView: UIView {
             link?.invalidate(); link = nil; audio.stop()
         }
     }
-    override func willMove(toWindow newWindow: UIWindow?) { super.willMove(toWindow: newWindow); if newWindow == nil { setRunning(false) } }
+    override func willMove(toWindow newWindow: UIWindow?) {
+        super.willMove(toWindow: newWindow)
+        if newWindow == nil { setRunning(false); game.contactReach = nil }
+    }
     @objc private func step(_ display: CADisplayLink) {
         let now = display.timestamp
         let cameraElapsed = stamp == 0 ? 0 : min(max(now - stamp, 0), 0.1)
         let dt = stamp == 0 || !drawn ? 0 : min(now - stamp, 1.0 / 30)
         stamp = now
+        // Android: in team play the drawn racket decides the contact. Without the pose art (Math Plus, Minik Plus)
+        // the table keeps its geometric reach.
+        game.contactReach = game.team && MPPoseAtlas.available ? { [weak self] i, at, z in self?.visibleReach(i, at, z) ?? false } : nil
         if !simulate && heardEvent != game.eventSerial {
             heardEvent = game.eventSerial
             if soundsEnabled() {
@@ -170,19 +103,25 @@ final class MPPracticeCourtView: UIView {
         if game.actors.indices.contains(receiver) {
             let a = project(game.actors[receiver].at)
             let b = game.flight.map { project($0.position, $0.height) } ?? a
-            camera.update(cameraElapsed, assist: game.reception, local: localSeat, focus: CGPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2), size: bounds.size, holding: holding, reduceMotion: UIAccessibility.isReduceMotionEnabled)
+            camera.update(cameraElapsed, assist: game.reception, local: localSeat, focus: CGPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2), size: bounds.size, holding: downAt != 0, reduceMotion: UIAccessibility.isReduceMotionEnabled)
         }
         onFrame?()
         setNeedsDisplay()
     }
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        let w = bounds.width, h = bounds.height
-        tw = min(w * 0.91, h * 1.9); left = (w - tw) / 2
-        actorHeight = min(h * 0.27, tw * 0.34); floorDrop = actorHeight * 0.40
-        depth = max(min(h * 0.61, (h - actorHeight - 40) / 1.14), h * 0.36)
-        lift = min(depth * 0.62, tw * 0.62)
-        top = actorHeight * 0.54 + depth * 0.07 + 12
+    override func layoutSubviews() { super.layoutSubviews(); relayout() }
+    /// Android `onSizeChanged`: the shared table layout; alternating teams reserve the retreat floor, including the
+    /// near player's feet and label.
+    private func relayout() {
+        let flags = game.team && game.alternate
+        if laidOut.0 == bounds.size && laidOut.1 == flags { return }
+        laidOut = (bounds.size, flags)
+        let g = MPPracticeTableLayout.fit(Double(bounds.width), Double(bounds.height)); layout = g
+        tw = CGFloat(g.width); left = CGFloat(g.left); actorHeight = CGFloat(g.actorHeight); floorDrop = CGFloat(g.floorDrop)
+        depth = CGFloat(g.depth); lift = CGFloat(g.lift); top = CGFloat(g.top)
+        if flags {
+            let maxDepth = (bounds.height - top - floorDrop - actorHeight * 0.06 - 20) / (1 + CGFloat(MPTeamMovement.retreat) * 0.45)
+            depth = min(depth, maxDepth); lift = min(depth * 0.62, tw * 0.62)
+        }
     }
     private var nearTeam: Int { game.actors.indices.contains(localSeat) ? game.actors[localSeat].team : 0 }
     private func screen(_ v: MPPoint) -> MPPoint { nearTeam == 0 ? v : MPPoint(1 - v.x, 1 - v.y) }
@@ -191,112 +130,118 @@ final class MPPracticeCourtView: UIView {
         return CGPoint(x: left + tw * (0.5 + (CGFloat(v.x) - 0.5) * (0.72 + 0.28 * CGFloat(v.y))), y: top + depth * CGFloat(v.y) - CGFloat(z) * lift)
     }
     private func facing(_ index: Int) -> MPPoseAtlas.Facing { game.actors[index].team == nearTeam ? .rear : .front }
-    /// Feet belong to the floor outside the end line, never to a ball contact.
+    /// Near players are drawn 22 % larger (Android 305914e).
+    private func playerHeight(_ index: Int) -> CGFloat { actorHeight * (game.actors[index].team == nearTeam ? 1.22 : 1) }
+    /// Feet belong to the floor outside the end line, never to a ball contact. A retreat behind the baseline is drawn
+    /// at 45 % (the full step for a house player beside the sideline). Lane coordinates locate the ready paddle, not
+    /// the centre of a wide torso.
     private func floorFoot(_ index: Int) -> CGPoint {
         let a = game.actors[index]
-        let clearance = Double(actorHeight * 0.08 / depth)
-        let at = project(MPPoint(a.at.x, a.team == 0 ? 1 + clearance : -clearance))
-        return CGPoint(x: at.x, y: at.y + floorDrop)
+        let clearance = Double(actorHeight * 0.06 / depth)
+        let y = a.team == 0 ? (nearTeam == 0 ? 1 + clearance : 1.0) : (nearTeam == 1 ? -clearance : 0.0)
+        let baseline = a.team == 0 ? 0.88 : 0.12
+        let side = !a.human && (a.at.x < 0.02 || a.at.x > 0.98)
+        let at = project(MPPoint(a.at.x, y + (a.at.y - baseline) * (side ? 1.0 : 0.45)))
+        var foot = CGPoint(x: at.x, y: at.y + floorDrop)
+        if let anchor = atlas.geometry(a.character, facing(index), foot: .zero, height: playerHeight(index), phase: a.team == nearTeam ? 2 : 0) { foot.x -= anchor.racket.x }
+        return foot
     }
-    private func visibleLoft(_ z: Double) -> Double { z <= 0.16 ? z : 0.16 + 0.16 * (1 - exp(-(z - 0.16) / 0.16)) }
-    /// Android `renderedBallPoint`: the table flight is unchanged; only its visible end blends into the ready paddle.
+    private var ballRadius: CGFloat { max(5, tw * 0.012) }
+    /// Android `visibleLoft`: the common elevated-ball scale (`TableBallProjection.rise`).
+    private func visibleLoft(_ z: Double) -> Double { MPTableBallProjection.rise(z) * Double(depth / lift) }
+    /// One projection for table, net, live ball and rebound. Never warp a bounce toward a paddle.
     private func renderedBallPoint(_ position: MPPoint, _ z: Double) -> CGPoint {
-        let raw = project(position, z < 0 ? z * Double(floorDrop) / (1.25 * Double(lift)) : visibleLoft(z))
-        if let ending = game.ending, game.flight == nil {
-            if endingSeen != ending { endingSeen = ending; endingOffset = lastFlightOffset }
-            let u = CGFloat((ending.remaining / 1.65).mpClamp(0, 1)), weight = u * u * (3 - 2 * u)
-            return CGPoint(x: raw.x + endingOffset.x * weight, y: raw.y + endingOffset.y * weight)
+        let raised = z < 0 ? z * Double(floorDrop) / (1.25 * Double(lift)) : visibleLoft(z)
+        var p = project(position, raised); p.y -= ballRadius
+        return p
+    }
+    /// Android `reachPose`: the authored pose, mirror and small lean (±15°, about the planted feet) whose racket
+    /// touches the drawn ball; otherwise the closest one.
+    private func reachPose(_ index: Int, _ position: MPPoint, _ z: Double) -> ReachPose {
+        let ball = renderedBallPoint(position, z), foot = floorFoot(index), actor = game.actors[index]
+        var best = ReachPose(phase: 2, mirrored: false, lean: 0, gap: .greatestFiniteMagnitude)
+        let degrees = [0] + (1...15).flatMap { [$0, -$0] }
+        for phase in [2, 0, 1, 3] {
+            for mirror in [false, true] {
+                guard let g = atlas.geometry(actor.character, facing(index), mirror: mirror, foot: foot, height: playerHeight(index), phase: phase) else { return best }
+                for d in degrees {
+                    let a = Double(d) * .pi / 180, x = Double(g.racket.x - foot.x), y = Double(g.racket.y - foot.y)
+                    let gap = CGFloat(hypot(Double(ball.x - foot.x) - x * cos(a) + y * sin(a), Double(ball.y - foot.y) - x * sin(a) - y * cos(a)) - Double(g.radius) - Double(ballRadius))
+                    if gap <= 0 { return ReachPose(phase: phase, mirrored: mirror, lean: CGFloat(d), gap: gap) }
+                    if gap < best.gap { best = ReachPose(phase: phase, mirrored: mirror, lean: CGFloat(d), gap: gap) }
+                }
+            }
         }
-        endingSeen = nil; lastFlightOffset = .zero
-        let side = position.y > 0.5 ? 0 : 1
-        let distance = MPContactGeometry.distanceToEnd(side, position.y)
-        let u = ((0.24 - distance) / (0.24 - MPContactGeometry.endInset)).mpClamp(0, 1)
-        if u <= 0 || z > 1.2 { return raw }
-        let f = game.flight
-        let outgoing = f.map { ($0.striker == .child ? 0 : 1) == side } ?? false
-        let index: Int
-        if outgoing { index = game.hitter }
-        else if game.team && game.alternate { index = game.nextHitter[side] }
-        else if let nearest = game.actors.indices.filter({ game.actors[$0].team == side }).min(by: { abs(game.actors[$0].at.x - position.x) < abs(game.actors[$1].at.x - position.x) }) { index = nearest }
-        else { return raw }
-        guard game.actors.indices.contains(index) else { return raw }
-        let a = game.actors[index]
-        if abs(a.at.x - position.x) > MPContactGeometry.lateralReach { return raw }
-        guard let ready = atlas.geometry(a.character, facing(index), foot: floorFoot(index), height: actorHeight, phase: 0) else { return raw }
-        // One contact-height reference, so the ball does not dip at the paddle.
-        var time = 0.0
-        if let f, abs(f.velocity.y) > 0.0001 { time = max((MPContactGeometry.baseline(side) - position.y) / f.velocity.y, 0) }
-        let contactZ: Double
-        if outgoing { contactZ = game.contactHeight }
-        else if let f { contactZ = max(0, z + f.lift * time - 0.5 * game.tuning.gravity * time * time) }
-        else { contactZ = z }
-        let plane = project(MPPoint(a.at.x, MPContactGeometry.baseline(side)), visibleLoft(contactZ))
-        let weight = CGFloat(u * u * (3 - 2 * u))
-        lastFlightOffset = CGPoint(x: (ready.racket.x - plane.x) * weight, y: (ready.racket.y - plane.y) * weight)
-        return CGPoint(x: raw.x + lastFlightOffset.x, y: raw.y + lastFlightOffset.y)
+        return best
+    }
+    /// Android `visibleReach`: the drawn racket reaches the drawn ball (within a point).
+    func visibleReach(_ index: Int, _ position: MPPoint, _ z: Double) -> Bool {
+        guard game.actors.indices.contains(index) else { return false }
+        relayout()
+        return reachPose(index, position, z).gap <= 1
     }
     private func ground(_ p: CGPoint) -> MPPoint {
         let yy = Double((p.y - top) / max(depth, 1))
         let x = 0.5 + Double(p.x - left - tw * 0.5) / Double(tw * (0.72 + 0.28 * CGFloat(yy)))
         return screen(MPPoint(x.mpClamp(0, 1), yy))
     }
-    private func color(_ argb: UInt32) -> UIColor {
-        UIColor(red: CGFloat((argb >> 16) & 0xff) / 255, green: CGFloat((argb >> 8) & 0xff) / 255, blue: CGFloat(argb & 0xff) / 255, alpha: CGFloat(argb >> 24) / 255)
-    }
+    private func color(_ argb: UInt32) -> UIColor { MPColor.ui(argb) }
     private func path(_ points: [MPPoint]) -> CGPath {
         let p = CGMutablePath()
         for (i, v) in points.enumerated() { let q = project(v); if i == 0 { p.move(to: q) } else { p.addLine(to: q) } }
         p.closeSubpath(); return p
     }
-    private func line(_ c: CGContext, _ a: MPPoint, _ b: MPPoint, _ argb: UInt32, _ width: CGFloat = 2, z: Double = 0) {
-        let x = project(a, z), y = project(b, z)
-        c.setStrokeColor(color(argb).cgColor); c.setLineWidth(width); c.setLineCap(.butt)
-        c.move(to: x); c.addLine(to: y); c.strokePath()
-    }
-    private func gradient(_ c: CGContext, _ clip: CGPath, from: CGFloat, to: CGFloat, _ a: UInt32, _ b: UInt32) {
-        guard let g = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: [color(a).cgColor, color(b).cgColor] as CFArray, locations: [0, 1]) else { return }
-        c.saveGState(); c.addPath(clip); c.clip()
-        c.drawLinearGradient(g, start: CGPoint(x: 0, y: from), end: CGPoint(x: 0, y: to), options: [.drawsBeforeStartLocation, .drawsAfterEndLocation])
-        c.restoreGState()
-    }
-    private func text(_ value: String, at: CGPoint, size: CGFloat, color: UIColor) {
+    private func text(_ value: String, at: CGPoint, size: CGFloat, color: UIColor, rounded: Bool = true) {
         let font = UIFont.systemFont(ofSize: size, weight: .bold)
-        let rounded = font.fontDescriptor.withDesign(.rounded).map { UIFont(descriptor: $0, size: size) } ?? font
-        let attributed = NSAttributedString(string: value, attributes: [.font: rounded, .foregroundColor: color])
+        let face = rounded ? (font.fontDescriptor.withDesign(.rounded).map { UIFont(descriptor: $0, size: size) } ?? font) : font
+        let attributed = NSAttributedString(string: value, attributes: [.font: face, .foregroundColor: color])
         let measured = attributed.size()
         attributed.draw(at: CGPoint(x: at.x - measured.width / 2, y: at.y - measured.height / 2))
     }
     private func drawActor(_ c: CGContext, _ index: Int) {
         let a = game.actors[index], rear = a.team == nearTeam, foot = floorFoot(index), face = facing(index)
-        let f = game.flight, age = game.clock - game.lastContact
-        var incoming = false
-        if let f, !f.resolved, f.receiver, (f.striker == .minik) == (a.team == 0), abs(f.position.x - a.at.x) < MPContactGeometry.lateralReach,
-           MPContactGeometry.distanceToEnd(a.team, f.position.y) < 0.20 { incoming = true }
+        let age = game.clock - game.lastContact
+        let incoming = game.preparingReturn(index)
         let walking = !(game.hitter == index && age < 0.34) && !incoming && CACurrentMediaTime() - (stepAt[index] ?? 0) < 0.13
         let art = walking ? a.character + "-walk" : a.character
+        let contact = game.hitter == index && age < 0.34
+        var impact: ReachPose?
+        if contact {
+            if let cached = impactPoses[index], cached.0 == game.lastContact { impact = cached.1 }
+            else { let pose = reachPose(index, game.contactAt, game.contactHeight); impactPoses[index] = (game.lastContact, pose); impact = pose }
+        }
         let phase: Int
-        if game.hitter == index && age < 0.10 { phase = 0 }
+        if contact && age < 0.10 { phase = impact?.phase ?? 0 }
         else if game.hitter == index && age < 0.34 { phase = 3 }
         else if incoming { phase = a.character == "minik" && rear ? 0 : 1 }
-        else if walking { phase = Int((walked[index] ?? 0) / 0.045) % 4 }
+        else if walking { phase = Int((walked[index] ?? 0) / 0.10) % 4 }
         else { phase = 0 }
-        guard let body = atlas.draw(art, face, foot: foot, height: actorHeight, phase: phase) ?? atlas.draw(a.character, face, foot: foot, height: actorHeight, phase: phase) else {
+        // A small whole-body reach pivots at the planted feet. Keep the actual ball trajectory and the intact pose.
+        let lean: CGFloat = game.hitter == index && age < 0.34 ? (impact?.lean ?? 0) * CGFloat(1 - ((age - 0.10) / 0.24).mpClamp(0, 1)) : 0
+        let mirror = impact?.mirrored ?? false, height = playerHeight(index)
+        c.saveGState()
+        c.translateBy(x: foot.x, y: foot.y); c.rotate(by: lean * .pi / 180); c.translateBy(x: -foot.x, y: -foot.y)
+        let drawnBody = atlas.draw(art, face, mirror: mirror, foot: foot, height: height, phase: phase) ?? atlas.draw(a.character, face, mirror: mirror, foot: foot, height: height, phase: phase)
+        c.restoreGState()
+        let active = game.team && game.alternate && game.nextHitter[a.team] == index
+        guard let drawn = drawnBody else {
             // Without the pose art (a build that does not bundle it) a simple marker keeps the place visible.
             c.setFillColor(color(a.team == 0 ? 0xff4bf4c7 : 0xffff74b6).cgColor)
             c.fillEllipse(in: CGRect(x: foot.x - actorHeight * 0.12, y: foot.y - actorHeight * 0.5, width: actorHeight * 0.24, height: actorHeight * 0.5))
-            labelRequests.append((index, CGPoint(x: foot.x, y: rear ? foot.y + 14 : foot.y - actorHeight * 0.55 - 15), game.team && game.alternate && game.nextHitter[a.team] == index))
+            labelRequests.append((index, CGPoint(x: foot.x, y: rear ? foot.y + 14 : foot.y - actorHeight * 0.55 - 15), active))
             return
         }
-        bodyBoxes[index] = body.bounds
-        let active = game.team && game.alternate && game.nextHitter[a.team] == index
-        labelRequests.append((index, CGPoint(x: body.bounds.midX, y: rear ? foot.y + 14 : body.bounds.minY - 15), active))
+        let transform = CGAffineTransform(translationX: foot.x, y: foot.y).rotated(by: lean * .pi / 180).translatedBy(x: -foot.x, y: -foot.y)
+        let bounds = drawn.bounds.applying(transform), racket = drawn.racket.applying(transform)
+        bodyBoxes[index] = bounds; racketPoints[index] = racket; racketRadii[index] = drawn.radius
+        labelRequests.append((index, CGPoint(x: bounds.midX, y: rear ? foot.y + 14 : bounds.minY - 15), active))
     }
     private func drawLabel(_ c: CGContext, _ index: Int, _ at: CGPoint, _ active: Bool) {
         let name = names[index] ?? (index == localSeat ? (hebrew ? "אתם" : "You") : (MPRoster.find(game.actors[index].character) ?? MPRoster.all[0]).name(hebrew: hebrew))
         let size = min(13, bounds.height * 0.035)
         let font = UIFont.systemFont(ofSize: size, weight: .bold)
         let half = (name as NSString).size(withAttributes: [.font: font]).width / 2 + 12
-        // A player zoomed out of frame takes the label too; clamping it onto the table looks wrong.
+        // When reception zoom moves a player out of frame, their label leaves too.
         if at.y < -size * 0.8 || at.y > bounds.height + size * 0.8 || at.x < -half || at.x > bounds.width + half { return }
         var cx = min(max(at.x, half + 2), bounds.width - half - 2), cy = min(max(at.y, size * 0.8 + 2), bounds.height - size * 0.8 - 2)
         // A shallow landscape window can clamp an above-head label onto the head: place it beside that player.
@@ -310,7 +255,15 @@ final class MPPracticeCourtView: UIView {
             }
         }
         let box = CGRect(x: cx - half, y: cy - size * 0.8, width: half * 2, height: size * 1.6)
-        c.setFillColor(color(active ? 0xffffd665 : 0xf4ffffff).cgColor)
+        // Android PongNameSpace: names never cover a body or another name.
+        let obstacles = bodyBoxes.values.map { r -> CGRect in
+            let a = camera.painted(CGPoint(x: r.minX, y: r.minY)), b = camera.painted(CGPoint(x: r.maxX, y: r.maxY))
+            return CGRect(x: a.x, y: a.y, width: b.x - a.x, height: b.y - a.y)
+        } + Array(labels.values)
+        if !MPNameSpace.fits(box, width: bounds.width, height: bounds.height, obstacles: obstacles) { return }
+        labels[index] = box
+        let fill: UInt32 = game.team ? MPTeamColors.fill(game.actors[index].team, seed: game.seed) : active ? 0xffffd665 : 0xf4ffffff
+        c.setFillColor(color(fill).cgColor)
         c.addPath(UIBezierPath(roundedRect: box, cornerRadius: 12).cgPath); c.fillPath()
         text(name, at: CGPoint(x: cx, y: cy), size: size, color: ink)
     }
@@ -331,30 +284,22 @@ final class MPPracticeCourtView: UIView {
             c.drawRadialGradient(g, startCenter: centre, startRadius: 0, endCenter: centre, endRadius: r * 1.5, options: [.drawsAfterEndLocation])
             c.restoreGState()
         }
+        tableArt.spin(c, x: at.x, y: at.y, r: r, flight: game.flight)
         if at != raw {
             // An edge marker points toward a ball that has left the view.
             c.setStrokeColor(UIColor.white.cgColor); c.setLineWidth(3)
             c.move(to: at); c.addLine(to: CGPoint(x: at.x + min(max(raw.x - at.x, -r * 2), r * 2), y: at.y + min(max(raw.y - at.y, -r * 2), r * 2))); c.strokePath()
         }
     }
-    private func tableFrame(_ c: CGContext) {
-        for v in [MPPoint(0.06, 0.08), MPPoint(0.94, 0.08), MPPoint(0.06, 0.92), MPPoint(0.94, 0.92)] {
-            let q = project(screen(v)), w = tw * 0.018
-            c.setFillColor(color(0xff163344).cgColor)
-            c.addPath(UIBezierPath(roundedRect: CGRect(x: q.x - w, y: q.y + 4, width: w * 2, height: max(0, floorDrop - 4)), cornerRadius: w * 0.3).cgPath); c.fillPath()
-            c.setFillColor(color(0xff6c98a4).cgColor); c.fill(CGRect(x: q.x - w, y: q.y + 4, width: w * 0.7, height: max(0, floorDrop - 9)))
-            c.setFillColor(color(0xff172f3b).cgColor); c.fillEllipse(in: CGRect(x: q.x - w * 1.5, y: q.y + floorDrop - w * 0.4, width: w * 3, height: w * 0.8))
-        }
-        let l = project(screen(MPPoint(0, 1))), r = project(screen(MPPoint(1, 1)))
-        c.setFillColor(color(0xff112d43).cgColor); c.fill(CGRect(x: l.x, y: l.y, width: r.x - l.x, height: tw * 0.027))
-    }
+    private func tableFrame(_ c: CGContext) { tableArt.frame(c, { v, z in self.project(self.screen(v), z) }, tw: tw, drop: floorDrop) }
     override func draw(_ rect: CGRect) {
         guard let c = UIGraphicsGetCurrentContext() else { return }
-        drawn = true; labelRequests = []; bodyBoxes = [:]
+        relayout()
+        drawn = true; labels = [:]; labelRequests = []; bodyBoxes = [:]; racketPoints = [:]
         let now = CACurrentMediaTime()
         for (i, a) in game.actors.enumerated() {
-            let prior = lastX[i] ?? a.at.x; lastX[i] = a.at.x
-            let travel = abs(a.at.x - prior)
+            let prior = lastAt[i] ?? a.at; lastAt[i] = a.at
+            let travel = hypot(a.at.x - prior.x, (a.at.y - prior.y) * MPTeamMovement.depthScale)
             if travel > 0.0003 { walked[i] = (walked[i] ?? 0) + travel; stepAt[i] = now }
         }
         c.saveGState(); camera.apply(c)
@@ -364,10 +309,9 @@ final class MPPracticeCourtView: UIView {
         }
         // A far-end ball is drawn behind the far players and the table, never over the tabletop.
         if farEnding { drawBall(c) }
-        for i in game.actors.indices.filter({ game.actors[$0].team != nearTeam }).sorted(by: { game.actors[$0].at.x < game.actors[$1].at.x }) { drawActor(c, i) }
+        for i in game.actors.indices.filter({ game.actors[$0].team != nearTeam }).sorted(by: { screen(game.actors[$0].at).y < screen(game.actors[$1].at).y }) { drawActor(c, i) }
         tableFrame(c)
-        gradient(c, path([MPPoint(0, 0), MPPoint(1, 0), MPPoint(1, 0.5), MPPoint(0, 0.5)]), from: top, to: top + depth, 0xff2b6197, 0xff102f56)
-        gradient(c, path([MPPoint(0, 0.5), MPPoint(1, 0.5), MPPoint(1, 1), MPPoint(0, 1)]), from: top + depth * 0.5, to: top + depth, 0xff256c81, 0xff164b65)
+        tableArt.surface(c, { v, z in self.project(v, z) }, top: top, depth: depth)
         if game.stage?.territory == true {
             let paint = game.paint
             for y in 0..<MPPaint.rows { for x in 0..<MPPaint.cols {
@@ -384,10 +328,26 @@ final class MPPracticeCourtView: UIView {
                 c.fillEllipse(in: CGRect(x: at.x - tw * 0.038, y: at.y - depth * 0.025, width: tw * 0.076, height: depth * 0.05))
             }
         }
-        let white: UInt32 = 0xffe9fbff
-        line(c, MPPoint(0, 0), MPPoint(1, 0), white, 4); line(c, MPPoint(0, 0), MPPoint(0, 1), white, 4)
-        line(c, MPPoint(1, 0), MPPoint(1, 1), white, 4); line(c, MPPoint(0, 1), MPPoint(1, 1), white, 4)
-        line(c, MPPoint(0.5, 0), MPPoint(0.5, 1), 0x66ffffff, 2)
+        tableArt.lines(c, { v, z in self.project(v, z) })
+        // Android bcee181: a ring where the ball last bounced (0.45 s) and a red cross where a ball left the table.
+        if let bounce = game.bounceAt, game.clock - game.bounceTime < 0.45 {
+            let q = project(bounce)
+            c.setStrokeColor(color(0xff8ef5df).cgColor); c.setLineWidth(max(2, tw * 0.005))
+            c.strokeEllipse(in: CGRect(x: q.x - tw * 0.025, y: q.y - tw * 0.012, width: tw * 0.05, height: tw * 0.024))
+        }
+        if let ending = game.ending, ending.fault == .leftTable {
+            let q = project(ending.outAt), r = tw * 0.018
+            c.setStrokeColor(color(0xffff5b67).cgColor); c.setLineWidth(max(3, tw * 0.007)); c.setLineCap(.butt)
+            c.move(to: CGPoint(x: q.x - r, y: q.y - r)); c.addLine(to: CGPoint(x: q.x + r, y: q.y + r))
+            c.move(to: CGPoint(x: q.x - r, y: q.y + r)); c.addLine(to: CGPoint(x: q.x + r, y: q.y - r)); c.strokePath()
+        }
+        // When reaching around a sideline, the authored paddle may extend over the tabletop. Reveal only the
+        // contacting hand, never the whole far body.
+        if game.clock - game.lastContact < 0.10, game.actors.indices.contains(game.hitter), game.actors[game.hitter].team != nearTeam,
+           let q = racketPoints[game.hitter], let r = racketRadii[game.hitter] {
+            c.saveGState(); c.addEllipse(in: CGRect(x: q.x - r * 1.25, y: q.y - r * 1.25, width: r * 2.5, height: r * 2.5)); c.clip()
+            drawActor(c, game.hitter); c.restoreGState()
+        }
         if game.targeted || game.stage?.serve == true {
             let targets = game.targets()
             for (i, t) in targets.enumerated() {
@@ -398,35 +358,87 @@ final class MPPracticeCourtView: UIView {
                 if game.stage?.skill == .shape { text(done ? "✓" : String(i + 1), at: project(t), size: min(tw * 0.03, 16), color: ink) }
             }
         }
-        for i in 0...32 {
-            let a = project(MPPoint(Double(i) / 32, 0.5)), b = project(MPPoint(Double(i) / 32, 0.5), 0.12)
-            c.setStrokeColor(color(0x99e1f7ff).cgColor); c.setLineWidth(1.4); c.move(to: a); c.addLine(to: b); c.strokePath()
-        }
-        for i in 0...5 { line(c, MPPoint(0, 0.5), MPPoint(1, 0.5), 0x99efffff, 1.4, z: Double(i) * 0.024) }
-        line(c, MPPoint(-0.025, 0.5), MPPoint(1.025, 0.5), white, 4, z: 0.12)
-        for i in game.actors.indices.filter({ game.actors[$0].team == nearTeam }).sorted(by: { game.actors[$0].at.x < game.actors[$1].at.x }) { drawActor(c, i) }
-        if !farEnding { drawBall(c) }
+        // A ball beyond the net is drawn before it, so the net covers it.
+        let behindNet = !farEnding && screen(game.flight?.position ?? game.ending?.position ?? MPPoint(0.5, 1)).y < 0.5
+        if behindNet { drawBall(c) }
+        let netScale = game.tuning.netHeight / 0.12
+        tableArt.net(c, { v, z in self.project(v, self.visibleLoft(z * netScale)) })
+        for i in game.actors.indices.filter({ game.actors[$0].team == nearTeam }).sorted(by: { screen(game.actors[$0].at).y < screen(game.actors[$1].at).y }) { drawActor(c, i) }
+        if !farEnding && !behindNet { drawBall(c) }
         c.restoreGState()
         for (index, point, active) in labelRequests { drawLabel(c, index, camera.painted(point), active) }
+        if game.showServeFaultBadge {
+            let message = hebrew ? "הגשה פסולה" : "Fault"
+            let size = min(27, bounds.height * 0.085)
+            let font = UIFont.systemFont(ofSize: size, weight: .bold)
+            let half = (message as NSString).size(withAttributes: [.font: font]).width / 2 + size * 0.75, cy = bounds.height * 0.32
+            let box = CGRect(x: bounds.width / 2 - half, y: cy - size, width: half * 2, height: size * 2)
+            c.setFillColor(color(0xf2e91e63).cgColor)
+            c.addPath(UIBezierPath(roundedRect: box, cornerRadius: size * 0.55).cgPath); c.fillPath()
+            text(message, at: CGPoint(x: bounds.width / 2, y: cy), size: size, color: .white, rounded: false)
+        }
     }
-    // MARK: Input (Android: a drag moves the player, a tap aims a serve or return)
+    // MARK: Input (Android `worldTouch`: a drag moves the player, a tap aims a serve or return, a Standard swipe
+    // returns as the ball arrives, a Pro stroke is read on release)
+    private func velocity() -> CGPoint {
+        guard let last = samples.last, let first = samples.first(where: { last.0 - $0.0 <= 0.1 }), last.0 - first.0 > 0.001 else { return .zero }
+        let dt = CGFloat(last.0 - first.0)
+        return CGPoint(x: (last.1.x - first.1.x) / dt, y: (last.1.y - first.1.y) / dt)
+    }
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
-        down = touch.location(in: self); holding = true; dragging = false
+        let p = camera.base(touch.location(in: self))
+        down = p; downAt = touch.timestamp; dragging = false
+        if game.actors.indices.contains(localSeat) { dragStart = game.actors[localSeat].at }
+        dragOrigin = ground(p); tapSent = false; samples = [(touch.timestamp, p)]
+        playerDrag = control == 3 && screen(ground(p)).y > 1.0
+        strokePath = [p]
     }
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
-        let p = touch.location(in: self)
-        if hypot(p.x - down.x, p.y - down.y) > 8 { dragging = true }
-        if dragging { move(ground(camera.base(p))) }
+        let p = camera.base(touch.location(in: self))
+        samples.append((touch.timestamp, p)); samples.removeAll { touch.timestamp - $0.0 > 0.15 }
+        let moved = hypot(p.x - down.x, p.y - down.y) > 12
+        let scale = Double(max(min(bounds.width, bounds.height), 1)) * 0.82
+        if game.stage?.standard == true && !tapSent && moved {
+            let v = velocity()
+            tapSent = game.standardSwipe(MPPoint(Double(v.x) / scale, Double(v.y) / scale))
+        }
+        if game.stage == nil && !tapSent && (control == 0 || control == 1) && game.canPrepareStandard(localSeat) && moved {
+            let v = velocity(), vx = Double(v.x) / scale, vy = Double(v.y) / scale, speed = hypot(vx, vy)
+            if speed > 0.045 {
+                let stroke = MPPongStroke(aim: (vx / max(speed, 0.001)).mpClamp(-1, 1), power: 1 - exp(-speed / 1.15))
+                let world = nearTeam == 0 ? stroke : stroke.reflected
+                if let onStroke { onStroke(world); tapSent = true } else { tapSent = game.strokeSeat(localSeat, world) }
+            }
+        }
+        if tapSent { return }
+        for t in event?.coalescedTouches(for: touch) ?? [touch] { strokePath.append(camera.base(t.location(in: self))) }
+        if moved { dragging = true }
+        if dragging && (control != 3 || playerDrag) {
+            let at = ground(p), delta = MPPoint(at.x - dragOrigin.x, at.y - dragOrigin.y)
+            // Relative drags never pull a player back to the finger's starting point. Small vertical finger wobble
+            // must not move the player off the hitting line.
+            let vertical = abs(p.y - down.y) > max(24, abs(p.x - down.x) * 0.65)
+            move(MPPoint(dragStart.x + delta.x, dragStart.y + (vertical ? delta.y / 0.45 : 0)))
+        }
     }
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
-        holding = false
-        let point = ground(camera.base(touch.location(in: self)))
-        if dragging { move(point) } else { tap(point) }
+        let p = camera.base(touch.location(in: self))
+        samples = []; strokePath.append(p)
+        defer { downAt = 0 }
+        if playerDrag { return }
+        if control == 3 {
+            let scale = Double(max(min(bounds.width, bounds.height), 1)) * 0.82
+            let points = strokePath.map { MPPoint(Double($0.x) / scale, Double($0.y) / scale) }
+            if let stroke = MPPongStroke.read(points, durationMs: Int64((touch.timestamp - downAt) * 1000)) {
+                let world = nearTeam == 0 ? stroke : stroke.reflected
+                if let onStroke { onStroke(world) } else { game.strokeSeat(localSeat, world) }
+            } else if game.waitingServe { tap(ground(p)) }
+        } else if !dragging && !tapSent { tap(ground(p)) }
     }
-    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) { holding = false; dragging = false }
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) { samples = []; downAt = 0; dragging = false }
     private func move(_ to: MPPoint) { if let onMove { onMove(to) } else { game.moveSeat(localSeat, to) } }
     private func tap(_ to: MPPoint) { if let onTap { onTap(to) } else { game.tapSeat(localSeat, to) } }
 }
@@ -439,16 +451,19 @@ struct MPPracticeCourt: UIViewRepresentable {
     var simulate = true
     var running: Bool
     var names: [Int: String] = [:]
+    var controlOverride: Int? = nil
     var soundsEnabled: () -> Bool = { true }
     var onMove: ((MPPoint) -> Void)? = nil
     var onTap: ((MPPoint) -> Void)? = nil
+    var onStroke: ((MPPongStroke) -> Void)? = nil
     var onFrame: (() -> Void)? = nil
     func makeUIView(context: Context) -> MPPracticeCourtView { MPPracticeCourtView(game: game) }
     func updateUIView(_ view: MPPracticeCourtView, context: Context) {
         view.game = game; view.hebrew = hebrew; view.localSeat = localSeat; view.simulate = simulate; view.names = names
-        view.soundsEnabled = soundsEnabled; view.onMove = onMove; view.onTap = onTap; view.onFrame = onFrame
+        view.controlOverride = controlOverride
+        view.soundsEnabled = soundsEnabled; view.onMove = onMove; view.onTap = onTap; view.onStroke = onStroke; view.onFrame = onFrame
         view.accessibilityLabel = hebrew ? "שולחן האימון. גררו כדי לזוז והקישו על יעד כדי לחבוט." : "Practice table. Drag to move and tap a target to hit."
         view.setRunning(running)
     }
-    static func dismantleUIView(_ view: MPPracticeCourtView, coordinator: ()) { view.setRunning(false) }
+    static func dismantleUIView(_ view: MPPracticeCourtView, coordinator: ()) { view.setRunning(false); view.game.contactReach = nil }
 }

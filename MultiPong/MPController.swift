@@ -90,6 +90,8 @@ struct CrossLocalResult: Equatable { var title: String; var rows: [MPXResultRow]
     /// CI smoke launches pass `-MinikOfflineSmoke YES`; they must never reach production Firebase.
     static var offlineSmoke: Bool { UserDefaults.standard.bool(forKey: "MinikOfflineSmoke") }
     init(experience: ModernPongExperience, preferences: MPPreferences = .init(), repository: (any MPRepository)? = nil, onClose: @escaping (ModernPongResult?) -> Void) {
+        // App Store captures only (MPStoreScreenshot): start from a fresh install's settings.
+        MPStoreScreenshot.prepare()
         self.experience = experience; self.preferences = preferences; completion = onClose; ads = .init(preferences: preferences, experience: experience)
         level = preferences.control; target = preferences.control.target(preferences.target); skipGuide = preferences.skipGuide; identity = preferences.identity
         actionCamera = preferences.crossActionCamera
@@ -724,12 +726,22 @@ struct CrossLocalResult: Equatable { var title: String; var rows: [MPXResultRow]
         if session != nil { back(); return }
         paused.toggle(); scene?.setActive(!paused && foreground); activityAt = MPClock.now; if paused { audio.stop() }
     }
-    /// App Store captures only (StoreScreenshotScene): opens one screen at launch, offline.
+    /// App Store captures only (StoreScreenshotScene, MPStoreScreenshot): opens one screen at launch, offline, with house
+    /// players and a fixed seed. Each capture starts from a fresh install, so the rally skips the first-visit tour.
+    /// `multi.avatar` (the profile editor's avatar choice) is opened by the home view; `home` needs nothing.
     func applyStoreScreenshotScene() {
         switch StoreScreenshotScene.name ?? "" {
-        case "pong.play": openCross(learn: false)
-        case "pong.guide": openCross(learn: true)
+        case "pong.play":
+            preferences.crossGuideSeen = true
+            openCross(learn: false, seed: MPStoreScreenshot.seed)
+        case "pong.guide": openCross(learn: true, seed: MPStoreScreenshot.seed)
         case "pong.rival": playerIndex = MPRoster.all.firstIndex { $0.id == "kyra" } ?? 0
+        case "multi.teams":
+            // The local 2-on-2 team match with house players (Android CrossJourneyActivity "Start team match"); an
+            // opponent serves first, so the rally is under way when the capture is taken.
+            openJourney(.teams, players: 4)
+            journey?.startTeamMatch(seed: MPStoreScreenshot.seed, firstServer: 1)
+        case "multi.journey": openJourney(.brief)
         default: break
         }
     }
@@ -786,22 +798,22 @@ struct CrossLocalResult: Equatable { var title: String; var rows: [MPXResultRow]
     // ---- local cross match and its guide (Android CrossActivity) ------------------------------------------------------------
     var crossControl: CrossControl { CrossControl.fromChoice(preferences.control.rawValue) }
     /// Android "Learn how to play with Minik": the cross table's tour, then a local match with house players.
-    func openCross(learn: Bool) {
+    func openCross(learn: Bool, seed: Int64? = nil) {
         audio.stop(); closeObservers(); session = nil; fixture = nil; result = nil; celebration = nil; scene = nil
         clearCross()
-        installLocalCross(newCrossEngine())
+        installLocalCross(newCrossEngine(seed: seed))
         route = .cross
         if learn || !preferences.crossGuideSeen { startTour() }
     }
     private func myName() -> String { identity?.name ?? MPNames.candidate(0, hebrew: hebrew, character: identity?.characterId ?? "miniko") }
-    private func newCrossEngine() -> CrossEngine {
+    private func newCrossEngine(seed: Int64? = nil) -> CrossEngine {
         let me = CrossSeat(index: 0, kind: .local, id: "local", name: myName(), characterId: identity?.characterId ?? "", avatar: identity?.avatar ?? 0)
         let ids = Array(preferences.crossOpponents.prefix(preferences.crossPlayers - 1))
         let others = ids.enumerated().map { item -> CrossSeat in
             let c = MPRoster.find(item.element) ?? MPRoster.all[0]
             return CrossSeat(index: item.offset + 1, kind: .house, id: "bot_" + c.id, name: c.name(hebrew: hebrew), bot: c.profile, characterId: c.id)
         }
-        return CrossEngine(seats: [me] + others, control: crossControl, target: preferences.crossTarget, seed: Int64.random(in: 1...Int64.max))
+        return CrossEngine(seats: [me] + others, control: crossControl, target: preferences.crossTarget, seed: seed ?? Int64.random(in: 1...Int64.max))
     }
     private func localNames(_ e: CrossEngine) -> [String] { e.seats.map { $0.kind == .local ? text("You", "אתם") : $0.name } }
     private func installLocalCross(_ engine: CrossEngine) {

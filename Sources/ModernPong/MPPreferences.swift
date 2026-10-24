@@ -1,6 +1,15 @@
 import Foundation
 
 enum MPNames {
+    /// Android `Nicknames.characterBase` (4bd6758): registered nickname bases stay "Minik" / "Miniko" although the
+    /// characters are now shown as Mega Minik and Mega Miniko (the rules' nickname list is unchanged).
+    static func characterBase(_ characterId: String, hebrew: Bool) -> String {
+        switch characterId {
+        case "minik": return hebrew ? "מיניק" : "Minik"
+        case "miniko": return hebrew ? "מיניקו" : "Miniko"
+        default: return (MPRoster.find(characterId) ?? MPRoster.all[0]).name(hebrew: hebrew)
+        }
+    }
     static let icons = ["🐱", "🦊", "🐼", "🐸", "🐯", "🐧"]
     static func candidate(_ index: Int, hebrew: Bool, suffix: Int = 0, character: String = "") -> String {
         let i = abs(index % 100), extra = suffix > 0 ? String(suffix) : ""
@@ -8,7 +17,7 @@ enum MPNames {
             let en = ["Best", "Happy", "Human", "Summer", "Winter", "Green", "Blue", "Sunny", "Super", "Brave"]
             let he = ["בכתר", "בכיף", "בקצב", "בקיץ", "בחורף", "בירוק", "בכחול", "בשמש", "בזהב", "בנצנוץ"]
             let word = character == "moshiko" && i % 10 == 3 ? "Beach" : character == "moshiko" && i % 10 == 4 ? "Snowy" : en[i % 10]
-            return (hebrew ? player.hebrew + " " + he[i % 10] : word + player.english.replacingOccurrences(of: " ", with: "")) + extra
+            return (hebrew ? characterBase(player.id, hebrew: true) + " " + he[i % 10] : word + characterBase(player.id, hebrew: false).replacingOccurrences(of: " ", with: "")) + extra
         }
         let adjectives = ["Green", "Blue", "Pink", "Sunny", "Happy", "Brave", "Sweet", "Lucky", "Playful", "Gentle"]
         let animals = ["Frog", "Panda", "Bunny", "Fox", "Koala", "Otter", "Tiger", "Bear", "Duck", "Owl"]
@@ -38,6 +47,13 @@ final class MPPreferences {
     var target: Int { get { let value = defaults.integer(forKey: prefix + "target"); return value == 0 ? 7 : value } set { defaults.set(newValue, forKey: prefix + "target") } }
     var skipGuide: Bool { get { defaults.bool(forKey: prefix + "skipGuide") } set { defaults.set(newValue, forKey: prefix + "skipGuide") } }
     var rooms: [MPSession] { get { load("rooms", [MPSession].self) ?? [] } set { save("rooms", newValue) } }
+    /// Android PlayActivity `arena_FRIENDLY` / `arena_TOURNAMENT` (a4174b6): the last arena chosen for each kind of room,
+    /// Beach for friendly games and Park for tournaments until one is chosen. A replay keeps the friendly arena.
+    func arena(_ kind: MPSessionKind) -> MPArena {
+        let saved = MPArena.read(defaults.string(forKey: prefix + "arena_" + kind.rawValue))
+        return MPArena.choices.contains(saved) ? saved : (kind == .tournament ? .park : .beach)
+    }
+    func setArena(_ arena: MPArena, for kind: MPSessionKind) { defaults.set(arena.wire, forKey: prefix + "arena_" + kind.rawValue) }
     /// Android PlayActivity `knockoutFormat`: the last chosen tournament format.
     var knockoutFormat: Bool { get { defaults.bool(forKey: prefix + "knockoutFormat") } set { defaults.set(newValue, forKey: prefix + "knockoutFormat") } }
     func sequence(_ id: String) -> Int64 {

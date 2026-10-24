@@ -59,8 +59,15 @@ final class MPSubscription {
     /// Android `PongRepository.receptionPreferences`: publishes this player's slow-motion choice and follows the
     /// other humans' choices (`minikPingPong/receptionPreferences/<uid>` = {version: 1, slow}).
     func receptionPreferences(_ players: Set<String>, _ changed: @escaping ([String: Bool]) -> Void, _ failed: @escaping (Error) -> Void) -> MPSubscription
+    /// Android `PongRepository.rank`: another player's published colour (`profiles/<uid>/{rankPoints, rankLevel}`).
+    func rank(_ player: String, _ changed: @escaping (MPRankBadge) -> Void) -> MPSubscription
+    /// Android `PongRepository.publishRank`: shares this player's colour on their profile.
+    func publishRank(_ badge: MPRankBadge)
 }
 extension MPRepository {
+    /// Local rooms have no shared colours: an opponent reads as White and nothing is published (Android defaults).
+    func rank(_ player: String, _ changed: @escaping (MPRankBadge) -> Void) -> MPSubscription { changed(MPRankBadge()); return MPSubscription() }
+    func publishRank(_ badge: MPRankBadge) {}
     /// Local rooms share no preferences (Android's default implementation).
     func receptionPreferences(_ players: Set<String>, _ changed: @escaping ([String: Bool]) -> Void, _ failed: @escaping (Error) -> Void) -> MPSubscription {
         changed([:]); return MPSubscription()
@@ -85,6 +92,8 @@ extension MPRepository {
         if sessions.values.filter({ $0.kind == kind && !$0.complete && $0.code != code }).count >= 3 { throw MPError.limit }
     }
     func create(_ s: MPSession) async throws -> MPSession { try await reserve(s.kind, s.code); sessions[s.id] = s; save(s); return s }
+    /// Android `ColorChallengeActivity.start`: a qualification room is stored without taking a saved-games slot.
+    func store(_ s: MPSession) -> MPSession { sessions[s.id] = s; save(s); return s }
     func mutate(_ kind: MPSessionKind, _ code: String, _ change: @escaping (MPSession) throws -> MPSession) async throws -> MPSession {
         guard let s = sessions[kind.path + "/" + code] else { throw MPError.missing }; var n = try change(s); n.lastActivityAt = MPClock.now; sessions[n.id] = n; save(n); return n
     }
@@ -133,12 +142,14 @@ extension MPRepository {
 }
 
 #if MINIK_PING_PONG && canImport(FirebaseDatabase) && canImport(FirebaseAuth)
+import os
 import FirebaseCore
 import FirebaseAuth
 import FirebaseDatabase
 
 @MainActor final class MPFirebaseRepository: MPRepository {
     static let appName = "minik-ping-pong-ios"
+    fileprivate nonisolated static let log = Logger(subsystem: "com.appsbybros.minik.pingpong", category: "ModernPongRepository")
     private let auth: Auth, database: Database, root: DatabaseReference
     private var presenceSlot = 0
     private var touched: [String: Int64] = [:]
@@ -179,8 +190,11 @@ import FirebaseDatabase
                     if let existing = value as? String, existing != id { throw MPError.duplicate }; return id
                 }
                 let identity = MPIdentity(id: id, name: name, avatar: avatar, characterId: character)
+                // Android `saveProfile` updates the profile's children, so the shared colour (rankPoints, rankLevel)
+                // survives a nickname or avatar change; a blank character is removed.
                 var w = try MPCodec.encode(identity); w["updatedAt"] = ServerValue.timestamp()
-                try await root.child("profiles").child(id).setValue(w); return identity
+                if character.isEmpty { w["characterId"] = NSNull() }
+                try await root.child("profiles").child(id).updateChildValues(w); return identity
             } catch MPError.duplicate { continue }
         }; throw MPError.duplicate
     }
@@ -235,6 +249,25 @@ import FirebaseDatabase
         let r = database.reference(withPath: ".info/connected"), handle = r.observe(.value) { changed(($0.value as? Bool) == true) }
         return .init { r.removeObserver(withHandle: handle) }
     }
+    func rank(_ player: String, _ changed: @escaping (MPRankBadge) -> Void) -> MPSubscription {
+        let ref = root.child("profiles").child(player)
+        let handle = ref.observe(.value, with: { snapshot in changed(MPRankBadge(wire: MPCodec.map(snapshot.value))) },
+                                 withCancel: { error in MPFirebaseRepository.log.warning("Rank unavailable: \(String(describing: error), privacy: .public)") })
+        return .init { ref.removeObserver(withHandle: handle) }
+    }
+    func publishRank(_ badge: MPRankBadge) {
+        guard !uid.isEmpty else { return }
+        root.child("profiles").child(uid).updateChildValues(badge.wire) { error, _ in
+            if let error { MPFirebaseRepository.log.warning("Rank sharing deferred: \(String(describing: error), privacy: .public)") }
+        }
+    }
+    /// Android `transactionalPresenceWrite` (a8d344b): a plain setValue/removeValue at a descendant cancels the room's
+    /// pending transaction (a Ready or a result), so presence and activity stamps are written as transactions too.
+    private nonisolated static func transactionalPresenceWrite(_ ref: DatabaseReference, _ value: Any?) {
+        ref.runTransactionBlock({ data in data.value = value; return TransactionResult.success(withValue: data) }, andCompletionBlock: { error, _, _ in
+            if let error { MPFirebaseRepository.log.warning("Presence update deferred: \(String(describing: error), privacy: .public)") }
+        }, withLocalEvents: false)
+    }
     func receptionPreferences(_ players: Set<String>, _ changed: @escaping ([String: Bool]) -> Void, _ failed: @escaping (Error) -> Void) -> MPSubscription {
         var values: [String: Bool] = [:]
         var watches: [(DatabaseReference, DatabaseHandle)] = []
@@ -255,10 +288,19 @@ import FirebaseDatabase
     }
     func presence(_ kind: MPSessionKind, _ code: String) -> MPSubscription {
         let r = ref(kind, code).child("connections").child(uid).child(String(presenceSlot % 16)); presenceSlot += 1
-        ref(kind, code).child("lastActivityAt").setValue(ServerValue.timestamp())
+        touch(kind, code)
         var closed = false
-        let online = connection { connected in guard connected && !closed else { return }; r.onDisconnectRemoveValue { error, _ in if error == nil && !closed { r.setValue(true) } } }
-        return .init { closed = true; online.close(); r.removeValue(); r.cancelDisconnectOperations() }
+        let online = connection { connected in
+            guard connected && !closed else { return }
+            r.onDisconnectRemoveValue { error, _ in if error == nil && !closed { MPFirebaseRepository.transactionalPresenceWrite(r, true) } }
+        }
+        return .init { closed = true; online.close(); MPFirebaseRepository.transactionalPresenceWrite(r, nil); r.cancelDisconnectOperations() }
+    }
+    /// Android `FirebasePongRepository.touch`: at most one activity stamp per room and minute, written transactionally.
+    private func touch(_ kind: MPSessionKind, _ code: String) {
+        let key = kind.path + "/" + code, now = MPClock.now
+        guard now - (touched[key] ?? 0) >= 60_000 else { return }
+        touched[key] = now; MPFirebaseRepository.transactionalPresenceWrite(ref(kind, code).child("lastActivityAt"), ServerValue.timestamp())
     }
     func watchLive(_ id: String, actions: Bool, _ changed: @escaping (MPWire) -> Void, _ failed: @escaping (Error) -> Void) -> MPSubscription {
         watch(root.child("live").child(id).child(actions ? "actions" : "checkpoint"), { w in
@@ -268,11 +310,8 @@ import FirebaseDatabase
     }
     func checkpoint(_ id: String, _ value: MPWire) async throws {
         let owner = uid
-        if let path = value["kind"] as? String, MPSessionKind.allCases.contains(where: { $0.path == path }), let code = value["code"] as? String {
-            let key = path + "/" + code, now = MPClock.now
-            // Android FirebasePongRepository.touch is fire-and-forget: a failed activity stamp never fails the checkpoint.
-            if now - (touched[key] ?? 0) >= 60_000 { touched[key] = now; try? await root.child(key).child("lastActivityAt").setValue(ServerValue.timestamp()) }
-        }
+        // Android FirebasePongRepository.touch is fire-and-forget: a failed activity stamp never fails the checkpoint.
+        if let path = value["kind"] as? String, let kind = MPSessionKind.allCases.first(where: { $0.path == path }), let code = value["code"] as? String { touch(kind, code) }
         _ = try await transaction(root.child("live").child(id).child("checkpoint")) { old in
             var w = value; w["revision"] = MPCodec.number(MPCodec.map(old), "revision") + 1; w["serverAt"] = ServerValue.timestamp(); w["authority"] = owner; return w
         }

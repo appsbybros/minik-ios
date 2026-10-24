@@ -167,7 +167,7 @@ if ($sourceText -notmatch '\bUserDefaults\b') {
     $errors.Add('Privacy audit expected app-owned UserDefaults use but found none; review manifest scope.')
 }
 # Every app's own Swift: the shared Sources and the game folders the other targets add.
-$appCodeText = (@('Sources', 'Family', 'MultiPong', 'Amudu', 'Splash', 'Sports') |
+$appCodeText = (@('Sources', 'Family', 'MultiPong', 'Amudu', 'Splash', 'Sports', 'TripleShot') |
     ForEach-Object { Join-Path $RepositoryRoot $_ } |
     Where-Object { Test-Path -LiteralPath $_ -PathType Container } |
     ForEach-Object { Get-ChildItem -File -Recurse -LiteralPath $_ -Filter '*.swift' } |
@@ -214,8 +214,8 @@ foreach ($target in $portraitOnlyTargets) {
     Require-Pattern $targetBodies[$target] '(?m)^\s+UISupportedInterfaceOrientations~ipad:REPLACE:\s*\r?\n\s+- UIInterfaceOrientationPortrait\s*\r?\n\s+- UIInterfaceOrientationPortraitUpsideDown\s*\r?\n(?!\s*- )' "$target must replace the template's iPad orientations with the two portrait ones."
 }
 
-if ($iconSets.Count -ne 11) {
-    $errors.Add("Expected exactly eleven app icon sets (two Language, Math, Math Plus, Modern, Retro and Multi Ping Pong, Amudu, Splash, Squash, Beach Volley); found $($iconSets.Count).")
+if ($iconSets.Count -ne 12) {
+    $errors.Add("Expected exactly twelve app icon sets (two Language, Math, Math Plus, Modern, Retro and Multi Ping Pong, Amudu, Splash, Squash, Beach Volley, Triple Shot); found $($iconSets.Count).")
 }
 foreach ($iconName in @('MinikPlusAppIcon', 'MinikPlusEnglishAppIcon', 'MinikMathAppIcon', 'MinikMathPlusAppIcon')) {
     $iconPath = Join-Path $RepositoryRoot "Resources\MinikVisuals.xcassets\$iconName.appiconset\$iconName-1024.png"

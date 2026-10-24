@@ -1,5 +1,18 @@
 # Shared 80’s STYLE Pong — 2026-09-28
 
+## 2026-10-24 sync
+
+iOS now matches Android Bounce `c21200d` (`C:\Projects\MinikPaddleAndLearn`). The only production change since `506490e` is `4f38dd5` ("Add parent-only rating, sharing and feedback to Bounce"); `3422332` and `c21200d` only raise the Android version.
+
+Ported:
+- Parents page (`BounceRootView`, after the same grown-up gate as Remove Ads, as Android's `MonetizationActivity` shows its options only after its adult gate): a bold "Remove ads" heading above the purchase text, then "More ways to support Minik Bounce" with "Rate Minik Bounce & Learn", "Share Minik Bounce & Learn" and "Send feedback", in Android's English and Hebrew wording. The page now scrolls.
+- Rate: Android opens the Play listing; Minik Bounce has no App Store id or link yet, so iOS asks for the App Store rating prompt (`MinikAppFeedback.requestReview()`), as the other iPhone ports do. Android's "Google Play is not available" toast has no iOS counterpart.
+- Share: the system share sheet (`MinikShareSheet`) with Android's share text and, in place of the Play listing, the app's page `https://miniklearn.com/apps/minik-bounce-and-learn/` (the family catalogue's landing page for `bounce`).
+- Feedback: `mailto:appsbybros.dev@gmail.com` with Android's localized subject; when no mail app opens, the address is copied and Android's "No email app found. The feedback address was copied." shows on the page.
+- "For parents" on the setup (`ios-host.js`, Android `minik-monetization.js`): now a link (`<a role="button">`, label "For parents") centred in the measured gap between the setup body and Start; when the gap is too small it moves onto its own row under the setup title. iOS also falls back that way if a setup part is missing.
+
+Checks: 16 host tests and the engine test pass; `audit-retro-pong.py` passes 209 checks; the Windows iOS type check reports 0 errors for MinikRetroPingPong, MinikMathPlus and MinikMultiPingPong.
+
 ## 2026-10-13 sync
 
 iOS now matches Android Bounce `506490e` ("Refresh Bounce menus, family messages and current store package", `C:\Projects\MinikPaddleAndLearn`). The web delta since `0f5b85f` is `maze-sky.css`, its link in `index.html` and the family hooks in `minik-monetization.js`; everything else in that commit is Android build, billing or store material.

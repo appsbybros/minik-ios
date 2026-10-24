@@ -33,6 +33,8 @@ struct SplashButton: View {
     var height: CGFloat = 54
     var top: CGFloat = 5
     var bottom: CGFloat = 5
+    /// Android `isEnabled` (the house-player Start): disabled lettering is grey 0xff727980.
+    var enabled = true
     let action: () -> Void
 
     var body: some View {
@@ -40,7 +42,7 @@ struct SplashButton: View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 16, weight: .bold))
-                .foregroundColor(back ? .white : SplashPalette.color(0xff0b2b42))
+                .foregroundColor(back ? .white : SplashPalette.color(enabled ? 0xff0b2b42 : 0xff727980))
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
@@ -49,8 +51,22 @@ struct SplashButton: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(SkyButtonStyle(color: back ? 0xffe91e63 : color, radius: 18, shadow: true))
+        .disabled(!enabled)
         .padding(.top, top)
         .padding(.bottom, bottom)
+    }
+}
+
+/// Android `back(col, action)`: an 18-point space, then the pink Back button.
+@MainActor
+struct SplashBack: View {
+    var top: CGFloat = 5
+    var bottom: CGFloat = 5
+    let action: () -> Void
+
+    var body: some View {
+        Color.clear.frame(height: 18)
+        SplashButton(title: tr("Back", "חזרה"), color: 0xffe91e63, top: top, bottom: bottom, action: action)
     }
 }
 
@@ -155,32 +171,36 @@ struct SplashDropdown: View {
     let change: (Int) -> Void
 
     var body: some View {
-        let rtl = AppText.rtl
         VStack(spacing: 0) {
-            SplashLabel(text: title, size: 17, color: 0xffb4f6e7)
+            SplashLabel(text: title, size: 17, color: 0xffb4f6e7, leading: true)
             Menu {
                 ForEach(Array(items.enumerated()), id: \.offset) { pair in
                     Button(pair.element) { change(pair.offset) }
                 }
             } label: {
-                ZStack(alignment: .trailing) {
-                    Text(selected >= 0 && selected < items.count ? items[selected] : "")
-                        .font(.system(size: 17))
-                        .foregroundColor(SplashPalette.color(0xff10263c))
-                        .lineLimit(3)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: .infinity)
-                        .padding(.leading, rtl ? 44 : 12)
-                        .padding(.trailing, rtl ? 12 : 44)
-                        .padding(.vertical, 8)
-                    Text("▾")
-                        .font(.system(size: 26, weight: .bold))
-                        .foregroundColor(SplashPalette.color(0xff10263c))
-                        .frame(width: 36)
-                }
-                .frame(minHeight: 54)
-                .frame(maxWidth: .infinity)
-                .background(SkySurface(color: 0xffcaeaff, radius: 18))
+                // Android START gravity, with the Spinner's relative padding (12 start, 44 end). Android binds the
+                // selected text and the marker to the Spinner's raised face one by one (`FamilyButtonAlignment.bind(view,
+                // spinner)`), so each is centred on that face by its own ink; both measure against the whole field.
+                Text(selected >= 0 && selected < items.count ? items[selected] : "")
+                    .font(.system(size: 17))
+                    .foregroundColor(SplashPalette.color(0xff10263c))
+                    .lineLimit(3)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading, 12)
+                    .padding(.trailing, 44)
+                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity, minHeight: 54)
+                    .modifier(FamilyKit.RaisedLettering(cornerRadius: 18))
+                    .overlay(alignment: .trailing) {
+                        Text("▾")
+                            .font(.system(size: 26, weight: .bold))
+                            .foregroundColor(SplashPalette.color(0xff10263c))
+                            .frame(width: 36)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
+                            .modifier(FamilyKit.RaisedLettering(cornerRadius: 18))
+                    }
+                    .background(SkySurface(color: 0xffcaeaff, radius: 18))
             }
             .padding(.bottom, 12)
         }
@@ -356,7 +376,11 @@ struct SplashRootView: View {
             ToastOverlay(controller: controller)
         }
         .preferredColorScheme(.dark)
-        .onAppear { UIApplication.shared.isIdleTimerDisabled = true }
+        .onAppear {
+            UIApplication.shared.isIdleTimerDisabled = true
+            // App Store captures only: opens the requested screen (SplashScreenshot).
+            controller.applyStoreScreenshotScene()
+        }
         .onChange(of: scenePhase, initial: true) { _, phase in
             controller.scenePhaseChanged(active: phase == .active)
         }
@@ -391,12 +415,12 @@ struct SplashRootView: View {
             }
         case .home: HomePage(controller: controller)
         case .settings: SettingsPage(controller: controller)
+        case .subjects: SubjectsPage(controller: controller)
         case .support: SupportPage(controller: controller)
         case .parentZone: ParentZonePage(controller: controller)
         case .progress: ProgressPage(controller: controller)
         case .ranks: RanksPage(controller: controller)
         case .play: PlayPage(controller: controller)
-        case .playOptions: PlayOptionsPage(controller: controller)
         case .wallOptions: WallOptionsPage(controller: controller)
         case .journey: JourneyPage(controller: controller)
         case .journeyResult: JourneyResultPage(controller: controller)
@@ -494,9 +518,11 @@ struct HomePage: View {
 
     var body: some View {
         let c = controller
-        let learn = tr("Start & learn", "מתחילים ולומדים")
+        let learn = tr("Learn & progress", "לומדים ומתקדמים")
         let play = tr("Play", "משחקים")
+        let saved = tr("Saved games", "משחקים שמורים")
         let advanced = tr("Advanced", "מתקדם")
+        let room = c.savedRoom
         SplashPage("MINIK SPLASH", moreCue: true) {
             if let logo = ArtStore.shared.logo {
                 Image(uiImage: logo)
@@ -507,25 +533,45 @@ struct HomePage: View {
             }
             SplashLabel(text: tr("Questions and answers were created with AI. AI can make mistakes.", "השאלות והתשובות נוצרו בעזרת בינה מלאכותית, שעלולה לטעות."),
                         size: 14, leading: true)
-            // Android FamilyMenu.organize: tutorial/daily actions, then the avatar, in "Start & learn".
+            // Android FamilyMenu.organize: the learning actions and colour ranks, then the avatar.
             MenuSection(learn, color: MenuColors.learn, open: c.sectionOpen(learn, 0), toggle: { c.toggleSection(learn, 0) }) {
                 SectionButton(SplashLaunch.proEdition ? tr("Learn to play with Mia", "ללמוד לשחק עם מיה") : tr("Learn to play with Minik", "ללמוד לשחק עם מיניק"),
                               color: MenuColors.learn) { c.startGame(true) }
                 SectionButton(tr("Daily paint journey", "אתגר יומי"), color: MenuColors.learn) { c.challengePage() }
+                SectionButton(tr("Your colour ranks", "דרגות הצבע שלכם"), color: MenuColors.learn) { c.openRanks() }
                 SplashLabel(text: tr("Your avatar", "הדמות שלכם"), size: 18, color: MenuColors.readable(0xff9cfff1))
                 AvatarPicker(controller: c)
             }
             MenuSection(play, color: MenuColors.play, open: c.sectionOpen(play, 1), toggle: { c.toggleSection(play, 1) }) {
                 SectionButton(tr("Play", "לשחק"), color: MenuColors.play) { c.playMenu() }
             }
+            // Saved games appear only when there is something to continue.
+            if c.hasSavedBattle || c.hasSavedCup || room != nil {
+                MenuSection(saved, color: MenuColors.saved, open: c.sectionOpen(saved, 2), toggle: { c.toggleSection(saved, 2) }) {
+                    if c.hasSavedBattle {
+                        SectionButton(tr("Continue your battle", "להמשיך בקרב"), color: MenuColors.saved) { c.continueBattle() }
+                    } else if c.hasSavedCup {
+                        SectionButton(tr("Continue your cup", "להמשיך בגביע"), color: MenuColors.saved) { c.continueCup() }
+                    }
+                    if let code = room {
+                        SectionButton(tr("Resume online room", "חזרה לחדר מקוון"), color: MenuColors.saved) { c.returnToRoom(code) }
+                    }
+                }
+            }
             MenuSection(advanced, color: MenuColors.advanced, open: c.sectionOpen(advanced, 3), toggle: { c.toggleSection(advanced, 3) }) {
                 SectionButton(tr("Settings", "הגדרות"), color: MenuColors.advanced) { c.openSettings() }
-                // Android FamilyMenu.organize moves "More Minik apps & games" here as a link.
-                FamilyLink(title: FamilyMessages.text("More Minik apps & games", "עוד אפליקציות ומשחקי מיניק")) { c.moreApps() }
+                SectionButton(tr("Subjects", "נושאים"), color: MenuColors.advanced) { c.openSubjects() }
+                SectionButton(tr("Parent zone", "אזור הורים"), color: MenuColors.advanced) {
+                    c.requestParentGate { [weak c] in c?.openParentZone() }
+                }
             }
-            FamilyLink(title: tr("Parent zone", "אזור הורים")) {
-                c.requestParentGate { [weak c] in c?.openParentZone() }
+            // Android FamilyMenu.link: two quiet links under the sections.
+            FamilyLink(title: tr("Share, rate or send feedback", "שיתוף, דירוג ומשוב")) {
+                c.requestParentGate { [weak c] in c?.openSupport() }
             }
+            .padding(.vertical, 5)
+            FamilyLink(title: FamilyMessages.text("More Minik apps & games", "עוד אפליקציות ומשחקי מיניק")) { c.moreApps() }
+                .padding(.vertical, 5)
         }
     }
 }
@@ -622,8 +668,19 @@ struct AvatarPicker: View {
                 .padding(.horizontal, 8)
                 .padding(.bottom, 4)
                 .frame(maxWidth: .infinity)
-                .padding(.bottom, 22)
+            SplashLabel(text: abilities, size: 14, color: MenuColors.readable(0xffffe5a4))
+                .padding(.bottom, 14)
         }
+    }
+
+    /// Android: "Speed 3/5  ·  Precision 4/5" over "Reflexes 3/5  ·  Power 5/5".
+    private var abilities: String {
+        let q = Characters.get(controller.selected).qualities
+        let ratings = [(tr("Speed", "מהירות"), q.speed), (tr("Precision", "דיוק"), q.precision),
+                       (tr("Reflexes", "זריזות תגובה"), q.reflexes), (tr("Power", "עוצמה"), q.power)]
+        return stride(from: 0, to: ratings.count, by: 2).map { start in
+            ratings[start..<min(start + 2, ratings.count)].map { "\($0.0) \($0.1)/5" }.joined(separator: "  ·  ")
+        }.joined(separator: "\n")
     }
 
     /// Android: slide 28 dp out at 25% opacity (90 ms), switch, then slide back in (130 ms).
@@ -655,14 +712,6 @@ struct AvatarPicker: View {
 struct SettingsPage: View {
     @ObservedObject var controller: SplashController
 
-    private func title(_ t: Topic) -> String {
-        switch t {
-        case .math: return tr("Math", "חשבון")
-        case .english: return tr("English", "אנגלית")
-        case .world, .mixed: return tr("World knowledge", "ידע כללי")
-        }
-    }
-
     var body: some View {
         let c = controller
         let s = c.settings
@@ -679,53 +728,59 @@ struct SettingsPage: View {
                            items: [tr("Standard · tap anywhere to throw", "רגילה · געו בכל מקום כדי לזרוק"),
                                    tr("Hard · aim the arc; swipe for power", "קשה · כוונו בקשת; החליקו לעוצמה")],
                            selected: s.throwing.ordinal) { c.setThrowing($0) }
-            SplashDropdown(title: tr("Battle format", "סוג הקרב"),
-                           items: [tr("Everyone for themselves", "כולם מול כולם"), "2 × 2", "3 × 3"],
-                           selected: c.format) { c.setFormat($0) }
-            SplashDropdown(title: tr("Players in a solo battle", "שחקנים בקרב אישי"),
-                           items: (2...6).map { String($0) },
-                           selected: c.count - 2) { c.setCount($0 + 2) }
-            SplashDropdown(title: tr("Arena", "זירה"),
-                           items: [tr("Beach", "חוף"), tr("Park", "פארק"), tr("Andromeda · low gravity", "אנדרומדה · כבידה נמוכה")],
-                           selected: s.arena.ordinal) { c.setArena($0) }
-            SplashLabel(text: tr("Andromeda: higher jumps, floating steps and rising throws.", "באנדרומדה: קפיצות גבוהות, צעדים מרחפים וזריקות גבוהות יותר."), size: 14)
-            SplashDropdown(title: tr("Court", "מגרש"),
-                           items: [tr("With court", "עם מגרש"), tr("Open space · no walls", "מרחב פתוח · ללא קירות")],
-                           selected: s.court ? 0 : 1) { c.setCourt($0) }
             SplashDropdown(title: tr("Answer balloons", "בלוני תשובות"),
                            items: [tr("One place", "במקום אחד"), tr("All over", "בכל הזירה")],
                            selected: s.balloons.ordinal) { c.setBalloons($0) }
-            SplashButton(title: tr("Back", "חזרה")) { c.home() }
-            SplashDropdown(title: tr("Game orientation", "כיוון המסך במשחק"),
-                           items: [tr("Automatic rotation", "סיבוב אוטומטי"), tr("Portrait", "לאורך"), tr("Landscape", "לרוחב")],
-                           selected: c.gameOrientation) { c.setGameOrientation($0) }
-            SplashButton(title: tr("Share, rate or send feedback", "שיתוף, דירוג ומשוב")) {
-                c.requestParentGate { [weak c] in c?.openSupport() }
-            }
-            SplashButton(title: tr("Your colour ranks", "דרגות הצבע שלכם"), color: 0xffffe5a4) { c.openRanks() }
-            // Subjects are intentionally the last setting: expandable, with tap/drag transfer lists.
-            SplashButton(title: tr("Subjects ▾", "נושאים ▾"), color: 0xffe2d4ff) { c.subjectsExpanded.toggle() }
-            if c.subjectsExpanded {
-                SplashLabel(text: tr("Tap a subject or drag it between lists. Keep at least one.", "געו בנושא או גררו בין הרשימות. יש להשאיר לפחות נושא אחד."), size: 14)
-                HStack(alignment: .top, spacing: 0) {
-                    subjectList(chosen: false)
-                    subjectList(chosen: true)
-                }
-            }
+            SplashSwitch(title: tr("Game sounds", "צלילי המשחק"), isOn: $controller.gameSounds)
+            Color.clear.frame(height: 18)
+            SplashBack { c.home() }
+        }
+    }
+}
+
+/// Android `subjectsPage()`: the available subjects (with the instruction), then the chosen ones; tap a
+/// subject or drag it between the lists, keeping at least one.
+@MainActor
+struct SubjectsPage: View {
+    @ObservedObject var controller: SplashController
+
+    private func title(_ t: Topic) -> String {
+        switch t {
+        case .math: return tr("Math", "חשבון")
+        case .english: return tr("English", "אנגלית")
+        case .world, .mixed: return tr("World knowledge", "ידע כללי")
+        }
+    }
+
+    var body: some View {
+        SplashPage(tr("Subjects", "נושאים")) {
+            subjectList(chosen: false)
+            subjectList(chosen: true)
+            Color.clear.frame(height: 18)
+            SplashBack { controller.home() }
         }
     }
 
     private func subjectList(chosen: Bool) -> some View {
         let topics = Topic.allCases.filter { $0 != .mixed && controller.settings.subjects.contains($0) == chosen }
         return VStack(spacing: 0) {
-            SplashLabel(text: chosen ? tr("Chosen subjects", "נושאים שנבחרו") : tr("Available subjects", "נושאים זמינים"), size: 15)
+            SplashLabel(text: chosen ? tr("Chosen subjects", "נושאים שנבחרו") : tr("Available subjects", "נושאים זמינים"), size: 17)
+            if !chosen {
+                SplashLabel(text: tr("Tap a subject or drag it between lists. Keep at least one.", "געו בנושא או גררו בין הרשימות. יש להשאיר לפחות נושא אחד."),
+                            size: 14, leading: true)
+                    .padding(.top, 8)
+                    .padding(.bottom, 9)
+            }
             ForEach(topics, id: \.self) { t in
                 SplashButton(title: title(t), color: chosen ? 0xffb4f6e7 : 0xffd6e8ff) { controller.tapSubject(t, chosen: chosen) }
+                    .padding(.horizontal, 6)
                     .draggable(t.rawValue)
             }
         }
-        .padding(6)
-        .frame(maxWidth: .infinity, minHeight: 120, alignment: .top)
+        .padding(.horizontal, 12)
+        .padding(.top, 10)
+        .padding(.bottom, 12)
+        .frame(maxWidth: .infinity, alignment: .top)
         .background(SkySurface(color: chosen ? 0xff214f60 : 0xff233e59, radius: 18))
         .dropDestination(for: String.self) { items, _ in
             for raw in items {
@@ -733,24 +788,26 @@ struct SettingsPage: View {
             }
             return true
         }
-        .padding(.horizontal, 3)
+        .padding(.bottom, 14)
     }
 }
 
-/// Android `supportPage()` ("For grown-ups", behind the parent gate).
+/// Android `supportPage()` (behind the parent gate).
 @MainActor
 struct SupportPage: View {
     @ObservedObject var controller: SplashController
 
     var body: some View {
         let c = controller
-        SplashPage(tr("For grown-ups", "למבוגרים")) {
-            SplashLabel(text: tr("Enjoying the game? Your feedback helps shape the next update.", "נהנים מהמשחק? המשוב שלכם עוזר לשפר את העדכון הבא."), size: 18)
-            SplashButton(title: tr("Rate the app", "דירוג האפליקציה")) { c.rateApp() }
-            SplashButton(title: tr("Share the game", "שיתוף המשחק")) { c.openShare() }
-            SplashButton(title: tr("Send feedback", "שליחת משוב")) { c.openFeedback() }
-            SplashSwitch(title: tr("Game sounds", "צלילי המשחק"), isOn: $controller.gameSounds)
-            SplashButton(title: tr("Back", "חזרה"), color: 0xffe91e63) { c.openSettings() }
+        SplashPage(tr("Share, rate or send feedback", "שיתוף, דירוג ומשוב")) {
+            SplashLabel(text: tr("Enjoying the game? Your feedback helps shape the next update.", "נהנים מהמשחק? המשוב שלכם עוזר לשפר את העדכון הבא."),
+                        size: 18, leading: true)
+            Color.clear.frame(height: 18)
+            SplashButton(title: tr("Rate the app", "דירוג האפליקציה"), color: 0xffd1c4ff) { c.rateApp() }
+            SplashButton(title: tr("Share the game", "שיתוף המשחק"), color: 0xffafdbff) { c.openShare() }
+            SplashButton(title: tr("Send feedback", "שליחת משוב"), color: 0xffffe082) { c.openFeedback() }
+            Color.clear.frame(height: 18)
+            SplashBack { c.home() }
         }
         .alert(tr("Your message", "ההודעה שלכם"), isPresented: $controller.shareVisible) {
             TextField("", text: $controller.shareInput, axis: .vertical)
@@ -777,8 +834,10 @@ struct ParentZonePage: View {
     var body: some View {
         SplashPage(tr("Parent zone", "אזור הורים")) {
             SplashLabel(text: tr("Learning and purchases, in one place.", "למידה ורכישות, במקום אחד."), size: 17)
+            Color.clear.frame(height: 18)
             SplashButton(title: tr("My learning progress", "התקדמות בלמידה")) { controller.openProgress() }
             // "Ads & purchases" (remove ads, restore, codes) is not offered on iOS.
+            Color.clear.frame(height: 18)
             SplashButton(title: tr("Back", "חזרה")) { controller.home() }
         }
     }
@@ -827,15 +886,16 @@ struct RanksPage: View {
                     .background(RoundedRectangle(cornerRadius: 8).fill(SplashPalette.color(rank.color)))
                     .padding(.bottom, 8)
             }
-            SplashButton(title: tr("Back", "חזרה"), color: 0xffe91e63) { controller.openSettings() }
+            SplashBack { controller.home() }
         }
     }
 }
 
 // MARK: Play
 
-/// Android `playMenu()`: saved games, then "Create room" apart from joining (a dashed line), house
-/// players and paint walls. Every action has 16 dp above and 8 below (`spaceRoomActions`).
+/// Android `playMenu()`: the arena, the game mode (Paint walls adds its hit rule) and the number of rounds,
+/// saved for the next visit; then Create room, Join room or House players only. Every action has 16 dp
+/// above and 8 below (`spaceRoomActions`).
 @MainActor
 struct PlayPage: View {
     @ObservedObject var controller: SplashController
@@ -843,54 +903,37 @@ struct PlayPage: View {
     var body: some View {
         let c = controller
         SplashPage(tr("Play", "לשחק")) {
-            Color.clear.frame(height: 22)
-            if c.hasSavedBattle {
-                SplashButton(title: tr("Continue your battle", "להמשיך בקרב"), top: 16, bottom: 8) { c.continueBattle() }
-            } else if c.hasSavedCup {
-                SplashButton(title: tr("Continue your cup", "להמשיך בגביע"), top: 16, bottom: 8) { c.continueCup() }
-            }
-            if let code = c.savedRoom {
-                SplashButton(title: tr("Return to \(code)", "חזרה לחדר \(code)"), top: 16, bottom: 8) { c.returnToRoom(code) }
-            }
-            SplashButton(title: tr("Create room", "יצירת חדר"), top: 16, bottom: 8) { c.playOptions(false) }
-            RoomDivider()
-            SplashButton(title: tr("Join room", "הצטרפות לחדר"), color: 0xffafdbff, top: 16, bottom: 8) { c.joinPage(false) }
-            SplashButton(title: tr("House players only", "שחקני הבית בלבד"), color: 0xffd1c4ff, top: 16, bottom: 8) { c.playOptions(true) }
-            SplashButton(title: tr("Paint walls · teams", "צביעת קירות · קבוצות"), color: 0xffffdca8, top: 16, bottom: 8) { c.wallOptions() }
-            SplashButton(title: tr("Back", "חזרה"), color: 0xffe91e63, top: 16, bottom: 8) { c.home() }
-        }
-    }
-}
-
-/// Android `playOptions(house)`: the host's settings for the next game only ("Create room" or
-/// "House players only"), then create the room or choose the house players; Cancel returns to Play.
-@MainActor
-struct PlayOptionsPage: View {
-    @ObservedObject var controller: SplashController
-
-    var body: some View {
-        let c = controller
-        let counts = c.playerCounts
-        let house = c.optionsHouse
-        SplashPage(house ? tr("House players only", "שחקני הבית בלבד") : tr("Create room", "יצירת חדר")) {
-            SplashLabel(text: tr("For this game only · your saved settings stay the same", "למשחק הקרוב בלבד · ההגדרות השמורות נשארות ללא שינוי"), size: 15)
-            SplashDropdown(title: tr("Arena", "זירה"), items: [tr("Beach", "חוף"), tr("Park", "פארק"), tr("Andromeda", "אנדרומדה")],
+            SplashDropdown(title: tr("Arena", "זירה"),
+                           items: Arena.allCases.map { arena in
+                               switch arena.name {
+                               case "BEACH": return tr("Beach", "חוף")
+                               case "PARK": return tr("Park", "פארק")
+                               case "ANDROMEDA": return tr("Andromeda · low gravity", "אנדרומדה · כבידה נמוכה")
+                               case "PARKING": return tr("Parking plaza", "רחבת חניה")
+                               default: return tr("Five-floor tower", "מגדל בן חמש קומות")
+                               }
+                           },
                            selected: (c.upcomingArena ?? c.settings.arena).ordinal) { c.setUpcomingArena($0) }
-            SplashDropdown(title: tr("Players", "שחקנים"), items: counts.map { String($0) },
-                           selected: max(counts.firstIndex(of: c.seats()) ?? 0, 0)) { c.setUpcomingCount($0) }
             SplashDropdown(title: tr("Game mode", "סוג המשחק"),
-                           items: [tr("Single battle", "קרב יחיד"), tr("3 battles cup", "גביע של 3 קרבות"), tr("5 battles cup", "גביע של 5 קרבות")],
-                           selected: [1, 3, 5].firstIndex(of: c.upcomingRounds) ?? 0) { c.setRounds($0) }
-            Color.clear.frame(height: 14)
-            SplashDropdown(title: tr("Difficulty", "רמת קושי"),
-                           items: [tr("Easy · time to learn", "קלה · זמן ללמוד"), tr("Standard", "רגילה"), tr("Pro", "מקצועית")],
-                           selected: c.settings.difficulty.ordinal) { c.setDifficulty($0) }
-            if house {
-                SplashButton(title: tr("Choose players", "בחירת שחקנים"), top: 16, bottom: 8) { c.houseGame(c.upcomingRounds > 1) }
-            } else {
-                SplashButton(title: tr("Create room", "יצירת חדר"), top: 16, bottom: 8) { c.createRoom() }
+                           items: [tr("Single · everyone for themselves", "יחיד · כולם מול כולם"), "2 × 2", "3 × 3",
+                                   tr("Paint walls · teams · 2 × 2", "צביעת קירות · קבוצות · 2 × 2"),
+                                   tr("Paint walls · teams · 3 × 3", "צביעת קירות · קבוצות · 3 × 3")],
+                           selected: c.playMode) { c.setPlayMode($0) }
+            if c.hitOptionsVisible {
+                SplashDropdown(title: tr("When a player is hit in Paint walls", "כששחקן נפגע בצביעת קירות"),
+                               items: [tr("Just paint · no penalty", "רק צבע · ללא השפעה"), tr("3 hits · 8-second rest", "3 פגיעות · מנוחה של 8 שניות"),
+                                       tr("Slow down · each hit lasts 30 seconds", "האטה · כל פגיעה נמשכת 30 שניות")],
+                               selected: c.hitEffect.ordinal) { c.setHitEffect($0) }
             }
-            SplashButton(title: tr("Cancel", "ביטול"), color: 0xffe91e63, top: 16, bottom: 8) { c.playMenu() }
+            SplashDropdown(title: tr("Number of rounds", "מספר קרבות"),
+                           items: [tr("Single battle", "קרב יחיד"), tr("3-battle cup", "גביע של 3 קרבות"),
+                                   tr("5-battle cup · house players only", "גביע של 5 קרבות · שחקני הבית בלבד")],
+                           selected: max([1, 3, 5].firstIndex(of: c.upcomingRounds) ?? 0, 0)) { c.setRounds($0) }
+            Color.clear.frame(height: 16)
+            SplashButton(title: tr("Create room", "יצירת חדר"), top: 16, bottom: 8) { c.createRoom() }
+            SplashButton(title: tr("Join room", "הצטרפות לחדר"), color: 0xffffe082, top: 16, bottom: 8) { c.joinPage(false) }
+            SplashButton(title: tr("House players only", "שחקני הבית בלבד"), color: 0xffffbb73, top: 16, bottom: 8) { c.houseGame(c.upcomingRounds > 1) }
+            SplashBack(top: 16, bottom: 8) { c.home() }
         }
     }
 }
@@ -944,7 +987,7 @@ struct JoinPage: View {
                     if value.count > 6 { controller.roomCode = String(value.prefix(6)) }
                 }
             SplashButton(title: tr("Join room", "הצטרפות לחדר")) { c.joinRoom() }
-            SplashButton(title: tr("Back", "חזרה"), color: 0xffe91e63) { c.joinBack() }
+            SplashBack { c.joinBack() }
         }
     }
 }
@@ -1091,6 +1134,10 @@ struct HouseChoices: View {
             .padding(.top, 8)
             .padding(.bottom, 10)
             .background(SkySurface(color: 0xe622405a, radius: 18))
+            // The check box handles its own tap; all otherwise non-clickable content
+            // (portrait, qualifier labels, stars and whitespace) toggles the same choice.
+            .contentShape(Rectangle())
+            .onTapGesture { if enabled { toggle(character.id, !checked) } }
             .padding(.vertical, 7)
         }
     }
@@ -1107,18 +1154,47 @@ struct HouseChoices: View {
     }
 }
 
+/// Android `houseGame`: "Choose players" with the count, the scrolling cards, and Start (enabled once
+/// the roster is valid) and Back fixed below them.
 @MainActor
 struct HousePage: View {
     @ObservedObject var controller: SplashController
 
     var body: some View {
         let c = controller
-        SplashPage(tr("House players", "שחקני הבית")) {
-            SplashLabel(text: c.selectionMessage(1, c.selectedHouse.count, c.seats()), size: 18)
-            SplashButton(title: tr("Start", "התחלה"), color: 0xffafdbff) { c.houseStart() }
-            SplashButton(title: tr("Back", "חזרה"), color: 0xffe91e63) { c.houseBack() }
-            HouseChoices(excluded: [c.selected], selected: c.selectedHouse, capacity: c.seats() - 1) { c.houseChanged($0) }
+        ZStack {
+            SplashPalette.color(0xff0b2941)
+            GeometryReader { geo in
+                if let lagoon = ArtStore.shared.lagoon {
+                    Image(uiImage: lagoon)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: geo.size.width, height: geo.size.height)
+                        .clipped()
+                        .opacity(0.43)
+                }
+            }
+            GeometryReader { geo in
+                VStack(spacing: 0) {
+                    SplashLabel(text: tr("Choose players", "בחירת שחקנים"), size: 28)
+                    SplashLabel(text: c.selectionMessage(1, c.selectedHouse.count, c.seats()), size: 18)
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            HouseChoices(excluded: [c.selected], selected: c.selectedHouse, capacity: c.seats() - 1) { c.houseChanged($0) }
+                        }
+                    }
+                    .frame(maxHeight: .infinity)
+                    SplashButton(title: tr("Start", "התחלה"), color: 0xffafdbff, enabled: c.houseStartEnabled) { c.houseStart() }
+                    SplashButton(title: tr("Back", "חזרה"), color: 0xffe91e63) { c.houseBack() }
+                }
+                .padding(.horizontal, 22)
+                .padding(.top, 10)
+                .padding(.bottom, 14)
+                .frame(width: SplashPageLayout.readingWidth(geo.size))
+                .frame(maxWidth: .infinity)
+            }
         }
+        .environment(\.layoutDirection, AppText.rtl ? .rightToLeft : .leftToRight)
     }
 }
 
@@ -1217,7 +1293,7 @@ struct JourneyPage: View {
                 SplashLabel(text: tr("Complete the whole cycle to meet new characters. No progress is lost on a retry.",
                                      "השלימו את כל המסלול כדי לפגוש דמויות חדשות. ניסיון חוזר לא מוחק התקדמות."), size: 15)
             }
-            SplashButton(title: tr("Back", "חזרה"), color: 0xffe91e63) { c.home() }
+            SplashBack { c.home() }
         }
     }
 }
@@ -1240,7 +1316,7 @@ struct JourneyResultPage: View {
                 SplashLabel(text: r.progress, size: 18)
                 if let score = r.score { SplashLabel(text: score, size: 18) }
                 SplashButton(title: r.button) { c.challengePage(r.nextStep) }
-                SplashButton(title: tr("Back", "חזרה"), color: 0xffe91e63) { c.challengePage() }
+                SplashBack { c.challengePage() }
             }
         } else {
             SplashPage("") {
@@ -1281,7 +1357,7 @@ struct LobbyPage: View {
                 if model.hosted {
                     SplashButton(title: tr("Start", "התחלה"), color: 0xffafdbff) { c.lobbyStartGame() }
                 }
-                SplashButton(title: tr("Back", "חזרה"), color: 0xffe91e63) { c.leaveCupScreen() }
+                SplashBack { c.leaveCupScreen() }
                 if model.hosted {
                     HouseChoices(excluded: Set(model.humans.map { $0.character }), selected: model.house,
                                  capacity: max(model.limit - model.humans.count, 0)) { c.lobbyChangeHouse($0) }
@@ -1306,7 +1382,7 @@ struct ResultsPage: View {
     var body: some View {
         if let model = controller.results {
             SplashPage(model.title) {
-                SplashLabel(text: tr("Battle complete", "הקרב הסתיים"), size: 20, color: 0xff91fff0)
+                SplashLabel(text: tr("Final scores", "תוצאות סופיות"), size: 20, color: 0xff91fff0)
                 ForEach(model.teams) { panel in
                     VStack(spacing: 0) {
                         SplashLabel(text: panel.name, size: 23, color: panel.ink)
@@ -1318,23 +1394,24 @@ struct ResultsPage: View {
                     .padding(.vertical, 8)
                 }
                 ForEach(model.rows) { row in PlayerRow(row: row) }
-                if let note = model.note { SplashLabel(text: note, size: 14) }
+                if let note = model.note { SplashLabel(text: note, size: 14, leading: true) }
                 SplashLabel(text: model.correctLine, size: 15)
-                SplashLabel(text: model.countsLine, size: 13)
+                if let counts = model.countsLine { SplashLabel(text: counts, size: 13) }
                 if model.onlineCup { SplashLabel(text: controller.standings, size: 16) }
+                // Every results action has 18 dp above and 10 below.
                 if model.nextRound {
-                    SplashButton(title: tr("Next round", "הסיבוב הבא")) { controller.resultsNextRound() }
+                    SplashButton(title: tr("Next round", "הסיבוב הבא"), top: 18, bottom: 10) { controller.resultsNextRound() }
                 }
                 if let cupLine = model.cupLine { SplashLabel(text: cupLine) }
                 if let standings = model.cupStandings { SplashLabel(text: standings, size: 15) }
                 if model.nextBattle {
-                    SplashButton(title: tr("Next battle", "הקרב הבא")) { controller.resultsNextBattle() }
+                    SplashButton(title: tr("Next battle", "הקרב הבא"), top: 18, bottom: 10) { controller.resultsNextBattle() }
                 }
                 if model.playAgain {
-                    SplashButton(title: tr("Play again", "לשחק שוב")) { controller.resultsPlayAgain() }
+                    SplashButton(title: tr("Play again", "לשחק שוב"), top: 18, bottom: 10) { controller.resultsPlayAgain() }
                 }
                 // A cup (local or online) asks whether to keep it before leaving.
-                SplashButton(title: tr("Main menu", "תפריט ראשי"), color: 0xffc6dfff) { controller.leaveCupScreen() }
+                SplashButton(title: tr("Main menu", "תפריט ראשי"), color: 0xffc6dfff, top: 18, bottom: 10) { controller.leaveCupScreen() }
             }
         } else {
             SplashPage("") {
@@ -1358,13 +1435,19 @@ struct PlayerRow: View {
                 }
             }
             .frame(width: 46, height: 58)
-            SplashLabel(text: row.name, size: 17, color: row.ink)
+            // Solo results: the winner's name in gold; the top three scores on gold, silver and bronze.
+            let medal: UInt32? = row.rank == 0 ? 0xffffd760 : (row.rank == 1 ? 0xffcbd9e5 : (row.rank == 2 ? 0xffd89c67 : nil))
+            SplashLabel(text: row.name, size: 17, color: row.rank == 0 ? (medal ?? row.ink) : row.ink)
             Text("\(row.score)")
                 .font(.system(size: 22, weight: .bold))
-                .foregroundColor(SplashPalette.color(row.ink))
+                .foregroundColor(SplashPalette.color(medal == nil ? row.ink : 0xff163148))
                 .lineLimit(1)
                 .padding(.horizontal, 4)
+                .padding(.vertical, 8)
                 .frame(width: 68)
+                .background {
+                    if let medal = medal { SkySurface(color: medal, radius: 12) }
+                }
         }
         .padding(.horizontal, 6)
         .padding(.vertical, 4)

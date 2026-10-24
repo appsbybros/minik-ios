@@ -163,8 +163,14 @@ enum MPCompletionText {
 
 /// Android `ControlChoice.title`: the room's control level (wire 4/0/3; older 1 and 2 are Standard).
 enum MPControlChoice {
+    /// Android `ControlChoice.normalize` (96ae066): 0 and 2 Standard, 1 Starter, 3 Pro, anything else Beginner (4).
+    /// Used by the colour ranks; `MPLevel.control` keeps the room/engine mapping.
+    static func normalize(_ value: Int) -> Int {
+        switch value { case 0, 2: return 0; case 1: return 1; case 3: return 3; default: return 4 }
+    }
     static func title(_ value: Int, hebrew he: Bool) -> String {
         switch MPLevel.control(value) {
+        case .medium: return he ? "נינוחה" : "Starter"
         case .easy: return he ? "רגילה" : "Standard"
         case .superHard: return he ? "מקצועני" : "Pro"
         default: return he ? "מתחילים" : "Beginner"

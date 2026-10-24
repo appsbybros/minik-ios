@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='utf-8'?>
+<question-bank version="1" mode="HISTORY" language="he">
+  <question id="history_001" level="2">
+    <prompt lang="he">באיזו שנה נפלה חומת ברלין?</prompt>
+    <answer correct="false">1991</answer>
+    <answer correct="false">1979</answer>
+    <answer correct="true">1989</answer>
+    <answer correct="false">1961</answer>
+    <explanation lang="he">החומה נפתחה בנובמבר 1989.</explanation>
+  </question>
+  <question id="history_002" level="2">
+    <prompt lang="he">איזו תרבות עתיקה בנתה את מאצ'ו פיצ'ו?</prompt>
+    <answer correct="true">האינקה</answer>
+    <answer correct="false">המאיה</answer>
+    <answer correct="false">האצטקים</answer>
+    <answer correct="false">הרומאים</answer>
+    <explanation lang="he">מאצ'ו פיצ'ו נבנתה בידי האינקה במאה ה-15.</explanation>
+  </question>
+  <question id="history_003" level="3">
+    <prompt lang="he">מי היה הקיסר הרומי הראשון?</prompt>
+    <answer correct="false">קונסטנטינוס</answer>
+    <answer correct="false">נירון</answer>
+    <answer correct="false">יוליוס קיסר</answer>
+    <answer correct="true">אוגוסטוס</answer>
+    <explanation lang="he">אוגוסטוס נחשב לקיסר הראשון של האימפריה הרומית.</explanation>
+  </question>
+  <question id="history_004" level="1">
+    <prompt lang="he">איזה אירוע החל באירופה בשנת 1914?</prompt>
+    <answer correct="false">מלחמת קרים</answer>
+    <answer correct="false">מלחמת העולם השנייה</answer>
+    <answer correct="false">המהפכה הצרפתית</answer>
+    <answer correct="true">מלחמת העולם הראשונה</answer>
+    <explanation lang="he">מלחמת העולם הראשונה החלה בקיץ 1914.</explanation>
+  </question>
+  <question id="history_005" level="2">
+    <prompt lang="he">איזו המצאה מזוהה עם יוהנס גוטנברג באירופה של המאה ה-15?</prompt>
+    <answer correct="false">טלפון</answer>
+    <answer correct="true">דפוס באותיות מתכת ניידות</answer>
+    <answer correct="false">מנוע קיטור</answer>
+    <answer correct="false">טלגרף</answer>
+    <explanation lang="he">גוטנברג פיתח מערכת דפוס יעילה באותיות ניידות.</explanation>
+  </question>
+  <question id="history_006" level="3">
+    <prompt lang="he">מה הייתה דרך המשי?</prompt>
+    <answer correct="false">מסלול ימי בלבד סביב אפריקה</answer>
+    <answer correct="false">כביש רומי יחיד</answer>
+    <answer correct="true">רשת נתיבי מסחר בין אזורים באסיה, אירופה וצפון אפריקה</answer>
+    <answer correct="false">נהר בסין</answer>
+    <explanation lang="he">דרך המשי הייתה רשת של נתיבים, לא דרך אחת.</explanation>
+  </question>
+  <question id="history_007" level="1">
+    <prompt lang="he">איזו מהפכה החלה בצרפת ב-1789?</prompt>
+    <answer correct="false">המהפכה התעשייתית</answer>
+    <answer correct="false">המהפכה הרוסית</answer>
+    <answer correct="false">האביב של פראג</answer>
+    <answer correct="true">המהפכה הצרפתית</answer>
+    <explanation lang="he">1789 היא שנת פתיחת המהפכה הצרפתית.</explanation>
+  </question>
+  <question id="history_008" level="3">
+    <prompt lang="he">מי כתב את הצהרת העצמאות האמריקאית בנוסח הראשוני העיקרי?</prompt>
+    <answer correct="false">ג'ורג' וושינגטון</answer>
+    <answer correct="true">תומאס ג'פרסון</answer>
+    <answer correct="false">בנג'מין פרנקלין לבדו</answer>
+    <answer correct="false">אברהם לינקולן</answer>
+    <explanation lang="he">ג'פרסון היה המחבר העיקרי של הטיוטה שאושרה ב-1776.</explanation>
+  </question>
+  <question id="history_009" level="3">
+    <prompt lang="he">איזו אימפריה שלטה בקונסטנטינופול עד 1453?</prompt>
+    <answer correct="true">האימפריה הביזנטית</answer>
+    <answer correct="false">האימפריה הבריטית</answer>
+    <answer correct="false">האימפריה המונגולית</answer>
+    <answer correct="false">האימפריה האצטקית</answer>
+    <explanation lang="he">קונסטנטינופול הייתה בירת האימפריה הביזנטית עד הכיבוש העות'מאני.</explanation>
+  </question>
+  <question id="history_010" level="2">
+    <prompt lang="he">מה הייתה המהפכה התעשייתית?</prompt>
+    <answer correct="false">רפורמה בלוח השנה</answer>
+    <answer correct="true">מעבר רחב לייצור ממוכן, מפעלים ושינויים כלכליים-חברתיים</answer>
+    <answer correct="false">מלחמה בין בריטניה לצרפת</answer>
+    <answer correct="false">תנועה אמנותית בלבד</answer>
+    <explanation lang="he">המהפכה התעשייתית שינתה ייצור, תחבורה, ערים וחברה.</explanation>
+  </question>
+</question-bank>

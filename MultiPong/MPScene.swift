@@ -56,7 +56,10 @@ final class MPScene: SKScene {
     func replaceEngine(_ engine: MPEngine) { cancelTouch(); self.engine = engine; previousTime = 0; accumulator = 0; render() }
     private func texture(_ name: String) -> SKTexture {
         if let existing = textures[name] { return existing }
-        let value = SKTexture(imageNamed: "mp_" + name); value.filteringMode = .linear; textures[name] = value; return value
+        // Multi Ping Pong keeps the Minik frames its Android twin (MinikCrossPong) ships; the shared catalog now holds
+        // Ping Pong's newer drawings, so these come from the Multi-only mpx_ copies.
+        let frozen = (name.hasPrefix("minik_left_") || name.hasPrefix("minik_motion_")) && name != "minik_motion_body"
+        let value = SKTexture(imageNamed: (frozen ? "mpx_" : "mp_") + name); value.filteringMode = .linear; textures[name] = value; return value
     }
     private func layoutCourt() {
         let scale = min((Double(size.width) - 16) / MPProjection.tableWidth, (Double(size.height) - 32) / (340 + 1437))

@@ -1,0 +1,163 @@
+<?xml version='1.0' encoding='utf-8'?>
+<question-bank version="1" mode="GENERAL_KNOWLEDGE" language="he">
+  <question id="general_knowledge_001" level="2">
+    <prompt lang="he">מהי בירת אוסטרליה?</prompt>
+    <answer correct="false">פרת'</answer>
+    <answer correct="false">מלבורן</answer>
+    <answer correct="true">קנברה</answer>
+    <answer correct="false">סידני</answer>
+    <explanation lang="he">קנברה היא בירת אוסטרליה; סידני ומלבורן גדולות יותר אך אינן הבירה.</explanation>
+  </question>
+  <question id="general_knowledge_002" level="1">
+    <prompt lang="he">איזה אוקיינוס הוא הגדול ביותר?</prompt>
+    <answer correct="true">האוקיינוס השקט</answer>
+    <answer correct="false">האוקיינוס הארקטי</answer>
+    <answer correct="false">האוקיינוס האטלנטי</answer>
+    <answer correct="false">האוקיינוס ההודי</answer>
+    <explanation lang="he">האוקיינוס השקט הוא הגדול והעמוק באוקיינוסים.</explanation>
+  </question>
+  <question id="general_knowledge_003" level="1">
+    <prompt lang="he">באיזו מדינה נמצאת העיר קיוטו?</prompt>
+    <answer correct="true">יפן</answer>
+    <answer correct="false">סין</answer>
+    <answer correct="false">קוריאה הדרומית</answer>
+    <answer correct="false">תאילנד</answer>
+    <explanation lang="he">קיוטו הייתה בירת יפן במשך יותר מאלף שנים.</explanation>
+  </question>
+  <question id="general_knowledge_004" level="1">
+    <prompt lang="he">מהו המטבע הרשמי של יפן?</prompt>
+    <answer correct="false">וון</answer>
+    <answer correct="false">יואן</answer>
+    <answer correct="true">ין</answer>
+    <answer correct="false">רופי</answer>
+    <explanation lang="he">המטבע היפני הוא ין.</explanation>
+  </question>
+  <question id="general_knowledge_005" level="1">
+    <prompt lang="he">איזו יבשת היא הגדולה בשטחה?</prompt>
+    <answer correct="true">אסיה</answer>
+    <answer correct="false">אפריקה</answer>
+    <answer correct="false">אמריקה הדרומית</answer>
+    <answer correct="false">אירופה</answer>
+    <explanation lang="he">אסיה היא היבשת הגדולה ביותר בשטח ובאוכלוסייה.</explanation>
+  </question>
+  <question id="general_knowledge_006" level="2">
+    <prompt lang="he">מהי השפה הרשמית העיקרית בברזיל?</prompt>
+    <answer correct="false">ספרדית</answer>
+    <answer correct="true">פורטוגזית</answer>
+    <answer correct="false">צרפתית</answer>
+    <answer correct="false">איטלקית</answer>
+    <explanation lang="he">ברזיל הייתה מושבה פורטוגלית ולכן השפה הרשמית היא פורטוגזית.</explanation>
+  </question>
+  <question id="general_knowledge_007" level="2">
+    <prompt lang="he">איזו מדינה מכונה 'ארץ השמש העולה'?</prompt>
+    <answer correct="false">נורווגיה</answer>
+    <answer correct="false">מצרים</answer>
+    <answer correct="true">יפן</answer>
+    <answer correct="false">מקסיקו</answer>
+    <explanation lang="he">הכינוי קשור למיקומה של יפן ממזרח לאסיה.</explanation>
+  </question>
+  <question id="general_knowledge_008" level="2">
+    <prompt lang="he">מהי בירת קנדה?</prompt>
+    <answer correct="false">מונטריאול</answer>
+    <answer correct="false">טורונטו</answer>
+    <answer correct="false">ונקובר</answer>
+    <answer correct="true">אוטווה</answer>
+    <explanation lang="he">אוטווה היא הבירה הפדרלית של קנדה.</explanation>
+  </question>
+  <question id="general_knowledge_009" level="3">
+    <prompt lang="he">איזו עיר מחולקת על ידי נהר הדנובה לבודה ולפשט?</prompt>
+    <answer correct="false">בלגרד</answer>
+    <answer correct="false">וינה</answer>
+    <answer correct="false">פראג</answer>
+    <answer correct="true">בודפשט</answer>
+    <explanation lang="he">בודה ופשט אוחדו במאה ה-19 לעיר בודפשט.</explanation>
+  </question>
+  <question id="general_knowledge_010" level="2">
+    <prompt lang="he">איזה כלי נגינה כולל בדרך כלל 88 קלידים בגרסה המודרנית?</prompt>
+    <answer correct="false">כינור</answer>
+    <answer correct="false">חליל צד</answer>
+    <answer correct="true">פסנתר</answer>
+    <answer correct="false">צ'לו</answer>
+    <explanation lang="he">לפסנתר מודרני סטנדרטי יש 88 קלידים.</explanation>
+  </question>
+  <question id="general_knowledge_011" level="2">
+    <prompt lang="he">איזה ספורט משתמש במונח 'אהבה' (Love) לציון אפס?</prompt>
+    <answer correct="false">גולף</answer>
+    <answer correct="false">כדורעף</answer>
+    <answer correct="false">קריקט</answer>
+    <answer correct="true">טניס</answer>
+    <explanation lang="he">בטניס Love מציין ניקוד אפס.</explanation>
+  </question>
+  <question id="general_knowledge_012" level="1">
+    <prompt lang="he">כמה טבעות יש בסמל האולימפי?</prompt>
+    <answer correct="true">5</answer>
+    <answer correct="false">6</answer>
+    <answer correct="false">4</answer>
+    <answer correct="false">7</answer>
+    <explanation lang="he">הסמל האולימפי כולל חמש טבעות משולבות.</explanation>
+  </question>
+  <question id="general_knowledge_013" level="3">
+    <prompt lang="he">מי כתב את 'הנסיך הקטן'?</prompt>
+    <answer correct="false">ויקטור הוגו</answer>
+    <answer correct="true">אנטואן דה סנט-אכזופרי</answer>
+    <answer correct="false">אלבר קאמי</answer>
+    <answer correct="false">ז'ול ורן</answer>
+    <explanation lang="he">סנט-אכזופרי פרסם את הספר ב-1943.</explanation>
+  </question>
+  <question id="general_knowledge_014" level="2">
+    <prompt lang="he">איזה חומר טבעי הוא הקשה ביותר בסולם מוס?</prompt>
+    <answer correct="false">קוורץ</answer>
+    <answer correct="false">טופז</answer>
+    <answer correct="true">יהלום</answer>
+    <answer correct="false">גרניט</answer>
+    <explanation lang="he">יהלום מדורג 10 בסולם מוס.</explanation>
+  </question>
+  <question id="general_knowledge_015" level="1">
+    <prompt lang="he">באיזה צד של הכביש נוהגים בבריטניה?</prompt>
+    <answer correct="false">רק במרכז העיר</answer>
+    <answer correct="false">משתנה לפי מחוז</answer>
+    <answer correct="false">ימין</answer>
+    <answer correct="true">שמאל</answer>
+    <explanation lang="he">בבריטניה התנועה נוסעת בצד שמאל.</explanation>
+  </question>
+  <question id="general_knowledge_016" level="1">
+    <prompt lang="he">איזה ים מפריד בין אירופה לאפריקה?</prompt>
+    <answer correct="true">הים התיכון</answer>
+    <answer correct="false">הים הבלטי</answer>
+    <answer correct="false">הים הקריבי</answer>
+    <answer correct="false">ים ברינג</answer>
+    <explanation lang="he">הים התיכון נמצא בין דרום אירופה לצפון אפריקה.</explanation>
+  </question>
+  <question id="general_knowledge_017" level="1">
+    <prompt lang="he">איזו מדינה היא הגדולה בעולם לפי שטח?</prompt>
+    <answer correct="false">ארצות הברית</answer>
+    <answer correct="false">סין</answer>
+    <answer correct="true">רוסיה</answer>
+    <answer correct="false">קנדה</answer>
+    <explanation lang="he">רוסיה היא המדינה הגדולה בעולם בשטח כולל.</explanation>
+  </question>
+  <question id="general_knowledge_018" level="1">
+    <prompt lang="he">איזה צבע מתקבל מערבוב כחול וצהוב בצבעי ציור מסורתיים?</prompt>
+    <answer correct="false">סגול</answer>
+    <answer correct="true">ירוק</answer>
+    <answer correct="false">אדום</answer>
+    <answer correct="false">כתום</answer>
+    <explanation lang="he">במודל ערבוב פיגמנטים בסיסי כחול וצהוב יוצרים ירוק.</explanation>
+  </question>
+  <question id="general_knowledge_019" level="1">
+    <prompt lang="he">מהו המספר הרומי X?</prompt>
+    <answer correct="false">5</answer>
+    <answer correct="false">50</answer>
+    <answer correct="false">100</answer>
+    <answer correct="true">10</answer>
+    <explanation lang="he">X מייצג עשר בספרות רומיות.</explanation>
+  </question>
+  <question id="general_knowledge_020" level="1">
+    <prompt lang="he">איזה משחק לוח כולל מלך, מלכה, רצים ופרשים?</prompt>
+    <answer correct="true">שחמט</answer>
+    <answer correct="false">דמקה</answer>
+    <answer correct="false">גו</answer>
+    <answer correct="false">שש-בש</answer>
+    <explanation lang="he">אלה שמות כלי שחמט.</explanation>
+  </question>
+</question-bank>

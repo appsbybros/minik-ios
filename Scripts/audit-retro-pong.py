@@ -60,6 +60,12 @@ check('MinikFamilyCatalogKey: bounce' in retro and 'Family/minik-family-catalog.
 check('case "menuIdle": if active { onMenuIdle?() }' in host, 'Native host must forward the idle-setup signal')
 ios_host = text('Resources/RetroPong/ios-host.js')
 check('send({type: "menuIdle"})' in ios_host and 'menuRoot = parent;' in ios_host, 'ios-host.js must signal the idle setup only once the parents link exists')
+# Android Bounce 4f38dd5: rating, sharing and feedback only on the gated parents page; the
+# "For parents" link sits in the measured gap above Start (or under the title).
+support = bounce.split('@ViewBuilder private var parentsSheet', 1)[1].split('ParentalGateView(', 1)[0]
+check('supportSection' in support and 'MinikAppFeedback.requestReview()' in bounce and 'MinikShareSheet(text:' in bounce
+      and 'MinikAppFeedback.feedbackAddress' in bounce and 'UIPasteboard.general.string' in bounce, 'Bounce parents page needs rate, share and feedback behind the gate')
+check('document.createElement("a")' in ios_host and '".pong-setup-actions"' in ios_host and 'gridRow: "2"' in ios_host, 'ios-host.js must place the parents link like Android Bounce 4f38dd5')
 index = text('Resources/RetroPong/index.html')
 check('maze-sky.css' in index and index.index('maze-sky.css') < index.index('ios-host.css'), 'ios-host.css must stay the last stylesheet, after Android maze-sky.css')
 check('frame-src \'none\'' in text('Resources/RetroPong/index.html'), 'Offline CSP missing')

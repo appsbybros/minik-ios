@@ -1096,3 +1096,56 @@ struct ShareText: Identifiable {
         status(tr("Code copied.", "הקוד הועתק."))
     }
 }
+
+// MARK: App Store screenshots
+
+extension AppModel {
+    /// App Store captures only (SpudScreenshot): opens one screen at launch. Matches are local, seeded and offline
+    /// (house players only), and nothing is saved: rank points shown on a page are staged in memory.
+    func applyStoreScreenshotScene() {
+        guard let scene = SpudScreenshot.value(after: "spud"), screen == .home, gameView == nil else { return }
+        switch scene {
+        case "home": rankPoints = 260
+        case "park": playStoreMatch(.park, .foam, .noon)
+        case "beach": playStoreMatch(.beach, .beach, .evening)
+        case "andromeda": playStoreMatch(.andromeda, .neon, .noon)
+        case "night": playStoreMatch(.park, .neon, .night)
+        case "setup": openSetup()
+        case "journey": openJourney(0)
+        case "colors":
+            rankPoints = 340
+            screen = .rank
+        default: break
+        }
+    }
+
+    /// A six-player SPUD match against the house players. The player throws the ball up and calls Minik's name, so
+    /// the capture shows the others running while Minik goes for the catch.
+    private func playStoreMatch(_ arena: ArenaScene, _ kind: BallKind, _ light: Daylight) {
+        scene = arena
+        ball = kind
+        daylight = light
+        rules = .spud
+        requireCall = true
+        stepsAfterCall = 4
+        freeze = .freeze
+        throwMode = .standard
+        wind = Wind.none
+        turns = 20
+        count = 6
+        var roster = [Member("p0", avatar, AmuduCharacters.get(avatar).name(hebrew: hebrew), bot: false, hebrew: hebrew)]
+        let picks = AmuduCharacters.availableBots(humans: [roster[0]], requested: ["minik", "mia", "kyra", "gaya", "flare"], fillTo: count - 1)
+        for (i, id) in picks.prefix(count - 1).enumerated() {
+            roster.append(Member("house\(i)", id, AmuduCharacters.get(id).name(hebrew: hebrew), bot: true, hebrew: hebrew))
+        }
+        guard roster.count == count, let cfg = config(roster.count),
+              let engine = try? AmuduEngine(members: roster, config: cfg, seed: SpudScreenshot.seed) else { return }
+        present(engine, uid: "p0", network: nil)
+        if SpudScreenshot.wantsLandscape { ScreenOrientation.apply(.landscapeRight) }
+        _ = afterDelay(1.5) { [weak self] in
+            guard let view = self?.gameView, view.engine.phase == .circle else { return }
+            view.command(.select(target: "house0"))
+            view.command(.toss(power: 0.72, drift: 0.35))
+        }
+    }
+}

@@ -1,22 +1,58 @@
 name: App Store screenshots
 
 # Captures every scene in appstore/screenshots.json on a 6.9-inch iPhone and a
-# 13-inch iPad Simulator, then frames them with captions at Apple's exact sizes.
+# 13-inch iPad Simulator, frames them with captions at Apple's exact sizes and
+# checks them against App Store Connect's rules. Only started by hand.
 on:
   workflow_dispatch:
     inputs:
       products:
-        description: Apps to capture, separated by spaces
+        description: Apps to capture, separated by spaces ("all" = the list below; MinikPingPong only when named)
         required: true
-        default: MinikPlus MinikPlusEnglish MinikMathPlus MinikPingPong MinikRetroPingPong
+        default: MinikPlus MinikPlusEnglish MinikMathPlus MinikMath MinikRetroPingPong MinikMultiPingPong MinikAmudu MinikSplash MinikSquash MinikBeachVolley MinikTripleShot
+      languages:
+        description: Languages to capture, separated by spaces (e.g. "en he"), or "all" for every language each app ships
+        required: true
+        default: all
 
 permissions:
   contents: read
 
 jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      products: ${{ steps.plan.outputs.products }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Split the apps into capture jobs
+        id: plan
+        shell: bash
+        env:
+          PRODUCTS: ${{ inputs.products }}
+          LANGUAGES: ${{ inputs.languages }}
+        run: |
+          set -euo pipefail
+          # One macOS job per product group keeps each job well inside its time limit.
+          # Apps whose scene hooks are still pending are skipped with a warning.
+          matrix="$(python3 Scripts/appstore-screenshots.py plan --products $PRODUCTS --languages $LANGUAGES)"
+          products="$(python3 -c 'import json,sys; print(" ".join(e["products"] for e in json.loads(sys.argv[1])["include"]))' "$matrix")"
+          echo "Capture jobs: $matrix"
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "products=$products" >> "$GITHUB_OUTPUT"
+
   capture:
+    needs: plan
+    name: capture (${{ matrix.group }})
     runs-on: macos-latest
     timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -34,7 +70,7 @@ jobs:
       - name: Build apps for the Simulator
         shell: bash
         env:
-          PRODUCTS: ${{ inputs.products }}
+          PRODUCTS: ${{ matrix.products }}
         run: |
           set -uo pipefail
           mkdir -p build/logs
@@ -102,7 +138,8 @@ jobs:
       - name: Capture scenes
         shell: bash
         env:
-          PRODUCTS: ${{ inputs.products }}
+          PRODUCTS: ${{ matrix.products }}
+          LANGUAGES: ${{ inputs.languages }}
         run: |
           set -uo pipefail
           missing=0
@@ -110,13 +147,12 @@ jobs:
             case " $FAILED_BUILDS " in *" $SCHEME "*) continue ;; esac
             APP="build/DerivedData/Shared/Build/Products/Debug-iphonesimulator/$SCHEME.app"
             BUNDLE="$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP/Info.plist")"
-            LANGUAGES="$(python3 -c "import json,sys; print(' '.join(json.load(open('appstore/screenshots.json', encoding='utf-8'))['apps'][sys.argv[1]]['languages']))" "$SCHEME")"
             python3 Scripts/appstore-screenshots.py scenes "$SCHEME" > "build/$SCHEME-scenes.txt"
+            python3 Scripts/appstore-screenshots.py languages "$SCHEME" --only $LANGUAGES > "build/$SCHEME-languages.txt"
             while IFS=$'\t' read -r DEVICE UDID NAME; do
               xcrun simctl uninstall "$UDID" "$BUNDLE" < /dev/null > /dev/null 2>&1 || true
               xcrun simctl install "$UDID" "$APP" < /dev/null
-              for LANGUAGE in $LANGUAGES; do
-                case "$LANGUAGE" in he) LOCALE=he_IL ;; *) LOCALE=en_US ;; esac
+              while IFS='|' read -r LANGUAGE LOCALE; do
                 while IFS='|' read -r ID SCENE WAIT IPHONE_ORIENTATION IPAD_ORIENTATION; do
                   ORIENTATION="$IPHONE_ORIENTATION"
                   [ "$DEVICE" = "ipad" ] && ORIENTATION="$IPAD_ORIENTATION"
@@ -138,7 +174,7 @@ jobs:
                     missing=$((missing + 1))
                   fi
                 done < "build/$SCHEME-scenes.txt"
-              done
+              done < "build/$SCHEME-languages.txt"
               xcrun simctl terminate "$UDID" "$BUNDLE" < /dev/null > /dev/null 2>&1 || true
             done < build/simulators.tsv
           done
@@ -152,7 +188,7 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: AppStore-raw-screenshots
+          name: AppStore-raw-${{ matrix.group }}
           path: |
             build/appstore-raw
             build/logs
@@ -160,10 +196,10 @@ jobs:
           retention-days: 7
 
   compose:
-    needs: capture
-    if: ${{ always() && needs.capture.result != 'cancelled' }}
+    needs: [plan, capture]
+    if: ${{ always() && needs.plan.result == 'success' && needs.capture.result != 'cancelled' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -171,24 +207,35 @@ jobs:
       - name: Download raw captures
         uses: actions/download-artifact@v4
         with:
-          name: AppStore-raw-screenshots
+          pattern: AppStore-raw-*
           path: build/raw-artifact
+          merge-multiple: true
 
-      - name: Frame screenshots with captions
+      - name: Frame and validate the screenshots
         shell: bash
         env:
-          PRODUCTS: ${{ inputs.products }}
+          PRODUCTS: ${{ needs.plan.outputs.products }}
+          LANGUAGES: ${{ inputs.languages }}
         run: |
           set -euo pipefail
+          # Arabic and Devanagari captions need Noto; Heebo covers Latin and Hebrew.
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-core > /dev/null
           python3 -m pip install --quiet pillow
+          # Fails, listing every problem, if any output breaks App Store Connect's rules
+          # (pixel size, PNG/JPEG, RGB without alpha, sRGB, 1-10 per slot, file size).
           python3 Scripts/appstore-screenshots.py compose \
             --raw build/raw-artifact/appstore-raw \
-            --out build/appstore-screenshots \
-            --apps $PRODUCTS
+            --out build/AppStore-screenshots \
+            --apps $PRODUCTS \
+            --languages $LANGUAGES
 
       - name: Upload App Store screenshots
+        if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
+          # Ready for App Store Connect: <App>/<locale>/<iphone-6.9|ipad-13>/NN-id.png, plus index.html.
           name: AppStore-screenshots
-          path: build/appstore-screenshots
+          path: build/AppStore-screenshots
+          if-no-files-found: error
           retention-days: 14

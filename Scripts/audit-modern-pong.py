@@ -11,7 +11,13 @@ checks=[]
 def check(condition,message):
     if not condition: raise AssertionError(message)
     checks.append(message)
-read=lambda p: p.read_text(encoding='utf-8-sig')
+# Android commit this port matches. Every Android source/rules file the audit reads must equal its committed blob there
+# (the Android working tree may carry an uncommitted version bump only).
+ANDROID_COMMIT='29f5dc7'
+android_reads=set()
+def read(p):
+    if args.android.exists() and Path(p).resolve().is_relative_to(args.android.resolve()): android_reads.add(Path(p).resolve())
+    return p.read_text(encoding='utf-8-sig')
 project=read(root/'project.yml')
 pong=project.split('  MinikPingPong:\n',1)[1].split('  ProductConfigurationTests:',1)[0]
 check(all('product: '+name in pong for name in ['FirebaseCore','FirebaseAuth','FirebaseDatabase','GoogleMobileAds','AppStoreCommerceKit']), 'Standalone target links required native services')
@@ -64,7 +70,7 @@ if args.android.exists():
     check('val needsTwoPointLead get() = this == MEDIUM || this == HARD' in kt['ModernEngine.kt'] and 'var needsTwoPointLead: Bool { self == .hard || self == .superHard }' in physics,'Two-point lead only on Android MEDIUM/HARD')
     check('!s.level.needsTwoPointLead' in models and 'needsTwoPointLead' in kt['multiplayer/PongModels.kt'].split('fun validFinal',1)[1].split('\n',3)[2],'Room final-score validation follows the level (Beginner has no deuce)')
     check('coerceIn(0,4)' in kt['multiplayer/PongCodec.kt'] and 'min(4, max(0, c.decode(Int.self, forKey: .difficulty)))' in models,'Room difficulty decodes within Android 0...4')
-    check('else->4' in kt['multiplayer/ControlChoice.kt'] and 'case 0, 1, 2: return .easy' in physics and 'case 3: return .superHard' in physics and 'default: return .beginner' in physics,'Control choice normalization matches Android ControlChoice')
+    check('else->4' in kt['multiplayer/ControlChoice.kt'] and '0,2->0;1->1;3->3;else->4' in kt['multiplayer/ControlChoice.kt'] and 'case 0, 2: return .easy' in physics and 'case 1: return .medium' in physics and 'case 3: return .superHard' in physics and 'default: return .beginner' in physics,'Control choice normalization matches Android ControlChoice')
     beginner_stroke=floats(re.search(r'Difficulty\.BEGINNER, Difficulty\.STARTER -> Stroke\(([^)]*)\)',kt['ModernGame.kt']).group(1))
     easy_stroke=floats(re.search(r'Difficulty\.EASY -> Stroke\(([^)]*)\)',kt['ModernGame.kt']).group(1))
     check(floats(re.search(r'case \.beginner, \.easy: childStroke = MPStroke\(([^)]*)\)',engine).group(1))==beginner_stroke==[0.1,0.4,0.5,0.62],'Beginner/Standard stroke window matches Android STARTER')
@@ -86,12 +92,12 @@ if args.android.exists():
     lessons=re.search(r'val lessons=listOf\(([^)]*)\)',kt['ModernTutorial.kt']).group(1)
     android_steps=[re.sub(r'_([a-z])',lambda m:m.group(1).upper(),n.split('.')[-1].strip().lower()) for n in lessons.split(',')]
     ios_steps=[s.strip() for s in re.search(r'enum MPTutorialStep: Int, CaseIterable \{\s*case ([^\n]*)',read(modern/'MPTutorial.swift')).group(1).split(',')]
-    check(android_steps==ios_steps and len(ios_steps)==9,'Guide lessons and order match Android ('+str(len(ios_steps))+')')
+    check(android_steps==ios_steps and len(ios_steps)==11,'Guide lessons and order match Android ('+str(len(ios_steps))+')')
     check('Fault.NET, Fault.LEFT_TABLE, Fault.FIRST_BOUNCE_OUT' in kt['ModernEvents.kt'] and '[MPFault.net, .leftTable, .firstBounceOut]' in read(modern/'MPAudio.swift'),'Failure sound only for net/out faults')
     scene=read(modern/'MPScene.swift')
     check('fun facingLeft(stroke: Stroke): Boolean = stroke.left' in kt['ActorPresentation.kt'] and 'facingLeft = stroke.left' in scene and 'walkAge' not in scene and '"step"' not in scene,'Opponent keeps swing hand; no walk cycle')
     play=kt['multiplayer/PlayActivity.kt']; view=read(modern/'ModernPongView.swift')
-    check('controlValues=listOf(4,0,3)' in play and '.tag(MPLevel.beginner)' in view,'Beginner / Standard / Pro room control')
+    check('controlValues=listOf(4,1,0,3)' in play and 'static let controlChoices: [MPLevel] = [.beginner, .medium, .easy, .superHard]' in physics and 'MPLevel.controlChoices.map' in view,'Beginner / Starter / Standard / Pro room control (Android 96ae066)')
     check('Standings points per win' in play and 'Standings points per win' in view and 'winPoints: winPoints' in view,'Tournament win-points selector')
     check('tr("Remove ","הסרת ")' in play and 'model.removeHouse(row.id)' in view,'Host can remove a house player before the tournament starts')
     check('fun canFinishFriendly' in kt['multiplayer/PongModels.kt'] and 'MPRules.canFinishFriendly(s, actor: actor)' in repository,'Either friendly participant may finish the game')
@@ -127,7 +133,7 @@ if args.android.exists():
           and '(1 + 0.35 * power)' in physics and 'mpClamp(-0.25, 0.25)' in physics and 'mpClamp(-2, 2) * pace * 0.70' in physics,'Forgiving tap: Standard swipe power, no sideline clamp (Android Shots.forgivingTap)')
     check('if(abs(dx)>=.012)tapAim=(dx/.085).coerceIn(-2.0,2.0)' in kt['ModernGame.kt'] and 'if abs(dx) >= 0.012 { tapAim = (dx / 0.085).mpClamp(-2, 2) }' in engine,'Beginner/Standard sideways aim matches Android updateTapGesture')
     check('((stroke.age-FOLLOW_END)/.16)' in kt['ActorPresentation.kt'] and '((age - 0.44) / 0.16)' in engine and 'stroke.recoveryBlend' in scene,'Minik FOLLOW to READY recovery cross-fade matches Android')
-    check('LEFT_LEFT->.013;TutorialAction.RIGHT_LEFT->.13;TutorialAction.LEFT_MIDDLE->.055;else->.065' in kt['ModernTutorial.kt'] and 'case .leftLeft: return 0.013; case .rightLeft: return 0.13; case .leftMiddle: return 0.055; default: return 0.065' in tutorial,'Guide demonstration distances match Android')
+    check('LEFT_LEFT->-.15;TutorialAction.RIGHT_LEFT->-.68;TutorialAction.LEFT_MIDDLE->.35;else->.60' in kt['ModernTutorial.kt'] and 'case .leftLeft: return -0.15; case .rightLeft: return -0.68; case .leftMiddle: return 0.35; default: return 0.60' in tutorial,'Guide demonstration aims match Android (29f5dc7)')
     check('repeat(75)' in confetti_kt and 'elapsed>2.8f' in confetti_kt and 'for i in 0..<75' in bracket and 'elapsed <= 2.8' in bracket,'Victory confetti: 75 pieces for 2.8 s, as Android')
     check('fun firstCelebration' in read(src/'multiplayer/RoomBook.kt') and 'func firstCelebration' in preferences and 'enqueue' not in preferences and 'MPNotice' not in controller,'Completed rooms are not kept; routine notices retired; one celebration per room')
     check('last_completed_match' not in kt['ModernGame.kt']+read(src/'ModernActivity.kt') and 'lastCompletedMatch' not in controller,'No automatic completed-match history (Android ModernActivity)')
@@ -141,7 +147,7 @@ if args.android.exists():
             if not hebrew.search(text): continue
             for fragment in re.split(r'\$\{[^}]*\}|\$[A-Za-z_]\w*',text):
                 if len(fragment.strip())>1 and fragment not in ios_text: missing.append(name+': '+fragment)
-    play_added=['שיטת הטורניר','בכל סיבוב מוגרלים זוגות מחדש. כשמספר השחקנים אי־זוגי, שחקן אחד נבחר באקראי ועולה בלי לשחק. מנצחים וממשיכים!','מתחילים: מזיזים את המחבט למקום לחבטה אוטומטית; החלקה קטנה הצידה מכוונת אותה.','רגילה: מקישים או מחליקים; החלקה מהירה מוסיפה עוצמה.','יכולת היריב נקבעת לפי שחקן הבית שתבחרו.','רמת השליטה: ','משחקים שנותרו בסיבוב הזה: ','המשחקים שלכם הסתיימו. ממתינים לשאר השחקנים לסיום הטורניר.','עץ הטורניר','החליקו לצדדים לצפייה בעץ. הזוגות מוגרלים מחדש בכל סיבוב.','לעץ הטורניר','ניצחתם במשחק!']
+    play_added=['שיטת הטורניר','בכל סיבוב מוגרלים זוגות מחדש. כשמספר השחקנים אי־זוגי, שחקן אחד נבחר באקראי ועולה בלי לשחק. מנצחים וממשיכים!','מתחילים: מזיזים את המחבט למקום לחבטה אוטומטית; החלקה קטנה הצידה מכוונת אותה.','נינוחה: חלון תזמון רחב יותר מאפשר להכין החלקה מכוונת מוקדם. רגילה: זזים לכדור ומחליקים כשהוא מגיע.','יכולת היריב נקבעת לפי שחקן הבית שתבחרו.','רמת השליטה: ','משחקים שנותרו בסיבוב הזה: ','המשחקים שלכם הסתיימו. ממתינים לשאר השחקנים לסיום הטורניר.','עץ הטורניר','החליקו לצדדים לצפייה בעץ. הזוגות מוגרלים מחדש בכל סיבוב.','חזרה לטורניר','ניצחתם במשחק!']
     play_src=read(src/'multiplayer/PlayActivity.kt')+read(src/'multiplayer/PrivateMatchActivity.kt')
     for text in play_added:
         if text not in play_src: missing.append('Android reference changed: '+text)
@@ -166,9 +172,9 @@ if args.android.exists():
     check(android_keys==ios_keys,'Doubles snapshot keys match Android PongPlay.save ('+str(len(ios_keys))+')')
     android_stages=re.findall(r'PongStage\("(\w+)"',journey_kt.split('val stages=listOf(',1)[1])
     ios_stages=re.findall(r'MPStage\("(\w+)"',play.split('static let stages',1)[1].split('static func stage',1)[0])
-    check(android_stages==ios_stages and len(ios_stages)==30,'Daily journey: thirty stages in Android order')
-    check(all(k in play_kt for k in ['bounceRestitution=.86','.coerceIn(.09,.38)','.coerceIn(.62,.91)','(.75+successes*.022+cycle*.02).coerceAtMost(1.08)','else if(team).82 else .65','seed xor (attempts.toLong()*1000003L+rally*1009L+i*9176L)'])
-          and all(k in play for k in ['t.bounceRestitution = 0.86','x.mpClamp(0.09, 0.38)','x.mpClamp(0.62, 0.91)','min(0.75 + Double(successes) * 0.022 + Double(cycle) * 0.02, 1.08)','(team ? 0.82 : 0.65)','Int64(attempts) &* 1000003 &+ Int64(rally) &* 1009 &+ Int64(i) &* 9176']),'Doubles table constants match Android PongPlay')
+    check(android_stages==ios_stages and len(ios_stages)==34,'Daily journey: thirty-four stages in Android order (29f5dc7)')
+    check(all(k in play_kt for k in ['bounceRestitution=.86','.coerceIn(.09,.38)','.coerceIn(.62,.91)','(.75+successes*.022+cycle*.02).coerceAtMost(1.08)','else if(team)1.10 else .65','seed xor (attempts.toLong()*1000003L+rally*1009L+i*9176L)'])
+          and all(k in play for k in ['t.bounceRestitution = 0.86','x.mpClamp(0.09, 0.38)','x.mpClamp(0.62, 0.91)','min(0.75 + Double(successes) * 0.022 + Double(cycle) * 0.02, 1.08)','(team ? 1.10 : 0.65)','Int64(attempts) &* 1000003 &+ Int64(rally) &* 1009 &+ Int64(i) &* 9176']),'Doubles table constants match Android PongPlay')
     android_assets=args.android/'app/src/main/assets'; art=root/'Resources/ModernPongArt'
     files=[('pong-poses/'+f.name,f) for f in sorted((android_assets/'pong-poses').iterdir())]+[('team-celebration/'+f.name,f) for f in sorted((android_assets/'team-celebration').iterdir()) if f.suffix=='.webp']
     files.append(('tournament_remove.webp',args.android/'app/src/main/res/drawable-nodpi/tournament_remove.webp'))
@@ -190,8 +196,21 @@ if args.android.exists():
         elif text not in ios_all: missing.append('PlayActivity: '+text)
     check(not missing,'Every Android 739f2f8 Hebrew text is in the iOS port'+('' if not missing else ': '+'; '.join(missing)))
     check('MPKotlinRandom(seed: seed ^ mixed)' in play and 'func nextDouble()' in read(modern/'MPKnockout.swift'),'House players in doubles roll Kotlin Random(seed) exactly as Android')
+if args.android.exists():
+    # Android 739f2f8..29f5dc7 foundation: arenas, rank sounds, spin physics wire, ranks and arenas.
+    res=args.android/'app/src/main/res'; art=root/'Resources/ModernPongArt'
+    arenas=['arena_beach_portrait.webp','arena_beach_landscape.webp','arena_park_portrait.webp','arena_park_landscape.webp','arena_castle_portrait.jpg','arena_castle_landscape.jpg']
+    check(all((art/'arenas'/n).read_bytes()==(res/'drawable-nodpi'/n).read_bytes() for n in arenas),'Arena scenery is byte-identical to Android (standalone art only)')
+    check(all((root/'Resources/ModernPongAudio'/n).read_bytes()==(res/'raw'/n).read_bytes() for n in ['rank_big_win.mp3','rank_trumpet.mp3','rank_win.mp3']),'Colour-rank sounds are byte-identical to Android')
+    network_kt=read(src/'NetworkState.kt'); physics=read(modern/'MPPhysics.swift')
+    check('"top" to top,"angle" to angle' in network_kt and 'case topSpin = "top", spinAngle = "angle"' in physics and 'top in 0.0..2.2&&kotlin.math.abs(spin)<=1.0' in network_kt and '(0...2.2).contains(topSpin) && abs(spin) <= 1' in physics,'Flight wire carries Android top/angle spin with the same bounds')
+    arena_kt=read(src/'PongArena.kt'); arena=read(modern/'MPArena.swift')
+    check(all(w in arena_kt and w in arena for w in ['"beach"','"indoors"','"park"','"castle"','טירת הפינג פונג','Ping Pong Castle']),'Arena wire values and titles match Android PongArena')
+    ranks_kt=read(src/'PongRanking.kt'); ranks=read(modern/'MPRanking.swift')
+    thresholds=re.findall(r'PongRank\((\d+),"([^"]+)","([^"]+)",0x(\w{8})',ranks_kt)
+    check(len(thresholds)==12 and all('MPRank(%s, "%s", "%s", 0x%s'%t in ranks for t in thresholds),'Colour ranks (thresholds, names, colours) match Android PongRanks')
 controller=read(modern/'MPController.swift'); view=read(modern/'ModernPongView.swift'); ads=read(modern/'MPAds.swift')
-check('UserDefaults.standard.bool(forKey: "MinikOfflineSmoke")' in controller and 'else if MPController.offlineSmoke { repo = MPLocalRepository() }' in controller,'CI offline smoke launch never uses Firebase')
+check('UserDefaults.standard.bool(forKey: "MinikOfflineSmoke")' in controller and 'else if MPController.offlineSmoke { main = MPLocalRepository() }' in controller,'CI offline smoke launch never uses Firebase')
 check('if !practice && !skipGuide && !guideOffered' in controller and 'didSet { preferences.skipGuide = skipGuide }' in controller,'Guide opens automatically unless hidden')
 check('ParentalGateView(onCancel:' in view and 'if commerceUnlocked { commerceSheet }' in view and view.count('commerceSheet')==2,'Purchase, restore and code redemption only behind the grown-up gate')
 check('guard experience == .full, ProductVariant.current == .minikPingPong' in ads and 'MinikAdsConfiguration.load(product: .minikPingPong).providerConfiguration' in ads,'Modern ads: standalone Full only; production IDs from MinikAdsConfiguration')
@@ -200,4 +219,12 @@ check(re.search(r'total > 2[\s\S]*120_000[\s\S]*300_000[\s\S]*210_000',ads) is n
 tests=read(root/'Tests/ProductConfigurationTests/ModernPongParityTests.swift')+read(root/'Tests/ProductConfigurationTests/ModernPongTeamsTests.swift')
 test_count=len(re.findall(r'func test\w+\(',tests))
 check(test_count>=20,'Focused XCTest cases registered: '+str(test_count))
+if args.android.exists():
+    import subprocess
+    changed=[]
+    for f in sorted(android_reads):
+        rel=f.relative_to(args.android.resolve()).as_posix()
+        blob=subprocess.run(['git','--no-optional-locks','-C',str(args.android),'show',ANDROID_COMMIT+':'+rel],capture_output=True).stdout
+        if blob.replace(b'\r\n',b'\n')!=f.read_bytes().replace(b'\r\n',b'\n'): changed.append(rel)
+    check(not changed,'Android files read by this audit equal their committed blobs at '+ANDROID_COMMIT+' ('+str(len(android_reads))+' files)'+('' if not changed else ': '+', '.join(changed)))
 print(json.dumps({'status':'PASS','source_asset_config_checks':len(checks),'swift_tests_authored_not_executed':test_count,'asset_bytes':sum(p.stat().st_size for p in assets),'checks':checks},ensure_ascii=True,indent=2))

@@ -8,6 +8,11 @@ struct SportsApp: App {
     /// Android `requestedOrientation`: Squash pages portrait, matches follow the device.
     @UIApplicationDelegateAdaptor(SportsAppDelegate.self) private var appDelegate
 
+    init() {
+        // App Store captures only (SportsScreenshot): start from a fresh install's settings.
+        SportsScreenshot.prepare()
+    }
+
     var body: some Scene {
         WindowGroup {
             SportsRootView()

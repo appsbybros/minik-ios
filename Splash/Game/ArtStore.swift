@@ -93,6 +93,7 @@ final class ArtStore {
     private var readyCells: [String: UIImage] = [:]
     private var images: [String: UIImage] = [:]
     private var wordBalloons: [Int: UIImage] = [:]
+    private var whiteImages: [String: UIImage] = [:]
     private var paintedCache: [String: UIImage] = [:]
     private var paintedOrder: [String] = []
 
@@ -130,6 +131,7 @@ final class ArtStore {
         motionCells.removeAll()
         images.removeAll()
         wordBalloons.removeAll()
+        whiteImages.removeAll()
         paintedCache.removeAll()
         paintedOrder.removeAll()
     }
@@ -285,7 +287,25 @@ final class ArtStore {
     var lagoon: UIImage? { return image("lagoon") }
     var logo: UIImage? { return image("splash_icon") }
 
+    /// Android `PorterDuffColorFilter(WHITE, SRC_IN)`: colour 6 is the white paint of Paint walls
+    /// (a wrong answer's eraser), drawn as the last colour's art filled white.
+    private func whitened(_ key: String, _ source: UIImage?) -> UIImage? {
+        if let cached = whiteImages[key] { return cached }
+        guard let source = source else { return nil }
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = source.scale
+        format.opaque = false
+        let made = UIGraphicsImageRenderer(size: source.size, format: format).image { context in
+            source.draw(at: .zero)
+            UIColor.white.setFill()
+            context.fill(CGRect(origin: .zero, size: source.size), blendMode: .sourceIn)
+        }
+        whiteImages[key] = made
+        return made
+    }
+
     func balloon(_ color: Int) -> UIImage? {
+        if color == 6 { return whitened("balloon", balloon(5)) }
         guard color >= 0 && color < ArtStore.balloonNames.count else { return nil }
         return image("balloon_" + ArtStore.balloonNames[color])
     }
@@ -301,6 +321,7 @@ final class ArtStore {
     }
 
     func splash(_ shape: Int, _ color: Int) -> UIImage? {
+        if color == 6 { return whitened("splash\(shape)", splash(shape, 5)) }
         guard shape >= 0 && shape < 6 && color >= 0 && color < 6 else { return nil }
         return image("splash_\(shape)_c\(color)")
     }

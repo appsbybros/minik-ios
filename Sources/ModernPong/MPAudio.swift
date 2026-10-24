@@ -1,5 +1,11 @@
 import AVFoundation
 
+/// Android `Cue.RANK_*`: the three colour-rank celebration sounds (bundled in `Resources/ModernPongAudio`).
+enum MPRankCue: CaseIterable {
+    case trumpet, win, bigWin
+    /// Android ColorChallengeActivity: a new colour level 10 or 11 plays the big win, any other a trumpet or a win.
+    static func celebration(level: Int, coin: Bool = Bool.random()) -> MPRankCue { level >= 10 ? .bigWin : coin ? .trumpet : .win }
+}
 @MainActor final class MPAudio {
     private var players: [String: AVAudioPlayer] = [:]
     private var music: AVAudioPlayer?
@@ -43,6 +49,14 @@ import AVFoundation
             case .victory(.child): play("minik_claps")
             default: break
             }
+        }
+    }
+    /// Android `Cue.RANK_TRUMPET` / `RANK_WIN` / `RANK_BIG_WIN` (e3bb8c2): colour-rank celebrations.
+    func play(_ cue: MPRankCue) {
+        switch cue {
+        case .trumpet: play("rank_trumpet")
+        case .win: play("rank_win")
+        case .bigWin: play("rank_big_win")
         }
     }
     func stop() { players.values.forEach { $0.stop() }; music?.stop(); music = nil }

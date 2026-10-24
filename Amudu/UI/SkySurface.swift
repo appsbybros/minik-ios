@@ -182,6 +182,10 @@ enum SkyPainter {
 }
 
 /// A button on a sky surface (Android buttons with a `FamilySkyDrawable` background): the face sinks while pressed.
+/// Android binds every such Button to `FamilyButtonAlignment` (the drawable's `bindButtonOwner`), so its lettering is
+/// centred on the raised face below the gloss and lowered 3 points (`FamilyKit.RaisedLettering`, Spud keeps the default
+/// face: it never calls `useFullRaisedFace`). Panels are never aligned; `raisedLettering` false is for a surface that is
+/// not an Android Button (the picture cards are LinearLayouts).
 struct SkyButtonStyle: ButtonStyle {
     let color: UInt32
     var radius: CGFloat = 18
@@ -190,12 +194,29 @@ struct SkyButtonStyle: ButtonStyle {
     var strokeColor: UInt32 = 0
     /// Android `clipToOutline` (the picture cards).
     var clips = false
+    var raisedLettering = true
 
     func makeBody(configuration: Configuration) -> some View {
         let surface = configuration.label
+            .modifier(SkyLettering(active: raisedLettering && !panel, radius: radius, pressed: configuration.isPressed))
             .background(SkySurface(color: color, radius: radius, panel: panel, strokeWidth: strokeWidth,
                                    strokeColor: strokeColor, pressed: configuration.isPressed))
         return surface.clipShape(RoundedRectangle(cornerRadius: clips ? radius : 0))
+    }
+}
+
+/// `FamilyKit.RaisedLettering` where Android aligns the label; the label unchanged elsewhere.
+private struct SkyLettering: ViewModifier {
+    let active: Bool
+    let radius: CGFloat
+    let pressed: Bool
+
+    func body(content: Content) -> some View {
+        if active {
+            content.modifier(FamilyKit.RaisedLettering(cornerRadius: radius, pressed: pressed))
+        } else {
+            content
+        }
     }
 }
 

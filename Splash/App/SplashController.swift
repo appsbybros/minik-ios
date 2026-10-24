@@ -7,7 +7,7 @@ import UIKit
 /// pause and lifecycle. Ads, purchases, code redemption and the family-services module (more apps,
 /// family reminders) are not part of the iOS build.
 enum SplashScreen: Equatable {
-    case home, settings, support, parentZone, progress, ranks, play, playOptions, wallOptions, journey, journeyResult, join, house, lobby, results, game
+    case home, settings, subjects, support, parentZone, progress, ranks, play, wallOptions, journey, journeyResult, join, house, lobby, results, game
 }
 
 struct ResultPlayerRow: Identifiable {
@@ -16,6 +16,8 @@ struct ResultPlayerRow: Identifiable {
     let name: String
     let score: Int
     let ink: UInt32
+    /// Solo results: 0, 1, 2 wear gold, silver and bronze (-1 otherwise).
+    var rank = -1
 }
 
 struct ResultTeamPanel: Identifiable {
@@ -34,7 +36,8 @@ struct ResultsModel {
     /// The wall-battle or team-score note.
     let note: String?
     let correctLine: String
-    let countsLine: String
+    /// "Your answer still counts when a throw misses." (not in Paint walls).
+    let countsLine: String?
     let onlineCup: Bool
     let nextRound: Bool
     let cupLine: String?
@@ -132,17 +135,16 @@ final class SplashController: ObservableObject {
     @Published private(set) var upcomingCount: Int?
     @Published private(set) var upcomingArena: Arena?
     @Published private(set) var upcomingRounds = 1
-    /// Android `playOptions(house)`: the options page leads to house players (true) or a new room.
-    @Published private(set) var optionsHouse = false
+    /// Android `playMode`: the Play page's game mode (0 single, 1 2 x 2, 2 3 x 3, 3 and 4 Paint walls
+    /// 2 x 2 and 3 x 3; the Pro edition allows up to 7), saved with the arena and the number of rounds.
+    @Published private(set) var playMode = 0
     @Published private(set) var hitEffect: HitEffect = .cosmetic
-    @Published private(set) var gameOrientation = 0
     @Published var gameSounds = true {
         didSet {
             SplashPrefs.setBool(gameSounds, "gameSounds")
             sounds.enabled = gameSounds
         }
     }
-    @Published var subjectsExpanded = false
     @Published var roomCode = ""
     @Published var shareVisible = false
     @Published var shareInput = ""
@@ -153,7 +155,7 @@ final class SplashController: ObservableObject {
     private(set) var gameView: SplashArenaView?
     let art = ArtStore.shared
     private let sounds = SplashSounds()
-    private let music = MenuMusic()
+    private let music = MenuMusic(announceLaunch: true)
     private let speech = SplashSpeech()
     private let localStore = LocalBattleStore()
     private(set) var hebrew = false
@@ -182,6 +184,8 @@ final class SplashController: ObservableObject {
     private var memoryObserver: NSObjectProtocol?
     /// Android DEBUG-only QA exhibitions; never enabled on iOS.
     private let qa = false
+    /// App Store captures only (SplashScreenshot): a seeded battle in which the player is a house player too.
+    private var storeDemo = false
 
     /// The public page of the game (Android shares its Play listing; the iOS listing has no link yet).
     static let storeLink = "https://miniklearn.com/apps/minik-splash/"
@@ -192,12 +196,15 @@ final class SplashController: ObservableObject {
         // Android `FamilyMessages.get(this).setLanguage(AppText.language)`.
         FamilyMessages.shared.languageOverride = AppText.language
         if let node = NodeJSON.node(SplashPrefs.string("playerSettings") ?? "{}") { settings = WorldCodec.settings(node) }
+        // Every battle has a court now (Android 2026-10-15).
+        settings.court = true
+        hitEffect = HitEffect(rawValue: SplashPrefs.string("hitEffect") ?? "COSMETIC") ?? .cosmetic
         selectedHouse = SplashPrefs.stringSet("housePlayers")
         selected = SplashPrefs.string("character") ?? (SplashLaunch.proEdition ? "mia" : "miniko")
         format = min(max(SplashPrefs.int("format", 0), 0), 2)
+        loadPlayChoices()
         count = min(max(SplashPrefs.int("count", 6), 2), 6)
         topic = Topic(rawValue: SplashPrefs.string("topic") ?? "MATH") ?? .math
-        gameOrientation = min(max(SplashPrefs.int("gameOrientation", 0), 0), 2)
         gameSounds = SplashPrefs.bool("gameSounds", true)
         sounds.enabled = gameSounds
         memoryObserver = NotificationCenter.default.addObserver(forName: UIApplication.didReceiveMemoryWarningNotification, object: nil, queue: .main) { _ in
@@ -241,10 +248,30 @@ final class SplashController: ObservableObject {
         learningSession = false
         parentPage = false
         upcomingCount = nil
-        upcomingArena = nil
-        upcomingRounds = 1
+        loadPlayChoices()
+        format = SplashController.format(playMode)
         showPage(.home)
         atHome = true
+    }
+
+    /// Android: the saved Play choices ("playArena", "playRounds", "playMode") and the Paint walls flag.
+    private func loadPlayChoices() {
+        let arena = SplashPrefs.int("playArena", settings.arena.ordinal)
+        upcomingArena = arena >= 0 && arena < Arena.allCases.count ? Arena.allCases[arena] : nil
+        let rounds = SplashPrefs.int("playRounds", 1)
+        upcomingRounds = [1, 3, 5].contains(rounds) ? rounds : 1
+        playMode = min(max(SplashPrefs.int("playMode", 0), 0), SplashLaunch.proEdition ? 7 : 4)
+        wallBattle = playMode >= (SplashLaunch.proEdition ? 6 : 3)
+    }
+
+    /// Android `format = when(playMode) { 0 -> 0; 3, 6 -> 1; 4, 7 -> 2; else -> playMode }`.
+    private static func format(_ mode: Int) -> Int {
+        switch mode {
+        case 0: return 0
+        case 3, 6: return 1
+        case 4, 7: return 2
+        default: return mode
+        }
     }
 
     /// Android `FamilyMenu.section`: open state per title ("family_menu_sections"); the first two start open.
@@ -263,6 +290,8 @@ final class SplashController: ObservableObject {
     var teacherId: String { return SplashLaunch.proEdition ? "mia" : "minik" }
 
     func openSettings() { showPage(.settings) }
+
+    func openSubjects() { showPage(.subjects) }
 
     func openSupport() { showPage(.support) }
 
@@ -326,37 +355,10 @@ final class SplashController: ObservableObject {
         saveSettings(next)
     }
 
-    func setFormat(_ index: Int) {
-        format = min(max(index, 0), 2)
-        SplashPrefs.setInt(format, "format")
-    }
-
-    func setCount(_ value: Int) {
-        count = min(max(value, 2), 6)
-        SplashPrefs.setInt(count, "count")
-    }
-
-    func setArena(_ index: Int) {
-        var next = settings
-        next.arena = Arena.allCases[min(max(index, 0), Arena.allCases.count - 1)]
-        saveSettings(next)
-    }
-
-    func setCourt(_ index: Int) {
-        var next = settings
-        next.court = index == 0
-        saveSettings(next)
-    }
-
     func setBalloons(_ index: Int) {
         var next = settings
         next.balloons = BalloonMode.allCases[min(max(index, 0), BalloonMode.allCases.count - 1)]
         saveSettings(next)
-    }
-
-    func setGameOrientation(_ index: Int) {
-        gameOrientation = min(max(index, 0), 2)
-        SplashPrefs.setInt(gameOrientation, "gameOrientation")
     }
 
     /// Tapping a subject moves it to the other list; at least one stays chosen.
@@ -465,19 +467,35 @@ final class SplashController: ObservableObject {
     private var matchSettings: PlayerSettings {
         var s = settings
         s.arena = upcomingArena ?? settings.arena
+        s.court = true
         return s
     }
 
+    /// Android `MAX_HOUSE_PLAYERS`.
+    static let maxHousePlayers = 6
+
+    /// Android `playMenu()`: arena, game mode (Paint walls adds the hit rule) and number of rounds, saved
+    /// for the next visit; then Create room, Join room or House players only.
     func playMenu() {
-        wallBattle = false
+        // Solo rooms use the roster picker/lobby rather than an inaccessible saved player count.
+        if playMode == 0 { upcomingCount = SplashController.maxHousePlayers }
         showPage(.play)
     }
 
-    /// Android `playOptions(house)`: arena, players, single battle or cup and difficulty for the next
-    /// game only, before creating a room or choosing house players.
-    func playOptions(_ house: Bool) {
-        optionsHouse = house
-        showPage(.playOptions)
+    /// Android: the hit rule shows for the Paint walls modes.
+    var hitOptionsVisible: Bool { return playMode >= (SplashLaunch.proEdition ? 6 : 3) }
+
+    func setPlayMode(_ mode: Int) {
+        playMode = mode
+        SplashPrefs.setInt(mode, "playMode")
+        wallBattle = mode >= 3
+        switch mode {
+        case 0: format = 0
+        case 3: format = 1
+        case 4: format = 2
+        default: format = mode
+        }
+        upcomingCount = mode == 0 ? SplashController.maxHousePlayers : (format + 1) * 2
     }
 
     func continueBattle() {
@@ -496,20 +514,15 @@ final class SplashController: ObservableObject {
     }
 
     func setUpcomingArena(_ index: Int) {
-        upcomingArena = Arena.allCases[min(max(index, 0), Arena.allCases.count - 1)]
-    }
-
-    /// Android Players dropdown: 2-6 for everyone-for-themselves, otherwise 4 or 6.
-    var playerCounts: [Int] { return format == 0 ? [2, 3, 4, 5, 6] : [4, 6] }
-
-    func setUpcomingCount(_ index: Int) {
-        let counts = playerCounts
-        upcomingCount = counts[min(max(index, 0), counts.count - 1)]
+        let i = min(max(index, 0), Arena.allCases.count - 1)
+        upcomingArena = Arena.allCases[i]
+        SplashPrefs.setInt(i, "playArena")
     }
 
     func setRounds(_ index: Int) {
         upcomingRounds = [1, 3, 5][min(max(index, 0), 2)]
         cupLength = upcomingRounds
+        SplashPrefs.setInt(upcomingRounds, "playRounds")
     }
 
     func wallOptions() {
@@ -525,6 +538,7 @@ final class SplashController: ObservableObject {
 
     func setHitEffect(_ index: Int) {
         hitEffect = HitEffect.allCases[min(max(index, 0), HitEffect.allCases.count - 1)]
+        SplashPrefs.setString(hitEffect.name, "hitEffect")
     }
 
     private func gameOptions(_ cupGame: Bool) {
@@ -538,7 +552,7 @@ final class SplashController: ObservableObject {
         showPage(.join)
     }
 
-    func joinBack() { gameOptions(joinCupGame) }
+    func joinBack() { playMenu() }
 
     func joinRoom() {
         let code = roomCode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
@@ -558,6 +572,10 @@ final class SplashController: ObservableObject {
 
     /// Android `checkRoster`: explains a roster problem, otherwise starts (never with a larger group).
     private func checkRoster(_ humans: Int, _ house: Int, _ limit: Int, _ teams: Bool, _ onValid: (Bool) -> Void) {
+        if teams && humans + house != limit {
+            message(tr("Choose all players for this team game.", "בחרו את כל השחקנים למשחק הקבוצתי."))
+            return
+        }
         switch LobbyPlan.problem(humans, house, limit, teams) {
         case "limit"?:
             message(tr("A battle supports at most six players. Remove a house player or a connected friend.",
@@ -574,15 +592,10 @@ final class SplashController: ObservableObject {
         }
     }
 
+    /// Android `houseGame`: "Choose players" (portrait), every card starting unchecked.
     func houseGame(_ cupGame: Bool) {
-        let capacity = seats() - 1
-        var kept: [String] = []
-        for id in selectedHouse where id != selected && Characters.all.contains(where: { $0.id == id }) && !kept.contains(id) {
-            if kept.count < capacity { kept.append(id) }
-        }
-        if kept.isEmpty { kept = Array(Characters.all.filter { $0.id != selected }.prefix(max(capacity, 0)).map { $0.id }) }
-        kept.removeAll { $0 == selected }
-        selectedHouse = kept
+        // Choose participants for this battle; no hidden preselected roster.
+        selectedHouse = []
         houseCupGame = cupGame
         showPage(.house)
     }
@@ -591,9 +604,19 @@ final class SplashController: ObservableObject {
         selectedHouse = chosen
     }
 
-    func houseBack() { gameOptions(houseCupGame) }
+    /// Android: Start is enabled once a solo battle has an opponent, or a team game has every player.
+    var houseStartEnabled: Bool {
+        return !selectedHouse.isEmpty && (format == 0 || selectedHouse.count + 1 == seats())
+    }
+
+    func houseBack() { playMenu() }
 
     func houseStart() {
+        let total = 1 + selectedHouse.count
+        if (format != 0 || wallBattle) && total != seats() {
+            message(tr("Choose all players for this team game.", "בחרו את כל השחקנים למשחק הקבוצתי."))
+            return
+        }
         checkRoster(1, selectedHouse.count, seats(), format != 0 || wallBattle) { _ in
             chosenRoster = selectedHouse
             cup = houseCupGame
@@ -772,7 +795,7 @@ final class SplashController: ObservableObject {
         let match = matchSettings
         var members: [Member] = []
         for (i, c) in ordered.prefix(size).enumerated() {
-            members.append(Member("p\(i)", c.id, team: i < size / 2 ? 0 : 1, bot: i != 0 || qa, name: c.name(hebrew), hebrew: hebrew,
+            members.append(Member("p\(i)", c.id, team: i < size / 2 ? 0 : 1, bot: i != 0 || qa || storeDemo, name: c.name(hebrew), hebrew: hebrew,
                                   settings: i == 0 ? match : PlayerSettings.bots([match])))
         }
         return members
@@ -781,8 +804,8 @@ final class SplashController: ObservableObject {
     func startGame(_ tutorial: Bool) {
         let wall = wallBattle && !tutorial
         var cfg = SplashConfig()
-        cfg.width = wall ? 26.0 : 20.0
-        cfg.depth = wall ? 14.0 : 20.0
+        cfg.width = 40.0
+        cfg.depth = 24.0
         cfg.duration = wallBattle ? 300.0 : 180.0
         cfg.difficulty = settings.difficulty
         cfg.wallBattle = wall
@@ -793,7 +816,8 @@ final class SplashController: ObservableObject {
             message(tr("This cup could not be restored.", "לא ניתן לשחזר את הגביע הזה."))
             return
         }
-        let e = SplashEngine(members: members, mode: mode, topic: .math, seed: SplashClock.currentTimeMillis(), config: cfg,
+        let seed = storeDemo ? SplashScreenshot.seed : SplashClock.currentTimeMillis()
+        let e = SplashEngine(members: members, mode: mode, topic: .math, seed: seed, config: cfg,
                              hebrew: hebrew, profiles: ["p0": learningProfile()])
         if cup && !tutorial { cupRoster = e.members }
         e.practice = tutorial
@@ -808,6 +832,7 @@ final class SplashController: ObservableObject {
     func present(_ e: SplashEngine, localId: String, tutorial: Bool = false, online: OnlineSession? = nil) {
         gameView?.stop()
         battleReady = false
+        let announceNewMatch = e.time == 0.0 // Capture before an online replica advances during loading.
         network = online
         learningSession = tutorial
         music.setMenu(false)
@@ -824,7 +849,8 @@ final class SplashController: ObservableObject {
         })
         gameView = v
         v.rankPoints = rankPoints()
-        SplashOrientation.apply(SplashOrientation.game(gameOrientation))
+        // Android SCREEN_ORIENTATION_FULL_SENSOR; the camera panel's Portrait / Landscape turns it.
+        SplashOrientation.apply(SplashOrientation.game(0))
         v.onRotate = { [weak v] in
             guard let v = v else { return }
             SplashOrientation.apply(SplashOrientation.rotated(landscape: v.bounds.width > v.bounds.height))
@@ -866,6 +892,7 @@ final class SplashController: ObservableObject {
         v.showLoading(avatar: selected) { [weak self, weak v] in
             guard let self = self, let v = v, self.gameView === v else { return }
             self.battleReady = true
+            if announceNewMatch { self.music.matchStarted(e.matchId, enabled: self.gameSounds) }
             if self.foreground && !self.pausePresented { v.start() }
         }
         online?.attach(v)
@@ -927,7 +954,14 @@ final class SplashController: ObservableObject {
             challengeResults(e, r)
             return
         }
-        let title = r.draw ? tr("A colorful draw!", "תיקו צבעוני!") : tr("What a splash!", "איזה קרב צבעוני!")
+        let title: String
+        if r.draw {
+            title = tr("A colorful draw!", "תיקו צבעוני!")
+        } else if r.winners.contains(network?.uid ?? "p0") {
+            title = tr("You won!", "ניצחתם!")
+        } else {
+            title = tr("Battle complete", "הקרב הסתיים")
+        }
         var teams: [ResultTeamPanel] = []
         var rows: [ResultPlayerRow] = []
         if e.mode == .teams {
@@ -954,19 +988,23 @@ final class SplashController: ObservableObject {
                                              rows: members.map { row($0, style.ink) }))
             }
         } else {
-            rows = e.actors.stableSorted { $0.score > $1.score }.map { row($0, SplashPalette.white) }
+            // Gold, silver and bronze for the first three.
+            rows = e.actors.stableSorted { $0.score > $1.score }.enumerated().map { pair in
+                var line = row(pair.element, SplashPalette.white)
+                line.rank = pair.offset
+                return line
+            }
         }
         var note: String? = nil
         if e.config.wallBattle {
             note = tr("Team score is the percentage of the opposing wall painted.", "ניקוד הקבוצה הוא אחוז הקיר הנגדי שנצבע.")
         } else if e.mode == .teams {
-            note = tr("Team scores count hits. Individual scores also include wrong-answer penalties.",
-                      "ניקוד הקבוצה סופר פגיעות. הניקוד האישי כולל גם הפחתות על תשובות שגויות.")
+            note = tr("Team scores count hits and wrong-answer penalties.", "ניקוד הקבוצה כולל פגיעות והפחתות על תשובות שגויות.")
         }
         let me = e.actor(network?.uid ?? "p0") ?? e.actors[0]
         let correct = me.answers.filter { $0.correct }.count
         let correctLine = tr("Correct answers: \(correct) · Hits: \(me.hits)", "תשובות נכונות: \(correct) · פגיעות: \(me.hits)")
-        let countsLine = tr("Your answer still counts when a throw misses.", "תשובה נכונה נחשבת גם כשהזריקה מחטיאה.")
+        let countsLine: String? = e.config.wallBattle ? nil : tr("Your answer still counts when a throw misses.", "תשובה נכונה נחשבת גם כשהזריקה מחטיאה.")
         var onlineCup = false
         var nextRound = false
         if let session = network {
@@ -1105,7 +1143,8 @@ final class SplashController: ObservableObject {
         }
         let session = OnlineSession(controller: self, host: emulator ? "127.0.0.1" : "", character: selected, hebrew: hebrew,
                                     mode: format == 0 ? .solo : .teams, topic: .math, rounds: rounds, maxPlayers: seats(),
-                                    playerSettings: matchSettings)
+                                    playerSettings: matchSettings,
+                                    battleConfig: OnlineSession.roomConfig(wallBattle: wallBattle, hitEffect: hitEffect))
         network = session
         do {
             try session.open(code) { [weak self] state in self?.message(state) }
@@ -1187,5 +1226,56 @@ final class SplashController: ObservableObject {
             if battleReady { gameView?.start() }
             network?.foreground()
         }
+    }
+}
+
+// MARK: App Store screenshots
+
+extension SplashController {
+    /// App Store captures only (SplashScreenshot): opens one screen at launch. Battles are local, seeded and offline, with
+    /// house players only (the player's own avatar plays as one too, like Android's qaDemo exhibitions); the points a page
+    /// shows are staged in this capture's settings, which the next capture removes (SplashScreenshot.prepare).
+    func applyStoreScreenshotScene() {
+        guard let name = SplashScreenshot.name, screen == .home, gameView == nil else { return }
+        let scene = name == "home" ? "home" : (SplashScreenshot.value(after: "splash") ?? "")
+        switch scene {
+        case "home":
+            SplashPrefs.setInt(260, "colourPoints")
+            objectWillChange.send()
+        case "beach":
+            storeBattle(.beach, format: 0, wall: false, you: "miniko", house: ["minik", "mia", "kyra", "gaya", "flare"])
+        case "teams":
+            storeBattle(.park, format: 2, wall: false, you: "kyra", house: ["comet", "june", "minik", "mia", "amber"])
+        case "andromeda":
+            storeBattle(.andromeda, format: 0, wall: false, you: "mia", house: ["minik", "comet", "gaya", "june", "flare"])
+        case "paint":
+            storeBattle(.beach, format: 1, wall: true, you: "miniko", house: ["minik", "kyra", "mia"])
+        case "play":
+            // The new Play page with every option showing: Paint walls 2 x 2 adds the hit rule.
+            setUpcomingArena(Arena.beach.ordinal)
+            setPlayMode(3)
+            playMenu()
+        default:
+            break
+        }
+    }
+
+    /// A seeded single battle (`format` 0 solo, 1 two teams of two, 2 two teams of three; `wall` Paint walls) caught while
+    /// the house players answer and throw. The arena turns landscape-right when the capture asks for it.
+    private func storeBattle(_ arena: Arena, format f: Int, wall: Bool, you: String, house: [String]) {
+        storeDemo = true
+        selected = you
+        upcomingArena = arena
+        format = f
+        wallBattle = wall
+        upcomingCount = house.count + 1
+        upcomingRounds = 1
+        cup = false
+        cupRound = 0
+        cupScores.removeAll()
+        cupRoster = nil
+        chosenRoster = house
+        startGame(false)
+        if SplashScreenshot.wantsLandscape { SplashOrientation.apply(.landscapeRight) }
     }
 }

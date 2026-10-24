@@ -1,7 +1,7 @@
 [
   {
     "source": "C:\\Projects\\MinikPingPong\\app\\src\\main\\res\\drawable-nodpi\\app_icon.webp",
-    "sha256": "fefc75413735bc589e0d58d66de102ac102ff511ed605caa6c0e2e9a5d883a75",
+    "sha256": "834c3b2f6c722e1c4c5b76c6960e13a3c78ac519c5cf7eaaf7129a1c98a9002f",
     "output": "Resources/ModernPongAssets.xcassets/mp_app_icon.imageset/app_icon.png"
   },
   {
@@ -51,37 +51,37 @@
   },
   {
     "source": "C:\\Projects\\MinikPingPong\\app\\src\\main\\res\\drawable-nodpi\\minik_motion_ready.webp",
-    "sha256": "07b22dc43c65ccecbb59e74161b8289e993e5f963f8b1cfa59b8ec60c790e5e5",
+    "sha256": "75d626854cdc3b97b84e15e5039ef3f188474f8b05b7b90b1e42d29bf4f60216",
     "output": "Resources/ModernPongAssets.xcassets/mp_minik_motion_ready.imageset/minik_motion_ready.png"
   },
   {
     "source": "C:\\Projects\\MinikPingPong\\app\\src\\main\\res\\drawable-nodpi\\minik_motion_step.webp",
-    "sha256": "a56f24c525d495fbc8d18e7b5ac5b459bb2aa6f3dd7e58f1db275a9e44a42970",
+    "sha256": "17e29f25d061588b90cda8ff7417ce7e5709ecb606d3729d64731b96788d2e99",
     "output": "Resources/ModernPongAssets.xcassets/mp_minik_motion_step.imageset/minik_motion_step.png"
   },
   {
     "source": "C:\\Projects\\MinikPingPong\\app\\src\\main\\res\\drawable-nodpi\\minik_motion_back.webp",
-    "sha256": "b1451f4dda29db73cca2609c1f48827c7ff67d15bb9c8877a996944f984ad8a7",
+    "sha256": "0851958d0d28ec15197a2e4a7fabe986d7fcc71bfbe33e9221e247aebd892b58",
     "output": "Resources/ModernPongAssets.xcassets/mp_minik_motion_back.imageset/minik_motion_back.png"
   },
   {
     "source": "C:\\Projects\\MinikPingPong\\app\\src\\main\\res\\drawable-nodpi\\minik_motion_windup.webp",
-    "sha256": "2dab00379082c2f36a8c4e9a16c2ecca54b4d28f047cf52dd885c801e25704ff",
+    "sha256": "f90def128578f10e81529d5808cac0ed41dcc0e1769c72d301d528a63583cb93",
     "output": "Resources/ModernPongAssets.xcassets/mp_minik_motion_windup.imageset/minik_motion_windup.png"
   },
   {
     "source": "C:\\Projects\\MinikPingPong\\app\\src\\main\\res\\drawable-nodpi\\minik_motion_accelerate.webp",
-    "sha256": "2525a1c17aeb7afbb3ef66233df4d2dcc6aacfc8cd50a7e1bafe43d73268a2f5",
+    "sha256": "0d28ebec231db31b8cc3cb930e7bf489768564c7d52766a75d450a07adc9ff86",
     "output": "Resources/ModernPongAssets.xcassets/mp_minik_motion_accelerate.imageset/minik_motion_accelerate.png"
   },
   {
     "source": "C:\\Projects\\MinikPingPong\\app\\src\\main\\res\\drawable-nodpi\\minik_motion_contact.webp",
-    "sha256": "6779ab74bb6e0dcef7491a58dec47d70c579997849ddd10dbb827bb2cd17b075",
+    "sha256": "dca8133e386052b661005c68dc201ae10a89d2d9fc803b4f834f818286429d24",
     "output": "Resources/ModernPongAssets.xcassets/mp_minik_motion_contact.imageset/minik_motion_contact.png"
   },
   {
     "source": "C:\\Projects\\MinikPingPong\\app\\src\\main\\res\\drawable-nodpi\\minik_motion_follow.webp",
-    "sha256": "889f44525e1a4fdaac8b64753b4f1639b96abaa16f6abe19df3a757fc56c2465",
+    "sha256": "d467a4c231f0f771b69df6798b437df8cc001c775a931e01dcfe666452e48cee",
     "output": "Resources/ModernPongAssets.xcassets/mp_minik_motion_follow.imageset/minik_motion_follow.png"
   },
   {
@@ -91,27 +91,27 @@
   },
   {
     "source": "C:\\Projects\\MinikPingPong\\app\\src\\main\\res\\drawable-nodpi\\minik_left_ready.webp",
-    "sha256": "baba6f970dd669c7c6b64deebacd46fd58ccde41da3a070308764024c479ec0f",
+    "sha256": "32e567791d613a393bbfb0b9a2744a295e92192f917790901ddff4087877a2c2",
     "output": "Resources/ModernPongAssets.xcassets/mp_minik_left_ready.imageset/minik_left_ready.png"
   },
   {
     "source": "C:\\Projects\\MinikPingPong\\app\\src\\main\\res\\drawable-nodpi\\minik_left_windup.webp",
-    "sha256": "97cd71645340e8117663b489680190c327ce86c490d9443b409ef57ac4cfd6a4",
+    "sha256": "9cb205076bbb1d83cab9e08ce57a5558c01930b18542c2e897a7cafce10ee7d9",
     "output": "Resources/ModernPongAssets.xcassets/mp_minik_left_windup.imageset/minik_left_windup.png"
   },
   {
     "source": "C:\\Projects\\MinikPingPong\\app\\src\\main\\res\\drawable-nodpi\\minik_left_accelerate.webp",
-    "sha256": "e7f0c75bd8529491e40d8f03610604dc62d7cf313a6eed36e7e18d5cdcc73627",
+    "sha256": "0f9163e4063e6201ca9a4be37218be6e9c2d6e34e8c564e129d620100f0d8d72",
     "output": "Resources/ModernPongAssets.xcassets/mp_minik_left_accelerate.imageset/minik_left_accelerate.png"
   },
   {
     "source": "C:\\Projects\\MinikPingPong\\app\\src\\main\\res\\drawable-nodpi\\minik_left_contact.webp",
-    "sha256": "7fd4a35730c5530dd9666f0ef9b348833bc1eb3e54860b5c776edc52b1f1cf94",
+    "sha256": "7e881ab1c2e9bf72d1878803b4408598a540bc8993823d9784b9ab52c510ae09",
     "output": "Resources/ModernPongAssets.xcassets/mp_minik_left_contact.imageset/minik_left_contact.png"
   },
   {
     "source": "C:\\Projects\\MinikPingPong\\app\\src\\main\\res\\drawable-nodpi\\minik_left_follow.webp",
-    "sha256": "42ebb27491d86fce5e596a8dbf91879221c4a3a644002fe2e8f19671516ced7c",
+    "sha256": "355c348e090e2989da26b9dd3395dedbebea8dbacdfdbbd3b812ab9899d5a20c",
     "output": "Resources/ModernPongAssets.xcassets/mp_minik_left_follow.imageset/minik_left_follow.png"
   },
   {
@@ -213,5 +213,50 @@
     "source": "C:\\Projects\\MinikPingPong\\app\\src\\main\\res\\raw\\cool_music2.mp3",
     "sha256": "8739c47026ed62f4dde407a432d013b151af6d191a3d9a4fc5a0392c9071563e",
     "output": "Resources/ModernPongAudio/cool_music2.mp3"
+  },
+  {
+    "source": "C:\\Projects\\MinikPingPong\\app\\src\\main\\res\\drawable-nodpi\\arena_beach_portrait.webp",
+    "sha256": "63fcfa0cfec364d8dd7e1776142cfdab61f930a57cf078415c316bc710603acb",
+    "output": "Resources/ModernPongArt/arenas/arena_beach_portrait.webp"
+  },
+  {
+    "source": "C:\\Projects\\MinikPingPong\\app\\src\\main\\res\\drawable-nodpi\\arena_beach_landscape.webp",
+    "sha256": "764b957e18c998ad17ba3aa29992dd501e8725f9d491f42eeeb9d881b2effa38",
+    "output": "Resources/ModernPongArt/arenas/arena_beach_landscape.webp"
+  },
+  {
+    "source": "C:\\Projects\\MinikPingPong\\app\\src\\main\\res\\drawable-nodpi\\arena_park_portrait.webp",
+    "sha256": "0b4c0af4a74bfbb71137be74cae98442c66e93b3dc0982afff70cf2cdbfd611a",
+    "output": "Resources/ModernPongArt/arenas/arena_park_portrait.webp"
+  },
+  {
+    "source": "C:\\Projects\\MinikPingPong\\app\\src\\main\\res\\drawable-nodpi\\arena_park_landscape.webp",
+    "sha256": "a37d4dd385434636f0530a43b91c02825eb26c39dd004c7f85db6937f6fc9a92",
+    "output": "Resources/ModernPongArt/arenas/arena_park_landscape.webp"
+  },
+  {
+    "source": "C:\\Projects\\MinikPingPong\\app\\src\\main\\res\\drawable-nodpi\\arena_castle_portrait.jpg",
+    "sha256": "ff9fd477a8ea1244275f5b7944df3597a8abc50dbb38b347fd50f6737c77e750",
+    "output": "Resources/ModernPongArt/arenas/arena_castle_portrait.jpg"
+  },
+  {
+    "source": "C:\\Projects\\MinikPingPong\\app\\src\\main\\res\\drawable-nodpi\\arena_castle_landscape.jpg",
+    "sha256": "1ec45c8455648af3e065a04f3d07433a307cf15a7112795e9e4be5c29241d12a",
+    "output": "Resources/ModernPongArt/arenas/arena_castle_landscape.jpg"
+  },
+  {
+    "source": "C:\\Projects\\MinikPingPong\\app\\src\\main\\res\\raw\\rank_big_win.mp3",
+    "sha256": "fbc5eade4de7c9397476eb015b2fc3233f129509d658358d16adaa8245f61bfb",
+    "output": "Resources/ModernPongAudio/rank_big_win.mp3"
+  },
+  {
+    "source": "C:\\Projects\\MinikPingPong\\app\\src\\main\\res\\raw\\rank_trumpet.mp3",
+    "sha256": "02ba23f3c3b9f6c3c5b1935d8115b418d9d82ec87a914b27ac03d47b3043203f",
+    "output": "Resources/ModernPongAudio/rank_trumpet.mp3"
+  },
+  {
+    "source": "C:\\Projects\\MinikPingPong\\app\\src\\main\\res\\raw\\rank_win.mp3",
+    "sha256": "fbc5eade4de7c9397476eb015b2fc3233f129509d658358d16adaa8245f61bfb",
+    "output": "Resources/ModernPongAudio/rank_win.mp3"
   }
 ]

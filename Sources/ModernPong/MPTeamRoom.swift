@@ -84,6 +84,8 @@ import FirebaseDatabase
     }
     func present(_ player: String) -> Bool { (presence[player] ?? 0) > now() - 9000 }
     var host: Bool { !uid.isEmpty && meta["host"] as? String == uid }
+    /// Android `PongTeamRoom.arena` (a4174b6): `meta.arena`, immutable once created; older rooms read as the original court.
+    var arena: MPArena { MPArena.read(meta["arena"] as? String) }
     var localSeat: Int { seats[uid] ?? -1 }
     var humanSeats: Set<Int> {
         if flexible { return Set(seats.values) }
@@ -135,12 +137,13 @@ import FirebaseDatabase
         fail("Online play is not configured for this build.")
         #endif
     }
-    func createFlexible(_ mode: MPTeamMode) {
+    /// Android `createFlexible(mode, arena)`: `arena` must be one of the four choices (rules reject anything else).
+    func createFlexible(_ mode: MPTeamMode, arena: String = "beach") {
         #if MINIK_PING_PONG && canImport(FirebaseDatabase) && canImport(FirebaseAuth)
-        guard room == nil, let database, !uid.isEmpty else { return }
+        guard MPArena.choices.map(\.wire).contains(arena), room == nil, let database, !uid.isEmpty else { return }
         let value = MPRules.code()
         let humans: MPWire = ["0": true, "1": true, "2": true, "3": true]
-        let metaValue: MPWire = ["host": uid, "protocol": MPTeamAuthority.protocolName + "-lobby-v2", "mode": mode.rawValue,
+        let metaValue: MPWire = ["host": uid, "protocol": MPTeamAuthority.protocolName + "-lobby-v2", "arena": arena, "mode": mode.rawValue,
                                  "roster": ["miniko", "minik", "mia", "june"], "humans": humans, "createdAt": ServerValue.timestamp()]
         let initial: MPWire = ["meta": metaValue, "phase": "lobby", "seats": ["0": uid], "ready": [uid: false],
                                "lineup": MPTeamLineup.initial(host: uid, count: 4).wire]
@@ -327,7 +330,11 @@ import FirebaseDatabase
                     guard let self, !self.closed, let a = self.authority else { return }
                     let n = MPCodec.map(s.value)
                     if self.everyoneHere && self.active {
-                        a.receive(player, sequence: MPPlayWire.int64(n, "seq"), kind: (n["kind"] as? String) ?? "", x: MPPlayWire.decimal(n, "x"), y: MPPlayWire.decimal(n, "y"))
+                        // Android 22f756e: optional `control` and `stroke` {aim, power, top, side}.
+                        let control = (n["control"] as? NSNumber)?.intValue
+                        let s = MPCodec.map(n["stroke"])
+                        let stroke = s.isEmpty ? nil : MPPongStroke(aim: MPPlayWire.decimal(s, "aim"), power: MPPlayWire.decimal(s, "power"), top: MPPlayWire.decimal(s, "top"), side: MPPlayWire.decimal(s, "side"))
+                        a.receive(player, sequence: MPPlayWire.int64(n, "seq"), kind: (n["kind"] as? String) ?? "", x: MPPlayWire.decimal(n, "x"), y: MPPlayWire.decimal(n, "y"), control: control, stroke: stroke)
                     }
                     self.consumed.append("inputs/" + player + "/" + s.key)
                 }
@@ -346,7 +353,7 @@ import FirebaseDatabase
         #if MINIK_PING_PONG && canImport(FirebaseDatabase) && canImport(FirebaseAuth)
         guard canStart, let room, let mode = MPTeamMode(rawValue: (meta["mode"] as? String) ?? "") else { return }
         let roster = (0..<4).map { characterAt($0) }
-        let engine = MPPlay(mode: mode, roster: roster, humanSeats: humanSeats)
+        let engine = MPPlay(mode: mode, roster: roster, humanSeats: humanSeats, arena: (meta["arena"] as? String) ?? "")
         engine.start()
         guard let a = try? MPTeamAuthority(game: engine, seats: seats), let body = MPJSON.encode(a.checkpoint()) else { return }
         authority = a; game = engine
@@ -361,19 +368,29 @@ import FirebaseDatabase
         changed()
         #endif
     }
-    /// A move or tap toward table coordinates; moves are throttled to one per 45 ms.
-    func input(_ kind: String, _ to: MPPoint) {
+    /// Android `supportsSpinControls`: the host, or a host whose snapshots advertise `spinControls` (older hosts would
+    /// reject stroke and control inputs).
+    var supportsSpinControls: Bool {
+        if host { return true }
+        guard let body = checkpoint, let w = try? MPJSON.decode(body) else { return false }
+        return (w["spinControls"] as? NSNumber)?.int64Value == 1
+    }
+    /// A move, tap, stroke or control change toward table coordinates; moves are throttled to one per 45 ms.
+    func input(_ kind: String, _ to: MPPoint, control: Int? = nil, stroke: MPPongStroke? = nil) {
         guard phase == "playing", !waiting, localSeat >= 0 else { return }
+        if (control != nil || stroke != nil) && !supportsSpinControls { return }
         let uptime = ProcessInfo.processInfo.systemUptime
         if kind == "move" { if uptime - moveAt < 0.045 { return }; moveAt = uptime }
         sequence = max(sequence + 1, MPClock.now)
         defaults.set(sequence, forKey: "modern.pong.teams.sequence")
         let x = to.x.mpClamp(0, 1), y = to.y.mpClamp(0, 1)
-        if host { authority?.receive(uid, sequence: sequence, kind: kind, x: x, y: y); return }
+        if host { authority?.receive(uid, sequence: sequence, kind: kind, x: x, y: y, control: control, stroke: stroke); return }
         #if MINIK_PING_PONG && canImport(FirebaseDatabase) && canImport(FirebaseAuth)
         guard let room else { return }
         let key = String(repeating: "0", count: max(0, 16 - String(sequence).count)) + String(sequence)
-        let value: MPWire = ["seq": NSNumber(value: sequence), "kind": kind, "x": x, "y": y]
+        var value: MPWire = ["seq": NSNumber(value: sequence), "kind": kind, "x": x, "y": y]
+        if let control { value["control"] = control }
+        if let stroke { value["stroke"] = ["aim": stroke.aim, "power": stroke.power, "top": stroke.top, "side": stroke.side] }
         room.child("inputs").child(uid).child(key).setValue(value) { [weak self] error, _ in MainActor.assumeIsolated { if let error { self?.fail(error) } } }
         #endif
     }

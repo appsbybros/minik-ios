@@ -134,3 +134,21 @@ test('Math, with no parents link, never asks for the family reminder',()=>{
   assert.equal(h.c.MinikMonetization.menu({style:{}},'en'),null);
   assert.equal(intervals.length,0);
 });
+test('The parents link sits in the measured gap above Start, or under the title when the gap is small, as on Android Bounce 4f38dd5',()=>{
+  const place=gap=>{
+    const frames=[], appended=[], header={append:x=>appended.push(x)};
+    const rect=(top,bottom)=>({getBoundingClientRect:()=>({top,bottom,height:bottom-top})});
+    const parts={'.pong-setup-body':rect(50,200),'.pong-setup-actions':rect(200+gap,260+gap),'.pong-setup-header':header};
+    const panel={isConnected:true,style:{},scrollTop:0,append(){},querySelector:s=>parts[s],getBoundingClientRect:()=>({top:0})};
+    const h=host({monetization:true,parents:true},false,{setInterval:()=>1,getComputedStyle:()=>({position:'relative'}),requestAnimationFrame:fn=>frames.push(fn)});
+    h.c.document.createElement=tag=>({tag,style:{},isConnected:true,setAttribute(k,v){this[k]=v;},getBoundingClientRect:()=>({height:36})});
+    const link=h.c.MinikMonetization.menu(panel,'en');
+    assert.equal(link.tag,'a'); assert.equal(link.role,'button'); assert.equal(link['aria-label'],'For parents');
+    assert.equal(link.style.visibility,'hidden'); frames[0](); assert.equal(link.style.visibility,'visible');
+    let prevented=false; link.onclick({preventDefault:()=>{prevented=true;}});
+    assert.ok(prevented); assert.equal(h.messages.at(-1).type,'parents');
+    return {link,appended};
+  };
+  const roomy=place(60); assert.equal(roomy.link.style.top,'212px'); assert.equal(roomy.appended.length,0);
+  const tight=place(20); assert.equal(tight.link.style.position,'static'); assert.equal(tight.link.style.gridRow,'2'); assert.equal(tight.appended[0],tight.link);
+});

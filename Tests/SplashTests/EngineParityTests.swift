@@ -14,7 +14,11 @@ final class EngineParityTests: XCTestCase {
                                           balloons: variant == 1 ? .allOver : .onePlace, subjects: subjects)
             members.append(Member("p\(i)", chars[i], team: i / 3, bot: false, name: chars[i], hebrew: false, settings: settings))
         }
-        return SplashEngine(members: members, mode: .teams, topic: .math, seed: seed, config: SplashConfig(), hebrew: false,
+        // The vectors were produced with Android's 20 x 20 arena of 2026-10-12 (now the online room size).
+        var config = SplashConfig()
+        config.width = 20.0
+        config.depth = 20.0
+        return SplashEngine(members: members, mode: .teams, topic: .math, seed: seed, config: config, hebrew: false,
                             profiles: [:], matchId: "local-\(seed)")
     }
 

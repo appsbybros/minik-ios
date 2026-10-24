@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='utf-8'?>
+<question-bank version="1" mode="HISTORY" language="en">
+  <question id="history_001" level="2">
+    <prompt lang="en">In what year did the Berlin Wall fall?</prompt>
+    <answer correct="false">1991</answer>
+    <answer correct="false">1979</answer>
+    <answer correct="true">1989</answer>
+    <answer correct="false">1961</answer>
+    <explanation lang="en">The Wall was opened in November 1989.</explanation>
+  </question>
+  <question id="history_002" level="2">
+    <prompt lang="en">Which ancient civilization built Machu Picchu?</prompt>
+    <answer correct="true">The Inca</answer>
+    <answer correct="false">The Maya</answer>
+    <answer correct="false">The Aztecs</answer>
+    <answer correct="false">The Romans</answer>
+    <explanation lang="en">The Inca built Machu Picchu in the 15th century.</explanation>
+  </question>
+  <question id="history_003" level="3">
+    <prompt lang="en">Who was the first Roman emperor?</prompt>
+    <answer correct="false">Constantine</answer>
+    <answer correct="false">Nero</answer>
+    <answer correct="false">Julius Caesar</answer>
+    <answer correct="true">Augustus</answer>
+    <explanation lang="en">Augustus is considered the first emperor of the Roman Empire.</explanation>
+  </question>
+  <question id="history_004" level="1">
+    <prompt lang="en">Which event began in Europe in 1914?</prompt>
+    <answer correct="false">The Crimean War</answer>
+    <answer correct="false">World War II</answer>
+    <answer correct="false">The French Revolution</answer>
+    <answer correct="true">World War I</answer>
+    <explanation lang="en">World War I began in the summer of 1914.</explanation>
+  </question>
+  <question id="history_005" level="2">
+    <prompt lang="en">Which invention is associated with Johannes Gutenberg in 15th-century Europe?</prompt>
+    <answer correct="false">The telephone</answer>
+    <answer correct="true">Printing with movable metal type</answer>
+    <answer correct="false">The steam engine</answer>
+    <answer correct="false">The telegraph</answer>
+    <explanation lang="en">Gutenberg developed an effective movable-type printing system.</explanation>
+  </question>
+  <question id="history_006" level="3">
+    <prompt lang="en">What was the Silk Road?</prompt>
+    <answer correct="false">Only a sea route around Africa</answer>
+    <answer correct="false">A single Roman road</answer>
+    <answer correct="true">A network of trade routes linking parts of Asia, Europe and North Africa</answer>
+    <answer correct="false">A river in China</answer>
+    <explanation lang="en">The Silk Road was a network of routes, not one road.</explanation>
+  </question>
+  <question id="history_007" level="1">
+    <prompt lang="en">Which revolution began in France in 1789?</prompt>
+    <answer correct="false">The Industrial Revolution</answer>
+    <answer correct="false">The Russian Revolution</answer>
+    <answer correct="false">The Prague Spring</answer>
+    <answer correct="true">The French Revolution</answer>
+    <explanation lang="en">The French Revolution began in 1789.</explanation>
+  </question>
+  <question id="history_008" level="3">
+    <prompt lang="en">Who was the principal author of the first draft of the American Declaration of Independence?</prompt>
+    <answer correct="false">George Washington</answer>
+    <answer correct="true">Thomas Jefferson</answer>
+    <answer correct="false">Benjamin Franklin alone</answer>
+    <answer correct="false">Abraham Lincoln</answer>
+    <explanation lang="en">Jefferson was the main author of the draft adopted in 1776.</explanation>
+  </question>
+  <question id="history_009" level="3">
+    <prompt lang="en">Which empire ruled Constantinople until 1453?</prompt>
+    <answer correct="true">The Byzantine Empire</answer>
+    <answer correct="false">The British Empire</answer>
+    <answer correct="false">The Mongol Empire</answer>
+    <answer correct="false">The Aztec Empire</answer>
+    <explanation lang="en">Constantinople was the Byzantine capital until the Ottoman conquest.</explanation>
+  </question>
+  <question id="history_010" level="2">
+    <prompt lang="en">What was the Industrial Revolution?</prompt>
+    <answer correct="false">A calendar reform</answer>
+    <answer correct="true">A major shift to mechanized production, factories and social and economic change</answer>
+    <answer correct="false">A war between Britain and France</answer>
+    <answer correct="false">Only an artistic movement</answer>
+    <explanation lang="en">The Industrial Revolution transformed production, transport, cities and society.</explanation>
+  </question>
+</question-bank>

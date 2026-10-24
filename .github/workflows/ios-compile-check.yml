@@ -16,7 +16,8 @@ permissions:
 jobs:
   compile:
     runs-on: macos-latest
-    timeout-minutes: 90
+    # The first eleven apps take about an hour; Triple Shot, the largest Swift module, and its tests add to it.
+    timeout-minutes: 120
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -57,7 +58,7 @@ jobs:
           # minutes) a failing app stops the run; in a public one (free minutes) every app is
           # compiled, so one run lists all errors. A test failure never stops the apps.
           STOP_AT_FIRST_FAILURE="${{ github.event.repository.private }}"
-          # Minik Math's and the sports (Android parity) unit tests also run, on the newest available iPhone simulator.
+          # Minik Math's, the sports and Triple Shot's (Android parity) unit tests also run, on the newest available iPhone simulator.
           SIMULATOR_UDID="$(xcrun simctl list devices available -j | python3 -c '
           import json
           import re
@@ -76,7 +77,7 @@ jobs:
                           best = key
           print(best[2] if best else "")
           ')"
-          for SCHEME in MinikPlus MinikPingPong MinikRetroPingPong MinikMathPlus MinikMath MinikPlusEnglish MinikMultiPingPong MinikAmudu MinikSplash MinikSquash MinikBeachVolley; do
+          for SCHEME in MinikPlus MinikPingPong MinikRetroPingPong MinikMathPlus MinikMath MinikPlusEnglish MinikMultiPingPong MinikAmudu MinikSplash MinikSquash MinikBeachVolley MinikTripleShot; do
             echo "Compiling $SCHEME"
             xcodebuild build -scheme "$SCHEME" "${COMMON[@]}" > "build/logs/$SCHEME.log" 2>&1
             scheme_status=$?
@@ -97,6 +98,7 @@ jobs:
               MinikAmudu) TESTS=AmuduTests ;;
               MinikSplash) TESTS=SplashTests ;;
               MinikSquash) TESTS=SportsTests ;;
+              MinikTripleShot) TESTS=TripleShotTests ;;
             esac
             if [ -n "$TESTS" ]; then
               echo "Compiling $TESTS"
@@ -105,7 +107,7 @@ jobs:
               if (( test_status != 0 )); then
                 echo "::error::Compile failed for $TESTS"
                 status=$test_status
-              elif [ "$SCHEME" = "MinikMath" ] || [ "$SCHEME" = "MinikSquash" ]; then
+              elif [ "$SCHEME" = "MinikMath" ] || [ "$SCHEME" = "MinikSquash" ] || [ "$SCHEME" = "MinikTripleShot" ]; then
                 if [ -n "$SIMULATOR_UDID" ]; then
                   echo "Running $TESTS"
                   xcodebuild test-without-building -project Minik.xcodeproj -scheme "$SCHEME" -configuration Debug \

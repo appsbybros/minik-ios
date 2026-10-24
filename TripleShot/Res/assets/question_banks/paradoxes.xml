@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='utf-8'?>
+<question-bank version="1" mode="PARADOXES" language="he">
+  <question id="paradoxes_001" level="2">
+    <prompt lang="he">בפרדוקס השקרן, המשפט 'המשפט הזה שקרי' יוצר קושי משום ש...</prompt>
+    <answer correct="false">הוא תמיד אמת בלי תנאי</answer>
+    <answer correct="false">אין בו נושא דקדוקי</answer>
+    <answer correct="false">הוא ארוך מדי</answer>
+    <answer correct="true">אם הוא אמת הוא שקר, ואם הוא שקר הוא אמת</answer>
+    <explanation lang="he">המשפט מפנה לערך האמת של עצמו ויוצר מעגל.</explanation>
+  </question>
+  <question id="paradoxes_002" level="2">
+    <prompt lang="he">מה מדגים פרדוקס הסבא במסע בזמן?</prompt>
+    <answer correct="false">שאי אפשר לזכור עבר</answer>
+    <answer correct="false">שכל מסע בזמן איטי</answer>
+    <answer correct="true">קונפליקט סיבתי אם נוסע לעבר מונע את התנאים שהובילו למסעו</answer>
+    <answer correct="false">שזמן תמיד נעצר</answer>
+    <explanation lang="he">אם מונעים את קיום הנוסע, לא ברור מי ביצע את הפעולה שמנעה אותו.</explanation>
+  </question>
+  <question id="paradoxes_003" level="1">
+    <prompt lang="he">מהו פרדוקס הספינה של תזאוס?</prompt>
+    <answer correct="false">סתירה בחוקי ציפה</answer>
+    <answer correct="false">שאלה על מהירות רוח</answer>
+    <answer correct="false">בעיה בחישוב שטח ספינה</answer>
+    <answer correct="true">שאלה על זהות של דבר שכל חלקיו מוחלפים בהדרגה</answer>
+    <explanation lang="he">הפרדוקס בוחן מה הופך עצם ל'אותו' עצם לאורך שינוי.</explanation>
+  </question>
+  <question id="paradoxes_004" level="4">
+    <prompt lang="he">בפרדוקס ראסל, איזו קבוצה יוצרת את הסתירה?</prompt>
+    <answer correct="true">קבוצת כל הקבוצות שאינן מכילות את עצמן</answer>
+    <answer correct="false">קבוצת כל המשולשים</answer>
+    <answer correct="false">קבוצת המספרים הזוגיים</answer>
+    <answer correct="false">הקבוצה הריקה</answer>
+    <explanation lang="he">השאלה האם קבוצה זו מכילה את עצמה מובילה לסתירה בתורת הקבוצות הנאיבית.</explanation>
+  </question>
+  <question id="paradoxes_005" level="2">
+    <prompt lang="he">מה מלמד פרדוקס יום ההולדת?</prompt>
+    <answer correct="false">שיש 366 אנשים בכל קבוצה</answer>
+    <answer correct="false">שיום הולדת קובע אישיות</answer>
+    <answer correct="false">שכל בני אדם נולדים באותו חודש</answer>
+    <answer correct="true">בקבוצה לא גדולה במיוחד הסיכוי שלשניים יהיה אותו יום הולדת גדל מהר מהאינטואיציה</answer>
+    <explanation lang="he">כבר ב-23 אנשים ההסתברות להתאמה אחת לפחות גדולה מ-50% תחת הנחות רגילות.</explanation>
+  </question>
+  <question id="paradoxes_006" level="3">
+    <prompt lang="he">מהו פרדוקס התאומים ביחסות?</prompt>
+    <answer correct="false">אחד התאומים נעלם</answer>
+    <answer correct="false">שני התאומים תמיד באותו גיל פיזיקלי</answer>
+    <answer correct="true">התאום שנוסע במהירות גבוהה וחוזר יכול להזדקן פחות מהתאום שנשאר</answer>
+    <answer correct="false">הנוסע מזדקן מהר יותר בהכרח</answer>
+    <explanation lang="he">המסלולים במרחב-זמן אינם סימטריים בגלל שינויי המסגרת של הנוסע.</explanation>
+  </question>
+  <question id="paradoxes_007" level="3">
+    <prompt lang="he">מהי נקודת המפתח בפרדוקס זנון 'אכילס והצב'?</prompt>
+    <answer correct="false">מרחק אינו ניתן למדידה</answer>
+    <answer correct="false">הצב נע במהירות האור</answer>
+    <answer correct="false">אכילס איטי מצב</answer>
+    <answer correct="true">חלוקת הדרך לאינסוף קטעים אינה מחייבת זמן אינסופי כאשר הסדרה מתכנסת</answer>
+    <explanation lang="he">סכום אינסופי של זמנים הולכים וקטנים יכול להיות סופי.</explanation>
+  </question>
+  <question id="paradoxes_008" level="3">
+    <prompt lang="he">מהו פרדוקס המלון של הילברט?</prompt>
+    <answer correct="false">אי אפשר למספר חדרים</answer>
+    <answer correct="false">מלון סופי חייב להיות ריק</answer>
+    <answer correct="true">מלון עם אינסוף חדרים מלאים יכול עדיין לפנות מקום לאורחים נוספים</answer>
+    <answer correct="false">כל חדר מכיל אינסוף אנשים</answer>
+    <explanation lang="he">הזזה שיטתית של אורחים מדגימה תכונות לא אינטואיטיביות של אינסוף בן-מנייה.</explanation>
+  </question>
+  <question id="paradoxes_009" level="1">
+    <prompt lang="he">מהו פרדוקס הבחירה (Choice Paradox) בפסיכולוגיה צרכנית?</prompt>
+    <answer correct="false">יותר אפשרויות תמיד מקצרות החלטה</answer>
+    <answer correct="true">עודף אפשרויות עלול להקשות על החלטה ולהפחית שביעות רצון</answer>
+    <answer correct="false">בחירה אינה תלויה בהקשר</answer>
+    <answer correct="false">אנשים לעולם אינם משווים</answer>
+    <explanation lang="he">זהו רעיון אמפירי/פסיכולוגי, לא פרדוקס לוגי פורמלי.</explanation>
+  </question>
+  <question id="paradoxes_010" level="4">
+    <prompt lang="he">מהי 'לולאה מוזרה' בפרדוקסים של הפניה עצמית?</prompt>
+    <answer correct="true">מבנה שבו מעבר בין רמות תיאור מחזיר בסוף לנקודת המוצא</answer>
+    <answer correct="false">טעות כתיב</answer>
+    <answer correct="false">לולאת for שאינה מסתיימת</answer>
+    <answer correct="false">מעגל חשמלי</answer>
+    <explanation lang="he">הפניה עצמית יכולה ליצור מעגלים בין משפטים, כללים או רמות מטא.</explanation>
+  </question>
+</question-bank>

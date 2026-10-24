@@ -3,8 +3,8 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 const {initializeTestEnvironment,assertSucceeds:yes,assertFails:no}=require('@firebase/rules-unit-testing');
 let env;
 before(async()=>{
- assert.equal(process.env.FIREBASE_DATABASE_EMULATOR_HOST,'127.0.0.1:9000','Local emulator required');
- env=await initializeTestEnvironment({projectId:'demo-reception-preferences',database:{host:'127.0.0.1',port:9000,rules:fs.readFileSync(path.resolve(__dirname,'../rules/merged.json'),'utf8')}});
+ assert.match(process.env.FIREBASE_DATABASE_EMULATOR_HOST||'',/^127\.0\.0\.1:[0-9]+$/,'Explicit local emulator required; never use production');
+ env=await initializeTestEnvironment({projectId:'demo-reception-preferences',database:{host:'127.0.0.1',port:Number(process.env.FIREBASE_DATABASE_EMULATOR_HOST.split(':')[1]),rules:fs.readFileSync(path.resolve(__dirname,'../rules/merged.json'),'utf8')}});
  await env.clearDatabase();
 });
 after(async()=>{if(env)await env.cleanup()});

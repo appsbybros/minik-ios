@@ -1,0 +1,1762 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources><!-- ========================= FRUITS — פירות ========================== --><!-- A — קל מאוד -->
+    <string-array name="fruits_a">
+        <word
+            ar="تفاحة" de="Apfel" en="Apple" es="manzana" fr="Pomme" he="תפוח" nl="appel" pt_BR="Maçã" pt_PT="Maçã" ru="Яблоко" />
+        <word
+            ar="ليمون" de="Zitrone" en="Lemon" es="limón" fr="Citron" he="לימון" nl="citroen" pt_BR="Limão" pt_PT="Limão" ru="Лимон" />
+        <word
+            ar="برقوق" de="Pflaume" en="Plum" es="ciruela" fr="Prune" he="שזיף" nl="pruim" pt_BR="Ameixa" pt_PT="Ameixa" ru="Слива" />
+        <word
+            ar="خوخ" de="Pfirsich" en="Peach" es="melocotón" fr="Pêche" he="אפרסק" nl="perzik" pt_BR="Pêssego" pt_PT="Pêssego" ru="Персик" />
+        <word
+            ar="عنب" de="Trauben" en="Grapes" es="uvas" fr="Raisins" he="ענבים" nl="druiven" pt_BR="Uvas" pt_PT="Uvas" ru="Виноград" />
+        <word
+            ar="مانجو" de="Mango" en="Mango" es="mango" fr="Mangue" he="מנגו" nl="mango" pt_BR="Manga" pt_PT="Manga" ru="Манго" />
+        <word
+            ar="موز" de="Banane" en="Banana" es="banana" fr="Banane" he="בננה" nl="banaan" pt_BR="Banana" pt_PT="Banana" ru="Банан" />
+        <word
+            ar="برتقال" de="Orange" en="Orange" es="naranja" fr="Orange" he="תפוז" nl="sinaasappel" pt_BR="Laranja" pt_PT="Laranja" ru="Апельсин" />
+        <word
+            ar="ليمون أخضر" de="Limette" en="Lime" es="lima" fr="Citron vert" he="ליים" nl="limoen" pt_BR="Limão" pt_PT="Lima" ru="Лайм" />
+        <word
+            ar="كيوي" de="Kiwi" en="Kiwi" es="kiwi" fr="Kiwi" he="קיווי" nl="kiwi" pt_BR="Kiwi" pt_PT="Kiwi" ru="Киви" />
+
+    </string-array><!-- B — קל -->
+    <string-array name="fruits_b">
+        <word
+            ar="مشمش" de="Aprikose" en="Apricot" es="albaricoque" fr="Abricot" he="משמש" nl="abrikoos" pt_BR="Damasco" pt_PT="Alperce" ru="Абрикос" />
+        <word
+            ar="فراولة" de="Erdbeere" en="Strawberry" es="fresa" fr="Fraise" he="תות" nl="aardbei" pt_BR="Morango" pt_PT="Morango" ru="Клубника" />
+        <word
+            ar="كمثرى" de="Birne" en="Pear" es="pera" fr="Poire" he="אגס" nl="peer" pt_BR="Pera" pt_PT="Pera" ru="Груша" /><!--    <word en="Kiwi" he="קיווי"/>-->
+        <word
+            ar="كرز" de="Kirsche" en="Cherry" es="cereza" fr="Cerise" he="דובדבן" nl="kers" pt_BR="Cereja" pt_PT="Cereja" ru="Вишня" />
+        <word
+            ar="أفوكادو" de="Avocado" en="Avocado" es="aguacate" fr="Avocat" he="אבוקדו" nl="avocado" pt_BR="Abacate" pt_PT="Abacate" ru="Авокадо" />
+        <word
+            ar="بابايا" de="Papaya" en="Papaya" es="papaya" fr="Papaye" he="פפאיה" nl="papaja" pt_BR="Mamão" pt_PT="Papaia" ru="Папайя" /><!--    <word en="Guava" he="גויאבה"/>-->
+        <word
+            ar="جريب فروت" de="Grapefruit" en="Grapefruit" es="pomelo" fr="Pamplemousse" he="אשכולית" nl="grapefruit" pt_BR="Toranja" pt_PT="Toranja" ru="Грейпфрут" />
+        <word
+            ar="توت أزرق" de="Heidelbeere" en="Blueberry" es="arándano" fr="Myrtille" he="אוכמנית" nl="bosbes" pt_BR="Mirtilo" pt_PT="Mirtilo" ru="Черника" />
+    </string-array><!-- C — בינוני -->
+    <string-array name="fruits_c">
+        <word
+            ar="تمور" de="Datteln" en="Dates" es="dátiles" fr="Dattes" he="תמרים" nl="dadels" pt_BR="Tâmaras" pt_PT="Tâmaras" ru="Финики" />
+        <word
+            ar="كليمنتين" de="Clementine" en="Clementine" es="clementina" fr="Clémentine" he="קלמנטינה" nl="clementine" pt_BR="Clementina" pt_PT="Clementina" ru="Клементин" />
+        <word
+            ar="تين" de="Feige" en="Fig" es="higo" fr="Figue" he="תאנה" nl="vijg" pt_BR="Figo" pt_PT="Figo" ru="Инжир" />
+        <word
+            ar="توت العليق" de="Himbeere" en="Raspberry" es="frambuesa" fr="Framboise" he="פטל" nl="framboos" pt_BR="Framboesa" pt_PT="Framboesa" ru="Малина" />
+        <word
+            ar="أناناس" de="Ananas" en="Pineapple" es="piña" fr="Ananas" he="אננס" nl="ananas" pt_BR="Abacaxi" pt_PT="Ananás" ru="Ананас" />
+        <word
+            ar="نكتارين" de="Nektarine" en="Nectarine" es="nectarina" fr="Nectarine" he="נקטרינה" nl="nectarine" pt_BR="Nectarina" pt_PT="Nectarina" ru="Нектарин" />
+        <word
+            ar="بطيخ" de="Wassermelone" en="Watermelon" es="sandía" fr="Pastèque" he="אבטיח" nl="watermeloen" pt_BR="Melancia" pt_PT="Melancia" ru="Арбуз" />
+        <word
+            ar="جوز الهند" de="Kokosnuss" en="Coconut" es="coco" fr="Noix de coco" he="קוקוס" nl="kokosnoot" pt_BR="Coco" pt_PT="Coco" ru="Кокос" />
+        <word
+            ar="يوسفي" de="Mandarine" en="Mandarin" es="mandarina" fr="Mandarine" he="מנדרינה" nl="mandarijn" pt_BR="Tangerina" pt_PT="Tangerina" ru="Мандарин" />
+		<word
+            ar="توت بري" de="Cranberry" en="Cranberry" es="arándano rojo" fr="canneberge" he="חמוצית" nl="veenbes" pt_BR="oxicoco" pt_PT="oxicoco" ru="клюква" />
+		<word
+            ar="خروب" de="Johannisbrot" en="Carob" es="algarroba" fr="caroube" he="חרוב" nl="johannesbrood" pt_BR="alfarroba" pt_PT="alfarroba" ru="кэроб" />
+    </string-array><!-- D — קשה -->
+    <string-array name="fruits_d">
+        <word
+            ar="رمان" de="Granatapfel" en="Pomegranate" es="granada" fr="grenade" he="רימון" nl="granaatappel" pt_BR="romã" pt_PT="romã" ru="гранат" />
+        <word
+            ar="كاكي" de="Kaki" en="Persimmon" es="caqui" fr="kaki" he="אפרסמון" nl="kaki" pt_BR="caqui" pt_PT="dióspiro" ru="хурма" />
+        <word
+            ar="فاكهة التنين" de="Drachenfrucht" en="Dragonfruit" es="pitahaya" fr="fruit du dragon" he="פיטאיה" nl="drakenfruit" pt_BR="pitaya" pt_PT="pitaya" ru="питайя" />
+        <word
+            ar="عنب الثعلب" de="Stachelbeere" en="Gooseberry" es="grosella" fr="groseille à maquereau" he="דומדמניות" nl="kruisbes" pt_BR="groselha" pt_PT="groselha" ru="крыжовник" />
+        <word
+            ar="تمر هندي" de="Tamarinde" en="Tamarind" es="tamarindo" fr="Tamarin" he="תמרהינדי" nl="tamarinde" pt_BR="Tamarindo" pt_PT="Tamarindo" ru="Тамаринд" />
+        <word
+            ar="جاك فروت" de="Jackfrucht" en="Jackfruit" es="jaca" fr="Jacquier" he="ג׳קפרוט" nl="jackfruit" pt_BR="Jaca" pt_PT="Jaca" ru="Джекфрут" />
+        <word
+            ar="قشطة شائكة" de="Stachelannone" en="Soursop" es="guanábana" fr="Corossol" he="גואנבנה" nl="zuurzak" pt_BR="Graviola" pt_PT="Graviola" ru="Гуанабана" />
+    </string-array><!-- E — קשה יותר -->
+    <string-array name="fruits_e">
+        <word
+            ar="تين شوكي (أوبونتيا)" de="Kaktusfeige (Opuntie)" en="Prickly pear (Opuntia)" es="higo chumbo (Opuntia)" fr="figue de Barbarie (opuntia)" he="סברס" nl="schijfcactusvrucht (Opuntia)" pt_BR="figo-da-índia (opúncia)" pt_PT="figo-da-índia (opúncia)" ru="плод опунции" am="በለስ በረሃ (ኦፑንቲያ)" />
+        <word
+            ar="كمكوات" de="Kumquat" en="Kumquat" es="kumquat" fr="kumquat" he="קומקוואט (תפוז סיני)" nl="kumquat" pt_BR="kumquat" pt_PT="kumquat" ru="кумкват" />
+        <word
+            ar="أسكدنيا" de="Japanische Mispel" en="Loquat" es="níspero" fr="néfle du Japon" he="שסק" nl="Japanse mispel" pt_BR="nêspera" pt_PT="nêspera" ru="мушмула японская" />
+        <word
+            ar="سفرجل" de="Quitte" en="Quince" es="membrillo" fr="coing" he="חבוש" nl="kweepeer" pt_BR="marmelo" pt_PT="marmelo" ru="айва" />
+        <word
+            ar="شيريمويا" de="Cherimoya" en="Cherimoya" es="chirimoya" fr="chérimole" he="אנונה" nl="cherimoya" pt_BR="cherimoia" pt_PT="cherimóia" ru="черимойя" />
+        <word
+            ar="مانغوستين" de="Mangostan" en="Mangosteen" es="mangostán" fr="Mangoustan" he="מנגוסטין" nl="mangistan" pt_BR="Mangostão" pt_PT="Mangostão" ru="Мангостан" />
+        <word
+            ar="رامبوتان" de="Rambutan" en="Rambutan" es="rambután" fr="Ramboutan" he="רמבוטן" nl="rambutan" pt_BR="Rambutan" pt_PT="Rambutan" ru="Рамбутан" />
+        <word
+            ar="لونجان" de="Longan" en="Longan" es="longan" fr="Longane" he="לונגן" nl="longan" pt_BR="Longan" pt_PT="Longan" ru="Лонган" />
+        <word
+            ar="دوريان" de="Durian" en="Durian" es="durián" fr="Durian" he="דוריאן" nl="doerian" pt_BR="Durião" pt_PT="Durião" ru="Дуриан" />
+        <word
+            ar="سالاك" de="Schlangenfrucht" en="Salak" es="salak" fr="Salak" he="סלאק" nl="slangenfruit" pt_BR="Salak" pt_PT="Salak" ru="Салак" />
+    </string-array><!-- ========================= VEGETABLES — ירקות ========================== --><!-- A — קל מאוד -->
+    <string-array name="vegetables_a">
+        <word
+            ar="طماطم" de="Tomate" en="Tomato" es="tomate" fr="Tomate" he="עגבנייה" nl="tomaat" pt_BR="Tomate" pt_PT="Tomate" ru="Помидор" />
+        <word
+            ar="جزر" de="Karotte" en="Carrot" es="zanahoria" fr="Carotte" he="גזר" nl="wortel" pt_BR="Cenoura" pt_PT="Cenoura" ru="Морковь" />
+        <word
+            ar="ذرة" de="Mais" en="Corn" es="maíz" fr="Maïs" he="תירס" nl="maïs" pt_BR="Milho" pt_PT="Milho" ru="Кукуруза" />
+        <word
+            ar="بازلاء" de="Erbse" en="Pea" es="guisante" fr="Petit pois" he="אפונה" nl="erwt" pt_BR="Ervilha" pt_PT="Ervilha" ru="Горох" />
+        <word
+            ar="ثوم" de="Knoblauch" en="Garlic" es="ajo" fr="Ail" he="שום" nl="knoflook" pt_BR="Alho" pt_PT="Alho" ru="Чеснок" />
+        <word
+            ar="فلفل حلو" de="Paprika" en="Pepper" es="pimiento" fr="Poivron" he="פלפל" nl="paprika" pt_BR="Pimentão" pt_PT="Pimento" ru="Сладкий перец" />
+        <word ar="فلفل حلو" de="Paprikas" en="Peppers" es="pimientos" fr="Poivrons" he="פלפלים" nl="paprika's" pt_BR="Pimentões" pt_PT="Pimentos" ru="Сладкие перцы" />
+    </string-array><!-- B — קל -->
+    <string-array name="vegetables_b">
+        <word
+            ar="فاصوليا" de="Bohne" en="Bean" es="frijol" fr="Haricot" he="שעועית" nl="boon" pt_BR="Feijão" pt_PT="Feijão" ru="Фасоль" />
+        <word
+            ar="بطاطس" de="Kartoffel" en="Potato" es="patata" fr="Pomme de terre" he="תפוח אדמה" nl="aardappel" pt_BR="Batata" pt_PT="Batata" ru="Картофель" />
+        <word
+            ar="خيار" de="Gurke" en="Cucumber" es="pepino" fr="Concombre" he="מלפפון" nl="komkommer" pt_BR="Pepino" pt_PT="Pepino" ru="Огурец" />
+        <word
+            ar="بطاطا حلوة" de="Süßkartoffel" en="Sweet potato" es="batata" fr="Patate douce" he="בטטה" nl="zoete aardappel" pt_BR="Batata-doce" pt_PT="Batata-doce" ru="Батат" />
+        <word
+            ar="ملفوف" de="Kohl" en="Cabbage" es="col" fr="Chou" he="כרוב" nl="kool" pt_BR="Repolho" pt_PT="Couve" ru="Капуста" />
+        <word
+            ar="شمندر" de="Rote Bete" en="Beet" es="remolacha" fr="Betterave" he="סלק" nl="biet" pt_BR="Beterraba" pt_PT="Beterraba" ru="Свёкла" />
+        <word
+            ar="فجل" de="Radieschen" en="Radish" es="rábano" fr="Radis" he="צנון" nl="radijs" pt_BR="Rabanete" pt_PT="Rabanete" ru="Редис" /><!--  <word en="Celery" he="סלרי"/>--><!--  <word en="Broccoli" he="ברוקולי"/>-->
+        <word
+            ar="كوسا" de="Zucchini" en="Zucchini" es="calabacín" fr="Courgette" he="קישוא" nl="courgette" pt_BR="Abobrinha" pt_PT="Curgete" ru="Кабачок" />
+    </string-array><!-- C — בינוני -->
+    <string-array name="vegetables_c">
+        <word
+            ar="كرنب أجعد" de="Grünkohl" en="Kale" es="col rizada" fr="Chou frisé" he="קייל" nl="boerenkool" pt_BR="Couve kale" pt_PT="Couve kale" ru="Кале" />
+        <word
+            ar="باذنجان" de="Aubergine" en="Eggplant" es="berenjena" fr="Aubergine" he="חציל" nl="aubergine" pt_BR="Berinjela" pt_PT="Beringela" ru="Баклажан" />
+        <word
+            ar="فطر" de="Pilz" en="Mushroom" es="seta" fr="Champignon" he="פטרייה" nl="paddenstoel" pt_BR="Cogumelo" pt_PT="Cogumelo" ru="Гриб" />
+        <word
+            ar="شبت" de="Dill" en="Dill" es="eneldo" fr="Aneth" he="שמיר" nl="dille" pt_BR="Endro" pt_PT="Endro" ru="Укроп" />
+        <word
+            ar="كراث" de="Lauch" en="Leek" es="puerro" fr="Poireau" he="כרישה" nl="prei" pt_BR="Alho-poró" pt_PT="Alho-porro" ru="Лук-порей" />
+        <word
+            ar="خرشوف" de="Artischocke" en="Artichoke" es="alcachofa" fr="Artichaut" he="ארטישוק" nl="artisjok" pt_BR="Alcachofra" pt_PT="Alcachofra" ru="Артишок" />
+        <word
+            ar="لفت" de="Rübe" en="Turnip" es="nabo" fr="Navet" he="לפת" nl="raap" pt_BR="Nabo" pt_PT="Nabo" ru="Репа" />
+        <word
+            ar="يقطين" de="Kürbis" en="Pumpkin" es="calabaza" fr="Citrouille" he="דלעת" nl="pompoen" pt_BR="Abóbora" pt_PT="Abóbora" ru="Тыква" />
+    </string-array><!-- D — קשה -->
+    <string-array name="vegetables_d">
+        <word
+            ar="بقدونس" de="Petersilie" en="Parsley" es="perejil" fr="persil" he="פטרוזיליה" nl="peterselie" pt_BR="salsa" pt_PT="salsa" ru="петрушка" />
+        <word
+            ar="قرنبيط" de="Blumenkohl" en="Cauliflower" es="coliflor" fr="chou-fleur" he="כרובית" nl="bloemkool" pt_BR="couve-flor" pt_PT="couve-flor" ru="цветная капуста" />
+        <word
+            ar="بصل أخضر" de="Frühlingszwiebel" en="Scallion" es="cebolleta" fr="oignon vert" he="בצל ירוק" nl="bosui" pt_BR="cebolinha" pt_PT="cebola verde" ru="зелёный лук" />
+        <word
+            ar="سلق" de="Mangold" en="Chard" es="acelga" fr="bette" he="מנגולד" nl="snijbiet" pt_BR="acelga" pt_PT="acelga" ru="мангольд" />
+        <word
+            ar="شمر" de="Fenchel" en="Fennel" es="hinojo" fr="fenouil" he="שומר" nl="venkel" pt_BR="funcho" pt_PT="funcho" ru="фенхель" />
+        <word
+            ar="هندباء" de="Endivie" en="Endive" es="endivia" fr="endive" he="אנדיב" nl="andijvie" pt_BR="endívia" pt_PT="endívia" ru="эндивий" />
+        <word
+            ar="جرجير" de="Rucola" en="Arugula" es="rúcula" fr="roquette" he="ארוגולה" nl="rucola" pt_BR="rúcula" pt_PT="rúcula" ru="руккола" />
+        <word
+            ar="كراث فرنسي" de="Schalotte" en="Shallot" es="chalota" fr="échalote" he="שאלוט" nl="sjalot" pt_BR="chalota" pt_PT="chalota" ru="лук-шалот" />
+        <word
+            ar="كرنب سلقي" de="Kohlrabi" en="Kohlrabi" es="colirrábano" fr="chou-rave" he="קולרבי" nl="koolrabi" pt_BR="couve-rábano" pt_PT="couve-rábano" ru="кольраби" />
+		<word
+            ar="بروكوليني" de="Broccolini" en="Broccolini" es="broccolini" fr="broccolini" he="ברוקוליני" nl="broccolini" pt_BR="broccolini" pt_PT="broccolini" ru="брокколини" />
+    </string-array><!-- E — קשה יותר -->
+    <string-array name="vegetables_e">
+        <word
+            ar="جرجير الماء" de="Brunnenkresse" en="Watercress" es="berro" fr="cresson" he="גרגר הנחלים" nl="waterkers" pt_BR="agrião" pt_PT="agrião" ru="кресс-салат" />
+        <word
+            ar="جذر البقدونس" de="Petersilienwurzel" en="Parsley root" es="raíz de perejil" fr="racine de persil" he="שורש פטרוזיליה" nl="peterseliewortel" pt_BR="raiz de salsa" pt_PT="raiz de salsa" ru="корень петрушки" />
+        <word
+            ar="خرشوف القدس" de="Topinambur" en="Jerusalem artichoke" es="topinambur" fr="topinambour" he="ארטישוק ירושלמי" nl="aardpeer" pt_BR="topinambo" pt_PT="tupinambo" ru="топинамбур" />
+    </string-array><!-- ========================= SCHOOL / LEARNING TOOLS — כלי למידה ========================== --><!-- A — קל מאוד -->
+    <string-array name="school_a">
+        <word
+            ar="قلم" de="Stift" en="Pen" es="bolígrafo" fr="Stylo" he="עט" nl="pen" pt_BR="Caneta" pt_PT="Caneta" ru="Ручка" />
+        <word
+            ar="قلم رصاص" de="Bleistift" en="Pencil" es="lápiz" fr="Crayon" he="עיפרון" nl="potlood" pt_BR="Lápis" pt_PT="Lápis" ru="Карандаш" />
+        <word
+            ar="ممحاة" de="Radiergummi" en="Eraser" es="goma de borrar" fr="Gomme" he="מחק" nl="gum" pt_BR="Borracha" pt_PT="Borracha" ru="Ластик" />
+        <word
+            ar="مسطرة" de="Lineal" en="Ruler" es="regla" fr="Règle" he="סרגל" nl="liniaal" pt_BR="Régua" pt_PT="Régua" ru="Линейка" />
+        <word
+            ar="كتاب" de="Buch" en="Book" es="libro" fr="Livre" he="ספר" nl="boek" pt_BR="Livro" pt_PT="Livro" ru="Книга" />
+        <word
+            ar="حقيبة" de="Tasche" en="Bag" es="mochila" fr="Sac" he="תיק" he2="שקית" he3="ילקוט" he4="מזוודה" nl="rugzak" pt_BR="Bolsa" pt_PT="Saco" ru="Сумка" />
+        <word
+            ar="غراء" de="Kleber" en="Glue" es="pegamento" fr="Colle" he="דבק" nl="lijm" pt_BR="Cola" pt_PT="Cola" ru="Клей" />
+        <word
+            ar="سبورة" de="Tafel" en="Board" es="pizarra" fr="Tableau" he="לוח" nl="schoolbord" pt_BR="Quadro" pt_PT="Quadro" ru="Доска" />
+    </string-array><!-- B — קל -->
+    <string-array name="school_b">
+        <word
+            ar="طباشير" de="Kreide" en="Chalk" es="tiza" fr="Craie" he="גיר" nl="krijt" pt_BR="Giz" pt_PT="Giz" ru="Мел" />
+        <word
+            ar="قلم تحديد" de="Marker" en="Marker" es="rotulador" fr="Marqueur" he="טוש" he2="מרקר" nl="stift" pt_BR="Marcador" pt_PT="Marcador" ru="Маркер" />
+        <word
+            ar="قلم شمعي" de="Wachsmalstift" en="Crayon" es="crayón" fr="Crayon" he="צבעי שעווה" nl="waskrijt" pt_BR="Giz de cera" pt_PT="Lápis de cera" ru="Восковой мелок" />
+        <word
+            ar="آلة حاسبة" de="Taschenrechner" en="Calculator" es="calculadora" fr="Calculatrice" he="מחשבון" nl="rekenmachine" pt_BR="Calculadora" pt_PT="Calculadora" ru="Калькулятор" />
+        <word
+            ar="جهاز لوحي" de="Tablet" en="Tablet" es="tableta" fr="Tablette" he="טאבלט" nl="tablet" pt_BR="Tablet" pt_PT="Tablet" ru="Планшет" />
+        <word
+            ar="كرة أرضية" de="Globus" en="Globe" es="globo terráqueo" fr="Globe" he="גלובוס" nl="wereldbol" pt_BR="Globo" pt_PT="Globo" ru="Глобус" />
+    </string-array><!-- C — בינוני -->
+    <string-array name="school_c">
+        <word
+            ar="مبراة" de="Spitzer" en="Sharpener" es="sacapuntas" fr="Taille-crayon" he="מחדד" nl="puntenslijper" pt_BR="Apontador" pt_PT="Apara-lápis" ru="Точилка" />
+        <word
+            ar="مقص" de="Schere" en="Scissors" es="tijeras" fr="Ciseaux" he="מספריים" nl="schaar" pt_BR="Tesoura" pt_PT="Tesoura" ru="Ножницы" />
+        <word
+            ar="دباسة" de="Heftgerät" en="Stapler" es="engrapadora" fr="Agrafeuse" he="שדכן" nl="nietmachine" pt_BR="Grampeador" pt_PT="Agrafador" ru="Степлер" />
+        <word
+            ar="بوصلة" de="Kompass" en="Compass" es="brújula" fr="Boussole" he="מצפן" nl="kompas" pt_BR="Bússola" pt_PT="Bússola" ru="Компас" am="ኮምፓስ" />
+        <word
+            ar="منقلة" de="Winkelmesser" en="Protractor" es="transportador" fr="Rapporteur" he="מד זווית" nl="geodriehoek" pt_BR="Transferidor" pt_PT="Transferidor" ru="Транспортир" />
+        <word
+            ar="سبورة بيضاء" de="Whiteboard" en="Whiteboard" es="pizarra blanca" fr="Tableau blanc" he="לוח לבן" nl="whiteboard" pt_BR="Quadro branco" pt_PT="Quadro branco" ru="Маркерная доска" />
+        <word
+            ar="جهاز عرض" de="Projektor" en="Projector" es="proyector" fr="Projecteur" he="מקרן" nl="projector" pt_BR="Projetor" pt_PT="Projetor" ru="Проектор" />
+        <word
+            ar="مجهر" de="Mikroskop" en="Microscope" es="microscopio" fr="Microscope" he="מיקרוסקופ" nl="microscoop" pt_BR="Microscópio" pt_PT="Microscópio" ru="Микроскоп" />
+        <word
+            ar="تلسكوب" de="Teleskop" en="Telescope" es="telescopio" fr="Télescope" he="טלסקופ" nl="telescoop" pt_BR="Telescópio" pt_PT="Telescópio" ru="Телескоп" />
+        <word
+            ar="مِعداد" de="Abakus" en="Abacus" es="ábaco" fr="Boulier" he="חשבונייה" nl="telraam" pt_BR="Ábaco" pt_PT="Ábaco" ru="Счёты" />
+        <word
+            ar="مجلد" de="Ordner" en="Folder" es="carpeta" fr="Chemise" he="תיקייה" nl="map" pt_BR="Pasta" pt_PT="Pasta" ru="Папка" />
+    </string-array><!-- D — קשה -->
+    <string-array name="school_d">
+        <word
+            ar="أنبوب اختبار" de="Reagenzglas" en="Test tube" es="tubo de ensayo" fr="tube à essai" he="מבחנה" nl="reageerbuis" pt_BR="tubo de ensaio" pt_PT="tubo de ensaio" ru="пробирка" />
+        <word
+            ar="كأس مخبري" de="Becherglas" en="Beaker" es="vaso de precipitados" fr="bécher" he="כוס מדידה" nl="bekerglas" pt_BR="béquer" pt_PT="béquer" ru="лабораторный стакан" />
+        <word
+            ar="مغناطيس" de="Magnet" en="Magnet" es="imán" fr="aimant" he="מגנט" nl="magneet" pt_BR="ímã" pt_PT="íman" ru="магнит" />
+        <word
+            ar="مثلث" de="Dreieck" en="Triangle" es="triángulo" fr="triangle" he="משולש" nl="driehoek" pt_BR="triângulo" pt_PT="triângulo" ru="треугольник" />
+        <word
+            ar="وردة البوصلة" de="Windrose" en="Compass rose" es="rosa de los vientos" fr="rose des vents" he="שושנת רוחות" nl="windroos" pt_BR="rosa dos ventos" pt_PT="rosa-dos-ventos" ru="роза ветров" am="የንፋስ አበባ" />
+        <word
+            ar="ميزان حرارة" de="Thermometer" en="Thermometer" es="termómetro" fr="thermomètre" he="מדחום" nl="thermometer" pt_BR="termômetro" pt_PT="termómetro" ru="термометр" />
+        <word
+            ar="بارومتر" de="Barometer" en="Barometer" es="barómetro" fr="baromètre" he="ברומטר" nl="barometer" pt_BR="barômetro" pt_PT="barómetro" ru="барометр" am="ባሮሜትር" />
+        <word
+            ar="قدمة قياس" de="Messschieber" en="Caliper" es="calibre" fr="pied à coulisse" he="קליבר" nl="schuifmaat" pt_BR="paquímetro" pt_PT="paquímetro" ru="штангенциркуль" />
+    </string-array><!-- E — קשה יותר -->
+    <string-array name="school_e">
+        <word
+            ar="الجدول الدوري" de="Periodensystem" en="Periodic table" es="tabla periódica" fr="tableau périodique" he="טבלת מחזור היסודות" nl="periodiek systeem" pt_BR="tabela periódica" pt_PT="tabela periódica" ru="периодическая таблица" am="የንጥረ ነገሮች ወቅታዊ ሰንጠረዥ" />
+        <word
+            ar="ماصة دقيقة" de="Mikropipette" en="Micropipette" es="micropipeta" fr="micropipette" he="מיקרופיפטה" nl="micropipet" pt_BR="micropipeta" pt_PT="micropipeta" ru="микропипетка" am="ማይክሮፓይፔት" />
+        <word
+            ar="راسم الذبذبات" de="Oszilloskop" en="Oscilloscope" es="osciloscopio" fr="oscilloscope" he="אוסצילוסקופ" nl="oscilloscoop" pt_BR="osciloscópio" pt_PT="osciloscópio" ru="осциллограф" am="ኦሲሎስኮፕ" />
+        <word
+            ar="كرونومتر" de="Chronometer" en="Chronometer" es="cronómetro" fr="chronomètre" he="כרונומטר" nl="chronometer" pt_BR="cronômetro" pt_PT="cronómetro" ru="хронометр" am="ክሮኖሜትር" />
+        <word
+            ar="مطياف" de="Spektroskop" en="Spectroscope" es="espectroscopio" fr="spectroscope" he="ספקטרוסקופ" nl="spectroscoop" pt_BR="espectroscópio" pt_PT="espectroscópio" ru="спектроскоп" am="ስፔክትሮስኮፕ" />
+        <word
+            ar="شوكة رنانة" de="Stimmgabel" en="Tuning fork" es="diapasón" fr="diapason" he="מזלג כוונון" nl="stemvork" pt_BR="diapasão" pt_PT="diapasão" ru="камертон" am="ቱኒንግ ፎርክ" />
+        <word
+            ar="راسم الزلازل" de="Seismograf" en="Seismograph" es="sismógrafo" fr="sismographe" he="סיסמוגרף" nl="seismograaf" pt_BR="sismógrafo" pt_PT="sismógrafo" ru="сейсмограф" am="ሴይስሞግራፍ" />
+        <word
+            ar="خريطة سماوية دوّارة" de="Planisphäre" en="Planisphere" es="planisferio" fr="planisphère" he="פלניספרה" nl="planisfeer" pt_BR="planisfério" pt_PT="planisfério" ru="планисфера" am="ፕላኒስፌር" />
+    </string-array><!-- ========================= PEOPLE / FAMILY — בני משפחה ואנשים ========================== --><!-- (כבר הועברו במלואם, מילות Father/Mother וכו' דומות ל-Dad/Mom ולכן לא שוכפלו) --><!-- OTHER — A (קל מאוד): מילים קצרות ושכיחות, היגוי פשוט בעברית ובאנגלית -->
+    <string-array name="other_a">
+        <word
+            ar="ملك" de="König" en="King" es="rey" fr="Roi" he="מלך" nl="koning" pt_BR="Rei" pt_PT="Rei" ru="Король" />
+        <word
+            ar="ملكة" de="Königin" en="Queen" es="reina" fr="Reine" he="מלכה" nl="koningin" pt_BR="Rainha" pt_PT="Rainha" ru="Королева" />
+        <word
+            ar="أمير" de="Prinz" en="Prince" es="príncipe" fr="Prince" he="נסיך" nl="prins" pt_BR="Príncipe" pt_PT="Príncipe" ru="Принц" />
+        <word
+            ar="أميرة" de="Prinzessin" en="Princess" es="princesa" fr="Princesse" he="נסיכה" nl="prinses" pt_BR="Princesa" pt_PT="Princesa" ru="Принцесса" />
+        <word
+            ar="تاج" de="Krone" en="Crown" es="corona" fr="Couronne" he="כתר" nl="kroon" pt_BR="Coroa" pt_PT="Coroa" ru="Корона" />
+        <word
+            ar="قلعة" de="Schloss" en="Castle" es="castillo" fr="Château" he="טירה" nl="kasteel" pt_BR="Castelo" pt_PT="Castelo" ru="Замок" />
+        <word
+            ar="بالون" de="Luftballon" en="Balloon" es="globo" fr="Ballon" he="בלון" nl="ballon" pt_BR="Balão" pt_PT="Balão" ru="Воздушный шар" />
+        <word
+            ar="طبل" de="Trommel" en="Drum" es="tambor" fr="Tambour" he="תוף" nl="trommel" pt_BR="Tambor" pt_PT="Tambor" ru="Барабан" />
+        <word
+            ar="علم" de="Flagge" en="Flag" es="bandera" fr="Drapeau" he="דגל" nl="vlag" pt_BR="Bandeira" pt_PT="Bandeira" ru="Флаг" />
+        <word
+            ar="سحر" de="Magie" en="Magic" es="magia" fr="Magie" he="קסם" nl="magie" pt_BR="Magia" pt_PT="Magia" ru="Магия" />
+        <word
+            ar="أحجية" de="Puzzle" en="Puzzle" es="rompecabezas" fr="Puzzle" he="פאזל" he2="פזל" he3="חידה" nl="puzzel" pt_BR="Quebra-cabeça" pt_PT="Puzzle" ru="Пазл" />
+    </string-array><!-- OTHER — B (קל): עדיין נפוצות אצל ילדים, היגוי מעט פחות אינטואיטיבי/שתי הברות+ -->
+    <string-array name="other_b">
+        <word
+            ar="فندق" de="Hotel" en="Hotel" es="hotel" fr="Hôtel" he="בית מלון" nl="hotel" pt_BR="Hotel" pt_PT="Hotel" ru="Отель" />
+        <word ar="سباق" de="Rennen" en="Race" es="carrera" fr="course" he="מירוץ" nl="race" pt_BR="corrida" pt_PT="corrida" ru="Гонка" />
+        <word ar="كريستال" de="Kristall" en="Crystal" es="cristal" fr="Cristal" he="גביש" nl="kristal" pt_BR="Cristal" pt_PT="Cristal" ru="Кристалл" />
+        <word
+            ar="يونيكورن" de="Einhorn" en="Unicorn" es="unicornio" fr="Licorne" he="חד־קרן" nl="eenhoorn" pt_BR="Unicórnio" pt_PT="Unicórnio" ru="Единорог" />
+        <word
+            ar="كمان" de="Violine" en="Violin" es="violín" fr="Violon" he="כינור" nl="viool" pt_BR="Violino" pt_PT="Violino" ru="Скрипка" />
+        <word
+            ar="قرصان" de="Pirat" en="Pirate" es="pirata" fr="Pirate" he="פיראט" nl="piraat" pt_BR="Pirata" pt_PT="Pirata" ru="Пират" />
+        <word
+            ar="فارس" de="Ritter" en="Knight" es="caballero" fr="Chevalier" he="אביר" nl="ridder" pt_BR="Cavaleiro" pt_PT="Cavaleiro" ru="Рыцарь" />
+        <word
+            ar="خوذة" de="Helm" en="Helmet" es="casco" fr="Casque" he="קסדה" nl="helm" pt_BR="Capacete" pt_PT="Capacete" ru="Шлем" />
+        <word
+            ar="درع" de="Schild" en="Shield" es="escudo" fr="Bouclier" he="מגן" nl="schild" pt_BR="Escudo" pt_PT="Escudo" ru="Щит" />
+        <word
+            ar="تنين" de="Drache" en="Dragon" es="dragón" fr="Dragon" he="דרקון" nl="draak" pt_BR="Dragão" pt_PT="Dragão" ru="Дракон" />
+        <word
+            ar="جنية" de="Fee" en="Fairy" es="hada" fr="Fée" he="פיה" nl="fee" pt_BR="Fada" pt_PT="Fada" ru="Фея" />
+        <word
+            ar="ساحر" de="Zauberer" en="Wizard" es="mago" fr="Sorcier" he="קוסם" nl="tovenaar" pt_BR="Mago" pt_PT="Mago" ru="Волшебник" />
+        <word
+            ar="قصر" de="Palast" en="Palace" es="palacio" fr="Palais" he="ארמון" nl="paleis" pt_BR="Palácio" pt_PT="Palácio" ru="Дворец" />
+    </string-array><!-- OTHER — C (בינוני): צירופים/מונחים מוכרים אך ארוכים או פחות יומיומיים -->
+    <string-array name="other_c">
+        <word ar="كأس" de="Pokal" en="Trophy" es="trofeo" fr="Trophée" he="גביע" nl="trofee" pt_BR="Troféu" pt_PT="Troféu" ru="Трофей" />
+        <word ar="كوب قهوة" de="Tasse Kaffee" en="Cup of coffee" es="taza de café" fr="Tasse de café" he="כוס קפה" nl="kopje koffie" pt_BR="Xícara de café" pt_PT="Chávena de café" ru="Чашка кофе" />
+        <word
+            ar="كنز" de="Schatz" en="Treasure" es="tesoro" fr="Trésor" he="אוצר" nl="schat" pt_BR="Tesouro" pt_PT="Tesouro" ru="Сокровище" />
+        <word
+            ar="فانوس" de="Laterne" en="Lantern" es="linterna" fr="Lanterne" he="פנס" nl="lantaarn" pt_BR="Lanterna" pt_PT="Lanterna" ru="Фонарь" />
+        <word
+            ar="زي تنكري" de="Kostüm" en="Costume" es="disfraz" fr="Déguisement" he="תחפושת" nl="kostuum" pt_BR="Fantasia" pt_PT="Fantasia" ru="Костюм" />
+        <word
+            ar="هارمونيكا" de="Mundharmonika" en="Harmonica" es="armónica" fr="Harmonica" he="מפוחית" nl="mondharmonica" pt_BR="Harmônica" pt_PT="Harmónica" ru="Губная гармошка" />
+        <word
+            ar="أكورديون" de="Akkordeon" en="Accordion" es="acordeón" fr="Accordéon" he="אקורדיון" nl="accordeon" pt_BR="Acordeão" pt_PT="Acordeão" ru="Аккордеон" />
+        <word
+            ar="مظلة" de="Fallschirm" en="Parachute" es="paracaídas" fr="Parachute" he="מצנח" nl="parachute" pt_BR="Paraquedas" pt_PT="Paraquedas" ru="Парашют" />
+        <word
+            ar="سيف" de="Schwert" en="Sword" es="espada" fr="Épée" he="חרב" nl="zwaard" pt_BR="Espada" pt_PT="Espada" ru="Меч" />
+        <word
+            ar="بوق" de="Trompete" en="Trumpet" es="trompeta" fr="Trompette" he="חצוצרה" nl="trompet" pt_BR="Trompete" pt_PT="Trompete" ru="Труба" />
+        <word
+            ar="درع" de="Rüstung" en="Armour" es="armadura" fr="Armure" he="שריון" nl="harnas" pt_BR="Armadura" pt_PT="Armadura" ru="Доспехи" />
+    </string-array><!-- OTHER — D (קשה): מילים ארוכות/פחות שכיחות, או עם היגוי מורכב -->
+    <string-array name="other_d">
+        <word
+            ar="إكسيليفون" de="Xylophon" en="Xylophone" es="xilófono" fr="xylophone" he="קסילופון" nl="xylofoon" pt_BR="xilofone" pt_PT="xilofone" ru="ксилофон" />
+        <word
+            ar="منظار" de="Fernglas" en="Binoculars" es="binoculares" fr="jumelles" he="משקפת" nl="verrekijker" pt_BR="binóculos" pt_PT="binóculos" ru="бинокль" />
+        <word
+            ar="متاهة" de="Labyrinth" en="Labyrinth" es="laberinto" fr="labyrinthe" he="מבוך" nl="doolhof" pt_BR="labirinto" pt_PT="labirinto" ru="лабиринт" />
+        <word
+            ar="أوركسترا" de="Orchester" en="Orchestra" es="orquesta" fr="orchestre" he="תזמורת" nl="orkest" pt_BR="orquestra" pt_PT="orquestra" ru="оркестр" />
+        <word
+            ar="فزاعة" de="Vogelscheuche" en="Scarecrow" es="espantapájaros" fr="épouvantail" he="דחליל" nl="vogelverschrikker" pt_BR="espantalho" pt_PT="espantalho" ru="пугало" />
+        <word
+            ar="جواهر التاج" de="Kronjuwelen" en="Crown jewels" es="joyas de la corona" fr="joyaux de la couronne" he="תכשיטי הכתר" nl="kroonjuwelen" pt_BR="joias da coroa" pt_PT="jóias da coroa" ru="королевские регалии" />
+        <word
+            ar="جسر متحرك" de="Zugbrücke" en="Drawbridge" es="puente levadizo" fr="pont-levis" he="גשר מתרומם" nl="ophaalbrug" pt_BR="ponte levadiça" pt_PT="ponte levadiça" ru="разводной мост" />
+    </string-array><!-- OTHER — E (קשה יותר): מושגים ארוכים/לועזיים, פחות שכיחים לשימוש יומיומי -->
+    <string-array name="other_e">
+        <word
+            ar="كاليدوسكوب" de="Kaleidoskop" en="Kaleidoscope" es="caleidoscopio" fr="kaléidoscope" he="קליידוסקופ" nl="kaleidoscoop" pt_BR="caleidoscópio" pt_PT="caleidoscópio" ru="калейдоскоп" />
+        <word
+            ar="هيروغليفية" de="Hieroglyphen" en="Hieroglyphs" es="jeroglíficos" fr="hiéroglyphes" he="כתב חרטומים" nl="hiërogliefen" pt_BR="hieróglifos" pt_PT="hieróglifos" ru="иероглифы" />
+        <word
+            ar="تمويه" de="Tarnung" en="Camouflage" es="camuflaje" fr="camouflage" he="הסוואה" nl="camouflage" pt_BR="camuflagem" pt_PT="camuflagem" ru="камуфляж" />
+        <word
+            ar="مترونوم" de="Metronom" en="Metronome" es="metrónomo" fr="métronome" he="מטרונום" nl="metronoom" pt_BR="metrônomo" pt_PT="metrónomo" ru="метроном" />
+        <word
+            ar="منظار" de="Periskop" en="Periscope" es="periscopio" fr="périscope" he="פריסקופ" nl="periscoop" pt_BR="periscópio" pt_PT="periscópio" ru="перископ" />
+        <word
+            ar="منجنيق" de="Katapult" en="Catapult" es="catapulta" fr="catapulte" he="קטפולטה" he2="קלע" nl="katapult" pt_BR="catapulta" pt_PT="catapulta" ru="катапульта" />
+        <word
+            ar="بوابة شبكية" de="Fallgatter" en="Portcullis" es="rastrillo" fr="herse" he="סבכת שער" nl="valhek" pt_BR="grade de castelo" pt_PT="portcullis" ru="герса" />
+    </string-array>
+    <string-array name="food_a">
+        <word
+            ar="آيس كريم" de="Eis" en="Ice cream" es="helado" fr="Glace" he="גלידה" nl="ijs" pt_BR="Sorvete" pt_PT="Gelado" ru="Мороженое" />
+        <word
+            ar="حلوى" de="Bonbon" en="Candy" es="caramelo" fr="Bonbon" he="סוכרייה" he2="ממתק" nl="snoepje" pt_BR="Doce" pt_PT="Doce" ru="Конфета" />
+        <word
+            ar="بسكويت" de="Keks" en="Cookie" es="galleta" fr="Biscuit" he="עוגייה" nl="koekje" pt_BR="Biscoito" pt_PT="Bolacha" ru="Печенье" />
+        <word
+            ar="عصير" de="Saft" en="Juice" es="jugo" fr="Jus" he="מיץ" nl="sap" pt_BR="Suco" pt_PT="Sumo" ru="Сок" />
+        <word
+            ar="حليب" de="Milch" en="Milk" es="leche" fr="Lait" he="חלב" nl="melk" pt_BR="Leite" pt_PT="Leite" ru="Молоко" />
+        <word
+            ar="ماء" de="Wasser" en="Water" es="agua" fr="Eau" he="מים" nl="water" pt_BR="Água" pt_PT="Água" ru="Вода" />
+        <word
+            ar="بيتزا" de="Pizza" en="Pizza" es="pizza" fr="Pizza" he="פיצה" nl="pizza" pt_BR="Pizza" pt_PT="Pizza" ru="Пицца" />
+        <word
+            ar="كعكة" de="Kuchen" en="Cake" es="pastel" fr="Gâteau" he="עוגה" nl="taart" pt_BR="Bolo" pt_PT="Bolo" ru="Торт" />
+        <word
+            ar="مربى" de="Marmelade" en="Jam" es="mermelada" fr="Confiture" he="ריבה" nl="jam" pt_BR="Geleia" pt_PT="Doce" ru="Варенье" />
+    </string-array>
+    <string-array name="food_b">
+        <word ar="شوربة" de="Suppe" en="Soup" es="sopa" fr="Soupe" he="מרק" nl="soep" pt_BR="Sopa" pt_PT="Sopa" ru="Суп" />
+        <word
+            ar="زبادي" de="Joghurt" en="Yogurt" es="yogur" fr="Yaourt" he="יוגורט" nl="yoghurt" pt_BR="Iogurte" pt_PT="Iogurte" ru="Йогурт" />
+        <word
+            ar="بان كيك" de="Pfannkuchen" en="Pancake" es="tortita" fr="Pancake" he="פנקייק" nl="pannenkoek" pt_BR="Panqueca" pt_PT="Panqueca" ru="Блин" />
+        <word
+            ar="شوكولاتة" de="Schokolade" en="Chocolate" es="chocolate" fr="Chocolat" he="שוקולד" nl="chocolade" pt_BR="Chocolate" pt_PT="Chocolate" ru="Шоколад" />
+        <word
+            ar="ساندويتش" de="Sandwich" en="Sandwich" es="sándwich" fr="Sandwich" he="כריך" he2="סנדוויץ׳" nl="sandwich" pt_BR="Sanduíche" pt_PT="Sandes" ru="Сэндвич" />
+        <word
+            ar="معكرونة" de="Nudeln" en="Pasta" es="pasta" fr="Pâtes" he="פסטה" nl="pasta" pt_BR="Massa" pt_PT="Massa" ru="Макароны" />
+        <word
+            ar="أرز" de="Reis" en="Rice" es="arroz" fr="Riz" he="אורז" nl="rijst" pt_BR="Arroz" pt_PT="Arroz" ru="Рис" />
+        <word
+            ar="بيتا" de="Pita" en="Pita" es="pita" fr="Pita" he="פיתה" nl="pita" pt_BR="Pita" pt_PT="Pita" ru="Пита" />
+        <word
+            ar="مصاصة" de="Lutscher" en="Lollipop" es="piruleta" fr="Sucette" he="סוכרייה על מקל" nl="lolly" pt_BR="Pirulito" pt_PT="Chupa-chupa" ru="Леденец" />
+        <word
+            ar="جبن" de="Käse" en="Cheese" es="queso" fr="Fromage" he="גבינה" nl="kaas" pt_BR="Queijo" pt_PT="Queijo" ru="Сыр" />
+		<word
+            ar="بيغل" de="Bagel" en="Bagel" es="bagel" fr="bagel" he="בייגל" nl="bagel" pt_BR="bagel" pt_PT="bagel" ru="бейгл" />
+    </string-array>
+    <string-array name="food_c">
+        <word ar="يخنة" de="Eintopf" en="Stew" es="guiso" fr="Ragoût" he="תבשיל" nl="stoofpot" pt_BR="Ensopado" pt_PT="Estufado" ru="Тушёное блюдо" />
+        <word
+            ar="هوت دوغ" de="Hotdog" en="Hot dog" es="perrito caliente" fr="Hot-dog" he="נקניקייה" nl="hotdog" pt_BR="Cachorro-quente" pt_PT="Cachorro-quente" ru="Хот-дог" />
+        <word
+            ar="حبوب الإفطار" de="Frühstücksflocken" en="Cereal" es="cereales" fr="Céréales" he="דגני בוקר" he2="קורנפלקס" nl="ontbijtgranen" pt_BR="Cereais" pt_PT="Cereais" ru="Хлопья" />
+        <word
+            ar="وافل" de="Waffel" en="Waffle" es="gofre" fr="Gaufre" he="וופל" nl="wafel" pt_BR="Waffle" pt_PT="Waffle" ru="Вафля" />
+        <word
+            ar="ناجتس الدجاج" de="Hähnchen-Nuggets" en="Chicken nuggets" es="nuggets de pollo" fr="Nuggets de poulet" he="נאגטס עוף" he2="שניצלונים" nl="kipnuggets" pt_BR="Nuggets de frango" pt_PT="Nuggets de frango" ru="Куриные наггетсы" />
+        <word
+            ar="همبرغر" de="Hamburger" en="Hamburger" es="hamburguesa" fr="Hamburger" he="המבורגר" nl="hamburger" pt_BR="Hambúrguer" pt_PT="Hambúrguer" ru="Гамбургер" />
+        <word
+            ar="بطاطس مقلية" de="Pommes frites" en="French fries" es="patatas fritas" fr="Frites" he="צ׳יפס" he2="טוגנים" nl="frietjes" pt_BR="Batata frita" pt_PT="Batatas fritas" ru="Картофель фри" />
+        <word
+            ar="بيض مخفوق" de="Rührei" en="Scrambled eggs" es="huevos revueltos" fr="Œufs brouillés" he="חביתה" he2="ביצים מקושקשות" nl="roerei" pt_BR="Ovos mexidos" pt_PT="Ovos mexidos" ru="Яичница-болтунья" />
+        <word
+            ar="زبدة الفول السوداني" de="Erdnussbutter" en="Peanut butter" es="mantequilla de cacahuete" fr="Beurre de cacahuète" he="חמאת בוטנים" nl="pindakaas" pt_BR="Pasta de amendoim" pt_PT="Manteiga de amendoim" ru="Арахисовая паста" />
+        <word
+            ar="مصاصة مثلجة" de="Eis am Stiel" en="Popsicle" es="polo" fr="Bâtonnet glacé" he="ארטיק" nl="ijsje" pt_BR="Picolé" pt_PT="Gelado no pau" ru="Эскимо" />
+        <word
+            ar="حمص" de="Hummus" en="Hummus" es="hummus" fr="Houmous" he="חומוס" nl="hummus" pt_BR="Húmus" pt_PT="Húmus" ru="Хумус" />
+        <word
+            ar="كاتشب" de="Ketchup" en="Ketchup" es="kétchup" fr="Ketchup" he="קטשופ" nl="ketchup" pt_BR="Ketchup" pt_PT="Ketchup" ru="Кетчуп" />
+		<word
+            ar="دونات" de="Donut" en="Donut" es="dona" fr="beignet" he="דונאט" he2="סופגנייה" nl="donut" pt_BR="rosquinha" pt_PT="donut" ru="пончик" />
+		<word
+            ar="شوربة دجاج" de="Hühnersuppe" en="Chicken soup" es="sopa de pollo" fr="soupe au poulet" he="מרק עוף" nl="kippensoep" pt_BR="sopa de frango" pt_PT="sopa de galinha" ru="куриный суп" />
+		<word
+            ar="بريتزل" de="Brezel" en="Pretzel" es="pretzel" fr="bretzel" he="בייגלה" nl="pretzel" pt_BR="pretzel" pt_PT="pretzel" ru="крендель" />
+		<word
+            ar="مكرونة بالجبن" de="Mac and Cheese" en="Mac and cheese" es="macarrones con queso" fr="macaroni au fromage" he="מקרוני עם גבינה" he2="מאק אנד צ׳יז" nl="macaroni met kaas" pt_BR="macarrão com queijo" pt_PT="massa com queijo" ru="макароны с сыром" />
+        <word
+            ar="ساندويتش جبن مشوي" de="Käsetoast" en="Grilled cheese" es="sándwich de queso a la plancha" fr="sandwich au fromage grillé" he="טוסט גבינה" he2="כריך גבינה חם" nl="gegrilde kaassandwich" pt_BR="sanduíche de queijo quente" pt_PT="sanduíche de queijo quente" ru="жареный бутерброд с сыром" />
+    </string-array>
+    <string-array name="food_d">
+        <word ar="عربة آيس كريم" de="Eiswagen" en="Ice cream truck" es="camión de helados" fr="Camion de glace" he="אוטו גלידה" nl="ijskar" pt_BR="Caminhão de sorvete" pt_PT="Carrinha de gelados" ru="Фургон с мороженым" />
+        <word ar="كوب آيس كريم" de="Eiswaffel" en="Ice cream cone" es="cono de helado" fr="Cornet de glace" he="גביע גלידה" nl="ijsje in een hoorntje" pt_BR="Casquinha de sorvete" pt_PT="Cone de gelado" ru="Рожок с мороженым" />
+        <word ar="مطعم" de="Restaurant" en="Restaurant" es="restaurante" fr="Restaurant" he="מסעדה" nl="restaurant" pt_BR="Restaurante" pt_PT="Restaurante" ru="Ресторан" />
+        <word
+            ar="أصابع السمك" de="Fischstäbchen" en="Fish sticks" es="palitos de pescado" fr="bâtonnets de poisson" he="אצבעות דג" nl="vissticks" pt_BR="palitos de peixe" pt_PT="palitos de peixe" ru="рыбные палочки" />
+        <word
+            ar="خبز فرنسي محمص" de="Armer Ritter" en="French toast" es="tostada francesa" fr="pain perdu" he="טוסט צרפתי" nl="wentelteefje" pt_BR="rabanada" pt_PT="rabanada" ru="французский тост" />
+        <word
+            ar="بودينغ" de="Pudding" en="Pudding" es="pudin" fr="pudding" he="פודינג" nl="pudding" pt_BR="pudim" pt_PT="pudim" ru="пудинг" />
+		<word
+            ar="فلافل" de="Falafel" en="Falafel" es="falafel" fr="falafel" he="פלאפל" nl="falafel" pt_BR="falafel" pt_PT="falafel" ru="фалафель" />
+		<word
+            ar="سوشي" de="Sushi" en="Sushi" es="sushi" fr="sushi" he="סושי" nl="sushi" pt_BR="sushi" pt_PT="sushi" ru="суши" />
+    </string-array>
+    <string-array name="food_e">
+        <word
+            ar="لازانيا" de="Lasagne" en="Lasagna" es="lasaña" fr="lasagnes" he="לזניה" nl="lasagne" pt_BR="lasanha" pt_PT="lasanha" ru="лазанья" />
+        <word
+            ar="كيساديلا" de="Quesadilla" en="Quesadilla" es="quesadilla" fr="quesadilla" he="קסדייה" nl="quesadilla" pt_BR="quesadilla" pt_PT="quesadilla" ru="кесадилья" />
+        <word
+            ar="طحينة" de="Tahini" en="Tahini" es="tahini" fr="tahini" he="טחינה" nl="tahin" pt_BR="tahine" pt_PT="tahini" ru="тахини" />
+        <word
+            ar="رافيولي" de="Ravioli" en="Ravioli" es="ravioli" fr="raviolis" he="רביולי" nl="ravioli" pt_BR="ravióli" pt_PT="ravióli" ru="равиоли" />
+        <word
+            ar="كريب" de="Crêpe" en="Crepe" es="crepe" fr="crêpe" he="קרפ" nl="crêpe" pt_BR="crepe" pt_PT="crepe" ru="креп" />
+        <word
+            ar="ناتشوز" de="Nachos" en="Nachos" es="nachos" fr="nachos" he="נאצ׳וס" nl="nacho's" pt_BR="nachos" pt_PT="nachos" ru="начос" />
+        <word
+            ar="بوريتو" de="Burrito" en="Burrito" es="burrito" fr="burrito" he="בוריטו" nl="burrito" pt_BR="burrito" pt_PT="burrito" ru="буррито" />
+        <word
+            ar="كيش" de="Quiche" en="Quiche" es="quiche" fr="quiche" he="קיש" nl="quiche" pt_BR="quiche" pt_PT="quiche" ru="киш" />
+    </string-array><!-- A — קל מאוד -->
+    <string-array name="people_a">
+        <word
+            ar="رضيع" de="Baby" en="Baby" es="bebé" fr="Bébé" he="תינוק" nl="baby" pt_BR="Bebê" pt_PT="Bebé" ru="Младенец" />
+        <word
+            ar="ولد" de="Junge" en="Boy" es="niño" fr="Garçon" he="ילד" nl="jongen" pt_BR="Menino" pt_PT="Menino" ru="Мальчик" />
+        <word
+            ar="بنت" de="Mädchen" en="Girl" es="niña" fr="Fille" he="ילדה" he2="נַעֲרָה" he3="בחורה" nl="meisje" pt_BR="Menina" pt_PT="Menina" ru="Девочка" />
+        <word
+            ar="ماما" de="Mama" en="Mom" es="mamá" fr="Maman" he="אמא" nl="mama" pt_BR="Mamãe" pt_PT="Mãe" ru="Мама" />
+        <word
+            ar="بابا" de="Papa" en="Dad" es="papá" fr="Papa" he="אבא" nl="papa" pt_BR="Papai" pt_PT="Pai" ru="Папа" />
+        <word
+            ar="رجل" de="Mann" en="Man" es="hombre" fr="Homme" he="איש" he2="גבר" nl="man" pt_BR="Homem" pt_PT="Homem" ru="Мужчина" />
+        <word
+            ar="امرأة" de="Frau" en="Woman" es="mujer" fr="Femme" he="אישה" he2="גברת" nl="vrouw" pt_BR="Mulher" pt_PT="Mulher" ru="Женщина" />
+        <word
+            ar="إخوة" de="Brüder" en="Brothers" es="hermanos" fr="Frères" he="אחים" nl="broers" pt_BR="Irmãos" pt_PT="Irmãos" ru="Братья" />
+        <word
+            ar="أخوات" de="Schwestern" en="Sisters" es="hermanas" fr="Sœurs" he="אחיות" nl="zussen" pt_BR="Irmãs" pt_PT="Irmãs" ru="Сёстры" />
+        <word
+            ar="أصدقاء" de="Freunde" en="Friends" es="amigos" fr="Amis" he="חברים" nl="vrienden" pt_BR="Amigos" pt_PT="Amigos" ru="Друзья" />
+    </string-array><!-- B — קל -->
+    <string-array name="people_b">
+        <word
+            ar="جد" de="Opa" en="Grandpa" es="abuelo" fr="Grand-père" he="סבא" nl="opa" pt_BR="Vovô" pt_PT="Avô" ru="Дедушка" />
+        <word
+            ar="جدة" de="Oma" en="Grandma" es="abuela" fr="Grand-mère" he="סבתא" nl="oma" pt_BR="Vovó" pt_PT="Avó" ru="Бабушка" />
+        <word
+            ar="توأمان" de="Zwillinge" en="Twins" es="gemelos" fr="Jumeaux" he="תאומים" nl="tweelingen" pt_BR="Gêmeos" pt_PT="Gémeos" ru="Близнецы" />
+        <word
+            ar="طالب" de="Schüler" en="Student" es="estudiante" fr="Élève" he="תלמיד" nl="leerling" pt_BR="Aluno" pt_PT="Aluno" ru="Ученик" />
+        <word
+            ar="عائلة" de="Familie" en="Family" es="familia" fr="Famille" he="משפחה" nl="familie" pt_BR="Família" pt_PT="Família" ru="Семья" />
+        <word
+            ar="جار" de="Nachbar" en="Neighbor" es="vecino" fr="Voisin" he="שכן" nl="buur" pt_BR="Vizinho" pt_PT="Vizinho" ru="Сосед" />
+    </string-array><!-- C — בינוני -->
+    <string-array name="people_c">
+        <word ar="عروس" de="Braut" en="Bride" es="novia" fr="Mariée" he="כלה" nl="bruid" pt_BR="Noiva" pt_PT="Noiva" ru="Невеста" />
+        <word
+            ar="عم" de="Onkel" en="Uncle" es="tío" fr="Oncle" he="דוד" nl="oom" pt_BR="Tio" pt_PT="Tio" ru="Дядя" am="አጎት" />
+        <word
+            ar="ابن" de="Sohn" en="Son" es="hijo" fr="Fils" he="בן" nl="zoon" pt_BR="Filho" pt_PT="Filho" ru="Сын" />
+        <word
+            ar="ابنة" de="Tochter" en="Daughter" es="hija" fr="Fille" he="בת" nl="dochter" pt_BR="Filha" pt_PT="Filha" ru="Дочь" />
+        <word
+            ar="ابن عم" de="Cousin" en="Cousin" es="primo" fr="Cousin" he="בן דוד" nl="neef" pt_BR="Primo" pt_PT="Primo" ru="Кузен" am="የአጎት ልጅ" />
+        <word
+            ar="رضيعة" de="Babymädchen" en="Baby girl" es="bebé niña" fr="Bébé fille" he="תינוקת" nl="meisjesbaby" pt_BR="Bebê menina" pt_PT="Bebé menina" ru="Младенец-девочка" am="ሴት ሕፃን" />
+        <word
+            ar="رضيع" de="Babyjunge" en="Baby boy" es="bebé niño" fr="Bébé garçon" he="תינוק" nl="jongensbaby" pt_BR="Bebê menino" pt_PT="Bebé menino" ru="Младенец-мальчик" am="ወንድ ሕፃን" />
+        <word
+            ar="صهر" de="Schwager" en="Brother-in-law" es="cuñado" fr="Beau-frère" he="גיס" nl="zwager" pt_BR="Cunhado" pt_PT="Cunhado" ru="Шурин/зять" am="የእህት/የወንድም ባል" />
+        <word
+            ar="زوجة الأخ" de="Schwägerin" en="Sister-in-law" es="cuñada" fr="Belle-sœur" he="גיסה" nl="schoonzus" pt_BR="Cunhada" pt_PT="Cunhada" ru="Невестка/золовка" am="የወንድም/የእህት ሚስት" />
+        <word
+            ar="زوج" de="Ehemann" en="Husband" es="marido" fr="Mari" he="בעל" nl="echtgenoot" pt_BR="Marido" pt_PT="Marido" ru="Муж" am="ባል" />
+        <word
+            ar="زوجة" de="Ehefrau" en="Wife" es="esposa" fr="Femme" he="אישה" nl="echtgenote" pt_BR="Esposa" pt_PT="Esposa" ru="Жена" am="ሚስት" />
+        <word
+            ar="أشقاء" de="Geschwister" en="Siblings" es="hermanos" fr="frères/sœurs" he="אחים" nl="broers of zussen" pt_BR="irmãos" pt_PT="irmãos" ru="братья/сестры" />
+        <word
+            ar="ضيف" de="Gast" en="Guest" es="invitado" fr="Invité" he="אורח" nl="gast" pt_BR="Convidado" pt_PT="Convidado" ru="Гость" am="እንግዳ" />
+        <word
+            ar="غريب" de="Fremder" en="Stranger" es="desconocido" fr="étranger" he="זר" nl="vreemde" pt_BR="estranho" pt_PT="estranho" ru="незнакомец" />
+    </string-array><!-- D — קשה -->
+    <string-array name="people_d">
+        <word
+            ar="ابن الأخ أو الأخت" de="Neffe" en="Nephew" es="sobrino" fr="neveu" he="אחיין" nl="neef" pt_BR="sobrinho" pt_PT="sobrinho" ru="племянник" am="የወንድም/የእህት ልጅ (ወንድ)" />
+        <word
+            ar="ابنة الأخ أو الأخت" de="Nichte" en="Niece" es="sobrina" fr="nièce" he="אחיינית" nl="nicht" pt_BR="sobrinha" pt_PT="sobrinha" ru="племянница" am="የወንድም/የእህት ልጅ ሴት" />
+        <word
+            ar="حفيد" de="Enkelkind" en="Grandchild" es="nieto" fr="petit-enfant" he="נכד" he2="נכדה" nl="kleinkind" pt_BR="neto" pt_PT="neto" ru="внук" />
+        <word
+            ar="زوج الأم" de="Stiefvater" en="Stepfather" es="padrastro" fr="beau-père" he="אב חורג" nl="stiefvader" pt_BR="padrasto" pt_PT="padrasto" ru="отчим" am="የእናት ባል" />
+        <word
+            ar="زوجة الأب" de="Stiefmutter" en="Stepmother" es="madrastra" fr="belle-mère" he="אם חורגת" nl="stiefmoeder" pt_BR="madrasta" pt_PT="madrasta" ru="мачеха" am="የአባት ሚስት" />
+        <word
+            ar="ابن الزوج أو الزوجة" de="Stiefsohn" en="Stepson" es="hijastro" fr="beau-fils" he="בן חורג" nl="stiefzoon" pt_BR="enteado" pt_PT="enteado" ru="пасынок" am="የባል/የሚስት ልጅ ወንድ" />
+        <word
+            ar="ابنة الزوج أو الزوجة" de="Stieftochter" en="Stepdaughter" es="hijastra" fr="belle-fille" he="בת חורגת" nl="stiefdochter" pt_BR="enteada" pt_PT="enteada" ru="падчерица" am="የባል/የሚስት ልጅ ሴት" />
+        <word
+            ar="قريب" de="Verwandter" en="Relative" es="pariente" fr="parent" he="קרוב משפחה" nl="familielid" pt_BR="parente" pt_PT="parente" ru="родственник" am="ዘመድ" />
+        <word
+            ar="معارف" de="Bekannter" en="Acquaintance" es="conocido" fr="connaissance" he="מכר" nl="kennis" pt_BR="conhecido" pt_PT="conhecido" ru="знакомый" am="የሚታወቅ ሰው" />
+        <word
+            ar="سلف" de="Vorfahre" en="Ancestor" es="antepasado" fr="ancêtre" he="אב קדמון" nl="voorouder" pt_BR="antepassado" pt_PT="antepassado" ru="предок" />
+		<word
+            ar="سليل" de="Nachkomme" en="Descendant" es="descendiente" fr="descendant" he="צאצא" nl="afstammeling" pt_BR="descendente" pt_PT="descendente" ru="потомок" />
+    </string-array><!-- E — קשה יותר -->
+    <string-array name="people_e">
+        <word
+            ar="خطيب" de="Verlobter" en="Fiancé" es="prometido" fr="fiancé" he="ארוס" nl="verloofde" pt_BR="noivo" pt_PT="noivo" ru="жених" />
+        <word
+            ar="خطيبة" de="Verlobte" en="Fiancée" es="prometida" fr="fiancée" he="ארוסה" nl="verloofde" pt_BR="noiva" pt_PT="noiva" ru="невеста" />
+        <word
+            ar="الأب الروحي" de="Pate" en="Godfather" es="padrino" fr="parrain" he="סנדק" nl="peetvader" pt_BR="padrinho" pt_PT="padrinho" ru="крёстный отец" am="ክርስትና አባት" />
+        <word
+            ar="الأم الروحية" de="Patin" en="Godmother" es="madrina" fr="marraine" he="סנדקית" nl="peettante" pt_BR="madrinha" pt_PT="madrinha" ru="крёстная мать" am="ክርስትና እናት" />
+        <word
+            ar="وصي" de="Vormund" en="Guardian" es="tutor" fr="tuteur" he="אפוטרופוס" nl="voogd" pt_BR="tutor" pt_PT="tutor" ru="опекун" />
+    </string-array><!-- ========================= PROFESSIONS — מקצועות ========================== --><!-- (ללא שינוי) --><!-- A — קל מאוד -->
+    <string-array name="jobs_a">
+        <word ar="كرة القدم" de="Fußball" en="Soccer" es="fútbol" fr="Football" he="כדורגל" nl="voetbal" pt_BR="Futebol" pt_PT="Futebol" ru="Футбол" />
+        <word
+            ar="ممثل" de="Schauspieler" en="Actor" es="actor" fr="Acteur" he="שחקן" he2="שחקנית" nl="acteur" pt_BR="Ator" pt_PT="Ator" ru="Актёр" />
+        <word
+            ar="خباز" de="Bäcker" en="Baker" es="panadero" fr="Boulanger" he="אופה" nl="bakker" pt_BR="Padeiro" pt_PT="Padeiro" ru="Пекарь" />
+        <word
+            ar="سائق" de="Fahrer" en="Driver" es="conductor" fr="Conducteur" he="נהג" he2="נהגת" nl="chauffeur" pt_BR="Motorista" pt_PT="Condutor" ru="Водитель" />
+        <word
+            ar="مزارع" de="Landwirt" en="Farmer" es="granjero" fr="Agriculteur" he="חקלאי" he2="חוואי" nl="boer" pt_BR="Agricultor" pt_PT="Agricultor" ru="Фермер" />
+        <word
+            ar="مغني" de="Sänger" en="Singer" es="cantante" fr="Chanteur" he="זמרת" he2="זמר" nl="zanger" pt_BR="Cantor" pt_PT="Cantor" ru="Певец" />
+        <word
+            ar="طبيب" de="Arzt" en="Doctor" es="médico" fr="Médecin" he="רופא" he2="רופאה" nl="dokter" pt_BR="Médico" pt_PT="Médico" ru="Врач" />
+        <word
+            ar="ممرض" de="Krankenpfleger" en="Nurse" es="enfermero" fr="Infirmier" he="אחות" he2="אח" nl="verpleegkundige" pt_BR="Enfermeiro" pt_PT="Enfermeiro" ru="Медсестра" />
+        <word
+            ar="راقص" de="Tänzer" en="Dancer" es="bailarín" fr="Danseur" he="רקדנית" he2="רקדן" nl="danser" pt_BR="Dançarino" pt_PT="Dançarino" ru="Танцор" />
+    </string-array><!-- B — קל -->
+    <string-array name="jobs_b">
+        <word
+            ar="عالم فلك" de="Astronom" en="Astronomer" es="astrónomo" fr="Astronome" he="אסטרונומית" he2="אסטרונום" nl="astronoom" pt_BR="Astrônomo" pt_PT="Astrónomo" ru="Астроном" />
+        <word
+            ar="معلم" de="Lehrer" en="Teacher" es="maestro" fr="Enseignant" he="מורה" nl="leraar" pt_BR="Professor" pt_PT="Professor" ru="Учитель" />
+        <word
+            ar="شرطي" de="Polizist" en="Police officer" es="policía" fr="Policier" he="שוטר" he2="שוטרת" nl="politieagent" pt_BR="Policial" pt_PT="Polícia" ru="Полицейский" />
+        <word
+            ar="بنّاء" de="Bauarbeiter" en="Builder" es="albañil" fr="Ouvrier du bâtiment" he="בנאי" nl="bouwvakker" pt_BR="Construtor" pt_PT="Construtor" ru="Строитель" />
+        <word
+            ar="خيّاط" de="Schneider" en="Tailor" es="sastre" fr="Tailleur" he="חייט" he2="חייטת" nl="kleermaker" pt_BR="Alfaiate" pt_PT="Alfaiate" ru="Портной" />
+        <word
+            ar="مدير" de="Manager" en="Manager" es="gerente" fr="Manager" he="מנהל" he2="מנהלת" nl="manager" pt_BR="Gerente" pt_PT="Gerente" ru="Менеджер" am="አስተዳዳሪ" />
+        <word
+            ar="فنان" de="Künstler" en="Artist" es="artista" fr="Artiste" he="אמן" he2="אמנית" nl="kunstenaar" pt_BR="Artista" pt_PT="Artista" ru="Художник" am="አርቲስት" />
+        <word
+            ar="طيار" de="Pilot" en="Pilot" es="piloto" fr="Pilote" he="טייס" he2="טייסת" nl="piloot" pt_BR="Piloto" pt_PT="Piloto" ru="Пилот" />
+        <word
+            ar="بحّار" de="Seemann" en="Sailor" es="marinero" fr="Marin" he="מלח" he2="מלחית" nl="zeeman" pt_BR="Marinheiro" pt_PT="Marinheiro" ru="Моряк" />
+        <word
+            ar="رجل إطفاء" de="Feuerwehrmann" en="Firefighter" es="bombero" fr="Pompier" he="כבאית" he2="כבאי" nl="brandweerman" pt_BR="Bombeiro" pt_PT="Bombeiro" ru="Пожарный" />
+    </string-array><!-- C — בינוני -->
+    <string-array name="jobs_c">
+        <word
+            ar="طاهٍ" de="Koch" en="Chef" es="cocinero" fr="Chef" he="טבח" he2="טבחית" nl="chef-kok" pt_BR="Cozinheiro" pt_PT="Cozinheiro" ru="Шеф-повар" />
+        <word
+            ar="نجار" de="Tischler" en="Carpenter" es="carpintero" fr="Charpentier" he="נגר" nl="timmerman" pt_BR="Carpinteiro" pt_PT="Carpinteiro" ru="Плотник" />
+        <word
+            ar="جندي" de="Soldat" en="Soldier" es="soldado" fr="Soldat" he="חייל" he2="חיילת" nl="soldaat" pt_BR="Soldado" pt_PT="Soldado" ru="Солдат" />
+        <word
+            ar="أمين صندوق" de="Kassierer" en="Cashier" es="cajero" fr="Caissier" he="קופאי" he2="קופאית" nl="kassière" pt_BR="Caixa" pt_PT="Caixa" ru="Кассир" />
+        <word
+            ar="مصور" de="Fotograf" en="Photographer" es="fotógrafo" fr="Photographe" he="צלם" he2="צלמת" nl="fotograaf" pt_BR="Fotógrafo" pt_PT="Fotógrafo" ru="Фотограф" />
+        <word
+            ar="ميكانيكي" de="Mechaniker" en="Mechanic" es="mecánico" fr="Mécanicien" he="מכונאי" he2="מכונאית" nl="monteur" pt_BR="Mecânico" pt_PT="Mecânico" ru="Механик" />
+        <word
+            ar="مهندس" de="Ingenieur" en="Engineer" es="ingeniero" fr="Ingénieur" he="מהנדס" he2="מהנדסת" nl="ingenieur" pt_BR="Engenheiro" pt_PT="Engenheiro" ru="Инженер" />
+        <word
+            ar="كهربائي" de="Elektriker" en="Electrician" es="electricista" fr="Électricien" he="חשמלאי" he2="חשמלאית" nl="elektricien" pt_BR="Eletricista" pt_PT="Eletricista" ru="Электрик" />
+        <word
+            ar="عالم" de="Wissenschaftler" en="Scientist" es="científico" fr="Scientifique" he="מדען" he2="מדענית" nl="wetenschapper" pt_BR="Cientista" pt_PT="Cientista" ru="Учёный" />
+        <word
+            ar="طبيب أسنان" de="Zahnarzt" en="Dentist" es="dentista" fr="Dentiste" he="רופא שיניים" he2="רופאת שיניים" nl="tandarts" pt_BR="Dentista" pt_PT="Dentista" ru="Стоматолог" />
+        <word
+            ar="صيدلي" de="Apotheker" en="Pharmacist" es="farmacéutico" fr="Pharmacien" he="רוקח" he2="רוקחת" nl="apotheker" pt_BR="Farmacêutico" pt_PT="Farmacêutico" ru="Фармацевт" />
+        <word
+            ar="محامٍ" de="Anwalt" en="Lawyer" es="abogado" fr="Avocat" he="עורך דין" he2="עורכת דין" nl="advocaat" pt_BR="Advogado" pt_PT="Advogado" ru="Адвокат" />
+        <word
+            ar="قاضٍ" de="Richter" en="Judge" es="juez" fr="Juge" he="שופט" he2="שופטת" nl="rechter" pt_BR="Juiz" pt_PT="Juiz" ru="Судья" />
+		<word
+            ar="مصمم" de="Designer" en="Designer" es="diseñador" fr="designer" he="מעצב" he2="מעצבת" nl="ontwerper" pt_BR="designer" pt_PT="designer" ru="дизайнер" />
+		<word
+            ar="مبرمج" de="Programmierer" en="Programmer" es="programador" fr="programmeur" he="מתכנת" he2="מתכנתת" nl="programmeur" pt_BR="programador" pt_PT="programador" ru="программист" />
+    </string-array><!-- D — קשה -->
+    <string-array name="jobs_d">
+        <word
+            ar="طبيب بيطري" de="Tierarzt" en="Veterinarian" es="veterinario" fr="vétérinaire" he="וטרינר" he2="וטרינרית" nl="dierenarts" pt_BR="veterinário" pt_PT="veterinário" ru="ветеринар" />
+        <word
+            ar="سباك" de="Klempner" en="Plumber" es="fontanero" fr="plombier" he="שרברב" he2="אינסטלטורית" nl="loodgieter" pt_BR="encanador" pt_PT="canalizador" ru="сантехник" am="ቧንቧ ሠራተኛ"/>
+        <word
+            ar="جزار" de="Metzger" en="Butcher" es="carnicero" fr="boucher" he="קצב" he2="קצבית" nl="slager" pt_BR="açougueiro" pt_PT="talhante" ru="мясник" />
+        <word
+            ar="موسيقي" de="Musiker" en="Musician" es="músico" fr="musicien" he="מוזיקאי" he2="מוזיקאית" nl="muzikant" pt_BR="músico" pt_PT="músico" ru="музыкант" />
+        <word
+            ar="محاسب" de="Buchhalter" en="Accountant" es="contador" fr="comptable" he="רואה חשבון" he2="רואת חשבון" nl="boekhouder" pt_BR="contador" pt_PT="contabilista" ru="бухгалтер" />
+        <word
+            ar="صحفي" de="Journalist" en="Journalist" es="periodista" fr="journaliste" he="עיתונאית" nl="journalist" pt_BR="jornalista" pt_PT="jornalista" ru="журналист" />
+        <word
+            ar="مترجم" de="Übersetzer" en="Translator" es="traductor" fr="traducteur" he="מתרגם" he2="מתרגמת" nl="vertaler" pt_BR="tradutor" pt_PT="tradutor" ru="переводчик" />
+        <word
+            ar="مهندس معماري" de="Architekt" en="Architect" es="arquitecto" fr="architecte" he="אדריכל" he2="אדריכלית" nl="architect" pt_BR="arquiteto" pt_PT="arquiteto" ru="архитектор" />
+		<word
+            ar="عالم أحياء" de="Biologe" en="Biologist" es="biólogo" fr="biologiste" he="ביולוג" he2="ביולוגית" nl="bioloog" pt_BR="biólogo" pt_PT="biólogo" ru="биолог" am="ባዮሎጂስት"/>
+		<word
+            ar="باحث" de="Forscher" en="Researcher" es="investigador" fr="chercheur" he="חוקר" he2="חוקרת" nl="onderzoeker" pt_BR="pesquisador" pt_PT="investigador" ru="исследователь" />
+		<word
+            ar="اقتصادي" de="Ökonom" en="Economist" es="economista" fr="économiste" he="כלכלן" he2="כלכלנית" nl="econoom" pt_BR="economista" pt_PT="economista" ru="экономист" am="ኢኮኖሚስት"/>
+		<word
+            ar="جيولوجي" de="Geologe" en="Geologist" es="geólogo" fr="géologue" he="גיאולוג" he2="גיאולוגית" nl="geoloog" pt_BR="geólogo" pt_PT="geólogo" ru="геолог" am="ጂኦሎጂስት"/>
+    </string-array><!-- E — קשה יותר -->
+    <string-array name="jobs_e">
+        <word
+            ar="أخصائي نفسي" de="Psychologe" en="Psychologist" es="psicólogo" fr="psychologue" he="פסיכולוג" he2="פסיכולוגית" nl="psycholoog" pt_BR="psicólogo" pt_PT="psicólogo" ru="психолог" />
+        <word
+            ar="مسعف" de="Notfallsanitäter" en="Paramedic" es="paramédico" fr="ambulancier" he="פרמדיק" he2="פרמדיקית" nl="ambulanceverpleegkundige" pt_BR="paramédico" pt_PT="paramédico" ru="парамедик" />
+        <word
+            ar="فيزيائي" de="Physiker" en="Physicist" es="físico" fr="physicien" he="פיזיקאי" he2="פיזיקאית" nl="natuurkundige" pt_BR="físico" pt_PT="físico" ru="физик" />
+        <word
+            ar="أمين مكتبة" de="Bibliothekar" en="Librarian" es="bibliotecario" fr="bibliothécaire" he="ספרנית" he2="ספרן" nl="bibliothecaris" pt_BR="bibliotecário" pt_PT="bibliotecário" ru="библиотекарь" />
+        <word
+            ar="عالم اجتماع" de="Soziologe" en="Sociologist" es="sociólogo" fr="Sociologue" he="סוציולוג" he2="סוציולוגית" nl="socioloog" pt_BR="Sociólogo" pt_PT="Sociólogo" ru="Социолог" />
+        <word
+            ar="عالم أنثروبولوجيا" de="Anthropologe" en="Anthropologist" es="antropólogo" fr="anthropologue" he="אנתרופולוג" he2="אנתרופולוגית" nl="antropoloog" pt_BR="Antropólogo" pt_PT="Antropólogo" ru="Антрополог" />
+        <word
+            ar="عالم آثار" de="Archäologe" en="Archaeologist" es="arqueólogo" fr="archéologue" he="ארכאולוג" he2="ארכאולוגית" nl="archeoloog" pt_BR="Arqueólogo" pt_PT="Arqueólogo" ru="Археолог" />
+    </string-array><!-- A — קל (בסיסי) -->
+    <string-array name="directions_a">
+        <word
+            ar="فوق" de="Oben" en="Up" es="arriba" fr="En haut" he="למעלה" nl="omhoog" pt_BR="Para cima" pt_PT="Para cima" ru="Вверх" />
+        <word
+            ar="تحت" de="Unten" en="Down" es="abajo" fr="En bas" he="למטה" nl="omlaag" pt_BR="Para baixo" pt_PT="Para baixo" ru="Вниз" />
+        <word
+            ar="يمين" de="Nach rechts" en="Right" es="derecha" fr="À droite" he="ימינה" he2="ימין" nl="rechts" pt_BR="À direita" pt_PT="À direita" ru="Направо" />
+        <word
+            ar="يسار" de="Nach links" en="Left" es="izquierda" fr="À gauche" he="שמאלה" he2="שמאל" nl="links" pt_BR="À esquerda" pt_PT="À esquerda" ru="Налево" />
+        <word
+            ar="قريب" de="Nah" en="Near" es="cerca" fr="Près" he="קרוב" he2="ליד" nl="dichtbij" pt_BR="Perto" pt_PT="Perto" ru="Близко" />
+        <word
+            ar="بعيد" de="Weit" en="Far" es="lejos" fr="Loin" he="רחוק" nl="ver weg" pt_BR="Longe" pt_PT="Longe" ru="Далеко" />
+    </string-array>
+    <string-array name="directions_b">
+        <word
+            ar="إلى الأمام" de="Vorwärts" en="Forward" es="adelante" fr="En avant" he="קדימה" nl="vooruit" pt_BR="Para a frente" pt_PT="Para a frente" ru="Вперёд" />
+        <word
+            ar="إلى الخلف" de="Rückwärts" en="Backward" es="atrás" fr="En arrière" he="אחורה" he2="לאחור" nl="achteruit" pt_BR="Para trás" pt_PT="Para trás" ru="Назад" />
+        <word
+            ar="خلف" de="Hinter" en="Behind" es="detrás" fr="Derrière" he="מאחורי" he2="מאחור" nl="achter" pt_BR="Atrás" pt_PT="Atrás" ru="Позади" />
+        <word
+            ar="داخل" de="Innen" en="Inside" es="dentro" fr="À l’intérieur" he="בפנים" he2="בתוך" nl="binnen" pt_BR="Dentro" pt_PT="Dentro" ru="Внутри" />
+        <word
+            ar="خارج" de="Draußen" en="Outside" es="fuera" fr="Dehors" he="בחוץ" he2="מחוץ ל" nl="buiten" pt_BR="Fora" pt_PT="Fora" ru="Снаружи" />
+    </string-array><!-- C — בינוני (מצפן + תנועות כיוון) -->
+    <string-array name="directions_c">
+        <word
+            ar="أمام" de="Vor" en="In front of" es="delante de" fr="Devant" he="לפני" he2="מול" nl="voor" pt_BR="Em frente de" pt_PT="Em frente de" ru="Перед" />
+        <word
+            ar="شمال" de="Norden" en="North" es="norte" fr="Nord" he="צפון" he2="צפונה" nl="noord" pt_BR="Norte" pt_PT="Norte" ru="Север" />
+        <word
+            ar="جنوب" de="Süden" en="South" es="sur" fr="Sud" he="דרום" he2="דרומה" nl="zuid" pt_BR="Sul" pt_PT="Sul" ru="Юг" />
+        <word
+            ar="شرق" de="Osten" en="East" es="este" fr="Est" he="מזרח" he2="מזרחה" nl="oost" pt_BR="Leste" pt_PT="Este" ru="Восток" />
+        <word
+            ar="غرب" de="Westen" en="West" es="oeste" fr="Ouest" he="מערב" he2="מערבה" nl="west" pt_BR="Oeste" pt_PT="Oeste" ru="Запад" />
+        <word
+            ar="على طول" de="Entlang" en="Along" es="a lo largo de" fr="Le long de" he="לאורך" nl="langs" pt_BR="Ao longo de" pt_PT="Ao longo de" ru="Вдоль" />
+        <word
+            ar="عبر" de="Über" en="Across" es="a través de" fr="À travers" he="מעבר ל" he2="לרוחב" nl="over" pt_BR="Através de" pt_PT="Através de" ru="Через" />
+        <word
+            ar="من خلال" de="Durch" en="Through" es="por" fr="À travers" he="דרך" he2="מבעד ל" nl="door" pt_BR="Através de" pt_PT="Através de" ru="Через" />
+        <word
+            ar="نحو" de="Zu" en="Toward" es="hacia" fr="Vers" he="לעבר" he2="לקראת" nl="naar" pt_BR="Para" pt_PT="Para" ru="К" />
+        <word
+            ar="حول" de="Um" en="Around" es="alrededor de" fr="Autour de" he="מסביב" he2="סביב" nl="rond" pt_BR="À volta de" pt_PT="À volta de" ru="Вокруг" />
+		<word
+            ar="صعودًا" de="bergauf" en="Uphill" es="cuesta arriba" fr="en montée" he="במעלה" he2="במעלה ההר" nl="bergopwaarts" pt_BR="subida" pt_PT="a subir" ru="в гору" />
+        <word
+            ar="نزولًا" de="bergab" en="Downhill" es="cuesta abajo" fr="en descente" he="במורד" he2="במורד ההר" nl="bergafwaarts" pt_BR="descida" pt_PT="a descer" ru="под гору" />
+    </string-array><!-- C — קשה (משולבים/מורכבים) -->
+    <string-array name="directions_d">
+        <word
+            ar="شمال شرق" de="Nordosten" en="Northeast" es="noreste" fr="nord-est" he="צפון-מזרח" nl="noordoost" pt_BR="nordeste" pt_PT="nordeste" ru="северо-восток" />
+        <word
+            ar="شمال غرب" de="Nordwesten" en="Northwest" es="noroeste" fr="nord-ouest" he="צפון-מערב" nl="noordwest" pt_BR="noroeste" pt_PT="noroeste" ru="северо-запад" />
+        <word
+            ar="جنوب شرق" de="Südosten" en="Southeast" es="sureste" fr="sud-est" he="דרום-מזרח" nl="zuidoost" pt_BR="sudeste" pt_PT="sudeste" ru="юго-восток" />
+        <word
+            ar="جنوب غرب" de="Südwesten" en="Southwest" es="suroeste" fr="sud-ouest" he="דרום-מערב" nl="zuidwest" pt_BR="sudoeste" pt_PT="sudoeste" ru="юго-запад" />
+        <word
+            ar="باتجاه عقارب الساعة" de="im Uhrzeigersinn" en="Clockwise" es="en el sentido de las agujas del reloj" fr="dans le sens des aiguilles d'une montre" he="עם כיוון השעון" nl="met de klok mee" pt_BR="no sentido horário" pt_PT="no sentido dos ponteiros do relógio" ru="по часовой стрелке" />
+        <word
+            ar="متوازي" de="parallel" en="Parallel" es="paralelo" fr="parallèle" he="מקביל" nl="parallel" pt_BR="paralelo" pt_PT="paralelo" ru="параллельный" />
+        <word
+            ar="قطري" de="diagonal" en="Diagonal" es="diagonal" fr="diagonal" he="באלכסון" nl="diagonaal" pt_BR="diagonal" pt_PT="diagonal" ru="диагональный" />
+		<word
+            ar="عكس التيار" de="flussaufwärts" en="Upstream" es="río arriba" fr="en amont" he="במעלה הזרם" nl="stroomopwaarts" pt_BR="rio acima" pt_PT="rio acima" ru="против течения" />
+        <word
+            ar="مع التيار" de="flussabwärts" en="Downstream" es="río abajo" fr="en aval" he="במורד הזרם" nl="stroomafwaarts" pt_BR="rio abaixo" pt_PT="rio abaixo" ru="по течению" />
+    </string-array><!-- D — קשה (משולבים/מורכבים) -->
+    <string-array name="directions_e">
+        <word
+            ar="عكس اتجاه عقارب الساعة" de="gegen den Uhrzeigersinn" en="Counterclockwise" es="en sentido contrario a las agujas del reloj" fr="dans le sens inverse des aiguilles d'une montre" he="נגד כיוון השעון" nl="tegen de klok in" pt_BR="no sentido anti-horário" pt_PT="no sentido contrário ao dos ponteiros do relógio" ru="против часовой стрелки" />
+        <word
+            ar="متعامد" de="senkrecht" en="Perpendicular" es="perpendicular" fr="perpendiculaire" he="מאונך" he2="ניצב" nl="loodrecht" pt_BR="perpendicular" pt_PT="perpendicular" ru="перпендикулярный" />
+    </string-array><!-- ========================= NEW: ANIMALS — חיות ========================== --><!-- A — קל מאוד -->
+    <string-array name="animals_a">
+        <word
+            ar="كلب" de="Hund" en="Dog" es="perro" fr="Chien" he="כלב" he2="כלבה" nl="hond" pt_BR="Cachorro" pt_PT="Cão" ru="Собака" />
+        <word
+            ar="قط" de="Katze" en="Cat" es="gato" fr="Chat" he="חתול" he2="חתולה" nl="kat" pt_BR="Gato" pt_PT="Gato" ru="Кошка" />
+        <word
+            ar="سمكة" de="Fisch" en="Fish" es="pez" fr="Poisson" he="דג" nl="vis" pt_BR="Peixe" pt_PT="Peixe" ru="Рыба" />
+        <word
+            ar="طائر" de="Vogel" en="Bird" es="pájaro" fr="Oiseau" he="ציפור" nl="vogel" pt_BR="Pássaro" pt_PT="Pássaro" ru="Птица" />
+        <word
+            ar="بقرة" de="Kuh" en="Cow" es="vaca" fr="Vache" he="פרה" nl="koe" pt_BR="Vaca" pt_PT="Vaca" ru="Корова" />
+        <word
+            ar="حصان" de="Pferd" en="Horse" es="caballo" fr="Cheval" he="סוס" he2="סוסה" nl="paard" pt_BR="Cavalo" pt_PT="Cavalo" ru="Лошадь" />
+        <word
+            ar="خنزير" de="Schwein" en="Pig" es="cerdo" fr="Cochon" he="חזיר" he2="חזירה" nl="varken" pt_BR="Porco" pt_PT="Porco" ru="Свинья" />
+        <word
+            ar="ثعلب" de="Fuchs" en="Fox" es="zorro" fr="Renard" he="שועל" he2="שועלה" nl="vos" pt_BR="Raposa" pt_PT="Raposa" ru="Лиса" />
+        <word
+            ar="بطة" de="Ente" en="Duck" es="pato" fr="Canard" he="ברווז" he2="ברווזה" nl="eend" pt_BR="Pato" pt_PT="Pato" ru="Утка" />
+        <word
+            ar="أوزة" de="Gans" en="Goose" es="ganso" fr="Oie" he="אווז" he2="אווזה" nl="gans" pt_BR="Ganso" pt_PT="Ganso" ru="Гусь" />
+        <word
+            ar="ضفدع" de="Frosch" en="Frog" es="rana" fr="Grenouille" he="צפרדע" nl="kikker" pt_BR="Sapo" pt_PT="Rã" ru="Лягушка" />
+    </string-array><!-- B — קל -->
+    <string-array name="animals_b">
+        <word
+            ar="أسد" de="Löwe" en="Lion" es="león" fr="Lion" he="אריה" nl="leeuw" pt_BR="Leão" pt_PT="Leão" ru="Лев" />
+        <word
+            ar="نمر" de="Tiger" en="Tiger" es="tigre" fr="Tigre" he="נמר" he2="נמרה" nl="tijger" pt_BR="Tigre" pt_PT="Tigre" ru="Тигр" />
+        <word
+            ar="دب" de="Bär" en="Bear" es="oso" fr="Ours" he="דוב" he2="דובה" nl="beer" pt_BR="Urso" pt_PT="Urso" ru="Медведь" />
+        <word
+            ar="قرد" de="Affe" en="Monkey" es="mono" fr="Singe" he="קוף" he2="קופה" nl="aap" pt_BR="Macaco" pt_PT="Macaco" ru="Обезьяна" />
+        <word
+            ar="حمار وحشي" de="Zebra" en="Zebra" es="cebra" fr="Zèbre" he="זברה" nl="zebra" pt_BR="Zebra" pt_PT="Zebra" ru="Зебра" />
+        <word
+            ar="فأر" de="Maus" en="Mouse" es="ratón" fr="Souris" he="עכבר" he2="עכברה" nl="muis" pt_BR="Rato" pt_PT="Rato" ru="Мышь" />
+        <word
+            ar="خروف" de="Schaf" en="Sheep" es="oveja" fr="Mouton" he="כבשה" nl="schaap" pt_BR="Ovelha" pt_PT="Ovelha" ru="Овца" />
+        <word
+            ar="ذئب" de="Wolf" en="Wolf" es="lobo" fr="Loup" he="זאב" he2="זאבה" nl="wolf" pt_BR="Lobo" pt_PT="Lobo" ru="Волк" />
+        <word
+            ar="أرنب" de="Kaninchen" en="Rabbit" es="conejo" fr="Lapin" he="ארנב" he2="ארנבת" nl="konijn" pt_BR="Coelho" pt_PT="Coelho" ru="Кролик" />
+    </string-array><!-- C — בינוני -->
+    <string-array name="animals_c">
+        <word
+            ar="سلحفاة" de="Schildkröte" en="Turtle" es="tortuga" fr="Tortue" he="צב" nl="schildpad" pt_BR="Tartaruga" pt_PT="Tartaruga" ru="Черепаха" />
+        <word
+            ar="كنغر" de="Känguru" en="Kangaroo" es="canguro" fr="Kangourou" he="קנגורו" nl="kangoeroe" pt_BR="Canguru" pt_PT="Canguru" ru="Кенгуру" />
+        <word
+            ar="ثعبان" de="Schlange" en="Snake" es="serpiente" fr="Serpent" he="נחש" nl="slang" pt_BR="Cobra" pt_PT="Cobra" ru="Змея" />
+        <word
+            ar="ماعز" de="Ziege" en="Goat" es="cabra" fr="Chèvre" he="עז" nl="geit" pt_BR="Cabra" pt_PT="Cabra" ru="Коза" />
+        <word
+            ar="حوت" de="Wal" en="Whale" es="ballena" fr="Baleine" he="לווייתן" nl="walvis" pt_BR="Baleia" pt_PT="Baleia" ru="Кит" />
+        <word
+            ar="دلفين" de="Delfin" en="Dolphin" es="delfín" fr="Dauphin" he="דולפין" he2="דולפינה" nl="dolfijn" pt_BR="Golfinho" pt_PT="Golfinho" ru="Дельфин" />
+        <word
+            ar="قرش" de="Hai" en="Shark" es="tiburón" fr="Requin" he="כריש" he2="כרישה" nl="haai" pt_BR="Tubarão" pt_PT="Tubarão" ru="Акула" />
+        <word
+            ar="دجاجة" de="Huhn" en="Chicken" es="gallina" fr="Poule" he="תרנגולת" nl="kip" pt_BR="Galinha" pt_PT="Galinha" ru="Курица" />
+        <word
+            ar="تمساح" de="Alligator" en="Alligator" es="aligátor" fr="Alligator" he="תנין" he2="תנינה" nl="alligator" pt_BR="Jacaré" pt_PT="Aligátor" ru="Аллигатор" />
+        <word
+            ar="فيل" de="Elefant" en="Elephant" es="elefante" fr="Éléphant" he="פיל" he2="פילה" nl="olifant" pt_BR="Elefante" pt_PT="Elefante" ru="Слон" />
+    </string-array><!-- ========================= NEW: TRANSPORT — תחבורה ========================== --><!-- A — קל מאוד -->
+    <string-array name="transport_a">
+        <word ar="لعبة" de="Spielzeug" en="Toy" es="juguete" fr="jouet" he="צעצוע" nl="speelgoed" pt_BR="brinquedo" pt_PT="brinquedo" ru="Игрушка" />
+        <word ar="عجلة" de="Rad" en="Wheel" es="rueda" fr="roue" he="גלגל" nl="wiel" pt_BR="roda" pt_PT="roda" ru="Колесо" />
+        <word
+            ar="حافلة" de="Bus" en="Bus" es="autobús" fr="Bus" he="אוטובוס" nl="bus" pt_BR="Ônibus" pt_PT="Autocarro" ru="Автобус" />
+        <word
+            ar="قطار" de="Zug" en="Train" es="tren" fr="Train" he="רכבת" nl="trein" pt_BR="Trem" pt_PT="Comboio" ru="Поезд" />
+        <word ar="سدادة" de="Stopfen" en="Stopper" es="tapón" fr="bouchon" he="פקק" nl="stop" pt_BR="tampão" pt_PT="rolha" ru="Пробка" />
+        <word
+            ar="سيارة" de="Auto" en="Car" es="coche" fr="Voiture" he="מכונית" nl="auto" pt_BR="Carro" pt_PT="Carro" ru="Машина" />
+        <word
+            ar="سرير" de="Bett" en="Bed" es="cama" fr="Lit" he="מיטה" nl="bed" pt_BR="Cama" pt_PT="Cama" ru="Кровать" />
+        <word
+            ar="مصباح" de="Lampe" en="Lamp" es="lámpara" fr="Lampe" he="מנורה" nl="lamp" pt_BR="Lâmpada" pt_PT="Candeeiro" ru="Лампа" />
+        <word
+            ar="سفينة" de="Schiff" en="Ship" es="barco" fr="Navire" he="ספינה" he2="אונייה" nl="schip" pt_BR="Navio" pt_PT="Navio" ru="Корабль" />
+    </string-array>
+    <string-array name="transport_b">
+        <word ar="إشارة مرور" de="Ampel" en="Traffic light" es="semáforo" fr="Feu de circulation" he="רמזור" nl="verkeerslicht" pt_BR="Semáforo" pt_PT="Semáforo" ru="Светофор" />
+        <word ar="مربع" de="Quadrat" en="Square" es="cuadrado" fr="carré" he="ריבוע" nl="vierkant" pt_BR="quadrado" pt_PT="quadrado" ru="Квадрат" />
+        <word ar="غطاء" de="Deckel" en="Lid" es="tapa" fr="couvercle" he="מכסה" nl="deksel" pt_BR="tampa" pt_PT="tampa" ru="Крышка" />
+        <word
+            ar="دراجة" de="Fahrrad" en="Bicycle" es="bicicleta" fr="Vélo" he="אופניים" nl="fiets" pt_BR="Bicicleta" pt_PT="Bicicleta" ru="Велосипед" />
+        <word ar="قاطرة" de="Lokomotive" en="Locomotive" es="locomotora" fr="Locomotive" he="קטר" nl="locomotief" pt_BR="locomotiva" pt_PT="locomotiva" ru="Локомотив" />
+        <word
+            ar="طائرة" de="Flugzeug" en="Plane" es="avión" fr="Avion" he="מטוס" nl="vliegtuig" pt_BR="Avião" pt_PT="Avião" ru="Самолёт" />
+        <word
+            ar="منزل" de="Haus" en="House" es="casa" fr="Maison" he="בית" nl="huis" pt_BR="Casa" pt_PT="Casa" ru="Дом" />
+    </string-array><!-- ========================= NEW: HOME / FURNITURE — בית וריהוט ========================== --><!-- A — קל מאוד -->
+    <string-array name="home_a">
+        <word
+            ar="قارب" de="Boot" en="Boat" es="barco" fr="Bateau" he="סירה" nl="boot" pt_BR="Barco" pt_PT="Barco" ru="Лодка" />
+        <word
+            ar="طاولة" de="Tisch" en="Table" es="mesa" fr="Table" he="שולחן" nl="tafel" pt_BR="Mesa" pt_PT="Mesa" ru="Стол" />
+        <word
+            ar="شاحنة" de="Lastwagen" en="Truck" es="camión" fr="Camion" he="משאית" nl="vrachtwagen" pt_BR="Caminhão" pt_PT="Camião" ru="Грузовик" />
+        <word
+            ar="كرسي" de="Stuhl" en="Chair" es="silla" fr="Chaise" he="כיסא" nl="stoel" pt_BR="Cadeira" pt_PT="Cadeira" ru="Стул" />
+        <word
+            ar="باب" de="Tür" en="Door" es="puerta" fr="Porte" he="דלת" nl="deur" pt_BR="Porta" pt_PT="Porta" ru="Дверь" />
+        <word
+            ar="نافذة" de="Fenster" en="Window" es="ventana" fr="Fenêtre" he="חלון" nl="raam" pt_BR="Janela" pt_PT="Janela" ru="Окно" />
+        <word
+            ar="أريكة" de="Sofa" en="Sofa" es="sofá" fr="Canapé" he="ספה" nl="bank" pt_BR="Sofá" pt_PT="Sofá" ru="Диван" />
+        <word
+            ar="سيارة أجرة" de="Taxi" en="Taxi" es="taxi" fr="Taxi" he="מונית" nl="taxi" pt_BR="Táxi" pt_PT="Táxi" ru="Такси" />
+        <word
+            ar="كوب" de="Tasse" en="Cup" es="taza" fr="Tasse" he="כוס" he2="ספל" nl="kopje" pt_BR="Xícara" pt_PT="Chávena" ru="Чашка" />
+        <word
+            ar="طبق" de="Teller" en="Plate" es="plato" fr="Assiette" he="צלחת" nl="bord" pt_BR="Prato" pt_PT="Prato" ru="Тарелка" />
+    </string-array><!-- B — קל -->
+    <string-array name="home_b">
+        <word
+            ar="دراجة نارية" de="Motorrad" en="Motorcycle" es="moto" fr="Moto" he="אופנוע" nl="motor" pt_BR="Motocicleta" pt_PT="Motociclo" ru="Мотоцикл" />
+        <word
+            ar="ساعة" de="Uhr" en="Clock" es="reloj" fr="Horloge" he="שעון" nl="klok" pt_BR="Relógio" pt_PT="Relógio" ru="Часы" />
+        <word
+            ar="هاتف" de="Telefon" en="Phone" es="teléfono" fr="Téléphone" he="טלפון" nl="telefoon" pt_BR="Telefone" pt_PT="Telefone" ru="Телефон" />
+        <word
+            ar="مكتب" de="Schreibtisch" en="Desk" es="escritorio" fr="Bureau" he="שולחן כתיבה" nl="bureau" pt_BR="Escrivaninha" pt_PT="Secretária" ru="Письменный стол" />
+        <word
+            ar="فرن" de="Ofen" en="Oven" es="horno" fr="Four" he="תנור" nl="oven" pt_BR="Forno" pt_PT="Forno" ru="Духовка" />
+        <word
+            ar="حوض" de="Spüle" en="Sink" es="fregadero" fr="Évier" he="כיור" nl="gootsteen" pt_BR="Pia" pt_PT="Lava-loiça" ru="Раковина" />
+        <word
+            ar="صابون" de="Seife" en="Soap" es="jabón" fr="Savon" he="סבון" nl="zeep" pt_BR="Sabão" pt_PT="Sabão" ru="Мыло" />
+        <word
+            ar="خزانة" de="Schrank" en="Closet" es="armario" fr="Placard" he="ארון" nl="kast" pt_BR="Armário" pt_PT="Armário" ru="Шкаф" />
+        <word
+            ar="سجادة" de="Teppich" en="Rug" es="alfombra" fr="Tapis" he="שטיח" nl="vloerkleed" pt_BR="Tapete" pt_PT="Tapete" ru="Ковёр" />
+        <word
+            ar="سلة" de="Korb" en="Basket" es="cesta" fr="Panier" he="סל" nl="mand" pt_BR="Cesto" pt_PT="Cesto" ru="Корзина" />
+		<word
+            ar="شرفة" de="Balkon" en="Balcony" es="balcón" fr="balcon" he="מרפסת" nl="balkon" pt_BR="sacada" pt_PT="varanda" ru="балкон" />
+    </string-array><!-- C — בינוני -->
+    <string-array name="home_c">
+        <word
+            ar="منشفة" de="Handtuch" en="Towel" es="toalla" fr="Serviette" he="מגבת" nl="handdoek" pt_BR="Toalha" pt_PT="Toalha" ru="Полотенце" />
+        <word
+            ar="ثلاجة" de="Kühlschrank" en="Fridge" es="nevera" fr="Réfrigérateur" he="מקרר" nl="koelkast" pt_BR="Geladeira" pt_PT="Frigorífico" ru="Холодильник" />
+        <word
+            ar="بطانية" de="Decke" en="Blanket" es="manta" fr="Couverture" he="שמיכה" nl="deken" pt_BR="Cobertor" pt_PT="Cobertor" ru="Одеяло" />
+        <word
+            ar="موقد" de="Herd" en="Stove" es="cocina" fr="Cuisinière" he="כיריים" nl="fornuis" pt_BR="Fogão" pt_PT="Fogão" ru="Плита" />
+        <word
+            ar="دُش" de="Dusche" en="Shower" es="ducha" fr="Douche" he="מקלחת" nl="douche" pt_BR="Chuveiro" pt_PT="Chuveiro" ru="Душ" />
+        <word
+            ar="حوض استحمام" de="Badewanne" en="Bathtub" es="bañera" fr="Baignoire" he="אמבטיה" nl="badkuip" pt_BR="Banheira" pt_PT="Banheira" ru="Ванна" />
+        <word
+            ar="فرشاة أسنان" de="Zahnbürste" en="Toothbrush" es="cepillo de dientes" fr="Brosse à dents" he="מברשת שיניים" nl="tandenborstel" pt_BR="Escova de dentes" pt_PT="Escova de dentes" ru="Зубная щётка" />
+        <word
+            ar="معجون أسنان" de="Zahnpasta" en="Toothpaste" es="pasta de dientes" fr="Dentifrice" he="משחת שיניים" nl="tandpasta" pt_BR="Pasta de dentes" pt_PT="Pasta de dentes" ru="Зубная паста" />
+        <word
+            ar="درج" de="Schublade" en="Drawer" es="cajón" fr="Tiroir" he="מגירה" nl="lade" pt_BR="Gaveta" pt_PT="Gaveta" ru="Ящик" />
+        <word
+            ar="رف" de="Regal" en="Shelf" es="estante" fr="Étagère" he="מדף" nl="plank" pt_BR="Prateleira" pt_PT="Prateleira" ru="Полка" />
+        <word
+            ar="ستارة" de="Vorhang" en="Curtain" es="cortina" fr="Rideau" he="וילון" nl="gordijn" pt_BR="Cortina" pt_PT="Cortina" ru="Штора" />
+		<word
+            ar="مجفف ملابس" de="Wäschetrockner" en="Dryer" es="secadora" fr="sèche-linge" he="מייבש כביסה" nl="droger" pt_BR="secadora" pt_PT="máquina de secar roupa" ru="сушильная машина" />
+		<word
+            ar="ميكروويف" de="Mikrowelle" en="Microwave" es="microondas" fr="micro-ondes" he="מיקרוגל" nl="magnetron" pt_BR="micro-ondas" pt_PT="micro-ondas" ru="микроволновка" />
+		<word
+            ar="رف كتب" de="Bücherregal" en="Bookshelf" es="estantería" fr="étagère" he="כוננית ספרים" nl="boekenkast" pt_BR="estante de livros" pt_PT="estante de livros" ru="книжный шкаф" />
+		<word
+            ar="غسالة" de="Waschmaschine" en="Washing Machine" es="lavadora" fr="machine à laver" he="מכונת כביסה" nl="wasmachine" pt_BR="máquina de lavar" pt_PT="máquina de lavar roupa" ru="стиральная машина" />
+    </string-array><!-- D — קשה -->
+    <string-array name="home_d">
+        <word
+            ar="غسالة صحون" de="Geschirrspüler" en="Dishwasher" es="lavavajillas" fr="lave-vaisselle" he="מדיח כלים" nl="vaatwasser" pt_BR="lava-louças" pt_PT="máquina de lavar loiça" ru="посудомоечная машина" />
+        <word
+            ar="مكنسة كهربائية" de="Staubsauger" en="Vacuum Cleaner" es="aspiradora" fr="aspirateur" he="שואב אבק" nl="stofzuiger" pt_BR="aspirador de pó" pt_PT="aspirador" ru="пылесос" />
+        <word
+            ar="مكيّف هواء" de="Klimaanlage" en="Air Conditioner" es="aire acondicionado" fr="climatiseur" he="מזגן" nl="airconditioner" pt_BR="ar-condicionado" pt_PT="ar condicionado" ru="кондиционер" />
+        <word
+            ar="مرتبة" de="Matratze" en="Mattress" es="colchón" fr="matelas" he="מזרן" nl="matras" pt_BR="colchão" pt_PT="colchão" ru="матрас" />
+		<word
+            ar="بلسم للشعر" de="Haarspülung" en="Conditioner" es="acondicionador" fr="après-shampooing" he="מרכך שיער" nl="conditioner" pt_BR="condicionador" pt_PT="amaciador" ru="кондиционер для волос" />
+		<word
+            ar="كاشف دخان" de="Rauchmelder" en="Smoke Detector" es="detector de humo" fr="détecteur de fumée" he="גלאי עשן" nl="rookmelder" pt_BR="detector de fumaça" pt_PT="detetor de fumo" ru="датчик дыма" />
+    </string-array><!-- E — קשה יותר -->
+    <string-array name="home_e">
+        <word
+            ar="منظّم حرارة" de="Thermostat" en="Thermostat" es="termostato" fr="thermostat" he="תרמוסטט" nl="thermostaat" pt_BR="termostato" pt_PT="termostato" ru="термостат" />
+        <word
+            ar="مقبس كهرباء" de="Steckdose" en="Power Outlet" es="enchufe" fr="prise électrique" he="שקע חשמל" nl="stopcontact" pt_BR="tomada" pt_PT="tomada" ru="электрическая розетка" />
+        <word
+            ar="سلك تمديد" de="Verlängerungskabel" en="Extension Cord" es="alargador" fr="rallonge" he="כבל מאריך" nl="verlengsnoer" pt_BR="extensão" pt_PT="extensão elétrica" ru="удлинитель" />
+        <word
+            ar="سلة إعادة التدوير" de="Recyclingbehälter" en="Recycling Bin" es="contenedor de reciclaje" fr="bac de recyclage" he="פח מחזור" nl="recyclebak" pt_BR="lixeira de reciclagem" pt_PT="caixote de reciclagem" ru="контейнер для переработки" />
+        <word
+            ar="مسحوق غسيل" de="Waschmittel" en="Laundry Detergent" es="detergente para la ropa" fr="lessive" he="אבקת כביסה" nl="wasmiddel" pt_BR="sabão em pó" pt_PT="detergente para a roupa" ru="стиральный порошок" />
+        <word
+            ar="جهاز ترطيب" de="Luftbefeuchter" en="Humidifier" es="humidificador" fr="humidificateur" he="מכשיר אדים" nl="luchtbevochtiger" pt_BR="umidificador" pt_PT="humidificador" ru="увлажнитель воздуха" />
+        <word
+            ar="مزيل رطوبة" de="Luftentfeuchter" en="Dehumidifier" es="deshumidificador" fr="déshumidificateur" he="מייבש לחות" nl="ontvochtiger" pt_BR="desumidificador" pt_PT="desumidificador" ru="осушитель воздуха" />
+    </string-array><!-- ========================= NEW: COLORS — צבעים ========================== --><!-- A — קל מאוד -->
+    <string-array name="colors_a">
+        <word
+            ar="أحمر" de="Rot" en="Red" es="rojo" fr="Rouge" he="אדום" nl="rood" pt_BR="Vermelho" pt_PT="Vermelho" ru="Красный" />
+        <word
+            ar="أزرق" de="Blau" en="Blue" es="azul" fr="Bleu" he="כחול" nl="blauw" pt_BR="Azul" pt_PT="Azul" ru="Синий" />
+        <word
+            ar="أخضر" de="Grün" en="Green" es="verde" fr="Vert" he="ירוק" nl="groen" pt_BR="Verde" pt_PT="Verde" ru="Зелёный" />
+        <word
+            ar="أصفر" de="Gelb" en="Yellow" es="amarillo" fr="Jaune" he="צהוב" nl="geel" pt_BR="Amarelo" pt_PT="Amarelo" ru="Жёлтый" />
+        <word
+            ar="أسود" de="Schwarz" en="Black" es="negro" fr="Noir" he="שחור" nl="zwart" pt_BR="Preto" pt_PT="Preto" ru="Чёрный" />
+        <word
+            ar="أبيض" de="Weiß" en="White" es="blanco" fr="Blanc" he="לבן" nl="wit" pt_BR="Branco" pt_PT="Branco" ru="Белый" />
+        <word
+            ar="وردي" de="Rosa" en="Pink" es="rosa" fr="Rose" he="ורוד" nl="roze" pt_BR="Rosa" pt_PT="Rosa" ru="Розовый" />
+        <word
+            ar="بنفسجي" de="Lila" en="Purple" es="morado" fr="Violet" he="סגול" nl="paars" pt_BR="Roxo" pt_PT="Roxo" ru="Фиолетовый" />
+        <word
+            ar="رمادي" de="Grau" en="Gray" es="gris" fr="Gris" he="אפור" nl="grijs" pt_BR="Cinza" pt_PT="Cinzento" ru="Серый" />
+    </string-array><!-- B — קל -->
+    <string-array name="colors_b">
+        <word
+            ar="ذهبي" de="Gold" en="Gold" es="dorado" fr="Doré" he="זהב" nl="goud" pt_BR="Dourado" pt_PT="Dourado" ru="Золотой" />
+        <word
+            ar="فضي" de="Silber" en="Silver" es="plateado" fr="Argenté" he="כסף" nl="zilver" pt_BR="Prateado" pt_PT="Prateado" ru="Серебряный" />
+        <word
+            ar="أزرق فاتح" de="Hellblau" en="Light Blue" es="azul claro" fr="Bleu clair" he="תכלת" nl="lichtblauw" pt_BR="Azul claro" pt_PT="Azul claro" ru="Голубой" am="ቀላል ሰማያዊ" />
+        <word
+            ar="أخضر فاتح" de="Hellgrün" en="Light Green" es="verde claro" fr="Vert clair" he="ירוק בהיר" nl="lichtgroen" pt_BR="Verde claro" pt_PT="Verde claro" ru="Светло-зелёный" />
+        <word
+            ar="أزرق داكن" de="Dunkelblau" en="Dark Blue" es="azul oscuro" fr="Bleu foncé" he="כחול כהה" nl="donkerblauw" pt_BR="Azul escuro" pt_PT="Azul escuro" ru="Тёмно-синий" am="ጨለማ ሰማያዊ" />
+        <word
+            ar="أخضر داكن" de="Dunkelgrün" en="Dark Green" es="verde oscuro" fr="Vert foncé" he="ירוק כהה" nl="donkergroen" pt_BR="Verde escuro" pt_PT="Verde escuro" ru="Тёмно-зелёный" />
+    </string-array><!-- C — בינוני -->
+    <string-array name="colors_c">
+        <word
+            ar="بيج" de="Beige" en="Beige" es="beige" fr="Beige" he="בז׳" nl="beige" pt_BR="Bege" pt_PT="Bege" ru="Бежевый" />
+        <word
+            ar="بنفسجي فاتح" de="Hellviolett" en="Violet" es="violeta claro" fr="Violet clair" he="סגול בהיר" nl="lichtpaars" pt_BR="Violeta claro" pt_PT="Violeta claro" ru="Светло-фиолетовый" />
+        <word
+            ar="خمري" de="Bordeauxrot" en="Maroon" es="granate" fr="Bordeaux" he="בורדו" nl="bordeauxrood" pt_BR="Bordô" pt_PT="Bordô" ru="Бордовый" />
+        <word
+            ar="عاجي" de="Elfenbein" en="Ivory" es="marfil" fr="Ivoire" he="שנהב" nl="ivoor" pt_BR="Marfim" pt_PT="Marfim" ru="Цвет слоновой кости" am="አይቮሪ" />
+        <word
+            ar="كهرماني" de="Bernstein" en="Amber" es="ámbar" fr="Ambre" he="ענבר" nl="amber" pt_BR="Âmbar" pt_PT="Âmbar" ru="Янтарный" />
+		<word
+            ar="سماوي" de="Cyan" en="Cyan" es="cian" fr="cyan" he="ציאן" nl="cyaan" pt_BR="ciano" pt_PT="ciano" ru="циановый" />
+		<word
+            ar="ليلكي" de="fliederfarben" en="Lilac" es="lila" fr="lilas" he="לילך" nl="lila" pt_BR="lilás" pt_PT="lilás" ru="сиреневый" />
+    </string-array><!-- D — קשה -->
+    <string-array name="colors_d">
+        <word
+            ar="كاكي" de="Khaki" en="Khaki" es="caqui" fr="kaki" he="חאקי" nl="khaki" pt_BR="cáqui" pt_PT="caqui" ru="хаки" am="ካኪ" />
+        <word
+            ar="خردلي" de="Senf" en="Mustard" es="mostaza" fr="moutarde" he="חרדל" nl="mosterd" pt_BR="mostarda" pt_PT="mostarda" ru="горчичный" />
+        <word
+            ar="قرمزي" de="karmesinrot" en="Crimson" es="carmesí" fr="cramoisi" he="ארגמן" nl="karmozijnrood" pt_BR="carmesim" pt_PT="carmesim" ru="малиновый" />
+        <word
+            ar="فيروزي" de="türkis" en="Turquoise" es="turquesa" fr="turquoise" he="טורקיז" nl="turkoois" pt_BR="turquesa" pt_PT="turquesa" ru="бирюзовый" />
+        <word
+            ar="ياقوتي" de="rubinrot" en="Ruby" es="rubí" fr="rubis" he="אודם" nl="robijnrood" pt_BR="rubi" pt_PT="rubi" ru="рубиновый" am="ሩቢ"/>
+    </string-array><!-- ========================= NEW: SHAPES — צורות ========================== --><!-- A — קל מאוד -->
+    <string-array name="shapes_a">
+        <word ar="كرة" de="Ball" en="Ball" es="pelota" fr="Ballon" he="כדור" nl="bal" pt_BR="Bola" pt_PT="Bola" ru="Мяч" />
+
+        <word
+            ar="دائرة" de="Kreis" en="Circle" es="círculo" fr="Cercle" he="עיגול" nl="cirkel" pt_BR="Círculo" pt_PT="Círculo" ru="Круг" />
+        <word
+            ar="سهم" de="Pfeil" en="Arrow" es="flecha" fr="Flèche" he="חץ" nl="pijl" pt_BR="Flecha" pt_PT="Flecha" ru="Стрела" />
+        <word
+            ar="نجمة" de="Stern" en="Star" es="estrella" fr="Étoile" he="כוכב" nl="ster" pt_BR="Estrela" pt_PT="Estrela" ru="Звезда" />
+        <word
+            ar="قلب" de="Herz" en="Heart" es="corazón" fr="Cœur" he="לב" nl="hart" pt_BR="Coração" pt_PT="Coração" ru="Сердце" />
+        <word
+            ar="خط" de="Linie" en="Line" es="línea" fr="Ligne" he="קו" nl="lijn" pt_BR="Linha" pt_PT="Linha" ru="Линия" />
+    </string-array><!-- B — קל -->
+    <string-array name="shapes_b">
+        <word ar="كرة سلة" de="Basketball" en="Basketball" es="balón de baloncesto" fr="Ballon de basket" he="כדור כדורסל" nl="basketbal" pt_BR="Bola de basquete" pt_PT="Bola de basquetebol" ru="Баскетбольный мяч" />
+        <word ar="كرة طائرة" de="Volleyball" en="Volleyball" es="balón de voleibol" fr="Ballon de volley" he="כדור כדורעף" nl="volleybal" pt_BR="Bola de vôlei" pt_PT="Bola de voleibol" ru="Волейбольный мяч" />
+        <word ar="كرة تنس" de="Tennisball" en="Tennis ball" es="pelota de tenis" fr="Balle de tennis" he="כדור טניס" nl="tennisbal" pt_BR="Bola de tênis" pt_PT="Bola de ténis" ru="Теннисный мяч" />
+        <word ar="كرة قدم" de="Soccer ball" en="Soccer ball" es="balón de fútbol" fr="Ballon de football" he="כדור כדורגל" nl="voetbal" pt_BR="Bola de futebol" pt_PT="Bola de futebol" ru="Футбольный мяч" />
+        <word
+            ar="مكعب" de="Würfel" en="Cube" es="cubo" fr="Cube" he="קובייה" nl="kubus" pt_BR="Cubo" pt_PT="Cubo" ru="Куб" />
+        <word
+            ar="معين" de="Raute" en="Diamond" es="rombo" fr="Losange" he="יהלום" nl="ruit" pt_BR="Losango" pt_PT="Losango" ru="Ромб" />
+        <word
+            ar="مثلث" de="Dreieck" en="Triangle" es="triángulo" fr="Triangle" he="משולש" nl="driehoek" pt_BR="Triângulo" pt_PT="Triângulo" ru="Треугольник" />
+        <word
+            ar="مستطيل" de="Rechteck" en="Rectangle" es="rectángulo" fr="Rectangle" he="מלבן" nl="rechthoek" pt_BR="Retângulo" pt_PT="Rectângulo" ru="Прямоугольник" />
+        <word
+            ar="خاتم" de="Ring" en="Ring" es="anillo" fr="Bague" he="טבעת" nl="ring" pt_BR="Anel" pt_PT="Anel" ru="Кольцо" />
+        <word
+            ar="مخروط" de="Kegel" en="Cone" es="cono" fr="Cône" he="חרוט" nl="kegel" pt_BR="Cone" pt_PT="Cone" ru="Конус" />
+    </string-array><!-- C — בינוני -->
+    <string-array name="shapes_c">
+        <word ar="إطار" de="Rahmen" en="Frame" es="marco" fr="Cadre" he="מסגרת" nl="lijst" pt_BR="Moldura" pt_PT="Moldura" ru="Рамка" />
+        <word ar="كرة شاطئ" de="Wasserball" en="Beach ball" es="pelota de playa" fr="Ballon de plage" he="כדור ים" nl="strandbal" pt_BR="Bola de praia" pt_PT="Bola de praia" ru="Пляжный мяч" />
+        <word
+            ar="مثمن" de="Achteck" en="Octagon" es="octágono" fr="Octogone" he="מתומן" nl="achthoek" pt_BR="Octógono" pt_PT="Octógono" ru="Восьмиугольник" />
+        <word
+            ar="أسطوانة" de="Zylinder" en="Cylinder" es="cilindro" fr="Cylindre" he="גליל" nl="cilinder" pt_BR="Cilindro" pt_PT="Cilindro" ru="Цилиндр" am="ሲሊንደር" />
+        <word
+            ar="كرة" de="Kugel" en="Sphere" es="esfera" fr="Sphère" he="כדור" nl="bol" pt_BR="Esfera" pt_PT="Esfera" ru="Сфера" />
+        <word
+            ar="هرم" de="Pyramide" en="Pyramid" es="pirámide" fr="Pyramide" he="פירמידה" nl="piramide" pt_BR="Pirâmide" pt_PT="Pirâmide" ru="Пирамида" />
+        <word
+            ar="قطع ناقص" de="Ellipse" en="Ellipse" es="elipse" fr="Ellipse" he="אליפסה" nl="ellips" pt_BR="Elipse" pt_PT="Elipse" ru="Эллипс" />
+        <word
+            ar="خماسي الأضلاع" de="Fünfeck" en="Pentagon" es="pentágono" fr="Pentagone" he="מחומש" nl="vijfhoek" pt_BR="Pentágono" pt_PT="Pentágono" ru="Пятиугольник" />
+        <word
+            ar="سداسي الأضلاع" de="Sechseck" en="Hexagon" es="hexágono" fr="Hexagone" he="משושה" nl="zeshoek" pt_BR="Hexágono" pt_PT="Hexágono" ru="Шестиугольник" />
+    </string-array><!-- D — קשה -->
+    <string-array name="shapes_d">
+        <word
+            ar="متوازي الأضلاع" de="Parallelogramm" en="Parallelogram" es="paralelogramo" fr="parallélogramme" he="מקבילית" nl="parallellogram" pt_BR="paralelogramo" pt_PT="paralelogramo" ru="параллелограмм" am="ፓራለሎግራም" />
+        <word
+            ar="شبه منحرف" de="Trapez" en="Trapezoid" es="trapecio" fr="trapèze" he="טרפז" nl="trapezium" pt_BR="trapézio" pt_PT="trapézio" ru="трапеция" />
+        <word
+            ar="معين" de="Raute" en="Rhombus" es="rombo" fr="losange" he="מעוין" nl="ruit" pt_BR="losango" pt_PT="losango" ru="ромб" />
+        <word
+            ar="منشور" de="Prisma" en="Prism" es="prisma" fr="prisme" he="מנסרה" nl="prisma" pt_BR="prisma" pt_PT="prisma" ru="призма" />
+        <word
+            ar="هلال" de="Mondsichel" en="Crescent" es="media luna" fr="croissant" he="סהר" nl="maansikkel" pt_BR="crescente" pt_PT="crescente" ru="серп" />
+    </string-array><!-- E — קשה יותר -->
+    <string-array name="shapes_e">
+        <word
+            ar="عشرونيّ الوجوه" de="Ikosaeder" en="Icosahedron" es="icosaedro" fr="icosaèdre" he="איקוסהדרון" nl="icosaëder" pt_BR="icosaedro" pt_PT="icosaedro" ru="икосаэдр" />
+        <word
+            ar="فراكتال" de="Fraktal" en="Fractal" es="fractal" fr="fractale" he="פרקטל" nl="fractal" pt_BR="fractal" pt_PT="fractal" ru="фрактал" />
+        <word
+            ar="شريط موبيوس" de="Möbiusband" en="Mobius strip" es="cinta de Möbius" fr="ruban de Möbius" he="רצועת מוביוס" nl="Möbiusband" pt_BR="fita de Möbius" pt_PT="fita de Möbius" ru="лента Мёбиуса" />
+        <word
+            ar="نجمة داوود" de="Davidstern" en="Star of David" es="estrella de David" fr="étoile de David" he="מגן דוד" nl="davidsster" pt_BR="estrela de Davi" pt_PT="estrela de David" ru="звезда Давида" />
+        <word
+            ar="نجمة خماسية" de="Pentagramm" en="Pentagram" es="pentagrama" fr="pentagramme" he="פנטגרם" he2="כוכב מחומש" nl="pentagram" pt_BR="pentagrama" pt_PT="pentagrama" ru="пентаграмма" />
+        <word
+            ar="لولب" de="Helix" en="Helix" es="hélice" fr="hélice" he="סליל" nl="helix" pt_BR="hélice" pt_PT="hélice" ru="спираль" />
+        <word
+            ar="متعدد الوجوه" de="Polyeder" en="Polyhedron" es="poliedro" fr="polyèdre" he="פוליהדרון" nl="veelvlak" pt_BR="poliedro" pt_PT="poliedro" ru="многогранник" />
+        <word
+            ar="مسلة" de="Obelisk" en="Obelisk" es="obelisco" fr="obélisque" he="אובליסק" nl="obelisk" pt_BR="obelisco" pt_PT="obelisco" ru="обелиск" />
+    </string-array><!-- ========================= NEW: VERBS — פעלים ========================== --><!-- A — קל מאוד -->
+    <string-array name="verbs_a">
+        <word
+            ar="يأكل" de="Essen" en="Eat" es="comer" fr="Manger" he="לאכול" nl="eten" pt_BR="Comer" pt_PT="Comer" ru="Есть" />
+        <word
+            ar="يشرب" de="Trinken" en="Drink" es="beber" fr="Boire" he="לשתות" nl="drinken" pt_BR="Beber" pt_PT="Beber" ru="Пить" />
+        <word
+            ar="يركض" de="Rennen" en="Run" es="correr" fr="Courir" he="לרוץ" nl="rennen" pt_BR="Correr" pt_PT="Correr" ru="Бежать" />
+        <word
+            ar="يمشي" de="Gehen" en="Walk" es="caminar" fr="Marcher" he="ללכת" nl="lopen" pt_BR="Andar" pt_PT="Andar" ru="Идти" am="መሄድ" />
+        <word
+            ar="يجلس" de="Sitzen" en="Sit" es="sentarse" fr="S’asseoir" he="לשבת" nl="zitten" pt_BR="Sentar" pt_PT="Sentar" ru="Сидеть" />
+        <word
+            ar="يقف" de="Stehen" en="Stand" es="pararse" fr="Se lever" he="לעמוד" nl="staan" pt_BR="Ficar em pé" pt_PT="Ficar de pé" ru="Стоять" />
+        <word
+            ar="ينام" de="Schlafen" en="Sleep" es="dormir" fr="Dormir" he="לישון" nl="slapen" pt_BR="Dormir" pt_PT="Dormir" ru="Спать" />
+        <word
+            ar="يلعب" de="Spielen" en="Play" es="jugar" fr="Jouer" he="לשחק" nl="spelen" pt_BR="Brincar" pt_PT="Brincar" ru="Играть" />
+        <word
+            ar="يقول" de="Sagen" en="Say" es="decir" fr="Dire" he="לומר" he2="לאמור" he3="אמרי" he4="אמור" nl="zeggen" pt_BR="Dizer" pt_PT="Dizer" ru="Сказать" am="መናገር" />
+        <word
+            ar="يساعد" de="Helfen" en="Help" es="ayudar" fr="Aider" he="עזרה" he2="לעזור" nl="helpen" pt_BR="Ajudar" pt_PT="Ajudar" ru="Помочь" />
+        <word
+            ar="يتوقف" de="Anhalten" en="Stop" es="parar" fr="Arrêter" he="לעצור" he2="עצרי" he3="עצור" nl="stoppen" pt_BR="Parar" pt_PT="Parar" ru="Остановиться" />
+        <word
+            ar="يفتح" de="Öffnen" en="Open" es="abrir" fr="Ouvrir" he="לפתוח" nl="openen" pt_BR="Abrir" pt_PT="Abrir" ru="Открыть" />
+        <word
+            ar="قريب" de="Nah" en="Close" es="cerca" fr="proche" he="קרוב" nl="dichtbij" pt_BR="Perto" pt_PT="Perto" ru="Близко" />
+        <word
+            ar="يعطي" de="Geben" en="Give" es="dar" fr="Donner" he="לתת" nl="geven" pt_BR="Dar" pt_PT="Dar" ru="Дать" am="መስጠት" />
+        <word
+            ar="يأخذ" de="Nehmen" en="Take" es="tomar" fr="Prendre" he="לקחת" nl="nemen" pt_BR="Pegar" pt_PT="Levar" ru="Взять" am="መውሰድ" />
+        <word
+            ar="يطبخ" de="Kochen" en="Cook" es="cocinar" fr="Cuisiner" he="לבשל" nl="koken" pt_BR="Cozinhar" pt_PT="Cozinhar" ru="Готовить" />
+        <word
+            ar="خروج" de="Beenden" en="Exit" es="Salir" fr="Quitter" he="יציאה" nl="Afsluiten" pt_BR="Sair" pt_PT="Sair" ru="Выход" />
+    </string-array><!-- B — קל -->
+    <string-array name="verbs_b">
+        <word
+            ar="أغلق" de="Schließen" en="Shut" es="cerrar" fr="Fermer" he="לסגור" nl="sluiten" pt_BR="Fechar" pt_PT="Fechar" ru="Закрыть" />
+        <word
+            ar="سماع" de="hören" en="Hear" es="oír" fr="entendre" he="לשמוע" nl="horen" pt_BR="ouvir" pt_PT="ouvir" ru="слышать" />
+        <word
+            ar="يقفز" de="springen" en="Jump" es="saltar" fr="sauter" he="לקפוץ" nl="springen" pt_BR="pular" pt_PT="saltar" ru="прыгать" />
+        <word
+            ar="ينظر" de="schauen" en="Look" es="mirar" fr="regarder" he="להסתכל" nl="kijken" pt_BR="olhar" pt_PT="olhar" ru="смотреть" />
+        <word
+            ar="يقرأ" de="lesen" en="Read" es="leer" fr="lire" he="לקרוא" nl="lezen" pt_BR="ler" pt_PT="ler" ru="читать" />
+        <word
+            ar="استمع" de="zuhören" en="Listen" es="escuchar" fr="écouter" he="להקשיב" he2="הקשיבי" he3="הקשב" nl="luisteren" pt_BR="escutar" pt_PT="ouvir" ru="слушать" />
+        <word
+            ar="يقف" de="stehen" en="Stand" es="estar de pie" fr="se tenir debout" he="לעמוד" nl="staan" pt_BR="ficar em pé" pt_PT="estar de pé" ru="стоять" />
+        <word
+            ar="يجد" de="finden" en="To find" es="encontrar" fr="trouver" he="למצוא" nl="vinden" pt_BR="encontrar" pt_PT="encontrar" ru="находить" am="መፈለግ" />
+        <word
+            ar="يعدّ" de="zählen" en="Count" es="contar" fr="compter" he="לספור" nl="tellen" pt_BR="contar" pt_PT="contar" ru="считать" />
+        <word
+            ar="يبدأ" de="anfangen" en="Start" es="empezar" fr="commencer" he="להתחיל" nl="beginnen" pt_BR="começar" pt_PT="começar" ru="начинать" am="መጀመር" />
+        <word
+            ar="يغنّي" de="singen" en="Sing" es="cantar" fr="chanter" he="לשיר" nl="zingen" pt_BR="cantar" pt_PT="cantar" ru="петь" />
+        <word
+            ar="يرقص" de="tanzen" en="Dance" es="bailar" fr="danser" he="לרקוד" nl="dansen" pt_BR="dançar" pt_PT="dançar" ru="танцевать" />
+    </string-array><!-- C — בינוני -->
+    <string-array name="verbs_c">
+        <word
+            ar="صيد" de="Fischen" en="Fishing" es="pesca" fr="Pêche" he="דיג" nl="vissen" pt_BR="Pesca" pt_PT="Pesca" ru="Рыбалка" />
+        <word
+            ar="يرسم" de="Zeichnen" en="Draw" es="dibujar" fr="Dessiner" he="לצייר" nl="tekenen" pt_BR="Desenhar" pt_PT="Desenhar" ru="Рисовать" />
+        <word
+            ar="يكتب" de="Schreiben" en="Write" es="escribir" fr="Écrire" he="לכתוב" nl="schrijven" pt_BR="Escrever" pt_PT="Escrever" ru="Писать" />
+        <word
+            ar="يشاهد" de="Anschauen" en="Watch" es="mirar" fr="Regarder" he="לצפות" he2="שעון" nl="kijken" pt_BR="Assistir" pt_PT="Ver" ru="Смотреть" />
+        <word ar="عرض" de="Show" en="Show" es="Espectáculo" fr="Spectacle" he="הופעה" nl="Show" pt_BR="Espetáculo" pt_PT="Espetáculo" ru="Шоу" />
+        <word
+            ar="يفكر" de="Denken" en="Think" es="pensar" fr="Penser" he="לחשוב" nl="denken" pt_BR="Pensar" pt_PT="Pensar" ru="Думать" />
+        <word
+            ar="يتذكر" de="Sich erinnern" en="Remember" es="recordar" fr="Se souvenir" he="לזכור" nl="onthouden" pt_BR="Lembrar" pt_PT="Lembrar" ru="Помнить" am="ማስታወስ"/>
+        <word
+            ar="ينسى" de="Vergessen" en="Forget" es="olvidar" fr="Oublier" he="לשכוח" nl="vergeten" pt_BR="Esquecer" pt_PT="Esquecer" ru="Забывать" am="መርሳት" />
+        <word
+            ar="يبني" de="Bauen" en="Build" es="construir" fr="Construire" he="לבנות" nl="bouwen" pt_BR="Construir" pt_PT="Construir" ru="Строить" />
+        <word
+            ar="يكسر" de="Zerbrechen" en="Break" es="romper" fr="Casser" he="לשבור" nl="breken" pt_BR="Quebrar" pt_PT="Quebrar" ru="Ломать" am="መስበር" />
+        <word
+            ar="يلتقط" de="Fangen" en="Catch" es="atrapar" fr="Attraper" he="לתפוס" nl="vangen" pt_BR="Pegar" pt_PT="Apanhar" ru="Ловить" />
+        <word
+            ar="يرمي" de="Werfen" en="Throw" es="lanzar" fr="Lancer" he="לזרוק" nl="gooien" pt_BR="Jogar" pt_PT="Atirar" ru="Бросать" />
+        <word
+            ar="يغسل" de="Waschen" en="Wash" es="lavar" fr="Laver" he="לשטוף" nl="wassen" pt_BR="Lavar" pt_PT="Lavar" ru="Мыть" />
+        <word
+            ar="ينظف" de="Putzen" en="Clean" es="limpiar" fr="Nettoyer" he="נקי" he2="לנקות" nl="schoonmaken" pt_BR="Limpar" pt_PT="Limpar" ru="Убирать" />
+        <word
+            ar="يقرر" de="Entscheiden" en="Decide" es="decidir" fr="Décider" he="להחליט" nl="beslissen" pt_BR="Decidir" pt_PT="Decidir" ru="Решать" am="መወሰን" />
+        <word
+            ar="يختار" de="Wählen" en="Choose" es="elegir" fr="Choisir" he="לבחור" nl="kiezen" pt_BR="Escolher" pt_PT="Escolher" ru="Выбирать" />
+        <word
+            ar="يجيب" de="Antworten" en="Answer" es="responder" fr="Répondre" he="לענות" nl="antwoorden" pt_BR="Responder" pt_PT="Responder" ru="Отвечать" />
+        <word
+            ar="ينتظر" de="Warten" en="Wait" es="esperar" fr="Attendre" he="לחכות" nl="wachten" pt_BR="Esperar" pt_PT="Esperar" ru="Ждать" />
+        <word
+            ar="يَعِد" de="Versprechen" en="Promise" es="prometer" fr="Promettre" he="להבטיח" nl="beloven" pt_BR="Prometer" pt_PT="Prometer" ru="Обещать" am="መስማማት" />
+        <word
+            ar="ينهي" de="Beenden" en="Finish" es="terminar" fr="Finir" he="לסיים" nl="afmaken" pt_BR="Terminar" pt_PT="Terminar" ru="Заканчивать" />
+        <word
+            ar="يوافق" de="Zustimmen" en="Agree" es="estar de acuerdo" fr="Être d’accord" he="להסכים" nl="eens zijn" pt_BR="Concordar" pt_PT="Concordar" ru="Соглашаться" am="መስማማት" />
+    </string-array><!-- D — קשה -->
+    <string-array name="verbs_d">
+        <word
+            ar="يفهم" de="verstehen" en="Understand" es="entender" fr="comprendre" he="להבין" nl="begrijpen" pt_BR="entender" pt_PT="entender" ru="понимать" am="መረዳት" />
+        <word
+            ar="يسأل" de="fragen" en="To ask" es="preguntar" fr="demander" he="לשאול" he2="לבקש" nl="vragen" pt_BR="perguntar" pt_PT="perguntar" ru="спрашивать" />
+        <word
+            ar="يتحدث" de="sprechen" en="To talk" es="hablar" fr="parler" he="לדבר" nl="praten" pt_BR="falar" pt_PT="falar" ru="говорить" am="መናገር"/>
+        <word
+            ar="يضع" de="legen" en="To put" es="poner" fr="mettre" he="לשים" nl="zetten" pt_BR="colocar" pt_PT="pôr" ru="класть" am="መጫን" />
+        <word
+            ar="يطلب المساعدة" de="um Hilfe bitten" en="Ask for help" es="pedir ayuda" fr="demander de l'aide" he="לבקש עזרה" nl="om hulp vragen" pt_BR="pedir ajuda" pt_PT="pedir ajuda" ru="попросить помощи" am="እርዳታ መጠየቅ" />
+        <word
+            ar="يكتشف" de="entdecken" en="Discover" es="descubrir" fr="découvrir" he="לגלות" nl="ontdekken" pt_BR="descobrir" pt_PT="descobrir" ru="обнаружить" am="መግኘት" />
+        <word
+            ar="يتخيل" de="sich vorstellen" en="Imagine" es="imaginar" fr="imaginer" he="לדמיין" nl="zich voorstellen" pt_BR="imaginar" pt_PT="imaginar" ru="воображать" am="መገመት"/>
+        <word
+            ar="يشرح مرة أخرى" de="noch einmal erklären" en="Explain again" es="explicar de nuevo" fr="réexpliquer" he="להסביר שוב" nl="opnieuw uitleggen" pt_BR="explicar novamente" pt_PT="explicar novamente" ru="объяснить снова" am="እንደገና ማብራራት" />
+        <word
+            ar="يقارن" de="vergleichen" en="Compare" es="comparar" fr="comparer" he="להשוות" nl="vergelijken" pt_BR="comparar" pt_PT="comparar" ru="сравнивать" am="መነጻጸር" />
+        <word
+            ar="يصف" de="beschreiben" en="Describe" es="describir" fr="décrire" he="לתאר" nl="beschrijven" pt_BR="descrever" pt_PT="descrever" ru="описывать" />
+        <word
+            ar="يحل" de="lösen" en="Solve" es="resolver" fr="résoudre" he="לפתור" nl="oplossen" pt_BR="resolver" pt_PT="resolver" ru="решать" am="መፍታት" />
+    </string-array><!-- E — קשה יותר --><!-- <string-array name="verbs_e"> <word en="Understand deeply" he="להבין לעומק"/> <word en="Decide together" he="להחליט יחד"/> </string-array> --><!-- ========================= NEW: NUMBERS — מספרים ========================== --><!-- A — קל מאוד -->
+    <string-array name="numbers_a">
+        <word
+            ar="واحد" de="Eins" en="One" es="uno" fr="Un" he="אחת" nl="één" pt_BR="Um" pt_PT="Um" ru="Один" />
+        <word
+            ar="اثنان" de="Zwei" en="Two" es="dos" fr="Deux" he="שתיים" nl="twee" pt_BR="Dois" pt_PT="Dois" ru="Два" />
+        <word
+            ar="ثلاثة" de="Drei" en="Three" es="tres" fr="Trois" he="שלוש" nl="drie" pt_BR="Três" pt_PT="Três" ru="Три" />
+        <word
+            ar="أربعة" de="Vier" en="Four" es="cuatro" fr="Quatre" he="ארבע" nl="vier" pt_BR="Quatro" pt_PT="Quatro" ru="Четыре" />
+        <word
+            ar="خمسة" de="Fünf" en="Five" es="cinco" fr="Cinq" he="חמש" nl="vijf" pt_BR="Cinco" pt_PT="Cinco" ru="Пять" />
+        <word
+            ar="ستة" de="Sechs" en="Six" es="seis" fr="Six" he="שש" nl="zes" pt_BR="Seis" pt_PT="Seis" ru="Шесть" />
+        <word
+            ar="سبعة" de="Sieben" en="Seven" es="siete" fr="Sept" he="שבע" nl="zeven" pt_BR="Sete" pt_PT="Sete" ru="Семь" />
+        <word
+            ar="ثمانية" de="Acht" en="Eight" es="ocho" fr="Huit" he="שמונה" nl="acht" pt_BR="Oito" pt_PT="Oito" ru="Восемь" />
+        <word
+            ar="تسعة" de="Neun" en="Nine" es="nueve" fr="Neuf" he="תשע" nl="negen" pt_BR="Nove" pt_PT="Nove" ru="Девять" />
+        <word
+            ar="عشرة" de="Zehn" en="Ten" es="diez" fr="Dix" he="עשר" nl="tien" pt_BR="Dez" pt_PT="Dez" ru="Десять" />
+    </string-array><!-- B — קל -->
+    <string-array name="numbers_b">
+        <word
+            ar="أحد عشر" de="elf" en="Eleven" es="once" fr="onze" he="אחד עשר" nl="elf" pt_BR="onze" pt_PT="onze" ru="одиннадцать" />
+        <word
+            ar="اثنا عشر" de="zwölf" en="Twelve" es="doce" fr="douze" he="שניים עשר" nl="twaalf" pt_BR="doze" pt_PT="doze" ru="двенадцать" />
+        <word
+            ar="ثلاثة عشر" de="dreizehn" en="Thirteen" es="trece" fr="treize" he="שלושה עשר" nl="dertien" pt_BR="treze" pt_PT="treze" ru="тринадцать" />
+        <word
+            ar="أربعة عشر" de="vierzehn" en="Fourteen" es="catorce" fr="quatorze" he="ארבעה עשר" nl="veertien" pt_BR="quatorze" pt_PT="catorze" ru="четырнадцать" />
+        <word
+            ar="خمسة عشر" de="fünfzehn" en="Fifteen" es="quince" fr="quinze" he="חמישה עשר" nl="vijftien" pt_BR="quinze" pt_PT="quinze" ru="пятнадцать" />
+        <word
+            ar="ستة عشر" de="sechzehn" en="Sixteen" es="dieciséis" fr="seize" he="שישה עשר" nl="zestien" pt_BR="dezesseis" pt_PT="dezasseis" ru="шестнадцать" />
+        <word
+            ar="سبعة عشر" de="siebzehn" en="Seventeen" es="diecisiete" fr="dix-sept" he="שבעה עשר" nl="zeventien" pt_BR="dezessete" pt_PT="dezassete" ru="семнадцать" />
+        <word
+            ar="ثمانية عشر" de="achtzehn" en="Eighteen" es="dieciocho" fr="dix-huit" he="שמונה עשר" nl="achttien" pt_BR="dezoito" pt_PT="dezoito" ru="восемнадцать" />
+        <word
+            ar="تسعة عشر" de="neunzehn" en="Nineteen" es="diecinueve" fr="dix-neuf" he="תשעה עשר" nl="negentien" pt_BR="dezenove" pt_PT="dezenove" ru="девятнадцать" />
+        <word
+            ar="عشرون" de="zwanzig" en="Twenty" es="veinte" fr="vingt" he="עשרים" nl="twintig" pt_BR="vinte" pt_PT="vinte" ru="двадцать" />
+    </string-array>
+    <string-array name="numbers_c">
+        <word
+            ar="ثلاثون" de="Dreißig" en="Thirty" es="treinta" fr="Trente" he="שלושים" nl="dertig" pt_BR="Trinta" pt_PT="Trinta" ru="Тридцать" />
+        <word
+            ar="أربعون" de="Vierzig" en="Forty" es="cuarenta" fr="Quarante" he="ארבעים" nl="veertig" pt_BR="Quarenta" pt_PT="Quarenta" ru="Сорок" />
+        <word
+            ar="خمسون" de="Fünfzig" en="Fifty" es="cincuenta" fr="Cinquante" he="חמישים" nl="vijftig" pt_BR="Cinquenta" pt_PT="Cinquenta" ru="Пятьдесят" />
+        <word
+            ar="ستون" de="Sechzig" en="Sixty" es="sesenta" fr="Soixante" he="שישים" nl="zestig" pt_BR="Sessenta" pt_PT="Sessenta" ru="Шестьдесят" />
+        <word
+            ar="سبعون" de="Siebzig" en="Seventy" es="setenta" fr="Soixante-dix" he="שבעים" nl="zeventig" pt_BR="Setenta" pt_PT="Setenta" ru="Семьдесят" />
+        <word
+            ar="ثمانون" de="Achtzig" en="Eighty" es="ochenta" fr="Quatre-vingts" he="שמונים" nl="tachtig" pt_BR="Oitenta" pt_PT="Oitenta" ru="Восемьдесят" />
+        <word
+            ar="تسعون" de="Neunzig" en="Ninety" es="noventa" fr="Quatre-vingt-dix" he="תשעים" nl="negentig" pt_BR="Noventa" pt_PT="Noventa" ru="Девяносто" />
+        <word
+            ar="مائة" de="Hundert" en="One hundred" es="cien" fr="Cent" he="מאה" nl="honderd" pt_BR="Cem" pt_PT="Cem" ru="Сто" />
+        <word
+            ar="نصف" de="Hälfte" en="Half" es="mitad" fr="Moitié" he="חצי" nl="helft" pt_BR="Metade" pt_PT="Metade" ru="Половина" />
+        <word
+            ar="خُمس" de="Fünftel" en="Fifth" es="quinto" fr="cinquième" he="חמישית" nl="vijfde" pt_BR="quinto" pt_PT="quinto" ru="пятая часть" />
+        <word
+            ar="عُشر" de="Zehntel" en="Tenth" es="décimo" fr="dixième" he="עשירית" nl="tiende" pt_BR="décimo" pt_PT="décimo" ru="десятая часть" />
+        <word
+            ar="ألف" de="tausend" en="Thousand" es="mil" fr="mille" he="אלף" nl="duizend" pt_BR="mil" pt_PT="mil" ru="тысяча" />
+        <word
+            ar="ألفان" de="zweitausend" en="Two thousand" es="dos mil" fr="deux mille" he="אלפיים" nl="tweeduizend" pt_BR="dois mil" pt_PT="dois mil" ru="две тысячи" />
+        <word
+            ar="عشرة آلاف" de="zehntausend" en="Ten thousand" es="diez mil" fr="dix mille" he="עשרת אלפים" nl="tienduizend" pt_BR="dez mil" pt_PT="dez mil" ru="десять тысяч" am="አስር ሺህ" />
+        <word
+            ar="ربع" de="Viertel" en="Quarter" es="cuarto" fr="quart" he="רבע" nl="kwart" pt_BR="quarto" pt_PT="quarto" ru="четверть" />
+        <word
+            ar="ثلث" de="Drittel" en="Third" es="tercio" fr="tiers" he="שליש" nl="derde" pt_BR="terço" pt_PT="terço" ru="треть" />
+        <word
+            ar="مليون" de="eine Million" en="One million" es="un millón" fr="un million" he="מיליון" nl="een miljoen" pt_BR="um milhão" pt_PT="um milhão" ru="один миллион" />
+        <word
+            ar="مئتان" de="zweihundert" en="Two hundred" es="doscientos" fr="deux cents" he="מאתיים" nl="tweehonderd" pt_BR="duzentos" pt_PT="duzentos" ru="двести" />
+        <word
+            ar="ثلاثمائة" de="dreihundert" en="Three hundred" es="trescientos" fr="trois cents" he="שלוש מאות" nl="driehonderd" pt_BR="trezentos" pt_PT="trezentos" ru="триста" />
+        <word
+            ar="أربعمائة" de="vierhundert" en="Four hundred" es="cuatrocientos" fr="quatre cents" he="ארבע מאות" nl="vierhonderd" pt_BR="quatrocentos" pt_PT="quatrocentos" ru="четыреста" />
+        <word
+            ar="خمسمائة" de="fünfhundert" en="Five hundred" es="quinientos" fr="cinq cents" he="חמש מאות" nl="vijfhonderd" pt_BR="quinhentos" pt_PT="quinhentos" ru="пятьсот" />
+        <word
+            ar="مليار" de="Milliarde" en="Billion" es="mil millones" fr="milliard" he="מיליארד" nl="miljard" pt_BR="bilhão" pt_PT="mil milhões" ru="миллиард" />
+    </string-array>
+    <string-array name="numbers_d">
+        <word
+            ar="كوادريليون" de="Billiarde" en="Quadrillion" es="mil billones" fr="billiard" he="קוודריליון" nl="biljard" pt_BR="quatrilhão" pt_PT="mil biliões" ru="квадриллион" am="ኳድሪሊዮን" />
+        <word
+            ar="تريليون" de="Billion" en="Trillion" es="un billón" fr="billion" he="טריליון" nl="biljoen" pt_BR="trilhão" pt_PT="bilião" ru="триллион" am="ትሪሊዮን" />
+        <word
+            ar="جوجل" de="Googol" en="Googol" es="gúgol" fr="googol" he="גוגול" nl="googol" pt_BR="googol" pt_PT="googol" ru="гугол" am="ጉጎል" />
+    </string-array><!-- E — קשה יותר -->
+    <string-array name="numbers_e">
+        <word
+            ar="كوينتليون" de="Trillion" en="Quintillion" es="trillón" fr="trillion" he="קוינטיליון" nl="triljoen" pt_BR="quintilhão" pt_PT="trilião" ru="квинтиллион" am="ኩዊንቲሊዮን" />
+        <word
+            ar="سكستليون" de="Trilliarde" en="Sextillion" es="mil trillones" fr="trilliard" he="סקסטיליון" nl="triljard" pt_BR="sextilhão" pt_PT="mil triliões" ru="секстиллион" am="ሴክስቲሊዮን" />
+        <word
+            ar="كوادريليون" de="Billiarde" en="Quadrillion" es="mil billones" fr="billiard" he="קוודריליון" nl="biljard" pt_BR="quatrilhão" pt_PT="mil biliões" ru="квадриллион" am="ኳድሪሊዮን" />
+        <word
+            ar="أوكتليون" de="Quadrilliarde" en="Octillion" es="mil cuatrillones" fr="quadrilliard" he="אוקטיליון" nl="quadriljard" pt_BR="octilhão" pt_PT="mil quadriliões" ru="октиллион" am="ኦክቲሊዮን" />
+        <word
+            ar="نونليون" de="Quintillion" en="Nonillion" es="quintillón" fr="quintillion" he="נוניליון" nl="quintiljoen" pt_BR="nonilhão" pt_PT="quintilião" ru="нониллион" am="ኖኒሊዮን" />
+        <word
+            ar="ديسيليون" de="Quintilliarde" en="Decillion" es="mil quintillones" fr="quintilliard" he="דציליון" nl="quintiljard" pt_BR="decilhão" pt_PT="mil quintiliões" ru="дециллион" am="ዴሲሊዮን" />
+    </string-array><!-- ========================= NEW: TIME — זמן ========================== --><!-- A — קל מאוד --><!-- A — קל מאוד -->
+    <string-array name="time_a">
+        <word ar="الوقت" de="Zeit" en="Time" es="tiempo" fr="temps" he="זמן" nl="tijd" pt_BR="tempo" pt_PT="tempo" ru="время" am="ጊዜ" />
+        <word
+            ar="اليوم" de="Heute" en="Today" es="hoy" fr="Aujourd’hui" he="היום" nl="vandaag" pt_BR="Hoje" pt_PT="Hoje" ru="Сегодня" am="ዛሬ"/>
+        <word
+            ar="غدًا" de="Morgen" en="Tomorrow" es="mañana" fr="Demain" he="מחר" nl="morgen" pt_BR="Amanhã" pt_PT="Amanhã" ru="Завтра" am="ነገ"/>
+        <word
+            ar="شمس" de="Sonne" en="Sun" es="sol" fr="Soleil" he="שמש" nl="zon" pt_BR="Sol" pt_PT="Sol" ru="Солнце" />
+        <word
+            ar="قمر" de="Mond" en="Moon" es="luna" fr="Lune" he="ירח" nl="maan" pt_BR="Lua" pt_PT="Lua" ru="Луна" />
+        <word
+            ar="يوم" de="Tag" en="Day" es="día" fr="Jour" he="יום" nl="dag" pt_BR="Dia" pt_PT="Dia" ru="День" am="ቀን"/>
+        <word
+            ar="أسبوع" de="Woche" en="Week" es="semana" fr="Semaine" he="שבוע" nl="week" pt_BR="Semana" pt_PT="Semana" ru="Неделя" am="ሳምንት"/>
+        <word
+            ar="شهر" de="Monat" en="Month" es="mes" fr="Mois" he="חודש" nl="maand" pt_BR="Mês" pt_PT="Mês" ru="Месяц" am="ወር"/>
+        <word
+            ar="سنة" de="Jahr" en="Year" es="año" fr="Année" he="שנה" nl="jaar" pt_BR="Ano" pt_PT="Ano" ru="Год" am="ዓመት"/>
+    </string-array><!-- B — קל -->
+    <string-array name="time_b">
+        <word
+            ar="أمس" de="Gestern" en="Yesterday" es="ayer" fr="Hier" he="אתמול" nl="gisteren" pt_BR="Ontem" pt_PT="Ontem" ru="Вчера" am="ትናንት"/>
+        <word
+            ar="الأحد" de="Sonntag" en="Sunday" es="domingo" fr="dimanche" he="יום ראשון" nl="zondag" pt_BR="domingo" pt_PT="domingo" ru="воскресенье" am="እሁድ"/>
+        <word
+            ar="الجمعة" de="Freitag" en="Friday" es="viernes" fr="vendredi" he="יום שישי" nl="vrijdag" pt_BR="sexta-feira" pt_PT="sexta-feira" ru="пятница" am="አርብ"/>
+        <word
+            ar="السبت" de="Samstag" en="Saturday" es="sábado" fr="samedi" he="שבת" nl="zaterdag" pt_BR="sábado" pt_PT="sábado" ru="суббота" am="ቅዳሜ"/>
+        <word
+            ar="الربيع" de="Frühling" en="Spring" es="primavera" fr="printemps" he="אביב" nl="lente" pt_BR="primavera" pt_PT="primavera" ru="весна" am="ጸደይ"/>
+        <word
+            ar="الصيف" de="Sommer" en="Summer" es="verano" fr="été" he="קיץ" nl="zomer" pt_BR="verão" pt_PT="verão" ru="лето" am="በጋ"/>
+        <word
+            ar="الشتاء" de="Winter" en="Winter" es="invierno" fr="hiver" he="חורף" nl="winter" pt_BR="inverno" pt_PT="inverno" ru="зима" am="ክረምት"/>
+        <word
+            ar="أبريل" de="April" en="April" es="abril" fr="avril" he="אפריל" nl="april" pt_BR="abril" pt_PT="abril" ru="апрель" am="ሚያዝያ"/>
+        <word
+            ar="ليل" de="Nacht" en="Night" es="noche" fr="nuit" he="לילה" nl="nacht" pt_BR="noite" pt_PT="noite" ru="ночь" am="ሌሊት"/>
+        <word
+            ar="صباح" de="Morgen" en="Morning" es="mañana" fr="matin" he="בוקר" nl="ochtend" pt_BR="manhã" pt_PT="manhã" ru="утро" am="ጠዋት"/>
+        <word
+            ar="يوليو" de="Juli" en="July" es="julio" fr="juillet" he="יולי" nl="juli" pt_BR="julho" pt_PT="julho" ru="июль" am="ሐምሌ"/>
+        <word
+            ar="ساعة" de="Stunde" en="Hour" es="hora" fr="heure" he="שעה" nl="uur" pt_BR="hora" pt_PT="hora" ru="час" am="ሰዓት"/>
+        <word
+            ar="دقيقة" de="Minute" en="Minute" es="minuto" fr="minute" he="דקה" nl="minuut" pt_BR="minuto" pt_PT="minuto" ru="минута" am="ደቂቃ"/>
+        <word
+            ar="ثانية" de="Sekunde" en="Second" es="segundo" fr="seconde" he="שנייה" nl="seconde" pt_BR="segundo" pt_PT="segundo" ru="секунда" am="ሰከንድ"/>
+    </string-array><!-- C — בינוני -->
+    <string-array name="time_c">
+        <word
+            ar="يناير" de="Januar" en="January" es="enero" fr="Janvier" he="ינואר" nl="januari" pt_BR="Janeiro" pt_PT="Janeiro" ru="Январь" am="ጥር"/>
+        <word
+            ar="فبراير" de="Februar" en="February" es="febrero" fr="Février" he="פברואר" nl="februari" pt_BR="Fevereiro" pt_PT="Fevereiro" ru="Февраль" am="የካቲት"/>
+        <word
+            ar="مارس" de="März" en="March" es="marzo" fr="Mars" he="מרץ" nl="maart" pt_BR="Março" pt_PT="Março" ru="Март" am="መጋቢት"/>
+        <word
+            ar="مساء" de="Abend" en="Evening" es="tarde" fr="Soir" he="ערב" nl="avond" pt_BR="Noite" pt_PT="Noite" ru="Вечер" am="ማታ"/>
+        <word
+            ar="الظهر" de="Mittag" en="Noon" es="mediodía" fr="Midi" he="צהריים" nl="middag" pt_BR="Meio-dia" pt_PT="Meio-dia" ru="Полдень" am="ቀትር"/>
+        <word
+            ar="الثلاثاء" de="Dienstag" en="Tuesday" es="martes" fr="Mardi" he="יום שלישי" nl="dinsdag" pt_BR="Terça-feira" pt_PT="Terça-feira" ru="Вторник" am="ማክሰኞ"/>
+        <word
+            ar="الأربعاء" de="Mittwoch" en="Wednesday" es="miércoles" fr="Mercredi" he="יום רביעי" nl="woensdag" pt_BR="Quarta-feira" pt_PT="Quarta-feira" ru="Среда" am="ረቡዕ"/>
+        <word
+            ar="الخميس" de="Donnerstag" en="Thursday" es="jueves" fr="Jeudi" he="יום חמישי" nl="donderdag" pt_BR="Quinta-feira" pt_PT="Quinta-feira" ru="Четверг" am="ሐሙስ"/>
+        <word
+            ar="أغسطس" de="August" en="August" es="agosto" fr="Août" he="אוגוסט" nl="augustus" pt_BR="Agosto" pt_PT="Agosto" ru="Август" am="ነሐሴ"/>
+        <word
+            ar="سبتمبر" de="September" en="September" es="septiembre" fr="Septembre" he="ספטמבר" nl="september" pt_BR="Setembro" pt_PT="Setembro" ru="Сентябрь" am="መስከረም"/>
+        <word
+            ar="أكتوبر" de="Oktober" en="October" es="octubre" fr="Octobre" he="אוקטובר" nl="oktober" pt_BR="Outubro" pt_PT="Outubro" ru="Октябрь" am="ጥቅምት"/>
+        <word
+            ar="نوفمبر" de="November" en="November" es="noviembre" fr="Novembre" he="נובמבר" nl="november" pt_BR="Novembro" pt_PT="Novembro" ru="Ноябрь" />
+        <word
+            ar="ديسمبر" de="Dezember" en="December" es="diciembre" fr="Décembre" he="דצמבר" nl="december" pt_BR="Dezembro" pt_PT="Dezembro" ru="Декабрь" am="ታህሳስ"/>
+        <word
+            ar="عيد" de="Feiertag" en="Holiday" es="fiesta" fr="Fête" he="חג" he2="חופשה" nl="feestdag" pt_BR="Feriado" pt_PT="Feriado" ru="Праздник" am="በዓል"/>
+        <word ar="إجازة" de="Urlaub" en="Vecation" es="Vacaciones" fr="Vacances" he="חופשה" nl="Vakantie" pt_BR="Férias" pt_PT="Férias" ru="Отпуск" />
+        <word
+            ar="عيد ميلاد" de="Geburtstag" en="Birthday" es="cumpleaños" fr="Anniversaire" he="יום הולדת" nl="verjaardag" pt_BR="Aniversário" pt_PT="Aniversário" ru="День рождения" />
+        <word
+            ar="المستقبل" de="Zukunft" en="Future" es="futuro" fr="Futur" he="עתיד" nl="toekomst" pt_BR="Futuro" pt_PT="Futuro" ru="Будущее" am="ወደፊት"/>
+        <word
+            ar="الحاضر" de="Gegenwart" en="Present" es="presente" fr="Présent" he="הווה" he2="מתנה" nl="heden" pt_BR="Presente" pt_PT="Presente" ru="Настоящее" am="አሁን"/>
+        <word
+            ar="قرن" de="Jahrhundert" en="Century" es="siglo" fr="Siècle" he="מאה" nl="eeuw" pt_BR="Século" pt_PT="Século" ru="Век" am="ክፍለ ዘመን"/>
+        <word
+            ar="ألفية" de="Jahrtausend" en="Millennium" es="milenio" fr="Millénaire" he="אלף" nl="millennium" pt_BR="Milênio" pt_PT="Milénio" ru="Тысячелетие" />
+        <word
+            ar="وقت النوم" de="Schlafenszeit" en="Bedtime" es="hora de dormir" fr="Heure du coucher" he="שעת השינה" nl="bedtijd" pt_BR="Hora de dormir" pt_PT="Hora de deitar" ru="Время сна" am="የመኝታ ጊዜ"/>
+    </string-array><!-- D — קשה -->
+    <string-array name="time_d">
+        <word
+            ar="الخريف" de="Herbst" en="Autumn" es="otoño" fr="automne" he="סתיו" nl="herfst" pt_BR="outono" pt_PT="outono" ru="осень" />
+        <word
+            ar="عطلة نهاية الأسبوع" de="Wochenende" en="Weekend" es="fin de semana" fr="week-end" he="סוף שבוע" nl="weekend" pt_BR="fim de semana" pt_PT="fim de semana" ru="выходные" am="የሳምንት መጨረሻ"/>
+        <word
+            ar="بعد الظهر" de="Nachmittag" en="Afternoon" es="tarde" fr="après-midi" he="אחר הצהריים" nl="middag" pt_BR="tarde" pt_PT="tarde" ru="после полудня" am="ከሰዓት በኋላ"/>
+        <word
+            ar="منتصف الليل" de="Mitternacht" en="Midnight" es="medianoche" fr="minuit" he="חצות" nl="middernacht" pt_BR="meia-noite" pt_PT="meia-noite" ru="полночь" am="እኩለ ሌሊት"/>
+        <word
+            ar="الماضي" de="Vergangenheit" en="Past" es="pasado" fr="passé" he="עבר" nl="verleden" pt_BR="passado" pt_PT="passado" ru="прошлое" am="ያለፈው" />
+        <word
+            ar="أمس صباحًا" de="gestern Morgen" en="Yesterday morning" es="ayer por la mañana" fr="hier matin" he="אתמול בבוקר" nl="gisterochtend" pt_BR="ontem de manhã" pt_PT="ontem de manhã" ru="вчера утром" am="ትናንት ጠዋት"/>
+        <word
+            ar="غدًا ليلاً" de="morgen Abend" en="Tomorrow night" es="mañana por la noche" fr="demain soir" he="מחר בלילה" nl="morgenavond" pt_BR="amanhã à noite" pt_PT="amanhã à noite" ru="завтра вечером" am="ነገ ሌሊት"/>
+    </string-array><!-- ========================= NEW: TECH / DEVICES — טכנולוגיה ========================== --><!-- A — קל מאוד -->
+    <string-array name="tech_a">
+        <word ar="صاروخ" de="Rakete" en="Rocket" es="cohete" fr="Fusée" he="טיל" nl="raket" pt_BR="Foguete" pt_PT="Foguetão" ru="Ракета" />
+        <word ar="كمبيوتر" de="Computer" en="Computer" es="computadora" fr="Ordinateur" he="מחשב" nl="computer" pt_BR="Computador" pt_PT="Computador" ru="Компьютер" am="ኮምፒውተር" />
+        <word ar="لعبة" de="Spiel" en="Game" es="juego" fr="Jeu" he="משחק" nl="spel" pt_BR="Jogo" pt_PT="Jogo" ru="Игра" am="ጨዋታ" />
+        <word ar="راديو" de="Radio" en="Radio" es="radio" fr="Radio" he="רדיו" nl="radio" pt_BR="Rádio" pt_PT="Rádio" ru="Радио" am="ሬዲዮ" />
+        <word ar="شاشة" de="Bildschirm" en="Screen" es="pantalla" fr="Écran" he="מסך" he2="צג" nl="scherm" pt_BR="Tela" pt_PT="Ecrã" ru="Экран" am="ማያ" />
+        <word ar="روبوت" de="Roboter" en="Robot" es="robot" fr="Robot" he="רובוט" nl="robot" pt_BR="Robô" pt_PT="Robô" ru="Робот" am="ሮቦት" />
+        <word ar="حاسوب محمول" de="Laptop" en="Laptop" es="portátil" fr="Ordinateur portable" he="מחשב נייד" he2="לפטופ" nl="laptop" pt_BR="Notebook" pt_PT="Portátil" ru="Ноутбук" am="ላፕቶፕ" />
+    </string-array>
+    <!-- B — קל -->
+    <string-array name="tech_b">
+        <word ar="تلفزيون" de="Fernseher" en="Television" es="televisión" fr="Télévision" he="טלוויזיה" nl="televisie" pt_BR="Televisão" pt_PT="Televisão" ru="Телевизор" am="ቴሌቪዥን" />
+        <word ar="كاميرا" de="Kamera" en="Camera" es="cámara" fr="Caméra" he="מצלמה" nl="camera" pt_BR="Câmera" pt_PT="Câmara" ru="Камера" am="ካሜራ" />
+        <word ar="طابعة" de="Drucker" en="Printer" es="impresora" fr="Imprimante" he="מדפסת" nl="printer" pt_BR="Impressora" pt_PT="Impressora" ru="Принтер" am="ፕሪንተር" />
+        <word ar="لوحة مفاتيح" de="Tastatur" en="Keyboard" es="teclado" fr="Clavier" he="מקלדת" nl="toetsenbord" pt_BR="Teclado" pt_PT="Teclado" ru="Клавиатура" am="ቁልፍ ሰሌዳ" />
+        <word ar="مكبر صوت" de="Lautsprecher" en="Speaker" es="altavoz" fr="Haut-parleur" he="רמקול" nl="luidspreker" pt_BR="Alto-falante" pt_PT="Altifalante" ru="Динамик" am="ስፒከር" />
+        <word ar="زر" de="Knopf" en="Button" es="botón" fr="Bouton" he="כפתור" he2="מקש" nl="knop" pt_BR="Botão" pt_PT="Botão" ru="Кнопка" am="አዝራር" />
+        <word ar="عصا تحكم" de="Joystick" en="Joystick" es="joystick" fr="Joystick" he="ג'ויסטיק" nl="joystick" pt_BR="Joystick" pt_PT="Joystick" ru="Джойстик" am="ጆይስቲክ" />
+        <word ar="لافتة" de="Schild" en="Sign" es="letrero" fr="Panneau" he="שלט" he2="סימן" he3="לחתום" nl="bord" pt_BR="Placa" pt_PT="Placa" ru="Вывеска" am="ምልክት" />
+    </string-array>
+    <!-- C — בינוני -->
+    <string-array name="tech_c">
+        <word ar="بكسل" de="Pixel" en="Pixel" es="píxel" fr="pixel" he="פיקסל" nl="pixel" pt_BR="pixel" pt_PT="pixel" ru="пиксель" am="ፒክሰል" />
+        <word ar="جهاز تحكم عن بعد" de="Fernbedienung" en="Remote control" es="control remoto" fr="Télécommande" he="שלט רחוק" nl="afstandsbediening" pt_BR="Controle remoto" pt_PT="Comando" ru="Пульт дистанционного управления" am="ሪሞት መቆጣጠሪያ" />
+        <word ar="تصميم" de="Design" en="Design" es="diseño" fr="Design" he="עיצוב" nl="ontwerp" pt_BR="Design" pt_PT="Design" ru="Дизайн" am="ንድፍ" />
+        <word ar="طائرة مسيّرة" de="Drohne" en="Drone" es="dron" fr="Drone" he="רחפן" nl="drone" pt_BR="Drone" pt_PT="Drone" ru="Дрон" am="ድሮን" />
+        <word ar="ميكروويف" de="Mikrowelle" en="Microwave" es="microondas" fr="Micro-ondes" he="מיקרוגל" nl="magnetron" pt_BR="Micro-ondas" pt_PT="Micro-ondas" ru="Микроволновка" am="ማይክሮዌቭ" />
+        <word ar="سماعات رأس" de="Kopfhörer" en="Headphones" es="auriculares" fr="Casque" he="אוזניות" nl="koptelefoon" pt_BR="Fones de ouvido" pt_PT="Auscultadores" ru="Наушники" am="የጆሮ ማዳመጫ" />
+    </string-array>
+    <!-- D — קשה -->
+    <string-array name="tech_d">
+        <word ar="الذكاء الاصطناعي" de="Künstliche Intelligenz" en="Artificial intelligence" es="inteligencia artificial" fr="Intelligence artificielle" he="בינה מלאכותית" nl="kunstmatige intelligentie" pt_BR="Inteligência artificial" pt_PT="Inteligência artificial" ru="Искусственный интеллект" />
+        <word ar="ساعة ذكية" de="Smartwatch" en="Smartwatch" es="reloj inteligente" fr="montre connectée" he="שעון חכם" nl="smartwatch" pt_BR="smartwatch" pt_PT="smartwatch" ru="умные часы" am="ስማርት ሰዓት" />
+        <word ar="رسومات" de="Grafik" en="Graphics" es="gráficos" fr="graphismes" he="גרפיקה" nl="grafische vormgeving" pt_BR="gráficos" pt_PT="gráficos" ru="графика" am="ግራፊክስ" />
+        <word ar="موجّه" de="Router" en="Router" es="router" fr="routeur" he="ראוטר" nl="router" pt_BR="roteador" pt_PT="router" ru="маршрутизатор" am="ራውተር" />
+        <word ar="وحدة ألعاب" de="Spielkonsole" en="Game console" es="consola de videojuegos" fr="console de jeux" he="קונסולת משחקים" nl="spelcomputer" pt_BR="console de videogame" pt_PT="consola de jogos" ru="игровая консоль" am="የጨዋታ ኮንሶል" />
+    </string-array>
+    <!-- E — קשה יותר -->
+    <string-array name="tech_e">
+        <word ar="طابعة ثلاثية الأبعاد" de="3D-Drucker" en="3D printer" es="impresora 3D" fr="imprimante 3D" he="מדפסת תלת מימד" nl="3D-printer" pt_BR="impressora 3D" pt_PT="impressora 3D" ru="3D-принтер" am="3D ፕሪንተር" />
+        <word ar="البرمجة" de="Programmierung" en="Computing" es="programación" fr="programmation" he="תכנות" nl="programmeren" pt_BR="programação" pt_PT="programação" ru="программирование" am="ፕሮግራሚንግ" />
+        <word ar="منزل ذكي" de="Smart Home" en="Smart home" es="hogar inteligente" fr="maison intelligente" he="בית חכם" nl="slim huis" pt_BR="casa inteligente" pt_PT="casa inteligente" ru="умный дом" am="ስማርት ቤት" />
+        <word ar="قمر صناعي" de="Satellit" en="Satellite" es="satélite" fr="satellite" he="לוויין" nl="satelliet" pt_BR="satélite" pt_PT="satélite" ru="спутник" am="ሳተላይት" />
+        <word ar="ذكاء اصطناعي" de="künstliche Intelligenz" en="Artificial intelligence" es="inteligencia artificial" fr="intelligence artificielle" he="בינה מלאכותית" nl="kunstmatige intelligentie" pt_BR="inteligência artificial" pt_PT="inteligência artificial" ru="искусственный интеллект" am="ሰው ሰራሽ ብልህነት" />
+    </string-array>
+    <!-- ========================= NEW: EXPRESSIONS — ביטויים ומילים שימושיות ========================== --><!-- A — קל מאוד (מילים בודדות) -->
+    <string-array name="expressions_a">
+        <word ar="رائع" de="Cool" en="Cool" es="guay" fr="génial" he="מגניב" nl="cool" pt_BR="legal" pt_PT="fixe" ru="Классно" />
+        <word ar="مرحبا" de="Hallo" en="Hello" es="hola" fr="Bonjour" he="שלום" nl="hallo" pt_BR="Olá" pt_PT="Olá" ru="Привет" am="ሰላም" />
+        <word ar="من فضلك" de="Bitte" en="Please" es="por favor" fr="S’il vous plaît" he="בבקשה" nl="alsjeblieft" pt_BR="Por favor" pt_PT="Por favor" ru="Пожалуйста" am="እባክህ" />
+        <word ar="آسف" de="Entschuldigung" en="Sorry" es="lo siento" fr="Désolé" he="מצטער" he2="מצטערת" he3="סליחה" nl="sorry" pt_BR="Desculpa" pt_PT="Desculpa" ru="Извини" am="ይቅርታ" />
+        <word ar="نعم" de="Ja" en="Yes" es="sí" fr="Oui" he="כן" nl="ja" pt_BR="Sim" pt_PT="Sim" ru="Да" am="አዎ" />
+        <word ar="لا" de="Nein" en="No" es="no" fr="Non" he="לא" nl="nee" pt_BR="Não" pt_PT="Não" ru="Нет" am="አይ" />
+        <word ar="ذكي" de="Klug" en="Smart" es="inteligente" fr="Intelligent" he="חכם" nl="slim" pt_BR="Inteligente" pt_PT="Inteligente" ru="Умный" am="ጥበበኛ" />
+        <word ar="ابتسامة" de="Lächeln" en="Smile" es="sonrisa" fr="Sourire" he="חיוך" he2="לחייך" nl="glimlach" pt_BR="Sorriso" pt_PT="Sorriso" ru="Улыбка" am="ፈገግታ" />
+        <word ar="كبير" de="Groß" en="Big" es="grande" fr="Grand" he="גדול" nl="groot" pt_BR="Grande" pt_PT="Grande" ru="Большой" am="ትልቅ" />
+        <word ar="سعيد" de="Glücklich" en="Happy" es="feliz" fr="Heureux" he="שמח" nl="blij" pt_BR="Feliz" pt_PT="Feliz" ru="Счастливый" am="ደስተኛ" />
+        <word ar="حزين" de="Traurig" en="Sad" es="triste" fr="Triste" he="עצוב" nl="verdrietig" pt_BR="Triste" pt_PT="Triste" ru="Грустный" am="አዝናኝ" />
+        <word ar="شجرة" de="Baum" en="Tree" es="árbol" fr="Arbre" he="עץ" nl="boom" pt_BR="Árvore" pt_PT="Árvore" ru="Дерево" am="ዛፍ" />
+        <word ar="قريب" de="In der Nähe" en="Near" es="cerca" fr="Près" he="ליד" he2="קרוב" nl="dichtbij" pt_BR="Perto" pt_PT="Perto" ru="Рядом" am="ቅርብ" />
+        <word ar="جيد" de="Gut" en="Good" es="bueno" fr="Bon" he="טוב" nl="goed" pt_BR="Bom" pt_PT="Bom" ru="Хороший" am="ጥሩ" />
+        <word ar="لطيف" de="Nett" en="Nice" es="agradable" fr="Sympa" he="נחמד" nl="leuk" pt_BR="Legal" pt_PT="Agradável" ru="Милый" am="ጥሩ" />
+        <word ar="في" de="In" en="In" es="en" fr="Dans" he="בתוך" he2="ב" nl="in" pt_BR="Em" pt_PT="Em" ru="В" am="ውስጥ" />
+        <word ar="على" de="Auf" en="On" es="sobre" fr="Sur" he="על" nl="op" pt_BR="Em cima" pt_PT="Em cima" ru="На" am="ላይ" />
+        <word ar="مفتاح" de="Schlüssel" en="Key" es="llave" fr="Clé" he="מפתח" nl="sleutel" pt_BR="Chave" pt_PT="Chave" ru="Ключ" am="ቁልፍ" />
+    </string-array>
+
+    <string-array name="expressions_b">
+        <word ar="سقف" de="Dach" en="Roof" es="tejado" fr="Toit" he="גג" nl="dak" pt_BR="Telhado" pt_PT="Telhado" ru="Крыша" am="ጣሪያ" />
+        <word ar="تحت" de="Unter" en="Under" es="debajo" fr="Sous" he="מתחת" nl="onder" pt_BR="Debaixo" pt_PT="Debaixo" ru="Под" am="በታች" />
+        <word ar="عائلة" de="Familie" en="Family" es="familia" fr="Famille" he="משפחה" nl="familie" pt_BR="Família" pt_PT="Família" ru="Семья" am="ቤተሰብ" />
+        <word ar="غاضب" de="Wütend" en="Angry" es="enojado" fr="En colère" he="כועס" nl="boos" pt_BR="Zangado" pt_PT="Zangado" ru="Злой" am="ተቆጣ" />
+        <word ar="زجاجة" de="Flasche" en="Bottle" es="botella" fr="Bouteille" he="בקבוק" nl="fles" pt_BR="Garrafa" pt_PT="Garrafa" ru="Бутылка" am="ጠርሙስ" />
+        <word ar="مثالي" de="Perfekt" en="Perfect" es="perfecto" fr="Parfait" he="מושלם" nl="perfect" pt_BR="Perfeito" pt_PT="Perfeito" ru="Идеально" am="ፍጹም" />
+        <word ar="أفضل" de="Besser" en="Better" es="mejor" fr="Mieux" he="טוב יותר" nl="beter" pt_BR="Melhor" pt_PT="Melhor" ru="Лучше" am="የተሻለ" />
+        <word ar="مدينة" de="Stadt" en="City" es="ciudad" fr="Ville" he="עיר" nl="stad" pt_BR="Cidade" pt_PT="Cidade" ru="Город" am="ከተማ" />
+        <word ar="حديقة" de="Park" en="Park" es="parque" fr="Parc" he="פארק" nl="park" pt_BR="Parque" pt_PT="Parque" ru="Парк" am="ፓርክ" />
+        <word ar="قفل" de="Schloss" en="Lock" es="candado" fr="Cadenas" he="מנעול" nl="slot" pt_BR="Cadeado" pt_PT="Cadeado" ru="Замок" am="መቆለፊያ" />
+        <word ar="نعناع" de="Minze" en="Mint" es="menta" fr="Menthe" he="מנטה" nl="munt" pt_BR="Hortelã" pt_PT="Hortelã" ru="Мята" am="ናና" />
+        <word ar="زيتون" de="Olive" en="Olive" es="aceituna" fr="Olive" he="זית" nl="olijf" pt_BR="Azeitona" pt_PT="Azeitona" ru="Оливка" am="ወይራ" />
+    </string-array>
+
+    <string-array name="expressions_c">
+        <word ar="عاطفة" de="Emotion" en="Emotion" es="emoción" fr="Émotion" he="רגש" nl="emotie" pt_BR="Emoção" pt_PT="Emoção" ru="Эмоция" />
+        <word ar="سدادة فلين" de="Korken" en="Cork" es="corcho" fr="bouchon de liège" he="פקק שעם" nl="kurk" pt_BR="rolha" pt_PT="rolha" ru="Пробка" />
+        <word ar="تلميذ" de="Schüler" en="Pupil" es="alumno" fr="Élève" he="תלמיד" nl="leerling" pt_BR="Aluno" pt_PT="Aluno" ru="Ученик" am="ተማሪ" />
+        <word ar="معًا" de="Zusammen" en="Together" es="juntos" fr="Ensemble" he="ביחד" nl="samen" pt_BR="Juntos" pt_PT="Juntos" ru="Вместе" am="አብረን" />
+        <word ar="قرية" de="Dorf" en="Village" es="pueblo" fr="Village" he="כפר" nl="dorp" pt_BR="Vila" pt_PT="Aldeia" ru="Деревня" am="መንደር" />
+        <word ar="جزيرة" de="Insel" en="Island" es="isla" fr="Île" he="אי" nl="eiland" pt_BR="Ilha" pt_PT="Ilha" ru="Остров" am="ደሴት" />
+        <word ar="مدرسة" de="Schule" en="School" es="escuela" fr="École" he="בית ספר" nl="school" pt_BR="Escola" pt_PT="Escola" ru="Школа" am="ትምህርት ቤት" />
+        <word ar="مع السلامة" de="Auf Wiedersehen" en="Goodbye" es="adiós" fr="Au revoir" he="להתראות" nl="tot ziens" pt_BR="Tchau" pt_PT="Adeus" ru="До свидания" am="ደህና ሁን" />
+        <word ar="صديق" de="Freund" en="Friend" es="amigo" fr="Ami" he="חבר" nl="vriend" pt_BR="Amigo" pt_PT="Amigo" ru="Друг" am="ጓደኛ" />
+        <word ar="بيت على الشجرة" de="Baumhaus" en="Tree house" es="casa del árbol" fr="Cabane dans les arbres" he="בית עץ" nl="boomhut" pt_BR="Casa na árvore" pt_PT="Casa na árvore" ru="Домик на дереве" am="የዛፍ ቤት" />
+        <word ar="النهاية" de="Das Ende" en="The end" es="el final" fr="Fin" he="הסוף" he2="סיום" nl="het einde" pt_BR="O fim" pt_PT="O fim" ru="Конец" am="መጨረሻ" />
+        <word ar="فصل دراسي" de="Klassenzimmer" en="Classroom" es="aula" fr="Salle de classe" he="כיתה" nl="klaslokaal" pt_BR="Sala de aula" pt_PT="Sala de aula" ru="Класс" am="ክፍል ትምህርት" />
+    </string-array>
+    <!-- ========================= NEW: BODY — גוף האדם ========================== --><!-- A — קל מאוד -->
+
+    <string-array name="body_a">
+        <word ar="حلم" de="Traum" en="Dream" es="sueño" fr="Rêve" he="חלום" nl="droom" pt_BR="Sonho" pt_PT="Sonho" ru="Мечта" />
+        <word ar="حب" de="Liebe" en="Love" es="amor" fr="Amour" he="אהבה" nl="liefde" pt_BR="Amor" pt_PT="Amor" ru="Любовь" />
+        <word
+            ar="رأس" de="Kopf" en="Head" es="cabeza" fr="Tête" he="ראש" nl="hoofd" pt_BR="Cabeça" pt_PT="Cabeça" ru="Голова" />
+        <word
+            ar="ساق" de="Bein" en="Leg" es="pierna" fr="Jambe" he="רגל" nl="been" pt_BR="Perna" pt_PT="Perna" ru="Нога" />
+        <word
+            ar="يد" de="Hand" en="Hand" es="mano" fr="Main" he="יד" nl="hand" pt_BR="Mão" pt_PT="Mão" ru="Рука" />
+        <word
+            ar="عين" de="Auge" en="Eye" es="ojo" fr="Œil" he="עין" nl="oog" pt_BR="Olho" pt_PT="Olho" ru="Глаз" />
+        <word
+            ar="أنف" de="Nase" en="Nose" es="nariz" fr="Nez" he="אף" nl="neus" pt_BR="Nariz" pt_PT="Nariz" ru="Нос" />
+        <word
+            ar="أذن" de="Ohr" en="Ear" es="oreja" fr="Oreille" he="אוזן" nl="oor" pt_BR="Orelha" pt_PT="Orelha" ru="Ухо" />
+    </string-array>
+    <string-array name="countries_b">
+        <word
+            ar="إسبانيا" de="Spanien" en="Spain" es="España" fr="Espagne" he="ספרד" nl="Spanje" pt_BR="Espanha" pt_PT="Espanha" ru="Испания" />
+        <word
+            ar="إسرائيل" de="Israel" en="Israel" es="Israel" fr="Israël" he="ישראל" nl="Israël" pt_BR="Israel" pt_PT="Israel" ru="Израиль" />
+        <word
+            ar="أمريكا" de="Amerika" en="America" es="América" fr="Amérique" he="אמריקה" nl="Amerika" pt_BR="América" pt_PT="América" ru="Америка" />
+        <word
+            ar="رومانيا" de="Rumänien" en="Romania" es="Rumanía" fr="Roumanie" he="רומניה" nl="Roemenië" pt_BR="Romênia" pt_PT="Roménia" ru="Румыния" />
+        <word
+            ar="فنلندا" de="Finnland" en="Finland" es="Finlandia" fr="Finlande" he="פינלנד" nl="Finland" pt_BR="Finlândia" pt_PT="Finlândia" ru="Финляндия" />
+        <word
+            ar="إيطاليا" de="Italien" en="Italy" es="Italia" fr="Italie" he="איטליה" nl="Italië" pt_BR="Itália" pt_PT="Itália" ru="Италия" />
+        <word
+            ar="موناكو" de="Monaco" en="Monaco" es="Mónaco" fr="Monaco" he="מונקו" nl="Monaco" pt_BR="Mônaco" pt_PT="Mónaco" ru="Монако" />
+        <word
+            ar="البرازيل" de="Brasilien" en="Brazil" es="Brasil" fr="Brésil" he="ברזיל" nl="Brazilië" pt_BR="Brasil" pt_PT="Brasil" ru="Бразилия" />
+        <word
+            ar="أفريقيا" de="Afrika" en="Africa" es="África" fr="Afrique" he="אפריקה" nl="Afrika" pt_BR="África" pt_PT="África" ru="Африка" />
+        <word
+            ar="ألمانيا" de="Deutschland" en="Germany" es="Alemania" fr="Allemagne" he="גרמניה" nl="Duitsland" pt_BR="Alemanha" pt_PT="Alemanha" ru="Германия" />
+        <word
+            ar="سان مارينو" de="San Marino" en="San Marino" es="San Marino" fr="Saint-Marin" he="סן מרינו" nl="San Marino" pt_BR="San Marino" pt_PT="San Marino" ru="Сан-Марино" />
+    </string-array>
+    <string-array name="countries_c">
+        <word
+            ar="بلغاريا" de="Bulgarien" en="Bulgaria" es="Bulgaria" fr="Bulgarie" he="בולגריה" nl="Bulgarije" pt_BR="Bulgária" pt_PT="Bulgária" ru="Болгария" />
+        <word
+            ar="الولايات المتحدة" de="Vereinigte Staaten" en="United States" es="Estados Unidos" fr="États-Unis" he="ארצות הברית" nl="Verenigde Staten" pt_BR="Estados Unidos" pt_PT="Estados Unidos" ru="Соединённые Штаты" />
+        <word
+            ar="المملكة المتحدة" de="Vereinigtes Königreich" en="United Kingdom" es="Reino Unido" fr="Royaume-Uni" he="בריטניה" nl="Verenigd Koninkrijk" pt_BR="Reino Unido" pt_PT="Reino Unido" ru="Соединённое Королевство" />
+        <word
+            ar="بولندا" de="Polen" en="Poland" es="Polonia" fr="Pologne" he="פולין" nl="Polen" pt_BR="Polônia" pt_PT="Polónia" ru="Польша" />
+        <word
+            ar="الأرجنتين" de="Argentinien" en="Argentina" es="Argentina" fr="Argentine" he="ארגנטינה" nl="Argentinië" pt_BR="Argentina" pt_PT="Argentina" ru="Аргентина" />
+        <word
+            ar="الدنمارك" de="Dänemark" en="Denmark" es="Dinamarca" fr="Danemark" he="דנמרק" nl="Denemarken" pt_BR="Dinamarca" pt_PT="Dinamarca" ru="Дания" />
+        <word
+            ar="أستراليا" de="Australien" en="Australia" es="Australia" fr="Australie" he="אוסטרליה" nl="Australië" pt_BR="Austrália" pt_PT="Austrália" ru="Австралия" />
+        <word
+            ar="المجر" de="Ungarn" en="Hungary" es="Hungría" fr="Hongrie" he="הונגריה" nl="Hongarije" pt_BR="Hungria" pt_PT="Hungria" ru="Венгрия" />
+        <word
+            ar="البرتغال" de="Portugal" en="Portugal" es="Portugal" fr="Portugal" he="פורטוגל" nl="Portugal" pt_BR="Portugal" pt_PT="Portugal" ru="Португалия" />
+        <word
+            ar="النرويج" de="Norwegen" en="Norway" es="Noruega" fr="Norvège" he="נורווגיה" nl="Noorwegen" pt_BR="Noruega" pt_PT="Noruega" ru="Норвегия" />
+        <word
+            ar="روسيا" de="Russland" en="Russia" es="Rusia" fr="Russie" he="רוסיה" nl="Rusland" pt_BR="Rússia" pt_PT="Rússia" ru="Россия" />
+        <word
+            ar="قبرص" de="Zypern" en="Cyprus" es="Chipre" fr="Chypre" he="קפריסין" nl="Cyprus" pt_BR="Chipre" pt_PT="Chipre" ru="Кипр" />
+        <word
+            ar="اليونان" de="Griechenland" en="Greece" es="Grecia" fr="Grèce" he="יוון" nl="Griekenland" pt_BR="Grécia" pt_PT="Grécia" ru="Греция" />
+    </string-array>
+    <string-array name="countries_d">
+        <word
+            ar="مصر" de="Ägypten" en="Egypt" es="Egipto" fr="Égypte" he="מצרים" nl="Egypte" pt_BR="Egito" pt_PT="Egito" ru="Египет" />
+        <word
+            ar="جمهورية التشيك" de="Tschechien" en="Czech Republic" es="República Checa" fr="République tchèque" he="צ'כיה" nl="Tsjechië" pt_BR="República Tcheca" pt_PT="República Checa" ru="Чехия" />
+        <word
+            ar="لوكسمبورغ" de="Luxemburg" en="Luxembourg" es="Luxemburgo" fr="Luxembourg" he="לוקסמבורג" nl="Luxemburg" pt_BR="Luxemburgo" pt_PT="Luxemburgo" ru="Люксембург" />
+        <word
+            ar="ليختنشتاين" de="Liechtenstein" en="Liechtenstein" es="Liechtenstein" fr="Liechtenstein" he="ליכטנשטיין" nl="Liechtenstein" pt_BR="Liechtenstein" pt_PT="Liechtenstein" ru="Лихтенштейн" />
+        <word
+            ar="السويد" de="Schweden" en="Sweden" es="Suecia" fr="Suède" he="שוודיה" nl="Zweden" pt_BR="Suécia" pt_PT="Suécia" ru="Швеция" />
+        <word
+            ar="هولندا" de="Niederlande" en="Nederland" es="Países Bajos" fr="Pays-Bas" he="הולנד" nl="Nederland" pt_BR="Países Baixos" pt_PT="Países Baixos" ru="Нидерланды" />
+        <word
+            ar="بلجيكا" de="Belgien" en="Belgium" es="Bélgica" fr="Belgique" he="בלגיה" nl="België" pt_BR="Bélgica" pt_PT="Bélgica" ru="Бельгия" />
+        <word
+            ar="سويسرا" de="Schweiz" en="Switzerland" es="Suiza" fr="Suisse" he="שוויץ" nl="Zwitserland" pt_BR="Suíça" pt_PT="Suíça" ru="Швейцария" />
+        <word
+            ar="أوروغواي" de="Uruguay" en="Uruguay" es="Uruguay" fr="Uruguay" he="אורוגוואי" nl="Uruguay" pt_BR="Uruguai" pt_PT="Uruguai" ru="Уругвай" />
+        <word
+            ar="تشيلي" de="Chile" en="Chile" es="Chile" fr="Chili" he="צ'ילה" nl="Chili" pt_BR="Chile" pt_PT="Chile" ru="Чили" />
+    </string-array>
+    <string-array name="languages_b">
+        <word
+            ar="الإنجليزية" de="Englisch" en="English" es="inglés" fr="Anglais" he="אנגלית" nl="Engels" pt_BR="Inglês" pt_PT="Inglês" ru="Английский" />
+        <word
+            ar="الإسبانية" de="Spanisch" en="Spanish" es="español" fr="Espagnol" he="ספרדית" nl="Spaans" pt_BR="Espanhol" pt_PT="Espanhol" ru="Испанский" />
+        <word
+            ar="العبرية" de="Hebräisch" en="Hebrew" es="hebreo" fr="Hébreu" he="עברית" nl="Hebreeuws" pt_BR="Hebraico" pt_PT="Hebraico" ru="Иврит" />
+        <word
+            ar="الروسية" de="Russisch" en="Russian" es="ruso" fr="Russe" he="רוסית" nl="Russisch" pt_BR="Russo" pt_PT="Russo" ru="Русский" />
+        <word
+            ar="الفرنسية" de="Französisch" en="French" es="francés" fr="Français" he="צרפתית" nl="Frans" pt_BR="Francês" pt_PT="Francês" ru="Французский" />
+        <word
+            ar="الألمانية" de="Deutsch" en="German" es="alemán" fr="Allemand" he="גרמנית" nl="Duits" pt_BR="Alemão" pt_PT="Alemão" ru="Немецкий" />
+    </string-array>
+    <string-array name="languages_c">
+        <word
+            ar="الإيطالية" de="Italienisch" en="Italian" es="italiano" fr="Italien" he="איטלקית" nl="Italiaans" pt_BR="Italiano" pt_PT="Italiano" ru="Итальянский" />
+        <word
+            ar="الكورية" de="Koreanisch" en="Korean" es="coreano" fr="Coréen" he="קוריאנית" nl="Koreaans" pt_BR="Coreano" pt_PT="Coreano" ru="Корейский" />
+        <word
+            ar="الهندية" de="Hindi" en="Hindi" es="hindi" fr="Hindi" he="הודית" nl="Hindi" pt_BR="Hindi" pt_PT="Hindi" ru="Хинди" />
+        <word
+            ar="العربية" de="Arabisch" en="Arabic" es="árabe" fr="Arabe" he="ערבית" nl="Arabisch" pt_BR="Árabe" pt_PT="Árabe" ru="Арабский" />
+        <word
+            ar="الدنماركية" de="Dänisch" en="Danish" es="danés" fr="Danois" he="דנית" nl="Deens" pt_BR="Dinamarquês" pt_PT="Dinamarquês" ru="Датский" />
+        <word
+            ar="الهولندية" de="Niederländisch" en="Dutch" es="neerlandés" fr="Néerlandais" he="הולנדית" nl="Nederlands" pt_BR="Holandês" pt_PT="Holandês" ru="Нидерландский" />
+    </string-array>
+    <string-array name="languages_d">
+        <word
+            ar="البرتغالية" de="Portugiesisch" en="Portuguese" es="portugués" fr="portugais" he="פורטוגזית" nl="Portugees" pt_BR="português" pt_PT="português" ru="португальский" />
+        <word
+            ar="الفيتنامية" de="Vietnamesisch" en="Vietnamese" es="vietnamita" fr="vietnamien" he="ויאטנמית" nl="Vietnamees" pt_BR="vietnamita" pt_PT="vietnamita" ru="вьетнамский" />
+        <word
+            ar="الصينية" de="Chinesisch" en="Chinese" es="chino" fr="chinois" he="סינית" nl="Chinees" pt_BR="chinês" pt_PT="chinês" ru="китайский" />
+        <word
+            ar="الإندونيسية" de="Indonesisch" en="Indonesian" es="indonesio" fr="indonésien" he="אינדונזית" nl="Indonesisch" pt_BR="indonésio" pt_PT="indonésio" ru="индонезийский" />
+        <word
+            ar="اليابانية" de="Japanisch" en="Japanese" es="japonés" fr="japonais" he="יפנית" nl="Japans" pt_BR="japonês" pt_PT="japonês" ru="японский" />
+        <word
+            ar="النرويجية" de="Norwegisch" en="Norwegian" es="noruego" fr="norvégien" he="נורווגית" nl="Noors" pt_BR="norueguês" pt_PT="norueguês" ru="норвежский" />
+        <word ar="الأمهرية" de="Amharisch" en="Amharic" es="Amárico" fr="amharique" he="אמהרית" nl="Amhaars" pt_BR="Amárico" pt_PT="Amárico" ru="Амхарский" />
+    </string-array><!-- ========================= NEW: SENTENCES — משפטים ========================== --><!-- A — קל מאוד --><!-- B — קל מאוד -->
+    <string-array name="sentences_b">
+        <word
+            ar="صباح الخير" de="Guten Morgen" en="Good morning" es="buenos días" fr="Bonjour" he="בוקר טוב" nl="goedemorgen" pt_BR="Bom dia" pt_PT="Bom dia" ru="Доброе утро" am="እንደምን አደሩ" />
+        <word
+            ar="تصبح على خير" de="Gute Nacht" en="Good night" es="buenas noches" fr="Bonne nuit" he="לילה טוב" nl="goedenacht" pt_BR="Boa noite" pt_PT="Boa noite" ru="Спокойной ночи" am="መልካም ሌሊት" />
+        <word
+            ar="كم؟" de="Wie viele?" en="How many?" es="¿cuántos?" fr="Combien ?" he="כמה?" nl="hoeveel?" pt_BR="Quantos?" pt_PT="Quantos?" ru="Сколько?" am="ስንት?" />
+        <word
+            ar="اسمي" de="ich heiße" en="My name is" es="me llamo" fr="je m'appelle" he="שמי הוא" nl="ik heet" pt_BR="eu me chamo" pt_PT="chamo-me" ru="меня зовут" am="ስሜ ... ነው" />
+        <word
+            ar="شكرًا" de="danke" en="Thank you" es="gracias" fr="merci" he="תודה" nl="dank je" pt_BR="obrigado" pt_PT="obrigado" ru="спасибо" am="አመሰግናለሁ" />
+        <word
+            ar="كن هادئًا" de="sei still" en="Be quiet" es="silencio" fr="chut" he="שמור על שקט" nl="stil" pt_BR="silêncio" pt_PT="silêncio" ru="тихо" am="ጸጥ በል" />
+    </string-array>
+
+    <string-array name="sentences_c">
+        <word
+            ar="هل لديك؟" de="Hast du?" en="Do you have?" es="¿Tienes?" fr="Tu as ?" he="יש לך?" nl="Heb je?" pt_BR="Você tem?" pt_PT="Tens?" ru="У тебя есть?" am="አለህ?" />
+        <word
+            ar="كيف حالك؟" de="Wie geht's?" en="How are you?" es="¿Cómo estás?" fr="Comment ça va ?" he="מה שלומך?" nl="Hoe gaat het?" pt_BR="Como você está?" pt_PT="Como estás?" ru="Как дела?" am="እንዴት ነህ?" />
+        <word
+            ar="ما هذا؟" de="Was ist das?" en="What is this?" es="¿Qué es esto?" fr="Qu’est-ce que c’est ?" he="מה זה?" nl="Wat is dit?" pt_BR="O que é isto?" pt_PT="O que é isto?" ru="Что это?" am="ይህ ምንድነው?" />
+        <word
+            ar="من هذا؟" de="Wer ist das?" en="Who is this?" es="¿Quién es?" fr="Qui est-ce ?" he="מי זה?" nl="Wie is dit?" pt_BR="Quem é?" pt_PT="Quem é?" ru="Кто это?" am="ይህ ማን ነው?" />
+        <word
+            ar="على السرير" de="Auf dem Bett" en="On the bed" es="en la cama" fr="Sur le lit" he="על המיטה" nl="op het bed" pt_BR="Na cama" pt_PT="Na cama" ru="На кровати" am="በአልጋ ላይ" />
+        <word
+            ar="أشر إلى" de="Zeig auf" en="Point to" es="señala" fr="Montre du doigt" he="הצבע על" nl="wijs naar" pt_BR="Aponte para" pt_PT="Aponta para" ru="Покажи на" am="አመልክት" />
+        <word
+            ar="أنا بخير" de="Mir geht's gut" en="I am fine" es="Estoy bien" fr="Je vais bien" he="אני בסדר" nl="Het gaat goed met me" pt_BR="Estou bem" pt_PT="Estou bem" ru="Я в порядке" am="ደህና ነኝ" />
+        <word
+            ar="انظر إلى" de="Schau" en="Look at" es="mira" fr="Regarde" he="תסתכל על" nl="kijk naar" pt_BR="Olhe para" pt_PT="Olha para" ru="Посмотри на" am="ተመልከት" />
+        <word
+            ar="من لديه؟" de="Wer hat?" en="Who has?" es="¿Quién tiene?" fr="Qui a ?" he="למי יש?" nl="Wie heeft?" pt_BR="Quem tem?" pt_PT="Quem tem?" ru="У кого есть?" am="ማን አለው?" />
+    </string-array>
+
+    <string-array name="sentences_d">
+        <word
+            ar="هيا بنا" de="los geht's" en="Let's go" es="vamos" fr="allons-y" he="בוא נלך" nl="laten we gaan" pt_BR="vamos lá" pt_PT="vamos" ru="пойдём" am="እንሂድ" />
+        <word
+            ar="ماذا ترى؟" de="was siehst du?" en="What do you see?" es="¿qué ves?" fr="qu'est-ce que tu vois ?" he="מה אתה רואה?" nl="wat zie je?" pt_BR="o que você vê?" pt_PT="o que vês?" ru="что ты видишь?" am="ምን ታያለህ?" />
+        <word
+            ar="ماذا تقصد؟" de="was meinst du?" en="What do you mean?" es="¿qué quieres decir?" fr="que veux-tu dire ?" he="מה אתה מתכוון?" nl="wat bedoel je?" pt_BR="o que você quer dizer?" pt_PT="o que queres dizer?" ru="что ты имеешь в виду?" am="ምን ማለት ነው?" />
+        <word
+            ar="أرى كرة كبيرة" de="ich sehe einen großen Ball" en="I see a big ball" es="veo una pelota grande" fr="je vois une grande balle" he="אני רואה כדור גדול" nl="ik zie een grote bal" pt_BR="eu vejo uma bola grande" pt_PT="vejo uma bola grande" ru="я вижу большой мяч" am="ትልቅ ኳስ አያለሁ" />
+        <word
+            ar="ما اسمك؟" de="wie heißt du?" en="What is your name?" es="¿cómo te llamas?" fr="comment tu t'appelles ?" he="מה השם שלך?" nl="hoe heet je?" pt_BR="qual é o seu nome?" pt_PT="como te chamas?" ru="как тебя зовут?" am="ስምህ ማን ነው?" />
+    </string-array>
+
+</resources>

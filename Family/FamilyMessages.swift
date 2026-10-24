@@ -354,9 +354,10 @@ private struct FamilyContentHeight: PreferenceKey {
     }
 }
 
-/// Android `show(a, entry, ...)`: eyebrow, artwork, title, body, the directory note and the link
-/// buttons on the card's lilac box, in a sky dialog at most 650 points wide that wraps its content;
-/// "Keep playing" (a raised blue dialog button) closes it, as does a tap outside.
+/// Android `show(a, entry, ...)`: eyebrow, artwork, title, body, the directory note, the link buttons
+/// and a full-width mint "Keep playing" button at the end, all on the card's lilac box, in a sky dialog
+/// at most 650 points wide that wraps its content (scrolling when it is taller). "Keep playing" closes
+/// it, as does a tap outside.
 @MainActor
 private struct FamilyCardView: View {
     let card: FamilyCard
@@ -372,6 +373,7 @@ private struct FamilyCardView: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 0) {
                             label(messages.text("From the Minik family", "ממשפחת מיניק"), 14, 0xff6951a1)
+                                .padding(.bottom, 10)
                             if let picture = messages.image {
                                 Image(uiImage: picture)
                                     .resizable()
@@ -379,6 +381,7 @@ private struct FamilyCardView: View {
                                     .frame(maxWidth: .infinity)
                                     .frame(height: min(geo.size.width - 60, 614) * 500 / 1024)
                                     .accessibilityLabel(e.title(locale))
+                                    .padding(.bottom, 12)
                             }
                             label(e.title(locale), 27, 0xff182844, bold: true)
                             label(e.body(locale), 18, 0xff263d5b)
@@ -387,29 +390,22 @@ private struct FamilyCardView: View {
                             if !e.webUrl.isEmpty { link(messages.text("Play on the website", "משחק באתר"), e.webUrl) }
                             if !e.iosUrl.isEmpty { link(messages.text("Also available for iPhone", "זמין גם ל־iPhone"), e.iosUrl) }
                             link(messages.text("All our apps & games", "כל האפליקציות והמשחקים"), FamilyCatalog.directory)
+                            keepPlaying
                         }
                         .padding(.horizontal, 18)
-                        .padding(.top, 12)
-                        .padding(.bottom, 10)
+                        .padding(.top, 16)
+                        .padding(.bottom, 20)
                         .background(GeometryReader { inner in
                             Color.clear.preference(key: FamilyContentHeight.self, value: inner.size.height)
                         })
                     }
-                    // The dialog's 24-point margins and the button row take the rest of the height.
-                    .frame(height: max(min(contentHeight, geo.size.height - 128), 1))
+                    // The dialog's 24-point margins take the rest of the height.
+                    .frame(height: max(min(contentHeight, geo.size.height - 48), 1))
                     .background(familyColor(0xfff7f5ff))
-                    .clipShape(UnevenRoundedRectangle(topLeadingRadius: FamilyKit.Sky.dialogCornerRadius,
-                                                      topTrailingRadius: FamilyKit.Sky.dialogCornerRadius, style: .circular))
+                    .clipShape(RoundedRectangle(cornerRadius: FamilyKit.Sky.dialogCornerRadius, style: .circular))
                     .onPreferenceChange(FamilyContentHeight.self) { height in
                         MainActor.assumeIsolated { contentHeight = height }
                     }
-                    HStack(spacing: 0) {
-                        Spacer(minLength: 0)
-                        FamilyKit.SkyDialogButton(messages.text("Keep playing", "ממשיכים לשחק")) { messages.dismissCard() }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
-                    .padding(.bottom, 16)
                 }
                 .environment(\.layoutDirection, messages.rtl ? .rightToLeft : .leftToRight)
             }
@@ -426,18 +422,40 @@ private struct FamilyCardView: View {
             .padding(.vertical, 7)
     }
 
+    /// A flat pale-blue link button, its text 1.5 points above centre (Android: no font padding,
+    /// 3 points of bottom padding), 12 points below the item above.
     private func link(_ title: String, _ url: String) -> some View {
         Button { messages.cardLink(url) } label: {
             Text(title)
                 .font(.system(size: 16))
                 .foregroundColor(familyColor(0xff16395b))
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 12)
+                .padding(.bottom, 3)
                 .frame(maxWidth: .infinity, minHeight: 50)
                 .background(RoundedRectangle(cornerRadius: 16).fill(familyColor(0xffdceeff)))
         }
         .buttonStyle(.plain)
-        .padding(.top, 7)
+        .padding(.top, 12)
+    }
+
+    /// Android's in-card "Keep playing" (no longer a dialog button): flat mint, 52 points tall, full
+    /// width, 16 points below the links.
+    private var keepPlaying: some View {
+        Button { messages.dismissCard() } label: {
+            Text(messages.text("Keep playing", "ממשיכים לשחק"))
+                .font(.system(size: 16))
+                .foregroundColor(familyColor(0xff17334f))
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+                .padding(.horizontal, 12)
+                .frame(maxWidth: .infinity)
+                .frame(height: 52)
+                .background(RoundedRectangle(cornerRadius: 16).fill(familyColor(0xffc8f1e6)))
+        }
+        .buttonStyle(.plain)
+        .padding(.top, 16)
+        .padding(.bottom, 4)
     }
 }
 

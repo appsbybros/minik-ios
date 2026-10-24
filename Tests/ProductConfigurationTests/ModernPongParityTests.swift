@@ -36,8 +36,8 @@ final class ModernPongParityTests: XCTestCase {
     func testBeginnerOrdinalTuningScoringAndRooms() throws {
         XCTAssertEqual(MPLevel.beginner.rawValue, 4); XCTAssertEqual(MPLevel(rawValue: 4), .beginner)
         XCTAssertEqual(MPLevel.allCases.filter(\.needsTwoPointLead), [.hard, .superHard])
-        XCTAssertEqual(MPLevel.beginner.targets, [3, 5, 7, 10]); XCTAssertEqual(MPLevel.superHard.targets, [3, 5, 7, 11])
-        XCTAssertEqual([0, 1, 2, 3, 4, 7, -1].map(MPLevel.control), [.easy, .easy, .easy, .superHard, .beginner, .beginner, .beginner])
+        XCTAssertEqual(MPLevel.beginner.targets, [3, 5, 7, 10, 11]); XCTAssertEqual(MPLevel.superHard.targets, [3, 5, 7, 11])
+        XCTAssertEqual([0, 1, 2, 3, 4, 7, -1].map(MPLevel.control), [.easy, .medium, .easy, .superHard, .beginner, .beginner, .beginner])
         let beginner = MPTuning.values(.beginner), starter = MPTuning.values(.easy)
         XCTAssertEqual(beginner.tapSpatialTolerance, starter.tapSpatialTolerance); XCTAssertEqual(beginner.minikReactionInterval, starter.minikReactionInterval)
         XCTAssertEqual(beginner.profile.serveSuccess, starter.profile.serveSuccess)
@@ -320,25 +320,56 @@ final class ModernPongParityTests: XCTestCase {
             XCTAssertEqual(Double(misses) / 20000, rate, accuracy: 0.012)
         }
     }
+    /// Android ModernTutorialTest (29f5dc7): eleven lessons; the demonstration (`MPController.tutorialFrame`, Android
+    /// `ModernTutorial.demonstrate`) and the child's own try (Android `tryAction`) both succeed without points.
     func testTutorialOrderAndRealLandingFeedback() {
-        XCTAssertEqual(MPTutorialStep.allCases.count, 9)
+        XCTAssertEqual(MPTutorialStep.allCases.count, 11)
         XCTAssertEqual(MPTutorialStep.allCases.prefix(3).map(\.serve), [true, true, true])
         XCTAssertEqual(MPTutorialStep.allCases[3], .autoReturn); XCTAssertEqual(MPTutorialStep.autoReturn.level, .beginner)
-        for step in MPTutorialStep.allCases {
-            let engine = MPEngine(level: step.level, exercise: step.exercise, seed: 42); var gestured = false
+        XCTAssertEqual(Array(MPTutorialStep.allCases.suffix(2)), [.topspin, .sidespin])
+        XCTAssertEqual(MPTutorialStep.topspin.level, .superHard); XCTAssertEqual(MPTutorialStep.sidespin.level, .superHard)
+        XCTAssertEqual(MPTutorialStep.allCases.map(\.expectedSpin), [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2])
+        XCTAssertEqual(MPTutorialStep.rightLeft.target, .left); XCTAssertEqual(MPTutorialStep.leftMiddle.target, .middle)
+        for demo in [true, false] { for step in MPTutorialStep.allCases {
+            let engine = MPEngine(level: step.level, exercise: step.exercise, seed: 42, expectedSpin: step.expectedSpin); var gestured = false
             for _ in 0..<5000 {
                 if step.serve && engine.awaitingServe && engine.trainingTime > 0.7 { engine.touch(step.servePoint); engine.endTouch() }
                 else if !step.serve, let f = engine.flight, f.receiver, f.striker == .minik, f.position.y >= 0.78, !gestured {
-                    // Android ModernTutorialTest (2026-10): per-lesson demonstrated distance and swipe speed.
-                    gestured = true; engine.touch(f.position)
-                    if let direction = step.swipeDirection { engine.touch(.init(f.position.x + direction * step.demoDistance, f.position.y - 0.075), movement: .init(direction * 1.8, -1.7), down: false) }
-                    engine.endTouch()
+                    gestured = true; let p = f.position
+                    if demo {
+                        if let stroke = step.demoStroke { engine.completeGesture(stroke) }
+                        else if step.swipeDirection == nil { engine.touch(p); engine.endTouch() }
+                        else { engine.prepareGesture(p); engine.standardSwipe(.init(step.demoAim, -0.9)); engine.endTouch() }
+                    } else {
+                        if step.spin { engine.completeGesture(MPPongStroke(aim: 0, power: 0.65, top: step == .topspin ? 0.8 : 0, side: step == .sidespin ? 0.8 : 0)) }
+                        else { engine.touch(p) }
+                        if let direction = step.swipeDirection {
+                            let distance: Double
+                            switch step { case .leftLeft: distance = 0.013; case .rightLeft: distance = 0.13; case .leftMiddle: distance = 0.055; default: distance = 0.065 }
+                            engine.touch(.init(p.x + direction * distance, p.y - 0.075), movement: .init(direction * 1.8, -1.7), down: false)
+                        }
+                        engine.endTouch()
+                    }
                 }
                 engine.advance(1.0 / 120); if engine.trainingResult != nil { break }
             }
-            XCTAssertEqual(engine.trainingResult, true, "Exercise \(step)")
+            XCTAssertEqual(engine.trainingResult, true, (demo ? "Demonstration " : "Try ") + "\(step)")
             XCTAssertEqual(engine.score.child + engine.score.minik, 0)
+        } }
+    }
+    /// Android ModernTutorialTest.directionalLessonRejectsWrongOrWeakSwipeAndRetryWorks, and a spin lesson needs its spin.
+    func testGuideRejectsWrongDirectionAndMissingSpin() {
+        func run(_ step: MPTutorialStep, _ act: (MPEngine, MPPoint) -> Void) -> Bool? {
+            let engine = MPEngine(level: step.level, exercise: step.exercise, seed: 42, expectedSpin: step.expectedSpin); var acted = false
+            for _ in 0..<5000 {
+                if !acted, let f = engine.flight, f.receiver, f.striker == .minik, f.position.y >= 0.78 { acted = true; act(engine, f.position) }
+                engine.advance(1.0 / 120); if engine.trainingResult != nil { break }
+            }
+            return engine.trainingResult
         }
+        XCTAssertEqual(run(.middleRight) { e, p in e.touch(p); e.touch(.init(p.x - 0.085, p.y - 0.075), movement: .init(-1.8, -1.7), down: false); e.endTouch() }, false)
+        XCTAssertEqual(run(.topspin) { e, _ in e.completeGesture(MPPongStroke(aim: 0, power: 0.65)) }, false, "A flat Pro stroke is not topspin")
+        XCTAssertEqual(run(.sidespin) { e, _ in e.completeGesture(MPPongStroke(aim: 0, power: 0.65, top: 0.8)) }, false, "Topspin is not sidespin")
     }
     func testGuideRejectsWrongServeSide() {
         let engine = MPEngine(level: .medium, exercise: MPTutorialStep.serveLeft.exercise)
@@ -470,7 +501,8 @@ final class ModernPongParityTests: XCTestCase {
         let preferences = MPPreferences(defaults)
         XCTAssertEqual(preferences.control, .beginner, "Android's default control is Beginner")
         preferences.control = .superHard; XCTAssertEqual(MPPreferences(defaults).control, .superHard)
-        preferences.control = .medium; XCTAssertEqual(MPPreferences(defaults).control, .easy)
+        preferences.control = .medium; XCTAssertEqual(MPPreferences(defaults).control, .medium, "Android 96ae066: Starter (1) is its own control choice")
+        preferences.control = .hard; XCTAssertEqual(MPPreferences(defaults).control, .easy)
         let legacy = try XCTUnwrap(UserDefaults(suiteName: "modern-legacy-" + UUID().uuidString))
         legacy.set(true, forKey: "modern.pong.v2.pro"); XCTAssertEqual(MPPreferences(legacy).control, .superHard)
         legacy.set(false, forKey: "modern.pong.v2.pro"); XCTAssertEqual(MPPreferences(legacy).control, .easy)
@@ -567,7 +599,7 @@ final class ModernPongParityTests: XCTestCase {
             XCTAssertEqual(s.difficulty, value); XCTAssertEqual(engine.automaticContact, value == 4); XCTAssertEqual(engine.level.pro, value == 3)
             XCTAssertEqual(MPControlChoice.title(s.difficulty, hebrew: false), value == 4 ? "Beginner" : value == 0 ? "Standard" : "Pro")
         } } }
-        XCTAssertEqual([0, 1, 2, 3, 4].map { MPControlChoice.title($0, hebrew: true) }, ["רגילה", "רגילה", "רגילה", "מקצועני", "מתחילים"])
+        XCTAssertEqual([0, 1, 2, 3, 4].map { MPControlChoice.title($0, hebrew: true) }, ["רגילה", "נינוחה", "רגילה", "מקצועני", "מתחילים"])
     }
     func testBeginnerAcceptsSmallHorizontalAndBackwardDiagonalSwipes() throws {
         for sign in [-1.0, 1.0] { for dy in [-0.01, 0, 0.03] {
@@ -908,5 +940,195 @@ final class ModernPongParityTests: XCTestCase {
         while !s.complete && steps < 10 { s = try finishRound(s); steps += 1 }
         XCTAssertEqual(MPKnockout.bracketColumns(s), [9, 5, 3, 2])
         XCTAssertEqual(MPKnockout.bracketColumns(try knockoutRoom(3)), [3, 2])
+    }
+    // MARK: Android 739f2f8..29f5dc7 singles engine (GroundedTimingTest, ControlServeReviewTest, StarterControlTest,
+    // ManualControlTournamentTest, TournamentInputRegressionTest, TableFollowupTest, ServePresentationTest,
+    // ModernRefinementTest, SwipePhysicsTest; the engine parts).
+    /// Android `restoreState(EngineState(..., FlightState(position, height, velocity, lift, MINIK, receiver, ...)))`.
+    private func restoredIncoming(_ level: MPLevel, networked: Bool = true, _ position: MPPoint, height: Double, velocity: MPPoint, lift: Double, receiver: Bool) -> MPEngine {
+        let engine = MPEngine(level: level, networked: networked)
+        var state = engine.snapshot()
+        state.flight = flight(position, height: height, velocity: velocity, lift: lift, striker: .minik, receiver: receiver, tuning: engine.tuning)
+        state.rally = 1; state.status = "RETURN_BALL"; state.serveDelay = nil; state.pointDelay = nil
+        if !networked { state.score.server = .minik }
+        engine.restore(state); _ = engine.drainEvents(); return engine
+    }
+    /// Android GroundedTimingTest: a buffered Standard tap waits for the legal bounce and the baseline; a tap on the
+    /// opponent's half never arms a return.
+    func testBufferedStandardTapWaitsForTheBounceAndTheBaseline() {
+        for start in [0.68, 0.74, 0.82, 0.91] {
+            let e = restoredIncoming(.easy, networked: false, .init(0.5, start), height: 0.13, velocity: .init(0, 0.65), lift: -0.7, receiver: start >= 0.82)
+            e.touch(.init(0.15, 0.84)); e.endTouch()
+            var hit = e.childStroke.contacted
+            for _ in 0..<100 {
+                let legal = e.flight?.receiver == true
+                e.advance(0.005)
+                if e.flight?.striker == .child && !hit {
+                    hit = true
+                    XCTAssertGreaterThanOrEqual(e.childStroke.point.y, 0.90, "Return before baseline"); XCTAssertTrue(legal, "Return before legal bounce")
+                }
+            }
+            XCTAssertTrue(hit, "An incoming-ball tap at \(start) expired")
+        }
+        let far = restoredIncoming(.easy, networked: false, .init(0.5, 0.8), height: 0.13, velocity: .init(0, 0.65), lift: 0.1, receiver: true)
+        far.touch(.init(0.5, 0.2)); for _ in 0..<100 { far.advance(0.005) }
+        XCTAssertFalse(far.childStroke.contacted)
+    }
+    /// Android ControlServeReviewTest.standardMovementDoesNotArmButPreparedTapKeepsDirectionalAim.
+    func testStandardFootworkDoesNotArmButAPreparedTapKeepsItsAim() {
+        for arm in [false, true] {
+            let g = restoredIncoming(.easy, .init(0.5, 0.72), height: 0.12, velocity: .init(0, 0.8), lift: 1.1, receiver: true)
+            if arm { g.touch(.init(0.5, 0.84)); g.endTouch() }
+            _ = g.drainEvents(); g.prepareGesture(.init(0.56, 0.84)); g.guidePreparedTap(from: .init(0.5, 0.84), to: .init(0.56, 0.84))
+            XCTAssertFalse(g.drainEvents().contains { if case .swing = $0 { return true }; return false })
+            for _ in 0..<45 { g.advance(1.0 / 120) }
+            XCTAssertEqual(g.flight?.striker, arm ? .child : .minik, "Only an explicit tap can return the ball")
+            if arm { XCTAssertGreaterThan(g.flight?.velocity.x ?? 0, 0, "Aiming after the tap is preserved") }
+        }
+    }
+    /// Android StarterControlTest.starterPreparesEarlierWithoutAutomaticReturn (Android EASY, the Starter control, is
+    /// iOS `.medium`; Android STARTER is iOS `.easy`).
+    func testStarterControlPreparesEarlierButNeverBypassesThePaddle() {
+        func engine(_ level: MPLevel) -> MPEngine {
+            let e = restoredIncoming(level, .init(0.5, 0.60), height: 0.12, velocity: .init(0, 0.62), lift: 0.8, receiver: true)
+            e.childCanReach = { _, _ in false }; return e
+        }
+        XCTAssertFalse(engine(.easy).standardSwipe(.init(0.2, -1)))
+        let e = engine(.medium); XCTAssertTrue(e.standardSwipe(.init(0.2, -1)))
+        for _ in 0..<120 { e.advance(1.0 / 120) }
+        XCTAssertEqual(childContacts(e.drainEvents()), 0, "Buffered aim cannot bypass the actual paddle")
+    }
+    /// Android ManualControlTournamentTest.standardSingleStrokeCannotReplaceLatestFingerTarget and
+    /// TournamentInputRegressionTest.unreachableBallCannotBeCreditedAsLocalHit.
+    func testStrokesKeepTheFingerTargetAndUnreachableBallsAreNotHit() {
+        let e = restoredIncoming(.easy, .init(0.7, 0.79), height: 0.12, velocity: .init(0, 0.8), lift: 0.8, receiver: true)
+        e.touch(.init(0.7, 0.88)); e.touch(.init(0.3, 0.88), movement: .init(-0.3, 0), down: false); e.endTouch()
+        for _ in 0..<160 { e.advance(1.0 / 120) }
+        XCTAssertEqual(e.restingPaddle.x, 0.3, accuracy: 1e-8)
+        let far = restoredIncoming(.easy, .init(0.7, 0.96), height: 0.12, velocity: .init(0, 0.8), lift: 0.8, receiver: true)
+        far.childCanReach = { _, _ in false }; far.touch(.init(0.5, 0.88)); for _ in 0..<10 { far.advance(1.0 / 120) }
+        XCTAssertFalse(far.childStroke.contacted)
+    }
+    /// Android ManualControlTournamentTest.manualServeStartsBesideThePlayerAndKeepsBothLegalBounces.
+    func testManualServeStartsBesideThePlayerAndStaysLegal() {
+        for x in [0.1, 0.3, 0.7, 0.9] { for target in [0.2, 0.5, 0.8] {
+            let e = MPEngine(level: .easy, exercise: MPExercise(serve: true, incoming: nil, expected: nil))
+            e.returnBaseline = 0.96; e.prepareGesture(.init(x, 0.88)); e.touch(.init(target, 0.25))
+            for _ in 0..<120 where e.flight == nil { e.advance(1.0 / 240) }
+            XCTAssertNotNil(e.flight); XCTAssertEqual(e.childStroke.point.x, x, accuracy: 1e-8); XCTAssertEqual(e.restingPaddle.x, x, accuracy: 1e-8)
+            for _ in 0..<1200 { e.advance(1.0 / 240) }
+            XCTAssertEqual(e.trainingResult, true, "x=\(x) target=\(target)")
+        } }
+    }
+    /// Android TableFollowupTest: a timely Standard tap needs no hidden spatial target; a tap before the bounce never
+    /// volleys or wins.
+    func testTimelyStandardTapNeedsNoSpatialTargetAndNeverVolleys() throws {
+        func incoming(_ y: Double) throws -> MPEngine {
+            let e = MPEngine(level: .easy, exercise: MPExercise(serve: false, incoming: 0, expected: nil), seed: 88)
+            for _ in 0..<2500 { if e.childReturnOpen, let f = e.flight, f.position.y >= y { return e }; e.advance(1.0 / 120) }
+            throw XCTSkip("No incoming ball")
+        }
+        for y in [0.78, 0.85, 0.93, 0.98] { for x in [0.05, 0.5, 0.95] {
+            let e = try incoming(y); e.touch(.init(x, 0.6)); e.endTouch()
+            for _ in 0..<65 { e.advance(1.0 / 120) }
+            XCTAssertTrue(e.childStroke.contacted || e.rally > 0, "Timely tap y=\(y), finger x=\(x)")
+            XCTAssertEqual(e.flight?.striker, .child)
+        } }
+        let e = MPEngine(level: .easy, exercise: MPExercise(serve: false, incoming: 0, expected: nil), seed: 88); var tapped = false
+        for _ in 0..<800 {
+            if !tapped, let f = e.flight, f.striker == .minik, (0.50...0.56).contains(f.position.y) { e.touch(.init(0.5, 0.7)); e.endTouch(); tapped = true }
+            e.advance(1.0 / 120)
+        }
+        XCTAssertTrue(tapped); XCTAssertEqual(e.rally, 0)
+    }
+    /// Android ServePresentationTest: the held serve ball is hidden until contact on every control level; a cancelled
+    /// Pro touch neither reveals nor launches it.
+    func testHeldServeBallAppearsOnlyAtContact() {
+        for level in MPLevel.allCases {
+            let e = MPEngine(level: level, target: 11, networked: true, first: .child, seed: 21)
+            XCTAssertTrue(e.awaitingServe); XCTAssertFalse(e.ballVisible)
+            e.touch(.init(0.45, 0.28)); e.endTouch()
+            XCTAssertFalse(e.awaitingServe, "\(level)"); XCTAssertFalse(e.ballVisible, "Ball appears only at contact")
+            for _ in 0..<30 { e.advance(1.0 / 120) }
+            XCTAssertNotNil(e.flight); XCTAssertTrue(e.ballVisible); XCTAssertEqual(e.flight?.striker, .child)
+            XCTAssertEqual(childContacts(e.drainEvents()), 1)
+        }
+        let pro = MPEngine(level: .superHard, target: 11, networked: true)
+        pro.touch(.init(0.5, 0.8)); pro.endTouch(cancelled: true); for _ in 0..<120 { pro.advance(1.0 / 120) }
+        XCTAssertTrue(pro.awaitingServe); XCTAssertFalse(pro.ballVisible); XCTAssertNil(pro.flight)
+    }
+    /// Android ModernRefinementTest.stationaryTapServesButCancelledTapKeepsTheBallInHand (Pro).
+    func testStationaryProTapServesButACancelledTapKeepsTheBall() {
+        let g = MPEngine(level: .superHard, networked: true)
+        g.touch(.init(0.5, 0.87)); for _ in 0..<48 { g.advance(1.0 / 120) }
+        XCTAssertTrue(g.awaitingServe); XCTAssertNil(g.flight)
+        g.endTouch(); for _ in 0..<24 { g.advance(1.0 / 120) }
+        XCTAssertFalse(g.awaitingServe); XCTAssertNotNil(g.flight); XCTAssertEqual(g.score.rallies, 0)
+        let cancelled = MPEngine(level: .superHard, networked: true)
+        cancelled.touch(.init(0.5, 0.87)); cancelled.touch(.init(0.502, 0.872), movement: .init(0.01, 0.01), down: false); cancelled.endTouch(cancelled: true)
+        XCTAssertTrue(cancelled.awaitingServe); XCTAssertEqual(cancelled.score.rallies, 0); XCTAssertTrue(cancelled.drainEvents().isEmpty)
+    }
+    /// Android SwipePhysicsTest.hardSweptSwipeBuffersUntilTheReachableBaselineAndContactsOnce.
+    func testProSweptSwipeBuffersUntilTheBaselineAndContactsOnce() throws {
+        let g = MPEngine(level: .superHard, target: 11, seed: 5); var ready = false
+        for _ in 0..<15000 {
+            if g.awaitingServe { g.touch(.init(0.5, 0.94)); g.touch(.init(0.5, 0.87), movement: .init(0, -0.6), down: false); g.endTouch() }
+            if g.childReturnOpen, let y = g.flight?.position.y, (0.79...0.86).contains(y) { _ = g.drainEvents(); ready = true; break }
+            g.advance(1.0 / 120)
+        }
+        try XCTSkipUnless(ready, "Expected an incoming Pro serve or return")
+        let b = try XCTUnwrap(g.flight).position
+        g.touch(.init(b.x + 0.06, b.y + 0.07)); g.touch(.init(b.x - 0.06, b.y - 0.07), movement: .init(-0.35, -0.8), down: false); g.endTouch()
+        var events = g.drainEvents()
+        XCTAssertEqual(childContacts(events), 0)
+        for _ in 0..<75 { g.advance(1.0 / 120); events += g.drainEvents() }
+        XCTAssertGreaterThanOrEqual(g.childStroke.point.y, 0.90, "A grounded player cannot hit halfway along the table")
+        XCTAssertEqual(childContacts(events), 1)
+        XCTAssertEqual(events.filter { if case .swing(.child, _) = $0 { return true }; return false }.count, 1)
+        XCTAssertLessThan(try XCTUnwrap(g.flight).velocity.x, 0)
+    }
+    /// Android 920caca: a decided ball keeps moving as a loose ball; the next rally waits until it rests.
+    func testLooseBallDelaysTheNextRallyUntilItSettles() {
+        let e = restoredIncoming(.easy, networked: false, .init(0.5, 0.97), height: 0.2, velocity: .init(0.1, 0.9), lift: 0.6, receiver: true)
+        for _ in 0..<120 where e.score.rallies == 0 { e.advance(1.0 / 120) }
+        XCTAssertEqual(e.score.rallies, 1); XCTAssertEqual(e.lastResolution?.fault, .unreturned)
+        XCTAssertNotNil(e.looseBall); XCTAssertTrue(e.ballVisible); XCTAssertTrue(e.settlingBall)
+        var restartedAt: Int?, restingAtRestart = false
+        for tick in 0..<2400 {
+            let loose = e.looseBall
+            e.advance(1.0 / 120)
+            if e.looseBall == nil { restartedAt = tick; restingAtRestart = loose?.settled == true; break }
+        }
+        XCTAssertNotNil(restartedAt); XCTAssertGreaterThanOrEqual(restartedAt ?? 0, 380, "The point stays readable for 3.2 s")
+        XCTAssertTrue(restingAtRestart, "A new rally never starts while the ball is still moving")
+        XCTAssertNil(e.outBall)
+    }
+    /// Android `Stroke.contact`: the follow-through starts at the actual contact, even for a late buffered tap.
+    func testBufferedContactRestartsTheFollowThrough() {
+        var s = MPStroke(); s.start(1, .init(0.5, 0.9), 0, false); s.advance(0.40)
+        s.contact(.init(0.5, 0.92), 0.1)
+        XCTAssertEqual(s.age, s.contactAt); XCTAssertTrue(s.active); XCTAssertEqual(s.point, MPPoint(0.5, 0.92))
+    }
+    /// Android ColorChallengeActivity rank sounds (e3bb8c2).
+    func testRankCelebrationCues() {
+        XCTAssertEqual(MPRankCue.celebration(level: 10, coin: true), .bigWin); XCTAssertEqual(MPRankCue.celebration(level: 11, coin: false), .bigWin)
+        XCTAssertEqual(MPRankCue.celebration(level: 3, coin: true), .trumpet); XCTAssertEqual(MPRankCue.celebration(level: 9, coin: false), .win)
+    }
+    /// Android ArenaBackdrop framing: aspect fill, and the landscape beach keeps its shoreline up.
+    func testArenaBackdropFramingAndCastleFoliage() {
+        let tall = MPSinglesArena.destination(CGSize(width: 1000, height: 2000), in: CGSize(width: 400, height: 900), arena: .park)
+        XCTAssertEqual(tall.width, 450, accuracy: 1e-9); XCTAssertEqual(tall.minX, -25, accuracy: 1e-9); XCTAssertEqual(tall.minY, 0)
+        let beach = MPSinglesArena.destination(CGSize(width: 2000, height: 1500), in: CGSize(width: 900, height: 400), arena: .beach)
+        XCTAssertEqual(beach.height, 675, accuracy: 1e-9); XCTAssertEqual(beach.minY, max(48 - 675 * 0.26, 400 - 675), accuracy: 1e-9)
+        XCTAssertEqual(MPSinglesArena.foliage(.castle, wide: false).count, 2); XCTAssertTrue(MPSinglesArena.foliage(.beach, wide: true).isEmpty)
+    }
+    /// Android PongNameSpace: below, above, left, then right of the body; never over the table or past the edge.
+    func testNameTagsAvoidTheTableAndTheEdges() {
+        let table = CGRect(x: 40, y: 200, width: 320, height: 400)
+        let tags = MPSinglesNames.layout(["You", "Mega Minik"], bodies: [CGRect(x: 150, y: 560, width: 80, height: 200), CGRect(x: 160, y: 40, width: 80, height: 150)],
+                                         table: table, width: 400, height: 800, colors: [MPTeamColors.uiFill(0), MPTeamColors.uiFill(1)])
+        XCTAssertEqual(tags.map(\.text), ["You", "Mega Minik"])
+        for tag in tags { XCTAssertFalse(MPNameSpace.intersects(tag.box, table)); XCTAssertGreaterThanOrEqual(tag.box.minX, 2); XCTAssertLessThanOrEqual(tag.box.maxY, 798) }
+        XCTAssertEqual(MPSinglesNames.argb(MPColor.ui(0xff2459c5)), 0xff2459c5)
     }
 }

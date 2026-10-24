@@ -609,6 +609,8 @@ struct SportsRootView: View {
         .onChange(of: scenePhase, initial: true) { _, phase in
             controller.scenePhaseChanged(active: phase == .active)
         }
+        // App Store captures only: opens the requested screen (SportsScreenshot).
+        .onAppear { controller.applyStoreScreenshotScene() }
         .sheet(item: $controller.shareSheet) { item in
             SportsActivityView(text: item.text)
         }

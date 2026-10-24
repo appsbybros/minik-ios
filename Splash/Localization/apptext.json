@@ -1729,6 +1729,13 @@
 "Gevecht afgelopen"
 ],
 [
+"Final scores",
+"Resultados finales",
+"النتائج النهائية",
+"अंतिम अंक",
+"Eindstand"
+],
+[
 "Battle paused",
 "Batalla en pausa",
 "المعركة متوقفة مؤقتًا",
@@ -5880,11 +5887,11 @@
 "Gele konijnen"
 ],
 [
-"What a splash!",
-"¡Menudo chapuzón!",
-"يا لها من ألوان!",
-"क्या खूब रंग बरसे!",
-"Wat een gespetter!"
+"You won!",
+"¡Ganaste!",
+"لقد فزت!",
+"आप जीत गए!",
+"Je hebt gewonnen!"
 ],
 [
 "Continue your battle",
@@ -6379,7 +6386,7 @@
 [
 "Paint {0}% : {1}%",
 "Pintura {0}% : {1}%",
-"التلوين {0}% : {1}%",
+"الطلاء {0}% : {1}%",
 "रंग {0}% : {1}%",
 "Verf {0}% : {1}%"
 ],
@@ -6393,7 +6400,7 @@
 [
 "Painted {0}%",
 "Pintado {0}%",
-"تم تلوين {0}%",
+"تم طلاء {0}%",
 "{0}% रंगा",
 "{0}% geverfd"
 ],
@@ -6662,6 +6669,174 @@
 "هنا الشخصية خصمك. تبدأ بلاعب أسهل، ثم تواجه خصمًا أقوى في كل مسار. تحديات التصويب تركز على الدقة، والمبارزات تراعي سرعة الحركة ورد الفعل أيضًا.",
 "यहाँ किरदार विरोधी है। आसान खिलाड़ी से शुरू करें, फिर हर चक्र में मज़बूत विरोधी आएगा। निशाने में सटीकता, और मुकाबले में प्रतिक्रिया तथा गति भी मायने रखती हैं।",
 "Hier is het personage je tegenstander. Begin met een makkelijkere speler en ontmoet elke ronde een sterkere. Bij doelen telt precisie; bij duels tellen ook reacties en snelheid mee."
+],
+[
+"Learn & progress",
+"Aprender y avanzar",
+"تعلّم وتقدّم",
+"सीखें और आगे बढ़ें",
+"Leren en groeien"
+],
+[
+"Advanced",
+"Avanzado",
+"متقدم",
+"उन्नत",
+"Geavanceerd"
+],
+[
+"Number of rounds",
+"Número de rondas",
+"عدد الجولات",
+"राउंड की संख्या",
+"Aantal rondes"
+],
+[
+"Single · everyone for themselves",
+"Individual · cada uno por su cuenta",
+"فردي · كل لاعب لنفسه",
+"एकल · हर खिलाड़ी अपने लिए",
+"Solo · ieder voor zich"
+],
+[
+"Paint walls · teams · 2 × 2",
+"Pintar paredes · equipos · 2 × 2",
+"طلاء الجدران · فرق · 2 × 2",
+"दीवारें रंगें · टीम · 2 × 2",
+"Muren verven · teams · 2 × 2"
+],
+[
+"Paint walls · teams · 3 × 3",
+"Pintar paredes · equipos · 3 × 3",
+"طلاء الجدران · فرق · 3 × 3",
+"दीवारें रंगें · टीम · 3 × 3",
+"Muren verven · teams · 3 × 3"
+],
+[
+"When a player is hit in Paint walls",
+"Al recibir un impacto en Pintar paredes",
+"عند إصابة لاعب في طلاء الجدران",
+"दीवारें रंगें में खिलाड़ी को गेंद लगे तो",
+"Bij een treffer in Muren verven"
+],
+[
+"3-battle cup",
+"Copa de 3 batallas",
+"كأس من 3 معارك",
+"3 मुकाबलों का कप",
+"Beker met 3 gevechten"
+],
+[
+"5-battle cup",
+"Copa de 5 batallas",
+"كأس من 5 معارك",
+"5 मुकाबलों का कप",
+"Beker met 5 gevechten"
+],
+[
+"5-battle cup · house players only",
+"Copa de 5 batallas · solo personajes",
+"كأس من 5 معارك · شخصيات اللعبة فقط",
+"5 मुकाबलों का कप · सिर्फ़ गेम खिलाड़ी",
+"Beker met 5 gevechten · alleen huisgenoten"
+],
+[
+"Subjects",
+"Temas",
+"المواضيع",
+"विषय",
+"Onderwerpen"
+],
+[
+"Saved games",
+"Partidas guardadas",
+"الألعاب المحفوظة",
+"सहेजे गए खेल",
+"Opgeslagen spellen"
+],
+[
+"Resume online room",
+"Volver a la sala en línea",
+"العودة إلى الغرفة عبر الإنترنت",
+"ऑनलाइन कमरे में लौटें",
+"Online kamer hervatten"
+],
+[
+"Portrait / Landscape",
+"Vertical / Horizontal",
+"عمودي / أفقي",
+"पोर्ट्रेट / लैंडस्केप",
+"Staand / Liggend"
+],
+[
+"Follow player",
+"Seguir al jugador",
+"متابعة اللاعب",
+"खिलाड़ी का पीछा करें",
+"Speler volgen"
+],
+[
+"Whole court",
+"Toda la cancha",
+"الملعب بالكامل",
+"पूरा मैदान",
+"Hele speelveld"
+],
+[
+"Rotate view",
+"Girar la vista",
+"تدوير المنظور",
+"दृश्य घुमाएँ",
+"Beeld draaien"
+],
+[
+"Zoom",
+"Acercar",
+"تقريب",
+"ज़ूम",
+"Zoomen"
+],
+[
+"Swipe the rotate control left, right, up or down.",
+"Desliza el control de giro a izquierda, derecha, arriba o abajo.",
+"اسحب أداة التدوير يسارًا أو يمينًا أو لأعلى أو لأسفل.",
+"दृश्य घुमाने वाला कंट्रोल बाएँ, दाएँ, ऊपर या नीचे स्वाइप करें।",
+"Veeg de draaiknop naar links, rechts, boven of beneden."
+],
+[
+"Team scores count hits and wrong-answer penalties.",
+"La puntuación del equipo incluye aciertos y penalizaciones por respuestas incorrectas.",
+"تشمل نقاط الفريق الإصابات وخصم الإجابات الخاطئة.",
+"टीम के अंक हिट और गलत जवाब की कटौती दोनों गिनते हैं।",
+"De teamscore telt treffers en strafpunten voor foute antwoorden."
+],
+[
+"Share",
+"Compartir",
+"مشاركة",
+"साझा करें",
+"Delen"
+],
+[
+"Save",
+"Guardar",
+"حفظ",
+"सहेजें",
+"Opslaan"
+],
+[
+"Don't save",
+"No guardar",
+"عدم الحفظ",
+"सहेजें नहीं",
+"Niet opslaan"
+],
+[
+"Save this tournament?",
+"¿Guardar este torneo?",
+"هل تريد حفظ هذه البطولة؟",
+"यह टूर्नामेंट सहेजें?",
+"Dit toernooi opslaan?"
 ],
 [
 "Duck under the splash",

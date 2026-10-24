@@ -89,30 +89,34 @@
       if (!parents || !parent) return null;
       menuRoot = parent;
       if (!idleTimer) idleTimer = setInterval(menuIdle, 1000);
-      const button = document.createElement("button");
-      button.type = "button"; button.className = "minik-parent-entry";
+      // Android Bounce 4f38dd5: a link, not a button, in the measured gap above Start.
+      const button = document.createElement("a");
+      button.href = "#"; button.className = "minik-parent-entry"; button.setAttribute("role", "button");
       button.textContent = lang === "he" ? "להורים" : "For parents";
-      button.setAttribute("aria-label", lang === "he" ? "להורים · הסרת פרסומות" : "For parents · Remove ads");
+      button.setAttribute("aria-label", lang === "he" ? "להורים" : "For parents");
       if (getComputedStyle(parent).position === "static") parent.style.position = "relative";
-      Object.assign(button.style, {position: "absolute", bottom: "10px", insetInlineStart: "16px", zIndex: "2", padding: "10px 12px",
-        minHeight: "44px", color: "#3F8CFF", background: "transparent", border: "0", font: "inherit", fontSize: "15px",
-        fontWeight: "700", textDecoration: "underline", cursor: "pointer", whiteSpace: "nowrap"});
-      button.onclick = () => send({type: "parents"});
+      Object.assign(button.style, {position: "absolute", top: "0", left: "50%", transform: "translateX(-50%)", zIndex: "2",
+        visibility: "hidden", padding: "0 8px", minHeight: "36px", boxSizing: "border-box", display: "inline-flex",
+        alignItems: "center", color: "#3F8CFF", background: "transparent", font: "inherit", fontSize: "15px",
+        fontWeight: "700", textDecoration: "underline", whiteSpace: "nowrap"});
+      button.onclick = event => { event.preventDefault(); send({type: "parents"}); };
       parent.append(button);
-      // As on Android, never cover a setup control on unusual screens.
-      const overlaps = () => {
-        const r = button.getBoundingClientRect();
-        return [...parent.querySelectorAll("button,h2,select")].some(other => {
-          if (other === button) return false;
-          const q = other.getBoundingClientRect();
-          return q.width && r.left < q.right && r.right > q.left && r.top < q.bottom && r.bottom > q.top;
-        });
-      };
+      // Use the measured gap above Start, without taking space from the game controls;
+      // when it is too small, the link sits on its own row under the setup title.
       requestAnimationFrame(() => {
-        if (!button.isConnected || !overlaps()) return;
-        button.style.bottom = "auto"; button.style.top = "10px"; button.style.insetInlineStart = "50%";
-        button.style.transform = "translateX(" + (document.documentElement.dir === "rtl" ? "50%" : "-50%") + ")";
-        if (overlaps()) button.style.display = "none";
+        if (!button.isConnected) return;
+        const body = parent.querySelector(".pong-setup-body"), actions = parent.querySelector(".pong-setup-actions");
+        const header = parent.querySelector(".pong-setup-header");
+        const height = button.getBoundingClientRect().height;
+        const gap = body && actions ? actions.getBoundingClientRect().top - body.getBoundingClientRect().bottom : -1;
+        if (gap >= height + 8) {
+          button.style.top = (body.getBoundingClientRect().bottom + (gap - height) / 2
+            - parent.getBoundingClientRect().top + parent.scrollTop) + "px";
+        } else if (header) {
+          Object.assign(button.style, {position: "static", transform: "none", gridColumn: "1 / -1", gridRow: "2", justifySelf: "center"});
+          header.append(button);
+        }
+        button.style.visibility = "visible";
       });
       return button;
     }

@@ -1,0 +1,99 @@
+<?xml version='1.0' encoding='utf-8'?>
+<question-bank version="1" mode="ASTRONOMY" language="en">
+  <question id="astronomy_001" level="1">
+    <prompt lang="en">Which planet is closest to the Sun?</prompt>
+    <answer correct="false">Mars</answer>
+    <answer correct="false">Venus</answer>
+    <answer correct="false">Earth</answer>
+    <answer correct="true">Mercury</answer>
+    <explanation lang="en">Mercury is the innermost planet.</explanation>
+  </question>
+  <question id="astronomy_002" level="1">
+    <prompt lang="en">Which is the largest planet in the Solar System?</prompt>
+    <answer correct="false">Saturn</answer>
+    <answer correct="false">Earth</answer>
+    <answer correct="false">Neptune</answer>
+    <answer correct="true">Jupiter</answer>
+    <explanation lang="en">Jupiter is the largest planet.</explanation>
+  </question>
+  <question id="astronomy_003" level="1">
+    <prompt lang="en">What lies at the center of the Solar System?</prompt>
+    <answer correct="false">The Moon</answer>
+    <answer correct="false">Jupiter</answer>
+    <answer correct="false">Earth</answer>
+    <answer correct="true">The Sun</answer>
+    <explanation lang="en">The planets orbit the Sun.</explanation>
+  </question>
+  <question id="astronomy_004" level="2">
+    <prompt lang="en">What mainly causes Earth's seasons?</prompt>
+    <answer correct="true">Earth's axial tilt relative to its orbit</answer>
+    <answer correct="false">The Moon</answer>
+    <answer correct="false">Only the changing distance from the Sun</answer>
+    <answer correct="false">Sunspots</answer>
+    <explanation lang="en">Axial tilt changes the angle and intensity of sunlight throughout the year.</explanation>
+  </question>
+  <question id="astronomy_005" level="4">
+    <prompt lang="en">What is a neutron star?</prompt>
+    <answer correct="false">A planet made of neutrons</answer>
+    <answer correct="false">A cold gas cloud</answer>
+    <answer correct="false">A small black hole</answer>
+    <answer correct="true">A very dense remnant of a collapsed massive star</answer>
+    <explanation lang="en">After a supernova, a massive star's core can become a neutron star.</explanation>
+  </question>
+  <question id="astronomy_006" level="1">
+    <prompt lang="en">What occurs when the Moon passes between Earth and the Sun, hiding the Sun?</prompt>
+    <answer correct="false">An equinox</answer>
+    <answer correct="true">A solar eclipse</answer>
+    <answer correct="false">A lunar eclipse</answer>
+    <answer correct="false">A meteor shower</answer>
+    <explanation lang="en">During a solar eclipse, the Moon blocks some sunlight for an observer on Earth.</explanation>
+  </question>
+  <question id="astronomy_007" level="1">
+    <prompt lang="en">Which galaxy contains our Solar System?</prompt>
+    <answer correct="false">The Triangulum Galaxy</answer>
+    <answer correct="true">The Milky Way</answer>
+    <answer correct="false">Andromeda</answer>
+    <answer correct="false">The Large Magellanic Cloud</answer>
+    <explanation lang="en">Our Solar System is in the Milky Way.</explanation>
+  </question>
+  <question id="astronomy_008" level="2">
+    <prompt lang="en">What is a light-year?</prompt>
+    <answer correct="true">A unit of distance</answer>
+    <answer correct="false">A unit of brightness</answer>
+    <answer correct="false">A unit of mass</answer>
+    <answer correct="false">A unit of time</answer>
+    <explanation lang="en">A light-year is the distance light travels in one year.</explanation>
+  </question>
+  <question id="astronomy_009" level="1">
+    <prompt lang="en">Which planet is famous for its prominent rings?</prompt>
+    <answer correct="false">Venus</answer>
+    <answer correct="false">Mars</answer>
+    <answer correct="false">Mercury</answer>
+    <answer correct="true">Saturn</answer>
+    <explanation lang="en">Several giant planets have rings, but Saturn's are the most prominent.</explanation>
+  </question>
+  <question id="astronomy_010" level="4">
+    <prompt lang="en">What is a black hole's event horizon?</prompt>
+    <answer correct="false">A region without gravity</answer>
+    <answer correct="false">The solid center of the black hole</answer>
+    <answer correct="false">A ring of planets</answer>
+    <answer correct="true">A boundary from which even light cannot escape</answer>
+    <explanation lang="en">The event horizon is a causal boundary around a black hole.</explanation>
+  </question>
+  <question id="astronomy_011" level="3">
+    <prompt lang="en">Why do stars appear to twinkle more than planets?</prompt>
+    <answer correct="false">Stars turn on and off</answer>
+    <answer correct="false">The Moon reflects their light</answer>
+    <answer correct="false">Planets produce their own light</answer>
+    <answer correct="true">The atmosphere changes the path of light from a point source</answer>
+    <explanation lang="en">Atmospheric turbulence particularly affects distant point sources.</explanation>
+  </question>
+  <question id="astronomy_012" level="2">
+    <prompt lang="en">What is a supernova?</prompt>
+    <answer correct="false">A total solar eclipse</answer>
+    <answer correct="false">A short-period comet</answer>
+    <answer correct="true">A powerful stellar explosion</answer>
+    <answer correct="false">A type of planet</answer>
+    <explanation lang="en">Supernovae occur in certain final stages of stars or stellar systems.</explanation>
+  </question>
+</question-bank>

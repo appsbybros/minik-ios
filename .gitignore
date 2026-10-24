@@ -10,6 +10,8 @@ GeneratedInfoPlists/
 !Config/Firebase/MinikPlus/GoogleService-Info.plist
 !Config/Firebase/MinikPlusEnglish/GoogleService-Info.plist
 !Config/Firebase/MinikPingPong/GoogleService-Info.plist
+# Triple Shot's registration, once the owner adds it (project.yml, target MinikTripleShot).
+!Config/Firebase/MinikTripleShot/GoogleService-Info.plist
 
 # Xcode user data and build output
 DerivedData/

@@ -199,6 +199,8 @@ struct RootView: View {
         .onAppear {
             // Android FLAG_KEEP_SCREEN_ON.
             UIApplication.shared.isIdleTimerDisabled = true
+            // App Store captures only: opens the requested screen (SpudScreenshot).
+            model.applyStoreScreenshotScene()
         }
     }
 

@@ -3,8 +3,8 @@ import Combine
 import StoreKit
 import UIKit
 
-/// Android `PongJourneyActivity`: the daily skill journey, local team play, the settings page and the online team
-/// entry. No ads run here, as on Android.
+/// Android `PongJourneyActivity` (29f5dc7): the daily skill journey, local team play, the settings page and the online
+/// team entry. No ads run here, as on Android.
 @MainActor final class MPJourneyController: ObservableObject {
     enum Page { case brief, list, teams, game, result, settings, online }
     @Published private(set) var page = Page.brief
@@ -12,9 +12,14 @@ import UIKit
     @Published var mode = MPTeamMode.alternate
     @Published var ids = ["miniko", "minik", "mia", "june"]
     @Published private(set) var hud = ""
+    @Published private(set) var hudScore: AttributedString?
     @Published private(set) var hint = ""
+    /// Android `PongHelpTips.align`: the double-bounce tip reads from the start edge.
+    @Published private(set) var hintIsTip = false
     @Published private(set) var running = false
-    @Published var instructions: MPPlay?
+    /// Android `PongInstructionDialog`: title and message of the open instructions (the message is composed once,
+    /// because it may count one showing of the "Did you know?" tip).
+    @Published private(set) var instructions: (game: MPPlay, title: String, message: String)?
     /// Team rules dialog: true starts a match, false practises the skill.
     @Published var teamBrief: Bool?
     @Published var picking: Int?
@@ -23,6 +28,11 @@ import UIKit
     @Published var share: MPShareItem?
     @Published private(set) var online: MPOnlineTeamsController?
     @Published private(set) var resultWon = false
+    /// Android team setup: control difficulty (`teamControl`, ControlChoice 4/1/0/3) and arena (`teamArena`).
+    @Published var teamControl = 0 { didSet { defaults.set(teamControl, forKey: MPJourneyController.prefix + "teamControl") } }
+    @Published var teamArena = MPArena.beach { didSet { defaults.set(teamArena.wire, forKey: MPJourneyController.prefix + "teamArena") } }
+    /// Android `teamSeed`: one seed per team-colour pairing; Play again draws a new one.
+    @Published private(set) var teamSeed = Int64.random(in: Int64.min...Int64.max)
     var hebrew = false
     var identity: MPIdentity?
     var onExit: (() -> Void)?
@@ -37,12 +47,28 @@ import UIKit
     var stars: Int { defaults.integer(forKey: MPJourneyController.prefix + "stars") }
     var hasSaved: Bool { defaults.string(forKey: MPJourneyController.prefix + "saved") != nil }
     func tr(_ en: String, _ he: String) -> String { hebrew ? he : en }
+    /// Android `PongTeamColors.score` for SwiftUI: "a : b", each number in its team colour, the separator white.
+    static func teamScore(_ first: Int, _ second: Int, firstTeam: Int = 0, seed: Int64) -> AttributedString {
+        var a = AttributedString(String(first)), gap = AttributedString(" : "), b = AttributedString(String(second))
+        a.foregroundColor = MPColor.color(MPTeamColors.fill(firstTeam, seed: seed)); gap.foregroundColor = .white
+        b.foregroundColor = MPColor.color(MPTeamColors.fill(1 - firstTeam, seed: seed))
+        return a + gap + b
+    }
+    /// Android `levels`: the order of the control choices in the team setup.
+    static let controlLevels = [4, 1, 0, 3]
 
     func open(_ page: Page, identity: MPIdentity?, hebrew: Bool) {
         self.identity = identity; self.hebrew = hebrew
+        // Android onCreate: a step saved with the 30-stage catalog keeps its cycle and stage.
+        let p = MPJourneyController.prefix, old = (defaults.object(forKey: p + "catalogSize") as? Int) ?? 30
+        if old != MPJourney.count {
+            defaults.set(MPJourney.migrateStep(step, max(old, 1)), forKey: p + "step"); defaults.set(MPJourney.count, forKey: p + "catalogSize")
+        }
         // Android: the player's avatar first, then the roster order.
         let avatar = MPRoster.find(identity?.characterId ?? "")?.id ?? "miniko"
         ids = Array(([avatar] + MPRoster.all.map(\.id).filter { $0 != avatar }).prefix(4))
+        teamControl = MPControlChoice.normalize((defaults.object(forKey: p + "teamControl") as? Int) ?? 0)
+        teamArena = MPArena.read(defaults.string(forKey: p + "teamArena") ?? "beach")
         switch page {
         case .teams: teamSetup()
         case .settings: settings()
@@ -63,18 +89,20 @@ import UIKit
         case .online: return online?.title ?? tr("Online team game", "משחק קבוצתי ברשת")
         }
     }
+    /// Android `navigateBack`: the game returns to its setup or briefing, the list to the briefing.
     func back() {
         switch page {
         case .game:
             let wasTeam = game?.stage == nil
-            save(); game = nil; running = false
+            save(); game = nil; running = false; instructions = nil
             if wasTeam { teamSetup() } else { brief() }
+        case .list: brief()
         case .online: online?.back()
         default: leave()
         }
     }
     func leave() {
-        save(); online?.close(); online = nil; game = nil; running = false; resultAudio.stop()
+        save(); online?.close(); online = nil; game = nil; running = false; instructions = nil; resultAudio.stop()
         onExit?()
     }
     func lifecycle(active: Bool) {
@@ -100,20 +128,20 @@ import UIKit
     func startJourney(_ step: Int) {
         let s = MPJourney.stage(step)
         var used: Set<String> = [ids[0]], roster = [ids[0]]
-        for _ in 0..<3 { let b = s.partner(step / 30, exclude: used); used.insert(b.id); roster.append(b.id) }
+        for _ in 0..<3 { let b = s.partner(step / MPJourney.count, exclude: used); used.insert(b.id); roster.append(b.id) }
         let g = MPPlay(step: step, roster: roster)
         play(g); showInstructions(g)
     }
     func play(_ g: MPPlay) {
-        game = g; page = .game; handled = false; hud = ""; hint = ""
+        game = g; page = .game; handled = false; hud = ""; hudScore = nil; hint = ""
         running = resumed && !g.paused
         frame()
     }
-    func startTeam() { play(MPPlay(mode: mode, roster: ids)) }
+    func startTeam() { play(MPPlay(mode: mode, roster: ids, seed: teamSeed, arena: teamArena.wire, control: teamControl)) }
     func practiseTeamSkill() { startJourney(mode == .alternate ? 15 : 16) }
-    /// Android `teamBrief`: the stage's team briefing plus the match rule.
+    /// Android `teamBrief`: the stage's team briefing plus the controls and the match rule.
     var teamBriefing: String {
-        MPJourney.stages[mode == .alternate ? 15 : 16].briefing(hebrew) + "\n\n" + tr("Drag to move. Tap a far-side target to return. First team to 7 points wins.", "גררו כדי לזוז. הקישו על יעד בצד הרחוק כדי להחזיר. הקבוצה הראשונה שתגיע ל־7 נקודות מנצחת.")
+        MPJourney.stages[mode == .alternate ? 15 : 16].briefing(hebrew) + "\n\n" + tr("Starter gives more time to prepare an aimed swipe. Standard: tap or swipe as the ball approaches your paddle. Outside that window, drag to move. Beginner assists the hit. Pro: swipe to aim; an arc adds topspin and a left–right sweep adds sidespin. First team to 7 wins.", "בנינוחה אפשר להכין החלקה מכוונת מוקדם יותר. ברגילה מקישים או מחליקים כשהכדור מתקרב למחבט. מחוץ לחלון הזה גוררים כדי לזוז. במתחילים החבטה נעשית בסיוע. במקצועני מחליקים כדי לכוון: קשת מוסיפה סיבוב קדמי ותנועת שמאל–ימין מוסיפה סיבוב צדי. הקבוצה הראשונה שתגיע ל־7 מנצחת.")
     }
     /// Each place needs a different character (Android shows a short notice).
     func choose(_ index: Int, _ id: String) {
@@ -121,17 +149,22 @@ import UIKit
             notice = tr("Choose a different character for each place", "בחרו דמות אחרת לכל מקום")
         } else { ids[index] = id }
     }
-    func showInstructions(_ g: MPPlay) { g.paused = true; running = false; instructions = g; frame() }
+    func showInstructions(_ g: MPPlay) {
+        g.paused = true; running = false; frame()
+        let title = g.stage.map { $0.title(hebrew) } ?? tr("Team match", "משחק קבוצתי")
+        let controls = g.stage?.controlDescription(hebrew) ?? tr("Starter: prepare an aimed swipe early. Standard: tap or swipe when the ball approaches your paddle; otherwise drag to move. Pro: swipe and curve for spin.", "נינוחה: מכינים החלקה מכוונת מוקדם. רגילה: מקישים או מחליקים כשהכדור מתקרב למחבט; בשאר הזמן גוררים כדי לזוז. מקצועני: מחליקים בקשת כדי לסובב.")
+        let message = (g.stage?.briefing(hebrew) ?? MPJourney.stages[g.alternate ? 15 : 16].briefing(hebrew)) + "\n\n" + controls +
+            MPHelpTips.next(he: hebrew, eligible: g.stage == nil || g.stage?.skill == .serve)
+        instructions = (g, title, message)
+    }
     func closeInstructions() {
-        instructions?.paused = false; instructions = nil
+        instructions?.game.paused = false; instructions = nil
         running = resumed && page == .game && game?.paused == false; frame()
     }
     func togglePause() {
         guard let g = game else { return }
         g.paused.toggle(); running = !g.paused && resumed; frame()
     }
-    func instructionsTitle(_ g: MPPlay) -> String { g.stage.map { $0.title(hebrew) } ?? tr("Team match", "משחק קבוצתי") }
-    func instructionsText(_ g: MPPlay) -> String { g.stage?.briefing(hebrew) ?? MPJourney.stages[g.alternate ? 15 : 16].briefing(hebrew) }
     /// Android `refresh`: the score line, the advice line and the end of a challenge.
     func frame() {
         guard let g = game, page == .game else { return }
@@ -140,31 +173,47 @@ import UIKit
         else if g.stage == nil { score = "\(g.points[0]) : \(g.points[1])" }
         else if g.openPaint { score = "★ \(g.successes)" }
         else { score = "\(g.successes) / \(g.goal)  · " + tr("Misses", "החטאות") + " \(g.mistakes)/3" }
-        if hud != score { hud = score }
+        if hud != score {
+            hud = score
+            // Team scores are drawn in the two team colours.
+            hudScore = g.stage == nil ? MPJourneyController.teamScore(g.points[0], g.points[1], seed: g.seed) : nil
+        }
         let advice: String
         if g.paused { advice = tr("Paused", "מושהה") }
         else if let ending = g.ending { advice = ending.message(hebrew) }
         else if g.stage?.skill == .serve { advice = tr("Land the serve inside the golden island", "הנחיתו את ההגשה בתוך האי הזהוב") }
         else if g.waitingServe { advice = tr("Tap the far side to serve", "הקישו בצד הרחוק כדי להגיש") }
-        else if g.team && g.alternate && g.nextHitter[0] != 0 { advice = tr("Your teammate's turn. Cover your side.", "תור חבר הקבוצה. שמרו על הצד שלכם.") }
+        else if g.team && g.alternate && g.nextHitter[0] != 0 { advice = tr("Your teammate’s turn. Drag aside to make room.", "תור חבר הקבוצה. גררו הצדה כדי לפנות מקום.") }
+        else if g.stage?.standard == true { advice = tr("Move into reach, then swipe toward the golden target", "התמקמו בטווח המחבט, ואז החליקו לכיוון היעד הזהוב") }
         else if g.targeted { advice = tr("Drag toward the ball, then tap the golden target", "גררו לכדור, ואז הקישו על היעד הזהוב") }
-        else { advice = tr("Drag to move. Tap the far side to return.", "גררו כדי לזוז. הקישו בצד הרחוק להחזרה.") }
-        if hint != advice { hint = advice }
+        else if g.controls[0] == 3 { advice = tr("Drag your character to move · swipe on the table to return · curve for spin", "גררו את הדמות כדי לזוז · החליקו על השולחן לחבטה · קשת לסיבוב") }
+        else { advice = tr("Drag to move. As the ball approaches, tap or swipe to return.", "גררו כדי לזוז. כשהכדור מתקרב, הקישו או החליקו לחבטה.") }
+        let shown: String
+        if g.notice.hasPrefix("diagonal-serve-") { shown = MPHelpTips.diagonal(he: hebrew, ownPoint: g.notice == "diagonal-serve-1") }
+        else if g.notice == "serve-double-bounce-0" && g.showServePointTip { shown = MPHelpTips.serveDoubleBouncePoint(he: hebrew) }
+        else { shown = advice }
+        if hint != shown { hint = shown }
+        let tip = g.notice.hasPrefix("serve-double-bounce-")
+        if hintIsTip != tip { hintIsTip = tip }
         if g.ended && g.ending == nil && !handled {
             handled = true; running = false
             Task { @MainActor [weak self] in self?.result(g) }
         }
     }
     @Published private(set) var resultText = ""
+    /// Android `winning-team` caption: "You and Minik won!" / "<pair> won!" (Hebrew "אתם ניצחתם!" for the player's team).
+    @Published private(set) var winningTeam: String?
     private func result(_ g: MPPlay) {
         guard game === g else { return }
         page = .result; resultWon = g.won
         defaults.removeObject(forKey: MPJourneyController.prefix + "saved")
         let p = MPJourneyController.prefix
         if g.won, let stage = g.stage, g.step == step {
-            let receipt = "\(g.step / 30)/" + stage.id
+            let receipt = "\(g.step / MPJourney.count)/" + stage.id
             var receipts = Set(defaults.stringArray(forKey: p + "receipts") ?? [])
             if receipts.insert(receipt).inserted {
+                // Android 96ae066: a new completion also pays colour-rank points once.
+                MPRanking().award("daily/" + receipt, MPRanks.daily(g.step))
                 let parts = Calendar.current.dateComponents([.year, .month, .day], from: Date())
                 let today = String(format: "%04d-%02d-%02d", parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
                 let bonus = defaults.string(forKey: p + "day") != today ? 30 : 0
@@ -173,10 +222,19 @@ import UIKit
             }
         }
         if g.won && MPJourneyController.soundsOn { resultAudio.play("minik_claps") }
+        if g.stage == nil {
+            let winner = g.points[0] > g.points[1] ? 0 : 1
+            let names = g.actors.enumerated().filter { $0.element.team == winner }.map { i, a in
+                i == 0 ? tr("You", "אתם") : (MPRoster.find(a.character) ?? MPRoster.all[0]).name(hebrew: hebrew)
+            }
+            let pair = names.map { "\u{2068}" + $0 + "\u{2069}" }.joined(separator: hebrew ? " ו" : " and ")
+            winningTeam = hebrew ? (winner == 0 ? "אתם ניצחתם!" : pair + " ניצחו!") : pair + " won!"
+        } else { winningTeam = nil }
         if g.stage == nil { resultText = tr("Final score: \(g.points[0]) : \(g.points[1])", "התוצאה: \(g.points[0]) : \(g.points[1])") }
         else if g.won { resultText = tr("Nice work. Your next skill is ready.", "כל הכבוד. המיומנות הבאה מחכה לכם.") }
         else { resultText = tr("Your progress is safe. Take your time and try again.", "ההתקדמות שלכם נשמרת. קחו את הזמן ונסו שוב.") }
     }
+    var resultWinner: Int { game.map { $0.points[0] > $0.points[1] ? 0 : 1 } ?? 0 }
     var resultAction: String {
         guard let g = game else { return "" }
         if g.stage == nil { return tr("Play again", "משחק נוסף") }
@@ -184,10 +242,14 @@ import UIKit
     }
     func resultPrimary() {
         guard let g = game else { brief(); return }
-        if g.stage == nil { teamSetup() } else if g.won { brief() } else if g.step >= 0 { startJourney(g.step) } else { teamSetup() }
+        if g.stage == nil {
+            // Android f0f27c4: replay the same teams, arena and control with a new colour pairing.
+            teamSeed = Int64.random(in: Int64.min...Int64.max)
+            play(MPPlay(mode: g.mode, roster: g.roster, seed: teamSeed, arena: g.arena, control: g.controls[0]))
+        } else if g.won { brief() } else if g.step >= 0 { startJourney(g.step) } else { teamSetup() }
     }
     func openOnline() {
-        let controller = MPOnlineTeamsController(mode: mode, identity: MPTeamIdentity.local(identity, hebrew: hebrew), hebrew: hebrew)
+        let controller = MPOnlineTeamsController(mode: mode, identity: MPTeamIdentity.local(identity, hebrew: hebrew), hebrew: hebrew, arena: teamArena, control: teamControl)
         controller.onExit = { [weak self] in
             guard let self else { return }
             self.online?.close(); self.online = nil; self.teamSetup()
@@ -232,6 +294,10 @@ enum MPJourneyStyle {
     static let panel = Color(red: 0xf5 / 255, green: 0xfc / 255, blue: 1).opacity(0xf2 / 255)
     static let hudBar = Color(red: 0x17 / 255, green: 0x3e / 255, blue: 0x56 / 255).opacity(0xe6 / 255)
     static let link = Color(red: 0x20 / 255, green: 0x5c / 255, blue: 0xa8 / 255)
+    /// Android settings buttons (29f5dc7): Rate pink, Share yellow, Send feedback orange, each a raised face.
+    static let rateFace = MPCourtFace(base: 0xffff5ba6, top: 0xffff85bd, middle: 0xffff5ba6, bottom: 0xffed4791)
+    static let shareFace = MPCourtFace(base: 0xffffe079, top: 0xffffedaa, middle: 0xffffe079, bottom: 0xfff4c954)
+    static let feedbackFace = MPCourtFace(base: 0xffffb46a, top: 0xffffd09b, middle: 0xffffb46a, bottom: 0xffef9849)
 }
 
 struct MPJourneyButton: View {
@@ -239,12 +305,17 @@ struct MPJourneyButton: View {
     var accent = false
     var fill: Color? = nil
     var textColor = MPJourneyStyle.ink
+    /// A raised Android face (gradient), e.g. `MPCourtStyle.startFace`.
+    var face: MPCourtFace? = nil
     let action: () -> Void
     var body: some View {
         Button(action: action) {
             Text(title).font(.system(size: 17, weight: .semibold, design: .rounded)).foregroundStyle(textColor).multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity, minHeight: 52).padding(.horizontal, 14)
-                .background(fill ?? (accent ? MPJourneyStyle.gold : MPJourneyStyle.cyan), in: RoundedRectangle(cornerRadius: 22))
+                .background {
+                    if let face { RoundedRectangle(cornerRadius: 22).fill(face.gradient) }
+                    else { RoundedRectangle(cornerRadius: 22).fill(fill ?? (accent ? MPJourneyStyle.gold : MPJourneyStyle.cyan)) }
+                }
         }.buttonStyle(.plain)
     }
 }
@@ -264,13 +335,93 @@ struct MPJourneyPanel<Content: View>: View {
     }
 }
 
+/// Android `SettingSelector`: a white rounded selector with a purple chevron (a native menu on iOS).
+struct MPJourneySelector<Value: Hashable>: View {
+    let title: String
+    let options: [(value: Value, label: String)]
+    @Binding var selection: Value
+    var body: some View {
+        Menu {
+            Picker(title, selection: $selection) {
+                ForEach(options.indices, id: \.self) { i in Text(options[i].label).tag(options[i].value) }
+            }
+        } label: {
+            HStack {
+                Text(options.first { $0.value == selection }?.label ?? "").font(.system(size: 17, weight: .semibold)).foregroundStyle(MPJourneyStyle.ink)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Image(systemName: "chevron.down").font(.system(size: 15, weight: .bold)).foregroundStyle(Color(red: 79 / 255, green: 53 / 255, blue: 126 / 255))
+            }
+            .padding(.horizontal, 16).frame(minHeight: 52)
+            .background(Color.white, in: RoundedRectangle(cornerRadius: 12))
+            .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(Color(red: 151 / 255, green: 132 / 255, blue: 190 / 255), lineWidth: 1) }
+        }
+        .accessibilityLabel(title)
+    }
+}
+
+/// Android `PongOrientationHint`: once per app run, a portrait court that has never been played in landscape
+/// suggests the wider view (after 0.9 s, shown like a long toast). The once-per-run state is the process-wide
+/// `MPLandscapeTipSession.shared`, which the singles court uses too (Android `PongOrientationHint.session`).
+@MainActor final class MPOrientationHint: ObservableObject {
+    static let shared = MPOrientationHint()
+    @Published private(set) var visible = false
+    func observe(wide: Bool) { MPLandscapeTipSession.shared.observe(wide); if wide { visible = false } }
+    func schedule(active: @escaping () -> Bool, wide: @escaping () -> Bool) {
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 900_000_000)
+            observe(wide: wide())
+            guard !wide(), MPLandscapeTipSession.shared.claim(active()) else { return }
+            visible = true
+            try? await Task.sleep(nanoseconds: 3_500_000_000)
+            visible = false
+        }
+    }
+    func text(_ hebrew: Bool) -> String { hebrew ? "לתצוגה רחבה יותר, שחקו במצב אופקי." : "For a wider view, play in landscape." }
+}
+
+/// The toast of `MPOrientationHint`.
+struct MPOrientationToast: View {
+    @ObservedObject var hint = MPOrientationHint.shared
+    let hebrew: Bool
+    var body: some View {
+        if hint.visible {
+            Text(hint.text(hebrew)).font(.system(size: 15, weight: .semibold)).foregroundStyle(.white).multilineTextAlignment(.center)
+                .padding(.horizontal, 16).padding(.vertical, 10).background(Color.black.opacity(0.78), in: Capsule())
+                .padding(.bottom, 32).frame(maxHeight: .infinity, alignment: .bottom).allowsHitTesting(false)
+                .transition(.opacity).accessibilityAddTraits(.isStaticText)
+        }
+    }
+}
+
+/// Android `safeContent(arena = …)` with `ArenaBackdrop`: game-only scenery behind a team match, aspect-filled (the
+/// landscape beach keeps its shoreline above the far baseline) with a dark fade at the top for the white captions.
+/// Original/Indoors keep the screen's own background; without the bundled art nothing is drawn.
+struct MPArenaBackdrop: View {
+    let arena: MPArena
+    var body: some View {
+        GeometryReader { proxy in
+            let size = proxy.size, wide = size.width > size.height
+            if let image = arena.backdrop(wide: wide), image.size.width > 0, image.size.height > 0 {
+                let scale = max(size.width / image.size.width, size.height / image.size.height)
+                let w = image.size.width * scale, h = image.size.height * scale
+                let top = wide && arena == .beach ? min(max(size.height * 0.12 - h * 0.26, size.height - h), 0) : 0
+                ZStack(alignment: .topLeading) {
+                    Image(uiImage: image).resizable().frame(width: w, height: h).offset(x: (size.width - w) / 2, y: top)
+                    LinearGradient(colors: [MPColor.color(0x9c10243b), .clear], startPoint: .top, endPoint: .bottom).frame(height: size.height * 0.25)
+                }.frame(width: size.width, height: size.height, alignment: .topLeading).clipped()
+            }
+        }.ignoresSafeArea().accessibilityHidden(true)
+    }
+}
+
 struct MPJourneyScreen: View {
     @ObservedObject var journey: MPJourneyController
     private var he: Bool { journey.hebrew }
     private func t(_ en: String, _ he: String) -> String { journey.tr(en, he) }
-    private func text(_ value: String, size: CGFloat = 17, bold: Bool = false) -> some View {
+    private func text(_ value: String, size: CGFloat = 17, bold: Bool = false, start: Bool = false) -> some View {
         Text(value).font(.system(size: size, weight: bold ? .bold : .regular)).foregroundStyle(MPJourneyStyle.ink)
-            .multilineTextAlignment(.center).frame(maxWidth: .infinity).padding(.vertical, 6).fixedSize(horizontal: false, vertical: true)
+            .multilineTextAlignment(start ? .leading : .center).frame(maxWidth: .infinity, alignment: start ? .leading : .center)
+            .padding(.vertical, 6).fixedSize(horizontal: false, vertical: true)
     }
     var body: some View {
         Group {
@@ -284,9 +435,11 @@ struct MPJourneyScreen: View {
             case .online: if let online = journey.online { MPOnlineTeamsScreen(model: online) }
             }
         }
-        .alert(journey.instructions.map { journey.instructionsTitle($0) } ?? "", isPresented: Binding(get: { journey.instructions != nil }, set: { if !$0 && journey.instructions != nil { journey.closeInstructions() } })) {
-            Button(t("Got it · Play", "הבנתי · מתחילים")) { journey.closeInstructions() }
-        } message: { Text(journey.instructions.map { journey.instructionsText($0) } ?? "") }
+        .overlay {
+            if let open = journey.instructions {
+                MPInstructionDialog(title: open.title, message: open.message, hebrew: he) { journey.closeInstructions() }
+            }
+        }
         .alert(t("Two against two", "שניים מול שניים"), isPresented: Binding(get: { journey.teamBrief != nil }, set: { if !$0 { journey.teamBrief = nil } })) {
             let start = journey.teamBrief == true
             Button(start ? t("Play", "לשחק") : t("Practice this skill", "מתרגלים את המיומנות")) {
@@ -300,7 +453,7 @@ struct MPJourneyScreen: View {
         }
         .sheet(isPresented: Binding(get: { journey.picking != nil }, set: { if !$0 { journey.picking = nil } })) {
             if let index = journey.picking {
-                MPHousePickerSheet(hebrew: he, selected: journey.ids[index], confirm: t("Play", "לשחק"), picked: { id in journey.choose(index, id); journey.picking = nil },
+                MPHousePickerSheet(hebrew: he, selected: journey.ids[index], picked: { id in journey.choose(index, id); journey.picking = nil },
                                    cancel: { journey.picking = nil })
             }
         }
@@ -313,26 +466,29 @@ struct MPJourneyScreen: View {
         }
     }
     private var brief: some View {
-        let n = journey.step, s = MPJourney.stage(n), partner = s.partner(n / 30, exclude: [journey.ids[0]])
+        let n = journey.step, count = MPJourney.count, s = MPJourney.stage(n), partner = s.partner(n / count, exclude: [journey.ids[0]])
         return MPJourneyPanel {
-            text(t("Practice a little each day. Your first completed stage each day earns a bonus. Play more whenever you like; missing a day never erases progress.", "מתאמנים קצת בכל יום. השלב הראשון שתשלימו ביום מזכה בבונוס. אפשר להמשיך לשחק מתי שרוצים; יום ללא משחק אינו מוחק התקדמות."), size: 15)
-            text("\(n % 30 + 1) / 30 · " + t("Cycle", "מסלול") + " \(n / 30 + 1)", size: 18, bold: true)
+            text(t("Practice a little each day. Your first completed stage each day earns a bonus. Play more whenever you like; missing a day never erases progress.", "מתאמנים קצת בכל יום. השלב הראשון שתשלימו ביום מזכה בבונוס. אפשר להמשיך לשחק מתי שרוצים; יום ללא משחק אינו מוחק התקדמות."), size: 15, start: true)
+            text("\(n % count + 1) / \(count) · " + t("Cycle", "מסלול") + " \(n / count + 1)", size: 18, bold: true)
             text(s.title(he), size: 24, bold: true)
             MPAvatar(character: partner.id, icon: 0).frame(height: 130).accessibilityLabel(partner.name(hebrew: he))
             text(partner.name(hebrew: he), size: 19, bold: true)
-            text(s.role(he), size: 15)
-            text(s.briefing(he))
-            text(s.territory ? t("90 seconds · Capture more area to win", "90 שניות · כובשים יותר שטח כדי לנצח") : t("Goal: \(s.goal(n / 30)) · 3 misses before a retry", "מטרה: \(s.goal(n / 30)) · אחרי 3 החטאות מנסים שוב"), bold: true)
+            text(s.role(he), size: 15, start: true)
+            text(s.briefing(he), start: true)
+            text(s.controlDescription(he), size: 17, bold: true, start: true)
+            text(t("New completion: +\(MPRanks.daily(n)) color-rank points", "השלמה חדשה: +\(MPRanks.daily(n)) נקודות לדירוג הצבע"), size: 15)
+            text(s.territory ? t("90 seconds · Capture more area to win", "90 שניות · כובשים יותר שטח כדי לנצח") : t("Goal: \(s.goal(n / count)) · 3 misses before a retry", "מטרה: \(s.goal(n / count)) · אחרי 3 החטאות מנסים שוב"), bold: true)
             if s.streak { text(t("Keep a streak: a miss resets the counter.", "שומרים על רצף: החטאה מאפסת את המונה."), size: 15) }
             MPJourneyButton(title: t("Start challenge", "מתחילים באתגר"), accent: true) { journey.startJourney(n) }
             if journey.hasSaved { MPJourneyButton(title: t("Resume practice", "המשך אימון")) { journey.resume() } }
             MPJourneyButton(title: t("Your journey", "המסע שלכם")) { journey.journeyList() }
-            MPJourneyButton(title: t("Paint playground · no limit", "מגרש הצבעים · בלי הגבלה")) { journey.paintPlayground() }
-            text(t("Practice stars", "כוכבי אימון") + ": \(journey.stars)", size: 15)
+            text(t("Optional free practice. Paint the table with your shots—no timer and no effect on journey progress.", "אימון חופשי לבחירה: צובעים את השולחן בחבטות, בלי הגבלת זמן ובלי לשנות את ההתקדמות באתגרים."), size: 15, start: true)
+            MPJourneyButton(title: t("Free practice · paint the table", "אימון חופשי · צובעים את השולחן")) { journey.paintPlayground() }
+            Text(t("Practice stars", "כוכבי אימון") + ": \(journey.stars)").font(.system(size: 16)).foregroundStyle(MPJourneyStyle.ink).frame(maxWidth: .infinity, minHeight: 72)
         }
     }
     private var list: some View {
-        let n = journey.step % 30
+        let n = journey.step % MPJourney.count
         return MPJourneyPanel {
             ForEach(MPJourney.stages.indices, id: \.self) { i in
                 text((i < n ? "✓" : i == n ? "★" : "○") + " \(i + 1). " + MPJourney.stages[i].title(he))
@@ -345,14 +501,20 @@ struct MPJourneyScreen: View {
             VStack(spacing: 12) {
                 VStack(spacing: 10) {
                     text(t("You and a house teammate against two house players", "אתם וחבר קבוצתכם מול שני שחקני בית"), size: 18, bold: true)
-                    text(t("Team rules", "חוקי הקבוצה"), size: 16, bold: true)
-                    MPChoiceBar(title: t("Team rules", "חוקי הקבוצה"), options: MPTeamMode.allCases.map { (value: $0, label: $0.title(he)) }, selection: $journey.mode)
+                    text(t("Team rules", "חוקי הקבוצה"), size: 19, bold: true)
+                    MPJourneySelector(title: t("Team rules", "חוקי הקבוצה"), options: MPTeamMode.allCases.map { (value: $0, label: $0.title(he)) }, selection: $journey.mode)
                     text(journey.mode.explanation(he), size: 16)
+                    text(t("Control difficulty", "רמת השליטה"), size: 19, bold: true)
+                    MPJourneySelector(title: t("Control difficulty", "רמת השליטה"), options: MPJourneyController.controlLevels.map { (value: $0, label: MPJourneyScreen.controlTitle($0, he)) }, selection: $journey.teamControl)
+                    text(t("Beginner: assisted returns. Starter: prepare your aimed swipe early. Standard: tap or swipe as the ball reaches you. Pro: swipe to aim and spin.", "מתחילים: החזרות בסיוע. נינוחה: מכינים החלקה מכוונת מוקדם. רגילה: מקישים או מחליקים כשהכדור מגיע. מקצועני: מחליקים כדי לכוון ולסובב."), size: 15)
+                    text(t("Arena", "זירה"), size: 19, bold: true)
+                    MPJourneySelector(title: t("Arena", "זירה"), options: MPArena.choices.map { (value: $0, label: $0.title(he: he)) }, selection: $journey.teamArena)
                     ForEach(1..<4, id: \.self) { i in
                         let role = i == 1 ? t("Your teammate", "חבר הקבוצה שלכם") : t("Opponent", "יריב") + " \(i - 1)"
-                        MPJourneyButton(title: role + ": " + (MPRoster.find(journey.ids[i]) ?? MPRoster.all[0]).name(hebrew: he)) { journey.picking = i }
+                        MPJourneyButton(title: role + ": " + (MPRoster.find(journey.ids[i]) ?? MPRoster.all[0]).name(hebrew: he),
+                                        fill: MPColor.color(MPTeamColors.fill(i == 1 ? 0 : 1, seed: journey.teamSeed))) { journey.picking = i }
                     }
-                    MPJourneyButton(title: t("Start team match", "מתחילים במשחק קבוצתי"), accent: true) { journey.teamBrief = true }
+                    MPJourneyButton(title: t("Start team match", "מתחילים במשחק קבוצתי"), face: MPCourtStyle.startFace) { journey.teamBrief = true }
                 }
                 .padding(.horizontal, 18).padding(.vertical, 16).frame(maxWidth: .infinity)
                 .background(MPJourneyStyle.panel, in: RoundedRectangle(cornerRadius: 28))
@@ -360,6 +522,15 @@ struct MPJourneyScreen: View {
                 teamLink(t("How teams work", "איך משחקים בקבוצה")) { journey.teamBrief = false }
                 teamLink(t("Online team game", "משחק קבוצתי ברשת")) { journey.openOnline() }
             }.frame(maxWidth: 620).padding(.horizontal, 12).padding(.vertical, 8).frame(maxWidth: .infinity)
+        }
+    }
+    /// Android `ControlChoice.title` (29f5dc7 adds Starter = 1).
+    static func controlTitle(_ value: Int, _ he: Bool) -> String {
+        switch MPControlChoice.normalize(value) {
+        case 1: return he ? "נינוחה" : "Starter"
+        case 0: return he ? "רגילה" : "Standard"
+        case 3: return he ? "מקצועני" : "Pro"
+        default: return he ? "מתחילים" : "Beginner"
         }
     }
     private func teamLink(_ title: String, _ action: @escaping () -> Void) -> some View {
@@ -374,43 +545,181 @@ struct MPJourneyScreen: View {
             let wide = proxy.size.width > proxy.size.height
             if let g = journey.game {
                 let court = MPPracticeCourt(game: g, hebrew: he, running: journey.running, soundsEnabled: { MPJourneyController.soundsOn }, onFrame: { journey.frame() })
-                if wide {
-                    HStack(spacing: 8) { ScrollView { controls(g) }.frame(width: 204); court }
-                } else {
-                    VStack(spacing: 6) { controls(g); court }
+                ZStack {
+                    if wide {
+                        // Android PongCourtStyle.landscape: a full-height court with coaching in its start-side
+                        // gutter; an equal empty gutter keeps the court centred.
+                        let side = min(max(proxy.size.width * 0.19, 144), 192)
+                        HStack(spacing: 0) { MPJourneySidebar(journey: journey, game: g).frame(width: side); court; Color.clear.frame(width: side) }
+                    } else {
+                        VStack(spacing: 6) { MPJourneyHud(journey: journey, game: g); court }
+                    }
+                    MPOrientationToast(hebrew: he)
                 }
+                .onAppear { MPOrientationHint.shared.observe(wide: wide); MPOrientationHint.shared.schedule(active: { journey.game?.ended == false && journey.page == .game }, wide: { wide }) }
+                .onChange(of: wide) { _, value in MPOrientationHint.shared.observe(wide: value) }
             }
-        }.padding(.horizontal, 6).padding(.bottom, 6)
-    }
-    private func controls(_ g: MPPlay) -> some View {
-        VStack(spacing: 4) {
-            HStack(spacing: 8) {
-                Text(journey.hud).font(.system(size: 18, weight: .bold)).foregroundStyle(.white).lineLimit(1).minimumScaleFactor(0.6)
-                    .frame(maxWidth: .infinity).environment(\.layoutDirection, .leftToRight)
-                Button { journey.togglePause() } label: {
-                    Image(systemName: g.paused ? "play.fill" : "pause.fill").font(.title3).foregroundStyle(MPJourneyStyle.ink).frame(width: 48, height: 48)
-                        .background(MPJourneyStyle.cyan, in: RoundedRectangle(cornerRadius: 14))
-                }.accessibilityLabel(g.paused ? t("Continue", "המשך") : t("Pause", "השהיה"))
-                Button { journey.showInstructions(g) } label: {
-                    Image(systemName: "questionmark").font(.title3.bold()).foregroundStyle(MPJourneyStyle.ink).frame(width: 48, height: 48)
-                        .background(MPJourneyStyle.cyan, in: RoundedRectangle(cornerRadius: 14))
-                }.accessibilityLabel(t("Help", "עזרה"))
-            }
-            Text(journey.hint).font(.system(size: 14, weight: .bold)).foregroundStyle(.white).multilineTextAlignment(.center).lineLimit(3)
-                .frame(maxWidth: .infinity).padding(.horizontal, 4).padding(.vertical, 5)
-                .accessibilityAddTraits(.updatesFrequently)
-        }.padding(.horizontal, 8).padding(.vertical, 6).background(MPJourneyStyle.hudBar, in: RoundedRectangle(cornerRadius: 18))
+        }
+        .padding(.horizontal, 6).padding(.bottom, 6)
+        .background { if let g = journey.game, g.stage == nil, !g.openPaint { MPArenaBackdrop(arena: MPArena.read(g.arena)) } }
     }
     private var result: some View {
-        MPJourneyPanel {
-            if journey.resultWon, let g = journey.game {
-                if g.team { MPTeamVictory(characters: g.actors.filter { $0.team == 0 }.map(\.character), hebrew: he).frame(height: 250) }
-                else { MPJourneyCelebration().frame(height: 170) }
+        GeometryReader { proxy in
+            let compact = proxy.size.width > proxy.size.height && journey.game?.stage == nil
+            MPJourneyPanel {
+                if compact {
+                    HStack(spacing: 8) {
+                        if journey.resultWon, let g = journey.game { celebration(g).frame(width: 160, height: 130) }
+                        VStack(spacing: 6) { winningCaption; text(journey.resultText, size: 20, bold: true) }
+                    }
+                    HStack(spacing: 12) { againButton; menuButton }.padding(.top, 12)
+                } else {
+                    if journey.resultWon, let g = journey.game { celebration(g).frame(height: g.team ? 250 : 170) }
+                    winningCaption
+                    text(journey.resultText, size: 20, bold: true)
+                    againButton
+                    menuButton.padding(.top, 14).padding(.bottom, 2)
+                }
             }
-            text(journey.resultText, size: 20, bold: true)
-            MPJourneyButton(title: journey.resultAction, accent: true) { journey.resultPrimary() }
-            MPJourneyButton(title: t("Back to menu", "חזרה לתפריט")) { journey.leave() }
         }
+    }
+    @ViewBuilder private func celebration(_ g: MPPlay) -> some View {
+        if g.team { MPTeamVictory(characters: g.actors.filter { $0.team == 0 }.map(\.character), hebrew: he) }
+        else { MPJourneyCelebration() }
+    }
+    /// Android `winning-team`: the winners' names on their team colour.
+    @ViewBuilder private var winningCaption: some View {
+        if let caption = journey.winningTeam, let g = journey.game {
+            Text(caption).font(.system(size: 23, weight: .bold)).foregroundStyle(MPJourneyStyle.ink).multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity).padding(14)
+                .background(MPColor.color(MPTeamColors.fill(journey.resultWinner, seed: g.seed)), in: RoundedRectangle(cornerRadius: 18))
+                .padding(.vertical, 12)
+        }
+    }
+    private var againButton: some View {
+        MPJourneyButton(title: journey.resultAction, face: MPCourtStyle.startFace) { journey.resultPrimary() }
+    }
+    private var menuButton: some View {
+        MPJourneyButton(title: t("Back to menu", "חזרה לתפריט"), fill: MPStyle.pink, textColor: .white) { journey.leave() }
+    }
+}
+
+/// Android journey HUD (portrait): the score owns the full row; tools never shift its horizontal centre. A stage puts
+/// the tools under the score; a team match keeps them at the end of the same row.
+struct MPJourneyHud: View {
+    @ObservedObject var journey: MPJourneyController
+    let game: MPPlay
+    var body: some View {
+        VStack(spacing: 4) {
+            if game.stage != nil {
+                MPJourneyScore(journey: journey, game: game).frame(height: 48)
+                MPJourneyTools(journey: journey, game: game)
+            } else {
+                ZStack {
+                    MPJourneyScore(journey: journey, game: game).padding(.horizontal, 112)
+                    HStack { Spacer(); MPJourneyTools(journey: journey, game: game) }
+                }.frame(height: 48)
+            }
+            MPJourneyHint(journey: journey, lines: 3, size: 14)
+        }.padding(.horizontal, 8).padding(.vertical, 6).background(MPJourneyStyle.hudBar, in: RoundedRectangle(cornerRadius: 18))
+    }
+}
+
+/// Android landscape sidebar: tools above, then the outlined score and coaching (no filled panel).
+struct MPJourneySidebar: View {
+    @ObservedObject var journey: MPJourneyController
+    let game: MPPlay
+    var body: some View {
+        VStack(spacing: 4) {
+            MPJourneyTools(journey: journey, game: game).frame(height: 48)
+            ScrollView {
+                VStack(spacing: 14) {
+                    MPJourneyScore(journey: journey, game: game, size: 24).shadow(color: MPColor.color(0xff071b3b), radius: 1.4)
+                    MPJourneyHint(journey: journey, lines: 12, size: 15).shadow(color: MPColor.color(0xff071b3b), radius: 1.4)
+                }.frame(maxWidth: .infinity).padding(.top, 4)
+            }
+            Color.clear.frame(height: 48)
+        }.padding(.horizontal, 8).padding(.vertical, 4)
+    }
+}
+
+struct MPJourneyScore: View {
+    @ObservedObject var journey: MPJourneyController
+    let game: MPPlay
+    var size: CGFloat? = nil
+    var body: some View {
+        Group {
+            if let colored = journey.hudScore { Text(colored) } else { Text(journey.hud).foregroundStyle(.white) }
+        }
+        .font(.system(size: size ?? (game.stage == nil ? 28 : 20), weight: .bold)).lineLimit(size == nil ? 1 : 4).minimumScaleFactor(0.6)
+        .multilineTextAlignment(.center).frame(maxWidth: .infinity).environment(\.layoutDirection, .leftToRight)
+        .accessibilityLabel(journey.hud).accessibilityAddTraits(.updatesFrequently)
+    }
+}
+
+struct MPJourneyHint: View {
+    @ObservedObject var journey: MPJourneyController
+    let lines: Int
+    let size: CGFloat
+    var body: some View {
+        Text(journey.hint).font(.system(size: size, weight: .bold)).foregroundStyle(.white)
+            .multilineTextAlignment(journey.hintIsTip ? .leading : .center).lineLimit(lines)
+            .frame(maxWidth: .infinity, alignment: journey.hintIsTip ? .leading : .center).padding(.horizontal, 4).padding(.vertical, 5)
+            .accessibilityAddTraits(.updatesFrequently)
+    }
+}
+
+struct MPJourneyTools: View {
+    @ObservedObject var journey: MPJourneyController
+    let game: MPPlay
+    private func t(_ en: String, _ he: String) -> String { journey.tr(en, he) }
+    var body: some View {
+        HStack(spacing: 8) {
+            Button { journey.togglePause() } label: {
+                Image(systemName: game.paused ? "play.fill" : "pause.fill").font(.title3).foregroundStyle(MPJourneyStyle.ink).frame(width: 48, height: 48)
+                    .background(MPJourneyStyle.cyan, in: RoundedRectangle(cornerRadius: 14))
+            }.accessibilityLabel(game.paused ? t("Continue", "המשך") : t("Pause", "השהיה"))
+            Button { journey.showInstructions(game) } label: {
+                Image(systemName: "questionmark").font(.title3.bold()).foregroundStyle(MPJourneyStyle.ink).frame(width: 48, height: 48)
+                    .background(MPJourneyStyle.cyan, in: RoundedRectangle(cornerRadius: 14))
+            }.accessibilityLabel(t("Help", "עזרה"))
+        }
+    }
+}
+
+/// Android `PongInstructionDialog` (22f756e): title on a raised menu face, the scrollable explanation and a green
+/// "Got it" button. It cannot be dismissed otherwise.
+struct MPInstructionDialog: View {
+    let title: String
+    let message: String
+    let hebrew: Bool
+    let done: () -> Void
+    var body: some View {
+        GeometryReader { proxy in
+        ZStack {
+            Color.black.opacity(0.42).ignoresSafeArea()
+            ScrollView {
+                VStack(spacing: 0) {
+                    Text(title).font(.system(size: 24, weight: .bold)).foregroundStyle(MPJourneyStyle.ink).multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity).padding(.horizontal, 12).padding(.top, 14).padding(.bottom, 16)
+                        .background(MPCourtStyle.menuFace.gradient, in: RoundedRectangle(cornerRadius: 18))
+                    Text(message).font(.system(size: 18)).foregroundStyle(MPJourneyStyle.ink).multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 4).padding(.top, 18).padding(.bottom, 10)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button(action: done) {
+                        Text(hebrew ? "הבנתי" : "Got it").font(.system(size: 18, weight: .semibold, design: .rounded)).foregroundStyle(MPJourneyStyle.ink)
+                            .frame(maxWidth: .infinity, minHeight: 56).background(MPCourtStyle.startFace.gradient, in: RoundedRectangle(cornerRadius: 18))
+                    }.buttonStyle(.plain).padding(.top, 14)
+                }
+                .padding(.horizontal, 18).padding(.top, 18).padding(.bottom, 22)
+                .background(MPColor.color(0xfff2faff), in: RoundedRectangle(cornerRadius: 26))
+                .frame(maxWidth: 540).padding(.horizontal, 16).padding(.vertical, 32)
+                .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+            }
+        }
+        }
+        .environment(\.layoutDirection, hebrew ? .rightToLeft : .leftToRight)
+        .accessibilityAddTraits(.isModal)
     }
 }
 
@@ -430,14 +739,15 @@ struct MPSettingsPage: View {
                 Text(t("Menu music", "מוזיקה בתפריט")).font(.system(size: 17, weight: .semibold)).foregroundStyle(MPJourneyStyle.ink)
             }.tint(MPStyle.pink).frame(minHeight: 56)
             MPReceptionSettingsView(hebrew: journey.hebrew, open: $assistanceOpen)
-            MPJourneyButton(title: t("Rate this app", "דירוג האפליקציה")) { journey.gate = { journey.rateApp() } }
-            MPJourneyButton(title: t("Share this app", "שיתוף האפליקציה")) { journey.gate = { journey.shareApp() } }
-            MPJourneyButton(title: t("Send feedback", "שליחת משוב")) { journey.gate = { journey.sendFeedback() } }
+            MPJourneyButton(title: t("Rate this app", "דירוג האפליקציה"), face: MPJourneyStyle.rateFace) { journey.gate = { journey.rateApp() } }
+            MPJourneyButton(title: t("Share this app", "שיתוף האפליקציה"), face: MPJourneyStyle.shareFace) { journey.gate = { journey.shareApp() } }
+            MPJourneyButton(title: t("Send feedback", "שליחת משוב"), face: MPJourneyStyle.feedbackFace) { journey.gate = { journey.sendFeedback() } }
         }
     }
 }
 
-/// Android `ReceptionSettings.add`: three choices, each explained, plus the shared note. All are off by default.
+/// Android `ReceptionSettings.add`: three choices, each explained, plus the shared note. All are off by default. The
+/// toggle (29f5dc7) reads "+  Ball assistance" / "−  Ball assistance" on a pale blue raised face.
 struct MPReceptionSettingsView: View {
     let hebrew: Bool
     @Binding var open: Bool
@@ -445,8 +755,8 @@ struct MPReceptionSettingsView: View {
     var body: some View {
         VStack(spacing: 8) {
             Button { open.toggle() } label: {
-                Text(MPReceptionSettings.title(hebrew: hebrew)).font(.system(size: 17, weight: .semibold)).foregroundStyle(MPJourneyStyle.ink)
-                    .frame(maxWidth: .infinity, minHeight: 52).background(Color.white, in: RoundedRectangle(cornerRadius: 14))
+                Text((open ? "−  " : "+  ") + (hebrew ? "עזרה בקבלת הכדור" : "Ball assistance")).font(.system(size: 17, weight: .semibold)).foregroundStyle(MPJourneyStyle.ink)
+                    .frame(maxWidth: .infinity, minHeight: 52).background(MPColor.color(0xffc4e5ff), in: RoundedRectangle(cornerRadius: 10))
             }.buttonStyle(.plain)
             if open {
                 VStack(alignment: .leading, spacing: 6) {
@@ -464,7 +774,8 @@ struct MPReceptionSettingsView: View {
     }
 }
 
-/// Android `BotPicker`: one house player at a time with large arrows, its name and skills.
+/// Android `BotPicker`: one house player at a time with large arrows, its name and skills. The confirm button reads
+/// "Select" unless the caller names it (29f5dc7).
 struct MPHousePickerSheet: View {
     let hebrew: Bool
     @State var selected: String
@@ -472,8 +783,8 @@ struct MPHousePickerSheet: View {
     let confirm: String
     let picked: (String) -> Void
     let cancel: () -> Void
-    init(hebrew: Bool, selected: String, excluded: Set<String> = [], confirm: String, picked: @escaping (String) -> Void, cancel: @escaping () -> Void) {
-        self.hebrew = hebrew; self.excluded = excluded; self.confirm = confirm; self.picked = picked; self.cancel = cancel
+    init(hebrew: Bool, selected: String, excluded: Set<String> = [], confirm: String? = nil, picked: @escaping (String) -> Void, cancel: @escaping () -> Void) {
+        self.hebrew = hebrew; self.excluded = excluded; self.confirm = confirm ?? (hebrew ? "בחירה" : "Select"); self.picked = picked; self.cancel = cancel
         _selected = State(initialValue: selected)
     }
     var body: some View {

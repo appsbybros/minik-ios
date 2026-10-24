@@ -4,3 +4,7 @@ Resources/MinikMathWeb/** -text
 
 # Minik Maze for iOS: the Godot game is copied byte for byte from Android (Scripts/sync-maze-from-android.py).
 Maze/game/** -text
+
+# Triple Shot for iOS: TripleShot/Res is Android's res/ and assets/ copied byte for byte, with the generated
+# R.swift (Scripts/tripleshot-sync-resources.py): no line-ending conversion.
+TripleShot/Res/** -text

@@ -101,9 +101,7 @@ extension FamilyKit {
             alpha = Double((base >> 24) & 0xff) / 255
             self.radius = radius
             let box = CGRect(origin: .zero, size: size)
-            let shortSide = min(size.width, size.height)
-            let depth = min(shortSide * 0.075, max(2 * pixel, radius * 0.28))
-            let rim = max(pixel, min(shortSide * 0.026, radius * 0.08))
+            let rim = SkyLook.rim(size: size, radius: radius, pixel: pixel)
             let r = Int((base >> 16) & 0xff), g = Int((base >> 8) & 0xff), b = Int(base & 0xff)
             let pale = max(r, g, b) - min(r, g, b) < 132
             // Dark HUD/selection surfaces carry white text; they are not washed into pale grey.
@@ -118,10 +116,7 @@ extension FamilyKit {
             }
             edge = FamilyKit.color(edgeColor)
             edgeRect = SkyLook.inset(box, rim, rim)
-            let sinks = pressed && !panel
-            let top = rim + (sinks ? depth * 0.65 : 0)
-            let bottom = rim + (sinks ? depth * 0.3 : depth)
-            let faceRect = CGRect(x: rim, y: top, width: max(0, size.width - 2 * rim), height: max(0, size.height - top - bottom))
+            let faceRect = SkyLook.faceRect(size: size, radius: radius, panel: panel, pressed: pressed, pixel: pixel)
             face = faceRect
 
             let stops: [Gradient.Stop]
@@ -169,6 +164,34 @@ extension FamilyKit {
             shine = gloss
             shineGradient = LinearGradient(gradient: Gradient(colors: [FamilyKit.color(0xbbffffff), FamilyKit.color(0x00ffffff)]),
                                            startPoint: glossStart, endPoint: glossEnd)
+        }
+
+        /// The fine rim around the face.
+        static func rim(size: CGSize, radius: CGFloat, pixel: CGFloat) -> CGFloat {
+            return max(pixel, min(min(size.width, size.height) * 0.026, radius * 0.08))
+        }
+
+        /// Android `copyFaceBounds`: the raised face `draw()` paints, above the darker lower edge (the
+        /// face sinks while a button is pressed; a panel never does).
+        static func faceRect(size: CGSize, radius: CGFloat, panel: Bool, pressed: Bool, pixel: CGFloat) -> CGRect {
+            let depth = min(min(size.width, size.height) * 0.075, max(2 * pixel, radius * 0.28))
+            let rim = SkyLook.rim(size: size, radius: radius, pixel: pixel)
+            let sinks = pressed && !panel
+            let top = rim + (sinks ? depth * 0.65 : 0)
+            let bottom = rim + (sinks ? depth * 0.3 : depth)
+            return CGRect(x: rim, y: top, width: max(0, size.width - 2 * rim), height: max(0, size.height - top - bottom))
+        }
+
+        /// Android `copyTextFaceBounds`: the face below the bright upper gloss (and above the lower edge),
+        /// where a button's lettering belongs. A panel keeps its whole face.
+        static func textFaceRect(size: CGSize, radius: CGFloat, panel: Bool, pressed: Bool, pixel: CGFloat) -> CGRect {
+            var face = faceRect(size: size, radius: radius, panel: panel, pressed: pressed, pixel: pixel)
+            if !panel {
+                let gloss = min(face.height * 0.20, radius * 0.65)
+                face.origin.y += gloss
+                face.size.height = max(0, face.height - gloss)
+            }
+            return face
         }
 
         /// `RectF.inset`, never smaller than empty (CGRect.insetBy would return the null rectangle).
@@ -239,7 +262,8 @@ extension FamilyKit {
     }
 
     /// Android `FamilySkyUi.button`: a button on a raised sky face that sinks while pressed. The label
-    /// keeps its own font, colour, padding and size.
+    /// keeps its own font, colour, padding and size; its lettering is centred on the raised face
+    /// (`RaisedLettering`, Android `FamilyButtonAlignment.bind`), except on a panel.
     struct SkyButtonStyle: ButtonStyle {
         let color: UInt32
         let cornerRadius: CGFloat
@@ -252,9 +276,16 @@ extension FamilyKit {
         }
 
         func makeBody(configuration: Configuration) -> some View {
-            configuration.label
-                .background(SkySurface(color: color, cornerRadius: cornerRadius, panel: panel, pressed: configuration.isPressed))
-                .contentShape(Rectangle())
+            Group {
+                if panel {
+                    configuration.label
+                } else {
+                    configuration.label
+                        .modifier(RaisedLettering(cornerRadius: cornerRadius, pressed: configuration.isPressed))
+                }
+            }
+            .background(SkySurface(color: color, cornerRadius: cornerRadius, panel: panel, pressed: configuration.isPressed))
+            .contentShape(Rectangle())
         }
     }
 

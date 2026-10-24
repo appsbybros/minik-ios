@@ -136,6 +136,10 @@ enum MPReceptionSettings {
         }
     }
     static func title(hebrew: Bool) -> String { hebrew ? "עזרה בקבלת הכדור ▾" : "Ball assistance ▾" }
+    /// Android ReceptionSettings (29f5dc7): the expandable section's raised toggle reads "+" when closed, "−" when open.
+    static func toggle(open: Bool, hebrew: Bool) -> String {
+        open ? (hebrew ? "−  עזרה בקבלת הכדור" : "−  Ball assistance") : (hebrew ? "+  עזרה בקבלת הכדור" : "+  Ball assistance")
+    }
     static func note(hebrew: Bool) -> String {
         hebrew ? "במשחק ברשת כולם משחקים באותה מהירות. כל שחקן בוחר אם להאט לקראת החבטה שלו. אפשרויות המצלמה משפיעות רק על המסך שלכם; אין התקרבות לקראת חבטות של בוטים."
             : "Online players share the same game speed. Each player chooses slow motion for their own return. Camera choices affect only your screen; bots do not trigger zoom."

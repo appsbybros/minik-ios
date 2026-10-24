@@ -1,0 +1,515 @@
+<?xml version='1.0' encoding='utf-8'?>
+<question-bank version="1" mode="BAGRUT_MATHEMATICS" language="he">
+  <question id="bagrut_001" level="1">
+    <prompt lang="he">מחיר מוצר הוא 100 ₪ והוא התייקר ב-20%. מה המחיר החדש?</prompt>
+    <answer correct="true">120</answer>
+    <answer correct="false">130</answer>
+    <answer correct="false">140</answer>
+    <answer correct="false">110</answer>
+    <explanation lang="he">מכפילים ב-1.20: 120 ₪.</explanation>
+  </question>
+  <question id="bagrut_002" level="1">
+    <prompt lang="he">מחיר מוצר הוא 120 ₪ והוא התייקר ב-30%. מה המחיר החדש?</prompt>
+    <answer correct="false">169</answer>
+    <answer correct="false">182</answer>
+    <answer correct="false">143</answer>
+    <answer correct="true">156</answer>
+    <explanation lang="he">מכפילים ב-1.30: 156 ₪.</explanation>
+  </question>
+  <question id="bagrut_003" level="1">
+    <prompt lang="he">מחיר מוצר הוא 160 ₪ והוא התייקר ב-20%. מה המחיר החדש?</prompt>
+    <answer correct="false">176</answer>
+    <answer correct="false">224</answer>
+    <answer correct="true">192</answer>
+    <answer correct="false">208</answer>
+    <explanation lang="he">מכפילים ב-1.20: 192 ₪.</explanation>
+  </question>
+  <question id="bagrut_004" level="1">
+    <prompt lang="he">מחיר מוצר הוא 200 ₪ והוא התייקר ב-20%. מה המחיר החדש?</prompt>
+    <answer correct="false">220</answer>
+    <answer correct="false">260</answer>
+    <answer correct="false">280</answer>
+    <answer correct="true">240</answer>
+    <explanation lang="he">מכפילים ב-1.20: 240 ₪.</explanation>
+  </question>
+  <question id="bagrut_007" level="1">
+    <prompt lang="he">מחיר מוצר הוא 100 ₪ והוא התייקר ב-30%. מה המחיר החדש?</prompt>
+    <answer correct="false">140</answer>
+    <answer correct="true">130</answer>
+    <answer correct="false">150</answer>
+    <answer correct="false">120</answer>
+    <explanation lang="he">מכפילים ב-1.30: 130 ₪.</explanation>
+  </question>
+  <question id="bagrut_008" level="1">
+    <prompt lang="he">מחיר מוצר הוא 160 ₪ והוא התייקר ב-30%. מה המחיר החדש?</prompt>
+    <answer correct="false">242</answer>
+    <answer correct="true">208</answer>
+    <answer correct="false">191</answer>
+    <answer correct="false">225</answer>
+    <explanation lang="he">מכפילים ב-1.30: 208 ₪.</explanation>
+  </question>
+  <question id="bagrut_009" level="1">
+    <prompt lang="he">מחיר מוצר הוא 100 ₪ והוא התייקר ב-10%. מה המחיר החדש?</prompt>
+    <answer correct="false">101</answer>
+    <answer correct="true">110</answer>
+    <answer correct="false">119</answer>
+    <answer correct="false">128</answer>
+    <explanation lang="he">מכפילים ב-1.10: 110 ₪.</explanation>
+  </question>
+  <question id="bagrut_010" level="1">
+    <prompt lang="he">מחיר מוצר הוא 160 ₪ והוא התייקר ב-10%. מה המחיר החדש?</prompt>
+    <answer correct="false">190</answer>
+    <answer correct="false">162</answer>
+    <answer correct="true">176</answer>
+    <answer correct="false">204</answer>
+    <explanation lang="he">מכפילים ב-1.10: 176 ₪.</explanation>
+  </question>
+  <question id="bagrut_011" level="1">
+    <prompt lang="he">מחיר מוצר הוא 160 ₪ והוא התייקר ב-25%. מה המחיר החדש?</prompt>
+    <answer correct="false">184</answer>
+    <answer correct="false">232</answer>
+    <answer correct="true">200</answer>
+    <answer correct="false">216</answer>
+    <explanation lang="he">מכפילים ב-1.25: 200 ₪.</explanation>
+  </question>
+  <question id="bagrut_013" level="1">
+    <prompt lang="he">מחיר מוצר הוא 120 ₪ והוא התייקר ב-20%. מה המחיר החדש?</prompt>
+    <answer correct="false">156</answer>
+    <answer correct="true">144</answer>
+    <answer correct="false">132</answer>
+    <answer correct="false">168</answer>
+    <explanation lang="he">מכפילים ב-1.20: 144 ₪.</explanation>
+  </question>
+  <question id="bagrut_014" level="1">
+    <prompt lang="he">מחיר מוצר הוא 200 ₪ והוא התייקר ב-25%. מה המחיר החדש?</prompt>
+    <answer correct="false">270</answer>
+    <answer correct="false">290</answer>
+    <answer correct="false">230</answer>
+    <answer correct="true">250</answer>
+    <explanation lang="he">מכפילים ב-1.25: 250 ₪.</explanation>
+  </question>
+  <question id="bagrut_019" level="1">
+    <prompt lang="he">מחיר מוצר הוא 240 ₪ והוא התייקר ב-25%. מה המחיר החדש?</prompt>
+    <answer correct="false">325</answer>
+    <answer correct="false">350</answer>
+    <answer correct="true">300</answer>
+    <answer correct="false">275</answer>
+    <explanation lang="he">מכפילים ב-1.25: 300 ₪.</explanation>
+  </question>
+  <question id="bagrut_022" level="1">
+    <prompt lang="he">מחיר מוצר הוא 120 ₪ והוא התייקר ב-25%. מה המחיר החדש?</prompt>
+    <answer correct="true">150</answer>
+    <answer correct="false">174</answer>
+    <answer correct="false">138</answer>
+    <answer correct="false">162</answer>
+    <explanation lang="he">מכפילים ב-1.25: 150 ₪.</explanation>
+  </question>
+  <question id="bagrut_025" level="2">
+    <prompt lang="he">לישר y=2x-5. מה ערך y כאשר x=6?</prompt>
+    <answer correct="true">7</answer>
+    <answer correct="false">8</answer>
+    <answer correct="false">9</answer>
+    <answer correct="false">6</answer>
+    <explanation lang="he">מציבים x=6: y=7.</explanation>
+  </question>
+  <question id="bagrut_026" level="2">
+    <prompt lang="he">לישר y=-2x+2. מה ערך y כאשר x=1?</prompt>
+    <answer correct="false">-1</answer>
+    <answer correct="false">1</answer>
+    <answer correct="true">0</answer>
+    <answer correct="false">2</answer>
+    <explanation lang="he">מציבים x=1: y=0.</explanation>
+  </question>
+  <question id="bagrut_027" level="2">
+    <prompt lang="he">לישר y=4x-1. מה ערך y כאשר x=-2?</prompt>
+    <answer correct="false">-10</answer>
+    <answer correct="false">-7</answer>
+    <answer correct="false">-8</answer>
+    <answer correct="true">-9</answer>
+    <explanation lang="he">מציבים x=-2: y=-9.</explanation>
+  </question>
+  <question id="bagrut_028" level="2">
+    <prompt lang="he">לישר y=-1x+4. מה ערך y כאשר x=0?</prompt>
+    <answer correct="false">3</answer>
+    <answer correct="true">4</answer>
+    <answer correct="false">5</answer>
+    <answer correct="false">6</answer>
+    <explanation lang="he">מציבים x=0: y=4.</explanation>
+  </question>
+  <question id="bagrut_029" level="2">
+    <prompt lang="he">לישר y=5x+5. מה ערך y כאשר x=7?</prompt>
+    <answer correct="false">43</answer>
+    <answer correct="false">46</answer>
+    <answer correct="false">37</answer>
+    <answer correct="true">40</answer>
+    <explanation lang="he">מציבים x=7: y=40.</explanation>
+  </question>
+  <question id="bagrut_030" level="2">
+    <prompt lang="he">לישר y=-5x+8. מה ערך y כאשר x=6?</prompt>
+    <answer correct="true">-22</answer>
+    <answer correct="false">-23</answer>
+    <answer correct="false">-21</answer>
+    <answer correct="false">-20</answer>
+    <explanation lang="he">מציבים x=6: y=-22.</explanation>
+  </question>
+  <question id="bagrut_031" level="2">
+    <prompt lang="he">לישר y=-5x-4. מה ערך y כאשר x=3?</prompt>
+    <answer correct="false">-20</answer>
+    <answer correct="true">-19</answer>
+    <answer correct="false">-17</answer>
+    <answer correct="false">-18</answer>
+    <explanation lang="he">מציבים x=3: y=-19.</explanation>
+  </question>
+  <question id="bagrut_032" level="2">
+    <prompt lang="he">לישר y=2x-3. מה ערך y כאשר x=3?</prompt>
+    <answer correct="false">2</answer>
+    <answer correct="false">5</answer>
+    <answer correct="true">3</answer>
+    <answer correct="false">4</answer>
+    <explanation lang="he">מציבים x=3: y=3.</explanation>
+  </question>
+  <question id="bagrut_033" level="2">
+    <prompt lang="he">לישר y=3x+7. מה ערך y כאשר x=7?</prompt>
+    <answer correct="false">30</answer>
+    <answer correct="true">28</answer>
+    <answer correct="false">32</answer>
+    <answer correct="false">26</answer>
+    <explanation lang="he">מציבים x=7: y=28.</explanation>
+  </question>
+  <question id="bagrut_034" level="2">
+    <prompt lang="he">לישר y=5x-7. מה ערך y כאשר x=-2?</prompt>
+    <answer correct="true">-17</answer>
+    <answer correct="false">-15</answer>
+    <answer correct="false">-16</answer>
+    <answer correct="false">-18</answer>
+    <explanation lang="he">מציבים x=-2: y=-17.</explanation>
+  </question>
+  <question id="bagrut_035" level="2">
+    <prompt lang="he">לישר y=-3x-5. מה ערך y כאשר x=-5?</prompt>
+    <answer correct="false">9</answer>
+    <answer correct="false">11</answer>
+    <answer correct="false">12</answer>
+    <answer correct="true">10</answer>
+    <explanation lang="he">מציבים x=-5: y=10.</explanation>
+  </question>
+  <question id="bagrut_036" level="2">
+    <prompt lang="he">לישר y=-3x-5. מה ערך y כאשר x=2?</prompt>
+    <answer correct="true">-11</answer>
+    <answer correct="false">-12</answer>
+    <answer correct="false">-10</answer>
+    <answer correct="false">-9</answer>
+    <explanation lang="he">מציבים x=2: y=-11.</explanation>
+  </question>
+  <question id="bagrut_037" level="2">
+    <prompt lang="he">לישר y=-3x+2. מה ערך y כאשר x=-1?</prompt>
+    <answer correct="false">7</answer>
+    <answer correct="false">4</answer>
+    <answer correct="false">6</answer>
+    <answer correct="true">5</answer>
+    <explanation lang="he">מציבים x=-1: y=5.</explanation>
+  </question>
+  <question id="bagrut_038" level="2">
+    <prompt lang="he">לישר y=1x+2. מה ערך y כאשר x=8?</prompt>
+    <answer correct="true">10</answer>
+    <answer correct="false">9</answer>
+    <answer correct="false">12</answer>
+    <answer correct="false">11</answer>
+    <explanation lang="he">מציבים x=8: y=10.</explanation>
+  </question>
+  <question id="bagrut_039" level="2">
+    <prompt lang="he">לישר y=2x-8. מה ערך y כאשר x=1?</prompt>
+    <answer correct="false">-5</answer>
+    <answer correct="true">-6</answer>
+    <answer correct="false">-4</answer>
+    <answer correct="false">-7</answer>
+    <explanation lang="he">מציבים x=1: y=-6.</explanation>
+  </question>
+  <question id="bagrut_040" level="2">
+    <prompt lang="he">לישר y=5x+8. מה ערך y כאשר x=-4?</prompt>
+    <answer correct="false">-11</answer>
+    <answer correct="false">-10</answer>
+    <answer correct="false">-13</answer>
+    <answer correct="true">-12</answer>
+    <explanation lang="he">מציבים x=-4: y=-12.</explanation>
+  </question>
+  <question id="bagrut_041" level="2">
+    <prompt lang="he">לישר y=1x-3. מה ערך y כאשר x=0?</prompt>
+    <answer correct="false">-1</answer>
+    <answer correct="false">-2</answer>
+    <answer correct="true">-3</answer>
+    <answer correct="false">-4</answer>
+    <explanation lang="he">מציבים x=0: y=-3.</explanation>
+  </question>
+  <question id="bagrut_042" level="2">
+    <prompt lang="he">לישר y=5x+4. מה ערך y כאשר x=0?</prompt>
+    <answer correct="false">3</answer>
+    <answer correct="false">5</answer>
+    <answer correct="false">6</answer>
+    <answer correct="true">4</answer>
+    <explanation lang="he">מציבים x=0: y=4.</explanation>
+  </question>
+  <question id="bagrut_043" level="2">
+    <prompt lang="he">לישר y=-3x+0. מה ערך y כאשר x=0?</prompt>
+    <answer correct="false">2</answer>
+    <answer correct="true">0</answer>
+    <answer correct="false">1</answer>
+    <answer correct="false">-1</answer>
+    <explanation lang="he">מציבים x=0: y=0.</explanation>
+  </question>
+  <question id="bagrut_044" level="2">
+    <prompt lang="he">לישר y=2x+1. מה ערך y כאשר x=0?</prompt>
+    <answer correct="false">2</answer>
+    <answer correct="true">1</answer>
+    <answer correct="false">0</answer>
+    <answer correct="false">3</answer>
+    <explanation lang="he">מציבים x=0: y=1.</explanation>
+  </question>
+  <question id="bagrut_045" level="2">
+    <prompt lang="he">לישר y=3x-6. מה ערך y כאשר x=6?</prompt>
+    <answer correct="false">13</answer>
+    <answer correct="false">14</answer>
+    <answer correct="true">12</answer>
+    <answer correct="false">11</answer>
+    <explanation lang="he">מציבים x=6: y=12.</explanation>
+  </question>
+  <question id="bagrut_046" level="2">
+    <prompt lang="he">לישר y=-1x+0. מה ערך y כאשר x=3?</prompt>
+    <answer correct="false">-2</answer>
+    <answer correct="true">-3</answer>
+    <answer correct="false">-1</answer>
+    <answer correct="false">-4</answer>
+    <explanation lang="he">מציבים x=3: y=-3.</explanation>
+  </question>
+  <question id="bagrut_047" level="2">
+    <prompt lang="he">לישר y=-2x+0. מה ערך y כאשר x=5?</prompt>
+    <answer correct="false">-9</answer>
+    <answer correct="true">-10</answer>
+    <answer correct="false">-8</answer>
+    <answer correct="false">-11</answer>
+    <explanation lang="he">מציבים x=5: y=-10.</explanation>
+  </question>
+  <question id="bagrut_048" level="2">
+    <prompt lang="he">לישר y=-1x+4. מה ערך y כאשר x=2?</prompt>
+    <answer correct="true">2</answer>
+    <answer correct="false">4</answer>
+    <answer correct="false">1</answer>
+    <answer correct="false">3</answer>
+    <explanation lang="he">מציבים x=2: y=2.</explanation>
+  </question>
+  <question id="bagrut_049" level="3">
+    <prompt lang="he">במשולש ישר-זווית הניצבים הם 5 ו-12. מה אורך היתר?</prompt>
+    <answer correct="false">12</answer>
+    <answer correct="false">14</answer>
+    <answer correct="true">13</answer>
+    <answer correct="false">15</answer>
+    <explanation lang="he">לפי פיתגורס: √(5²+12²)=13.</explanation>
+  </question>
+  <question id="bagrut_050" level="3">
+    <prompt lang="he">במשולש ישר-זווית הניצבים הם 6 ו-8. מה אורך היתר?</prompt>
+    <answer correct="false">12</answer>
+    <answer correct="false">9</answer>
+    <answer correct="true">10</answer>
+    <answer correct="false">11</answer>
+    <explanation lang="he">לפי פיתגורס: √(6²+8²)=10.</explanation>
+  </question>
+  <question id="bagrut_051" level="3">
+    <prompt lang="he">במשולש ישר-זווית הניצבים הם 3 ו-4. מה אורך היתר?</prompt>
+    <answer correct="true">5</answer>
+    <answer correct="false">6</answer>
+    <answer correct="false">4</answer>
+    <answer correct="false">7</answer>
+    <explanation lang="he">לפי פיתגורס: √(3²+4²)=5.</explanation>
+  </question>
+  <question id="bagrut_052" level="3">
+    <prompt lang="he">במשולש ישר-זווית הניצבים הם 7 ו-24. מה אורך היתר?</prompt>
+    <answer correct="false">27</answer>
+    <answer correct="false">29</answer>
+    <answer correct="true">25</answer>
+    <answer correct="false">23</answer>
+    <explanation lang="he">לפי פיתגורס: √(7²+24²)=25.</explanation>
+  </question>
+  <question id="bagrut_058" level="3">
+    <prompt lang="he">במשולש ישר-זווית הניצבים הם 8 ו-15. מה אורך היתר?</prompt>
+    <answer correct="true">17</answer>
+    <answer correct="false">16</answer>
+    <answer correct="false">18</answer>
+    <answer correct="false">19</answer>
+    <explanation lang="he">לפי פיתגורס: √(8²+15²)=17.</explanation>
+  </question>
+  <question id="bagrut_073" level="4">
+    <prompt lang="he">מטילים מטבע הוגן 2 פעמים. כמה רצפים אפשריים שונים יש?</prompt>
+    <answer correct="false">6</answer>
+    <answer correct="false">5</answer>
+    <answer correct="false">3</answer>
+    <answer correct="true">4</answer>
+    <explanation lang="he">בכל הטלה 2 אפשרויות, לכן 2^2=4.</explanation>
+  </question>
+  <question id="bagrut_074" level="4">
+    <prompt lang="he">מטילים מטבע הוגן 5 פעמים. כמה רצפים אפשריים שונים יש?</prompt>
+    <answer correct="true">32</answer>
+    <answer correct="false">30</answer>
+    <answer correct="false">34</answer>
+    <answer correct="false">36</answer>
+    <explanation lang="he">בכל הטלה 2 אפשרויות, לכן 2^5=32.</explanation>
+  </question>
+  <question id="bagrut_075" level="4">
+    <prompt lang="he">מטילים מטבע הוגן 3 פעמים. כמה רצפים אפשריים שונים יש?</prompt>
+    <answer correct="false">7</answer>
+    <answer correct="false">9</answer>
+    <answer correct="true">8</answer>
+    <answer correct="false">10</answer>
+    <explanation lang="he">בכל הטלה 2 אפשרויות, לכן 2^3=8.</explanation>
+  </question>
+  <question id="bagrut_083" level="4">
+    <prompt lang="he">מטילים מטבע הוגן 4 פעמים. כמה רצפים אפשריים שונים יש?</prompt>
+    <answer correct="false">15</answer>
+    <answer correct="true">16</answer>
+    <answer correct="false">17</answer>
+    <answer correct="false">18</answer>
+    <explanation lang="he">בכל הטלה 2 אפשרויות, לכן 2^4=16.</explanation>
+  </question>
+  <question id="bagrut_097" level="5">
+    <prompt lang="he">אם f(x)=2x², מהו f'(5)?</prompt>
+    <answer correct="false">19</answer>
+    <answer correct="true">20</answer>
+    <answer correct="false">22</answer>
+    <answer correct="false">21</answer>
+    <explanation lang="he">f'(x)=4x ולכן f'(5)=20.</explanation>
+  </question>
+  <question id="bagrut_098" level="5">
+    <prompt lang="he">אם f(x)=5x², מהו f'(2)?</prompt>
+    <answer correct="false">21</answer>
+    <answer correct="true">20</answer>
+    <answer correct="false">19</answer>
+    <answer correct="false">22</answer>
+    <explanation lang="he">f'(x)=10x ולכן f'(2)=20.</explanation>
+  </question>
+  <question id="bagrut_099" level="5">
+    <prompt lang="he">אם f(x)=1x², מהו f'(6)?</prompt>
+    <answer correct="true">12</answer>
+    <answer correct="false">13</answer>
+    <answer correct="false">14</answer>
+    <answer correct="false">11</answer>
+    <explanation lang="he">f'(x)=2x ולכן f'(6)=12.</explanation>
+  </question>
+  <question id="bagrut_100" level="5">
+    <prompt lang="he">אם f(x)=1x², מהו f'(5)?</prompt>
+    <answer correct="true">10</answer>
+    <answer correct="false">12</answer>
+    <answer correct="false">11</answer>
+    <answer correct="false">9</answer>
+    <explanation lang="he">f'(x)=2x ולכן f'(5)=10.</explanation>
+  </question>
+  <question id="bagrut_101" level="5">
+    <prompt lang="he">אם f(x)=5x², מהו f'(5)?</prompt>
+    <answer correct="false">54</answer>
+    <answer correct="true">50</answer>
+    <answer correct="false">58</answer>
+    <answer correct="false">46</answer>
+    <explanation lang="he">f'(x)=10x ולכן f'(5)=50.</explanation>
+  </question>
+  <question id="bagrut_103" level="5">
+    <prompt lang="he">אם f(x)=5x², מהו f'(6)?</prompt>
+    <answer correct="false">65</answer>
+    <answer correct="true">60</answer>
+    <answer correct="false">55</answer>
+    <answer correct="false">70</answer>
+    <explanation lang="he">f'(x)=10x ולכן f'(6)=60.</explanation>
+  </question>
+  <question id="bagrut_104" level="5">
+    <prompt lang="he">אם f(x)=3x², מהו f'(4)?</prompt>
+    <answer correct="false">22</answer>
+    <answer correct="true">24</answer>
+    <answer correct="false">28</answer>
+    <answer correct="false">26</answer>
+    <explanation lang="he">f'(x)=6x ולכן f'(4)=24.</explanation>
+  </question>
+  <question id="bagrut_105" level="5">
+    <prompt lang="he">אם f(x)=4x², מהו f'(3)?</prompt>
+    <answer correct="false">22</answer>
+    <answer correct="false">26</answer>
+    <answer correct="false">28</answer>
+    <answer correct="true">24</answer>
+    <explanation lang="he">f'(x)=8x ולכן f'(3)=24.</explanation>
+  </question>
+  <question id="bagrut_107" level="5">
+    <prompt lang="he">אם f(x)=2x², מהו f'(1)?</prompt>
+    <answer correct="true">4</answer>
+    <answer correct="false">6</answer>
+    <answer correct="false">5</answer>
+    <answer correct="false">3</answer>
+    <explanation lang="he">f'(x)=4x ולכן f'(1)=4.</explanation>
+  </question>
+  <question id="bagrut_108" level="5">
+    <prompt lang="he">אם f(x)=2x², מהו f'(4)?</prompt>
+    <answer correct="false">18</answer>
+    <answer correct="false">15</answer>
+    <answer correct="true">16</answer>
+    <answer correct="false">17</answer>
+    <explanation lang="he">f'(x)=4x ולכן f'(4)=16.</explanation>
+  </question>
+  <question id="bagrut_109" level="5">
+    <prompt lang="he">אם f(x)=3x², מהו f'(3)?</prompt>
+    <answer correct="true">18</answer>
+    <answer correct="false">20</answer>
+    <answer correct="false">19</answer>
+    <answer correct="false">17</answer>
+    <explanation lang="he">f'(x)=6x ולכן f'(3)=18.</explanation>
+  </question>
+  <question id="bagrut_110" level="5">
+    <prompt lang="he">אם f(x)=1x², מהו f'(2)?</prompt>
+    <answer correct="true">4</answer>
+    <answer correct="false">6</answer>
+    <answer correct="false">5</answer>
+    <answer correct="false">3</answer>
+    <explanation lang="he">f'(x)=2x ולכן f'(2)=4.</explanation>
+  </question>
+  <question id="bagrut_111" level="5">
+    <prompt lang="he">אם f(x)=5x², מהו f'(4)?</prompt>
+    <answer correct="false">37</answer>
+    <answer correct="false">46</answer>
+    <answer correct="true">40</answer>
+    <answer correct="false">43</answer>
+    <explanation lang="he">f'(x)=10x ולכן f'(4)=40.</explanation>
+  </question>
+  <question id="bagrut_112" level="5">
+    <prompt lang="he">אם f(x)=5x², מהו f'(3)?</prompt>
+    <answer correct="false">32</answer>
+    <answer correct="true">30</answer>
+    <answer correct="false">34</answer>
+    <answer correct="false">28</answer>
+    <explanation lang="he">f'(x)=10x ולכן f'(3)=30.</explanation>
+  </question>
+  <question id="bagrut_115" level="5">
+    <prompt lang="he">אם f(x)=3x², מהו f'(1)?</prompt>
+    <answer correct="false">8</answer>
+    <answer correct="false">5</answer>
+    <answer correct="true">6</answer>
+    <answer correct="false">7</answer>
+    <explanation lang="he">f'(x)=6x ולכן f'(1)=6.</explanation>
+  </question>
+  <question id="bagrut_117" level="5">
+    <prompt lang="he">אם f(x)=3x², מהו f'(2)?</prompt>
+    <answer correct="false">13</answer>
+    <answer correct="true">12</answer>
+    <answer correct="false">11</answer>
+    <answer correct="false">14</answer>
+    <explanation lang="he">f'(x)=6x ולכן f'(2)=12.</explanation>
+  </question>
+  <question id="bagrut_118" level="5">
+    <prompt lang="he">אם f(x)=1x², מהו f'(4)?</prompt>
+    <answer correct="false">9</answer>
+    <answer correct="false">7</answer>
+    <answer correct="false">10</answer>
+    <answer correct="true">8</answer>
+    <explanation lang="he">f'(x)=2x ולכן f'(4)=8.</explanation>
+  </question>
+  <question id="bagrut_119" level="5">
+    <prompt lang="he">אם f(x)=3x², מהו f'(6)?</prompt>
+    <answer correct="false">42</answer>
+    <answer correct="false">39</answer>
+    <answer correct="false">33</answer>
+    <answer correct="true">36</answer>
+    <explanation lang="he">f'(x)=6x ולכן f'(6)=36.</explanation>
+  </question>
+</question-bank>

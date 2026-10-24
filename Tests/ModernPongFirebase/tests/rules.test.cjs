@@ -7,8 +7,8 @@ let env;
 const mergedPath = path.resolve(__dirname, '../rules/merged.json');
 const projectId = 'demo-minik-pingpong';
 before(async () => {
-  assert.equal(process.env.FIREBASE_DATABASE_EMULATOR_HOST, '127.0.0.1:9000', 'Emulator required; never use production');
-  env = await initializeTestEnvironment({projectId, database:{host:'127.0.0.1',port:9000,rules:fs.readFileSync(mergedPath,'utf8')}});
+  assert.match(process.env.FIREBASE_DATABASE_EMULATOR_HOST||'',/^127\.0\.0\.1:[0-9]+$/,'Explicit local emulator required; never use production');
+  env = await initializeTestEnvironment({projectId, database:{host:'127.0.0.1',port:Number(process.env.FIREBASE_DATABASE_EMULATOR_HOST.split(':')[1]),rules:fs.readFileSync(mergedPath,'utf8')}});
 });
 after(async () => {if(env) await env.cleanup()});
 beforeEach(async () => {await env.clearDatabase()});
@@ -46,12 +46,12 @@ function ready(r,uid) {const m=Object.values(r.matches)[0];m.phase='READY';m.rea
 function playing(r) {const m=Object.values(r.matches)[0];m.phase='PLAYING';m.starts=1;delete m.ready;return r}
 function finish(r) {const m=Object.values(r.matches)[0];m.phase='FINISHED';m.scoreA=7;m.scoreB=3;m.winner=m.a;r.state='FINISHED';return r}
 
-test('only minikPingPong differs from supplied full rules; originals and registrations stay intact', () => {
+test('only Ping Pong room namespaces differ from the captured live rules', () => {
   const supplied=JSON.parse(fs.readFileSync(path.resolve(__dirname,'../rules/original.json'),'utf8'));
   const merged=JSON.parse(fs.readFileSync(mergedPath,'utf8'));
   const fragment=JSON.parse(fs.readFileSync(path.resolve(__dirname,'../rules/pingpong.json'),'utf8'));
   assert.deepEqual(merged.rules.minikPingPong,fragment.rules.minikPingPong);
-  delete supplied.rules.minikPingPong;delete merged.rules.minikPingPong;assert.deepEqual(merged,supplied);
+  for(const root of ["minikPingPong","minikPongTeams"]){delete supplied.rules[root];delete merged.rules[root]}assert.deepEqual(merged,supplied);
 });
 test('collection scans and unknown namespaces denied even to authenticated users',async()=>{
   for(const p of [undefined,'minikPingPong','minikPingPong/profiles','minikPingPong/friendlyRooms','minikPingPong/tournaments','minikPingPong/live','minikPingPong/leaderboard'])await assertFails(db('alice').ref(p).once('value'));
@@ -606,4 +606,41 @@ test('knockout: a bye may repeat next round, but results cannot be rewritten to 
   const sameBye=knockoutDraw(good,['alice','charlie','erin'],1);
   await assertSucceeds(db('charlie').ref(p).set(sameBye));
   await assertFails(db('alice').ref(p).set(good)); // draw frozen after commit
+});
+
+for(const kind of ['friendlyRooms','tournaments'])for(const arena of ['beach','indoors','park','castle']) {
+ test(`${kind}: ${arena} survives joining and is immutable`,async()=>{
+  const r={...room(kind,['alice'],'ARENA2',2),arena},p=`minikPingPong/${kind}/${r.code}`;
+  await reserve('alice',kind,r.code);await reserve('bob',kind,r.code);
+  await assertSucceeds(db('alice').ref(p).set(r));
+  await assertSucceeds(change('bob',p,r=>joined(r,'bob')));
+  assert.equal((await read(p)).arena,arena);
+  for(const who of ['alice','bob']){
+   await assertFails(db(who).ref(p+'/arena').set(arena==='park'?'beach':'park'));
+   await assertFails(db(who).ref(p+'/arena').remove());
+  }
+  await assertSucceeds(db('alice').ref(p).set(schedule(await read(p))));
+  assert.equal((await read(p)).arena,arena);
+ });
+}
+test('unknown arena is rejected when creating a room',async()=>{
+ const r={...room('friendlyRooms',['alice'],'ARENA3',2),arena:'other-app'};
+ await reserve('alice','friendlyRooms',r.code);
+ await assertFails(db('alice').ref('minikPingPong/friendlyRooms/'+r.code).set(r));
+});
+
+test('rank points use the existing own profile; another player can read but cannot write',async()=>{
+ await assertSucceeds(db('alice').ref('minikPingPong/nicknames/GreenFrog').set('alice'));
+ await assertSucceeds(db('alice').ref('minikPingPong/profiles/alice').set({...identity('alice'),name:'GreenFrog',rankPoints:100,rankLevel:0}));
+ await assertSucceeds(db('alice').ref('minikPingPong/profiles/alice/rankPoints').transaction(n=>Math.max(n||0,250)));
+ assert.equal((await db('bob').ref('minikPingPong/profiles/alice/rankPoints').once('value')).val(),250);
+ await assertSucceeds(db('alice').ref('minikPingPong/profiles/alice/rankLevel').set(1));
+ await assertFails(db('bob').ref('minikPingPong/profiles/alice/rankLevel').set(11));
+ await assertFails(db('bob').ref('minikPingPong/profiles/alice/rankPoints').set(999));
+ await assertFails(db().ref('minikPingPong/profiles/alice/rankPoints').once('value'));
+});
+test('replay may create a fresh friendly room with the same house player',async()=>{
+ const r=room('friendlyRooms',['alice','bot_kyra'],'RPLABC',2);r.target=11;r.arena='park';
+ await reserve('alice','friendlyRooms',r.code);
+ await assertSucceeds(db('alice').ref('minikPingPong/friendlyRooms/'+r.code).set(r));
 });

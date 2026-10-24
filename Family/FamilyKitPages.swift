@@ -29,7 +29,8 @@ extension FamilyKit {
 
     /// Android `FamilyTournamentUi.confirmSave`: leaving an unfinished tournament asks Save / Don't save
     /// / Cancel. A raised light panel with a centred title and message and three 64-point buttons (Save
-    /// blue, Don't save red with white text, Cancel lilac). A tap outside does nothing. The host shows
+    /// blue, Don't save red with white text, Cancel lilac; their lettering centred on the raised face, as
+    /// Android binds `FamilyButtonAlignment`). A tap outside does nothing. The host shows
     /// it last in a full-screen `ZStack`, supplies the texts in its own language and hides it in each
     /// callback (Android dismisses the dialog first, then runs Save or Don't save; Cancel only closes).
     struct TournamentExitDialog: View {

@@ -115,7 +115,14 @@ import SpriteKit
         .foregroundStyle(MPStyle.ink).preferredColorScheme(.light)
         .task {
             await model.start(hebrew: he, removeAds: false)
-            if model.experience == .full { model.applyStoreScreenshotScene() }
+            if model.experience == .full {
+                model.applyStoreScreenshotScene()
+                // App Store captures only (multi.avatar): the home page's profile editor, open on the current avatar.
+                if StoreScreenshotScene.name == "multi.avatar" {
+                    avatarIndex = model.identity?.avatar ?? 0; avatarCharacter = model.identity?.characterId ?? "miniko"; profileSaved = false
+                    section = "profile"
+                }
+            }
         }
         .onChange(of: phase) { _, value in model.lifecycle(active: value == .active) }
         .onDisappear { model.close() }
@@ -191,53 +198,63 @@ import SpriteKit
 
     // ---- home -------------------------------------------------------------------------------------------------------------
     private var menu: some View {
-        ScrollView {
-            VStack(spacing: gap) {
-                if model.experience == .simple {
-                    Image("mp_app_icon").resizable().scaledToFit().frame(maxWidth: 220, maxHeight: 220).accessibilityHidden(true).padding(.bottom, 16)
-                    action(t("Learn how to play with Minik", "למדו לשחק עם מיניק"), color: MPStyle.mint) { model.guide() }
-                    controls
-                    carousel
-                    action(t("Start", "מתחילים"), color: MPStyle.blue) { model.startSingle() }
-                } else {
-                    Color.clear.frame(height: heroSpace).padding(.bottom, 24).accessibilityHidden(true)
-                    // Android 5c1aa4d PlayActivity.home: four FamilyMenu sections.
-                    MPXSection(title: t("Start & learn", "מתחילים ולומדים"), color: MPXMenu.learn, preferences: model.preferences, defaultOpen: true) {
-                        action(t("Learn how to play with Minik", "לומדים לשחק עם מיניק"), color: MPXMenu.learn) { model.openCross(learn: true) }
-                        action(t("Daily skill journey", "אתגר יומי"), color: MPXMenu.learn) { model.openJourney(.brief) }
-                        action(t("Nickname & avatar", "כינוי ודמות") + " · " + profileName, color: MPXMenu.learn) {
-                            if section != "profile" {
-                                avatarIndex = model.identity?.avatar ?? 0; avatarCharacter = model.identity?.characterId ?? "miniko"; profileSaved = false
-                            }
-                            section = section == "profile" ? nil : "profile"
-                        }.accessibilityLabel(t("Choose your nickname and avatar", "בחירת כינוי ודמות"))
-                        if section == "profile" { profileEditor }
+        ScrollViewReader { reader in
+            ScrollView {
+                VStack(spacing: gap) {
+                    if model.experience == .simple {
+                        Image("mpx_app_icon").resizable().scaledToFit().frame(maxWidth: 220, maxHeight: 220).accessibilityHidden(true).padding(.bottom, 16)
+                        action(t("Learn how to play with Minik", "למדו לשחק עם מיניק"), color: MPStyle.mint) { model.guide() }
+                        controls
+                        carousel
+                        action(t("Start", "מתחילים"), color: MPStyle.blue) { model.startSingle() }
+                    } else {
+                        Color.clear.frame(height: heroSpace).padding(.bottom, 24).accessibilityHidden(true)
+                        // Android 5c1aa4d PlayActivity.home: four FamilyMenu sections.
+                        MPXSection(title: t("Start & learn", "מתחילים ולומדים"), color: MPXMenu.learn, preferences: model.preferences, defaultOpen: true) {
+                            action(t("Learn how to play with Minik", "לומדים לשחק עם מיניק"), color: MPXMenu.learn) { model.openCross(learn: true) }
+                            action(t("Daily skill journey", "אתגר יומי"), color: MPXMenu.learn) { model.openJourney(.brief) }
+                            action(t("Nickname & avatar", "כינוי ודמות") + " · " + profileName, color: MPXMenu.learn) {
+                                if section != "profile" {
+                                    avatarIndex = model.identity?.avatar ?? 0; avatarCharacter = model.identity?.characterId ?? "miniko"; profileSaved = false
+                                }
+                                section = section == "profile" ? nil : "profile"
+                            }.accessibilityLabel(t("Choose your nickname and avatar", "בחירת כינוי ודמות"))
+                            if section == "profile" { profileEditor }
+                        }
+                        MPXSection(title: t("Play", "משחקים"), color: MPXMenu.play, preferences: model.preferences, defaultOpen: true) {
+                            expandHeader(t("New friendly game", "משחק ידידות חדש"), open: section == "friendly", fill: MPXMenu.play) { section = section == "friendly" ? nil : "friendly" }
+                            if section == "friendly" { createForm(.friendly) }
+                            expandHeader(t("New tournament", "טורניר חדש"), open: section == "tournament", fill: MPXMenu.play) { section = section == "tournament" ? nil : "tournament" }
+                            if section == "tournament" { tournamentEntry }
+                        }
+                        MPXSection(title: t("Saved games", "משחקים שמורים"), color: MPXMenu.saved, preferences: model.preferences, defaultOpen: false) {
+                            roomSection(.friendly)
+                            roomSection(.tournament)
+                        }
+                        MPXSection(title: t("Advanced", "מתקדם"), color: MPXMenu.advanced, preferences: model.preferences, defaultOpen: false) {
+                            action(t("Settings · Feedback & sharing", "הגדרות · משוב ושיתוף"), color: MPXMenu.advanced) { model.openJourney(.settings) }
+                            // Android PlayActivity (Advanced): "More Minik apps & games" as a link, behind the family grown-up gate.
+                            MPXLink(title: FamilyMessages.text("More Minik apps & games", "עוד אפליקציות ומשחקי מיניק")) { FamilyMessages.shared.showMoreApps(gate: nil) }
+                        }
+                        if model.online {
+                            if model.connecting { ProgressView(t("Connecting…", "מתחברים…")) }
+                            else if !model.connected { Button(t("Retry online connection", "נסו להתחבר שוב")) { Task { await model.retryOnline(removeAds: false) } }.font(.headline).padding(12) }
+                        }
                     }
-                    MPXSection(title: t("Play", "משחקים"), color: MPXMenu.play, preferences: model.preferences, defaultOpen: true) {
-                        expandHeader(t("New friendly game", "משחק ידידות חדש"), open: section == "friendly", fill: MPXMenu.play) { section = section == "friendly" ? nil : "friendly" }
-                        if section == "friendly" { createForm(.friendly) }
-                        expandHeader(t("New tournament", "טורניר חדש"), open: section == "tournament", fill: MPXMenu.play) { section = section == "tournament" ? nil : "tournament" }
-                        if section == "tournament" { tournamentEntry }
-                    }
-                    MPXSection(title: t("Saved games", "משחקים שמורים"), color: MPXMenu.saved, preferences: model.preferences, defaultOpen: false) {
-                        roomSection(.friendly)
-                        roomSection(.tournament)
-                    }
-                    MPXSection(title: t("Advanced", "מתקדם"), color: MPXMenu.advanced, preferences: model.preferences, defaultOpen: false) {
-                        action(t("Settings · Feedback & sharing", "הגדרות · משוב ושיתוף"), color: MPXMenu.advanced) { model.openJourney(.settings) }
-                        // Android PlayActivity (Advanced): "More Minik apps & games" as a link, behind the family grown-up gate.
-                        MPXLink(title: FamilyMessages.text("More Minik apps & games", "עוד אפליקציות ומשחקי מיניק")) { FamilyMessages.shared.showMoreApps(gate: nil) }
-                    }
-                    if model.online {
-                        if model.connecting { ProgressView(t("Connecting…", "מתחברים…")) }
-                        else if !model.connected { Button(t("Retry online connection", "נסו להתחבר שוב")) { Task { await model.retryOnline(removeAds: false) } }.font(.headline).padding(12) }
-                    }
+                    if model.busy { ProgressView().accessibilityLabel(t("Loading", "טוען")) }
+                }.frame(maxWidth: 560).padding(.horizontal, 20).padding(.bottom, 28).frame(maxWidth: .infinity)
+            }
+            .scrollDismissesKeyboard(.interactively)
+            .onAppear { loadForms() }
+            // App Store captures only (multi.avatar): the avatar choice of the opened profile editor in view.
+            .onChange(of: section) { _, open in
+                guard open == "profile", StoreScreenshotScene.name == "multi.avatar" else { return }
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 400_000_000)
+                    reader.scrollTo(MPStoreScreenshot.avatarAnchor, anchor: .top)
                 }
-                if model.busy { ProgressView().accessibilityLabel(t("Loading", "טוען")) }
-            }.frame(maxWidth: 560).padding(.horizontal, 20).padding(.bottom, 28).frame(maxWidth: .infinity)
+            }
         }
-        .scrollDismissesKeyboard(.interactively)
-        .onAppear { loadForms() }
     }
     private func loadForms() {
         guard !formsLoaded else { return }
@@ -351,7 +368,7 @@ import SpriteKit
                     .foregroundStyle(MPStyle.pink).background(MPStyle.lilac, in: RoundedRectangle(cornerRadius: 12)).accessibilityLabel(t("Next nickname", "הכינוי הבא"))
             }.environment(\.layoutDirection, .leftToRight)
             Text(t("Choose a playful name. Character names match your avatar. A number is added only if the name is already taken.", "בחרו כינוי חמוד. שם הדמות הוא חלק מהכינוי. מספר יתווסף רק אם הכינוי כבר תפוס.")).font(.footnote).multilineTextAlignment(.center)
-            Text(t("Choose your avatar", "בחרו את הדמות שלכם")).font(.title3.bold())
+            Text(t("Choose your avatar", "בחרו את הדמות שלכם")).font(.title3.bold()).id(MPStoreScreenshot.avatarAnchor)
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 12) {
                 ForEach(MPRoster.all) { player in
                     Button { avatarCharacter = player.id; profileSaved = false } label: {
@@ -659,7 +676,7 @@ import SpriteKit
     }
     @ViewBuilder private var guideCourt: some View {
         if let scene = model.scene { SpriteView(scene: scene).id(ObjectIdentifier(scene)).clipShape(RoundedRectangle(cornerRadius: 16)).allowsHitTesting(model.tutorialPhase == .attempt) }
-        else { Image("mp_minik_motion_ready").resizable().scaledToFit().frame(maxHeight: 220).accessibilityHidden(true) }
+        else { Image("mpx_minik_motion_ready").resizable().scaledToFit().frame(maxHeight: 220).accessibilityHidden(true) }
     }
     private var guideControls: some View {
         VStack(spacing: 12) {
@@ -756,7 +773,7 @@ struct MPAvatar: View {
         Group {
             // Android BotPortrait (5c1aa4d): the character's first standing pose.
             if let pose = MPXPortrait.image(character) { Image(uiImage: pose).resizable().scaledToFit() }
-            else if character == "minik" { Image("mp_minik_motion_ready").resizable().scaledToFit() }
+            else if character == "minik" { Image("mpx_minik_motion_ready").resizable().scaledToFit() }
             else if let image = Self.image(character) { Image(uiImage: image).resizable().scaledToFit() }
             else { Text(MPNames.icons[max(0, icon) % MPNames.icons.count]).font(.system(size: 48)) }
         }.accessibilityHidden(true)

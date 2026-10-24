@@ -85,7 +85,8 @@ import Foundation
         if authority && (contact || engine.score.rallies != lastRallies || engine.awaitingServe != lastAwaiting || ready && now - lastCheckpoint >= interval) { checkpoint() }
         lastRallies = engine.score.rallies; lastAwaiting = engine.awaitingServe
         if authority && engine.score.winner != nil && !finalQueued { checkpoint() }
-        if authority && engine.score.winner != nil && finalSaved && !busy && pending == nil && !saving && now - lastSave > 1500 {
+        // Android MatchLink (920caca): the final save also waits for the loose ball to come to rest.
+        if authority && engine.score.winner != nil && finalSaved && !engine.settlingBall && !busy && pending == nil && !saving && now - lastSave > 1500 {
             saving = true; lastSave = now
             let a = record.a == repo.uid ? engine.score.child : engine.score.minik, b = record.a == repo.uid ? engine.score.minik : engine.score.child
             let actor = repo.uid, id = record.id

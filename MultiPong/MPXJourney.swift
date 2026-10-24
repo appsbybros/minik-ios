@@ -110,17 +110,18 @@ struct MPXJourneyResult: Equatable {
         ids[place] = id
         return true
     }
-    func startTeamMatch() {
-        startMatch(twoOpponents ? [ids[0], ids[2], ids[1], ids[3]] : [ids[0], ids[2], ids[1]])
+    /// `seed` and `firstServer` are for App Store captures only (MPStoreScreenshot); players get a fresh seed and serve first.
+    func startTeamMatch(seed: Int64? = nil, firstServer: Int = 0) {
+        startMatch(twoOpponents ? [ids[0], ids[2], ids[1], ids[3]] : [ids[0], ids[2], ids[1]], seed: seed, firstServer: firstServer)
     }
-    private func startMatch(_ order: [String]) {
+    private func startMatch(_ order: [String], seed: Int64? = nil, firstServer: Int = 0) {
         let seats = order.enumerated().map { item -> CrossSeat in
             let c = MPRoster.find(item.element) ?? MPRoster.all[0]
             return CrossSeat(index: item.offset, kind: item.offset == 0 ? .local : .house, id: "seat\(item.offset)", name: c.name(hebrew: hebrew),
                              bot: item.offset == 0 ? nil : c.profile, characterId: item.element)
         }
         practice = nil
-        match = CrossEngine(seats: seats, control: .beginner, target: 7, seed: MPClock.now,
+        match = CrossEngine(seats: seats, control: .beginner, target: 7, seed: seed ?? MPClock.now, firstServer: firstServer,
                             teams: CrossTeams(order.indices.map { $0 == 0 || $0 == 2 ? 0 : 1 }), tapTargets: true)
         gamePage()
     }

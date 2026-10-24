@@ -1,6 +1,21 @@
-# Modern Ping Pong iOS implementation — 2026-09-28, updated 2026-10-13
+# Modern Ping Pong iOS implementation — 2026-09-28, updated 2026-10-24
 
 **Implemented in source only. Nothing in this document has been compiled, run in a Simulator or on a device, or played between iOS and Android. The Windows source audit and the local-emulator Firebase rules tests pass. An Apple build and native runtime verification are still required. No IPA was produced.**
+
+## 2026-10-24 sync: Android commit `29f5dc7`
+
+iOS now matches Android MinikPingPong `29f5dc7` (50 commits after `739f2f8`; store captures, QA reports, docs and version bumps are not app code). Type-checked on Windows against the iOS 26.5 SDK (0 errors in MinikPingPong, ProductConfigurationTests, MinikMultiPingPong, MultiPongTests, MinikMathPlus, MinikPlus, MinikPlusEnglish); **no XCTest, Simulator, device or iOS↔Android session has been run**.
+
+Ported:
+- **Physics** (`MPPhysics.swift`, `MPPongStroke.swift`, `MPTableMotion.swift`): eleven-point matches for every level, Android serve order, Standard swipe shots, assisted tap landings, poor house returns go wide, risky extreme-zone tap serves, Pro topspin/sidespin (`PongStroke`, `PongSpinShot`; flight wire keys `top`/`angle`), finite-radius table edges, loose ball after every point, near-player projection, return placement, serve difficulty, gait.
+- **Singles court** (`MPEngine.swift`, `MPScene.swift`, `MPLargeMatch.swift`, `MPSinglesArt.swift`): four arenas (Beach and Castle keep the compact table, Indoors and Park use the daily table through `LargeMatchRenderer`), your own avatar from behind in Standard/Pro, relative footwork drags, Standard swipe and buffered taps at the baseline, Starter's earlier preparation, Pro gesture strokes, held serve ball hidden, names beside players, spin stripe, castle foliage, landscape framing. Guide: topspin and sidespin lessons (11), new demonstrations. Rank cues `rank_trumpet`/`rank_win`/`rank_big_win`.
+- **Team and daily journey** (`MPPlay.swift`, `MPTeamMovement.swift`, `MPPracticeView.swift`, `MPPracticeTable.swift`, `MPJourneyView.swift`, `MPOnlineTeamsView.swift`, `MPTeam.swift`, `MPTeamRoom.swift`): 34 stages (Pro spin, Standard swipe/pace) with catalogue migration, per-seat controls, diagonal serving and wrong-half faults, yielding/retreating teammates with swept collisions, reachable visible-paddle contacts, arenas, team colours, result and instruction pages, control/arena on team setup and online rooms (`meta.arena`, `stroke`/`control` inputs as Android).
+- **Rooms, menus and ranking** (`ModernPongView.swift`, `MPController.swift`, `MPRepository.swift`, `MPMultiplayerModels.swift`, `MPRanking.swift`, `MPArena.swift`, `MPRoomsViews.swift`, `MPRankViews.swift`, `MPMatchResultView.swift`, `MPColorChallengeView.swift`): room `arena` (immutable, written only when set), Starter control (4-way choice), friendly setup page with replay, tournament standings with scored/conceded/difference, podium and fixtures expander, rank colours and the Color Challenge (twelve ranks, qualification streaks, champions, promotion celebration) with `rankPoints`/`rankLevel` on the profile, result panel, landscape HUD and help tips, Mega Minik / Mega Miniko.
+- **Art and sounds**: arena backgrounds (`Resources/ModernPongArt/arenas`, standalone only), redrawn Minik frames and pose atlases (Multi Ping Pong keeps the old frames as `mpx_*`), rank sounds. Firebase rules copies and tests equal Android `29f5dc7` (local emulator: 76 passed).
+
+Deliberate differences / not ported: Android-only label-centering helpers (`PongButton`, `PongRaisedLabel`, `PongControlLayout`, SettingSelector chevron, ExpandButton lettering); `ic_back_bold` (no iOS equivalent); device-test hooks; in iOS a friendly match against a house player stays a local match (Android creates a local room) — ranking pays the same; team courts draw the arena behind the court view, so the castle foliage, camera-synchronised scenery and gutter name labels are singles-only.
+
+Verification: `Scripts/audit-modern-pong.py` PASS (247 checks; it now also checks that every Android file it reads equals its committed blob at `29f5dc7`); `Scripts/audit-multi-pong.py` OK. New/updated XCTests (`ModernPongFoundationTests`, `ModernPongParityTests`, `ModernPongTeamsTests`, `ModernPongRoomsTests`) pin values from the compiled Android 29f5dc7 classes — authored, not executed.
 
 ## 2026-10-13 sync: Android commit `739f2f8`
 

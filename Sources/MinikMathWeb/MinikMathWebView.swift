@@ -28,6 +28,14 @@ struct MinikMathWebView: UIViewRepresentable {
             injectionTime: .atDocumentStart,
             forMainFrameOnly: true
         ))
+        // App Store captures only (-MinikScreenshotScene web.<scene>); never added for players.
+        if let screenshot = MinikMathWebScreenshot.script {
+            config.userContentController.addUserScript(WKUserScript(
+                source: screenshot,
+                injectionTime: .atDocumentStart,
+                forMainFrameOnly: true
+            ))
+        }
         config.userContentController.add(context.coordinator, name: MinikMathWebBridge.handlerName)
         let web = WKWebView(frame: .zero, configuration: config)
         web.isOpaque = false

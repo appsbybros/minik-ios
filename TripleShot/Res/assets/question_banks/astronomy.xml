@@ -1,0 +1,99 @@
+<?xml version='1.0' encoding='utf-8'?>
+<question-bank version="1" mode="ASTRONOMY" language="he">
+  <question id="astronomy_001" level="1">
+    <prompt lang="he">איזה כוכב לכת הוא הקרוב ביותר לשמש?</prompt>
+    <answer correct="false">מאדים</answer>
+    <answer correct="false">נוגה</answer>
+    <answer correct="false">כדור הארץ</answer>
+    <answer correct="true">כוכב חמה</answer>
+    <explanation lang="he">כוכב חמה הוא כוכב הלכת הפנימי ביותר.</explanation>
+  </question>
+  <question id="astronomy_002" level="1">
+    <prompt lang="he">איזה כוכב לכת הוא הגדול במערכת השמש?</prompt>
+    <answer correct="false">שבתאי</answer>
+    <answer correct="false">כדור הארץ</answer>
+    <answer correct="false">נפטון</answer>
+    <answer correct="true">צדק</answer>
+    <explanation lang="he">צדק הוא הגדול בכוכבי הלכת.</explanation>
+  </question>
+  <question id="astronomy_003" level="1">
+    <prompt lang="he">מהו הגוף שבמרכז מערכת השמש?</prompt>
+    <answer correct="false">הירח</answer>
+    <answer correct="false">צדק</answer>
+    <answer correct="false">כדור הארץ</answer>
+    <answer correct="true">השמש</answer>
+    <explanation lang="he">כוכבי הלכת מקיפים את השמש.</explanation>
+  </question>
+  <question id="astronomy_004" level="2">
+    <prompt lang="he">מה גורם בעיקר לעונות השנה בכדור הארץ?</prompt>
+    <answer correct="true">נטיית ציר כדור הארץ ביחס למסלולו</answer>
+    <answer correct="false">הירח</answer>
+    <answer correct="false">המרחק המשתנה מהשמש בלבד</answer>
+    <answer correct="false">כתמי שמש</answer>
+    <explanation lang="he">נטיית הציר משנה את זווית ועוצמת הקרינה במהלך השנה.</explanation>
+  </question>
+  <question id="astronomy_005" level="4">
+    <prompt lang="he">מהו כוכב נויטרונים?</prompt>
+    <answer correct="false">כוכב לכת עשוי נויטרונים</answer>
+    <answer correct="false">ענן גז קר</answer>
+    <answer correct="false">חור שחור קטן</answer>
+    <answer correct="true">שריד צפוף מאוד של כוכב מסיבי שקרס</answer>
+    <explanation lang="he">לאחר סופרנובה ליבת כוכב מסיבי יכולה להפוך לכוכב נויטרונים.</explanation>
+  </question>
+  <question id="astronomy_006" level="1">
+    <prompt lang="he">מהו אירוע שבו הירח עובר בין כדור הארץ לשמש ומסתיר אותה?</prompt>
+    <answer correct="false">יום שוויון</answer>
+    <answer correct="true">ליקוי חמה</answer>
+    <answer correct="false">ליקוי ירח</answer>
+    <answer correct="false">מטר מטאורים</answer>
+    <explanation lang="he">בליקוי חמה הירח חוסם חלק מאור השמש לצופה בכדור הארץ.</explanation>
+  </question>
+  <question id="astronomy_007" level="1">
+    <prompt lang="he">איזו גלקסיה מכילה את מערכת השמש?</prompt>
+    <answer correct="false">גלקסיית המשולש</answer>
+    <answer correct="true">שביל החלב</answer>
+    <answer correct="false">אנדרומדה</answer>
+    <answer correct="false">ענן מגלן הגדול</answer>
+    <explanation lang="he">מערכת השמש נמצאת בשביל החלב.</explanation>
+  </question>
+  <question id="astronomy_008" level="2">
+    <prompt lang="he">מהו שנת אור?</prompt>
+    <answer correct="true">יחידת מרחק</answer>
+    <answer correct="false">יחידת בהירות</answer>
+    <answer correct="false">יחידת מסה</answer>
+    <answer correct="false">יחידת זמן</answer>
+    <explanation lang="he">שנת אור היא המרחק שאור עובר בשנה.</explanation>
+  </question>
+  <question id="astronomy_009" level="1">
+    <prompt lang="he">איזה כוכב לכת מפורסם במערכת הטבעות הבולטת שלו?</prompt>
+    <answer correct="false">נוגה</answer>
+    <answer correct="false">מאדים</answer>
+    <answer correct="false">כוכב חמה</answer>
+    <answer correct="true">שבתאי</answer>
+    <explanation lang="he">לכמה ענקי גז יש טבעות, אך של שבתאי הן הבולטות ביותר.</explanation>
+  </question>
+  <question id="astronomy_010" level="4">
+    <prompt lang="he">מהו אופק האירועים של חור שחור?</prompt>
+    <answer correct="false">אזור ללא כבידה</answer>
+    <answer correct="false">המרכז המוצק של החור השחור</answer>
+    <answer correct="false">טבעת של כוכבי לכת</answer>
+    <answer correct="true">גבול שממנו אפילו אור אינו יכול להימלט החוצה</answer>
+    <explanation lang="he">אופק האירועים הוא גבול סיבתי סביב החור השחור.</explanation>
+  </question>
+  <question id="astronomy_011" level="3">
+    <prompt lang="he">למה כוכבים נראים מנצנצים יותר מכוכבי לכת?</prompt>
+    <answer correct="false">כוכבים נכבים ונדלקים</answer>
+    <answer correct="false">הירח מחזיר את אורם</answer>
+    <answer correct="false">כוכבי לכת מאירים בעצמם</answer>
+    <answer correct="true">האטמוספרה משנה את נתיב האור ממקור נקודתי</answer>
+    <explanation lang="he">טורבולנציה אטמוספרית משפיעה במיוחד על מקורות נקודתיים רחוקים.</explanation>
+  </question>
+  <question id="astronomy_012" level="2">
+    <prompt lang="he">מהי סופרנובה?</prompt>
+    <answer correct="false">ליקוי חמה מלא</answer>
+    <answer correct="false">שביט קצר מחזור</answer>
+    <answer correct="true">התפוצצות כוכבית עוצמתית</answer>
+    <answer correct="false">סוג של כוכב לכת</answer>
+    <explanation lang="he">סופרנובות הן אירועי סוף-חיים מסוימים של כוכבים או מערכות כוכביות.</explanation>
+  </question>
+</question-bank>

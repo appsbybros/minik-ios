@@ -103,13 +103,25 @@ final class MPTeamAuthority {
               Set(seats.values) == game.humanSeats else { throw MPError.permission }
         self.game = game; self.seats = seats
     }
-    @discardableResult func receive(_ uid: String, sequence: Int64, kind: String, x: Double, y: Double) -> Bool {
+    /// Android 22f756e: `stroke` carries a Pro/Standard gesture `{aim, power, top, side}`; `control` (0, 1, 3 or 4)
+    /// switches the sender's seat to their chosen control level. Both are only sent to a room whose snapshots
+    /// advertise `spinControls`.
+    @discardableResult func receive(_ uid: String, sequence: Int64, kind: String, x: Double, y: Double, control: Int? = nil, stroke: MPPongStroke? = nil) -> Bool {
         guard let seat = seats[uid] else { return false }
-        if sequence <= 0 || sequence <= (seen[uid] ?? 0) || (kind != "move" && kind != "tap") { return false }
+        if sequence <= 0 || sequence <= (seen[uid] ?? 0) || !["move", "tap", "stroke", "control"].contains(kind) { return false }
         if !x.isFinite || !y.isFinite || x < 0 || x > 1 || y < 0 || y > 1 { return false }
+        if let control, ![0, 1, 3, 4].contains(control) { return false }
+        if let stroke, !stroke.valid { return false }
+        if kind == "stroke" && stroke == nil { return false }
         if game.paused || game.ended { return false }
         seen[uid] = sequence
-        if kind == "move" { game.moveSeat(seat, .init(x, y)) } else { game.tapSeat(seat, .init(x, y)) }
+        if let control { game.controls[seat] = control }
+        switch kind {
+        case "move": game.moveSeat(seat, .init(x, y))
+        case "tap": game.tapSeat(seat, .init(x, y))
+        case "stroke": if let stroke { game.strokeSeat(seat, stroke) }
+        default: break
+        }
         return true
     }
     func checkpoint() -> MPWire {
@@ -118,7 +130,7 @@ final class MPTeamAuthority {
         for (uid, sequence) in seen { acknowledged[uid] = NSNumber(value: sequence) }
         var positions: MPWire = [:]
         for (uid, seat) in seats { positions[uid] = seat }
-        return ["protocol": MPTeamAuthority.protocolName, "revision": NSNumber(value: revision), "seats": positions, "seen": acknowledged, "game": game.save()]
+        return ["spinControls": 1, "protocol": MPTeamAuthority.protocolName, "revision": NSNumber(value: revision), "seats": positions, "seen": acknowledged, "game": game.save()]
     }
     static func restore(_ w: MPWire, expectedSeats: [String: Int]) throws -> MPTeamAuthority {
         guard w["protocol"] as? String == protocolName else { throw MPError.configuration }

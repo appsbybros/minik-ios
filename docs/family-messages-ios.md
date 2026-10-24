@@ -4,6 +4,28 @@ Port of the shared Android module `C:\Projects\MinikFamilyServices` (FamilyCatal
 FamilyMessages, FamilyText, FamilyAdultGate) to `Family/`, used by every iPhone app whose Android twin
 hosts it, plus `FamilyKit` (below), the shared SwiftUI look of the Android family UI classes.
 
+## 2026-10-24 sync
+
+iOS matches MinikFamilyServices `31e380d` (from `dcfdd13`: `82e8721`, `514b7cf`, `69ba3d0`, `2e1f428`,
+`8323ba0`, `2f75e98`, `6a27708`, `31e380d`). The catalogue, art, texts and message policy did not change.
+
+- Raised-button lettering (`FamilyButtonAlignment`, new): `FamilyKit.RaisedLettering` measures the ink
+  of the label's own shaped text (`Text.LayoutKey`, drawn into a mask as Android rasterises its
+  `Layout`) and moves the letters, by a translation, to the centre of the raised face below the upper
+  gloss (`SkyLook.textFaceRect`, Android `copyTextFaceBounds`) plus 3 points; the face follows the
+  press. `FamilyKit.Lettering.fullRaisedFace = true` is Android `useFullRaisedFace(true)` (the whole
+  face, `SkyLook.faceRect` / `copyFaceBounds`). `SkyButtonStyle` (not on panels) and `MenuButtonStyle`
+  apply it, as Android binds `FamilySkyUi.button`, `FamilyMenu.style`, sky dialog buttons, the
+  tournament exit buttons and every Button on a `FamilySkyDrawable`.
+- Family card: no dialog button any more; "Keep playing" is a full-width flat mint (`#C8F1E6`)
+  52-point button at the end of the card's box, 16 points below the links. Link buttons are 12 points
+  apart, have no side padding and their text sits 1.5 points above centre; 10 points below the eyebrow
+  and 12 below the art; the box has 16 points of padding at the top and 20 at the bottom.
+- Not ported: `FamilyButtonAlignmentDeviceTest`, the QA reports and the QA skill (Android device QA).
+  The apps' own sky copies (`Amudu/UI/SkySurface.swift`, `Splash/App/SplashSky.swift`,
+  `Sports/App/SportsSky.swift`) are app code, not `Family/`; they can apply `FamilyKit.RaisedLettering`
+  to their labels.
+
 ## 2026-10-13 sync
 
 iOS matches MinikFamilyServices `dcfdd13` (the code is `ee0505d`; `dcfdd13` adds only docs and the QA
@@ -52,20 +74,24 @@ message policy and its test were already as ported on the morning of 13 October.
 | Minik Ping Pong | PlayActivity Advanced link; AdCoordinator promotion and idle-menu reminder | Link above "Parents / adults"; promotion in `MPAds.completed`; reminder 1.5 s after the home appears |
 | Multi Ping Pong | PlayActivity Advanced link (ads off) | Link at the end of the home |
 | Spud, Splash, Minik Squash, Minik Beach Volley | Home "Advanced" link (FamilyMenu.organize), the app's own parent gate | Same, with the app's own gate; no ads, so no promotion or reminder |
+| Triple Shot | "More Minik apps & games" button on the skill journey's settings page (BasketballJourneyActivity) behind FamilyAdultGate; the Home sections and info link use FamilyMenu | Same page, button and gate through `FamilyBridge.showMoreApps` (`TripleShot/Family/FamilyBridge.swift`); no ads, so no promotion or reminder |
 | Minik Retro Ping Pong (Bounce & Learn) | AdCoordinator promotion and idle-menu reminder; "More Minik apps & games" in the parents page (MonetizationActivity) | Link in the parents page; promotion through `MinikFamilyAdBreak`; idle-menu reminder |
 | Minik Math (web app) | none | none |
 
 `FamilyOverlay()` sits above each app's root view (the Minik apps: `RootView`; a second copy above the
 Minik Parent Area sheet shows cards opened there). Only the overlay that appeared last draws the card,
 gate and reminder, so a card is never drawn twice. In Spud, Splash and the sports apps the overlay sits
-under the app's own grown-up gate and toasts, which the card's links open. Each app names its catalogue key in Info.plist
-(`MinikFamilyCatalogKey`: minik, math-plus, pong, multiplayer, spud, splash, squash, volley, bounce) so it never
+under the app's own grown-up gate and toasts, which the card's links open. Triple Shot, whose screens are the
+translated Android views, shows its one `FamilyOverlay` in a hosting controller above its activities and dialogs
+and below its toasts. Each app names its catalogue key in Info.plist
+(`MinikFamilyCatalogKey`: minik, math-plus, pong, multiplayer, spud, splash, squash, volley, bounce, tripleshot) so it never
 promotes itself.
 
 ## Differences from Android
 
 - "More Minik apps & games" is always a quiet underlined link (Android `FamilyMenu.link`, `FamilyMenuLink`
   on iOS), never a regular app button, also in Minik Plus and Math Plus, where Android uses buttons.
+  Triple Shot, a line-by-line port of its Android views, keeps Android's button.
 - No "View on Google Play" button on iOS.
 - The app is recognised by its catalogue key instead of Android package names and aliases.
 - The cadence is stored as JSON in UserDefaults (`minik_family_messages.cadence`) instead of Java
@@ -74,10 +100,10 @@ promotes itself.
   `Family/FamilyArt.xcassets` as `family-<name>`; only the apps that show the card bundle it.
 - Languages, as on Android: Minik Plus and Math Plus use their in-app interface language; Minik Ping
   Pong is English, or Hebrew on a Hebrew device; Multi Ping Pong, Spud, Splash and the sports apps use
-  their app language.
+  their app language; Triple Shot never sets one, so its family texts follow the device language.
 - The grown-up gate accepts any Unicode decimal digits, like Java's `Integer.parseInt`, and asks for
   an ASCII number pad.
-- The card's lilac content box has rounded top corners inside the 24-point sky panel (Android's
+- The card's lilac content box has rounded corners inside the 24-point sky panel (Android's
   rectangular content view leaves square corners over the rounded window).
 - The "More below" arrow is the SF Symbol `chevron.down` (Android draws the "⌄" character).
 - Android Squash/Volley label the menu entry with the sports `tr()` text, which has no translation in
@@ -94,6 +120,7 @@ Android ARGB `UInt32` values. The apps call them where their Android twin uses t
 | --- | --- | --- |
 | `FamilySkyDrawable` | `FamilyKit.SkySurface(color:cornerRadius:panel:pressed:strokeWidth:strokeColor:faceColors:)` as a background; `FamilyKit.Sky.palette`, `.blend`, `.isPanelColor` | Squash/Volley, Splash and Spud `bg()` (panel for white, `#F5F7FD`, `#F6F8FF`); Spud PictureChoices; Pong and Multi Pong `surface()`, SettingSelector, TeamLobbyCards, KnockoutBracketView |
 | `FamilySkyUi.button` | `.buttonStyle(FamilyKit.SkyButtonStyle(color:cornerRadius:panel:))` | buttons on sky faces |
+| `FamilyButtonAlignment` | built into `SkyButtonStyle` and `MenuButtonStyle`; `.modifier(FamilyKit.RaisedLettering(cornerRadius:pressed:))` on a label before its `SkySurface` background; `FamilyKit.Lettering.fullRaisedFace` | every Button on a `FamilySkyDrawable`; Spinner labels (`bind(text, surface)`); `useFullRaisedFace` per app |
 | `FamilySkyUi.dialog` | `FamilyKit.SkyDialog { ... }` with `FamilyKit.SkyDialogButton(_:role:textColor:uppercase:action:)` | Splash and Spud `GameDialogBuilder`; the family dialogs (done) |
 | `FamilyMenu.section`, `.style`, colours | `FamilyKit.MenuSection(_:color:open:toggle:content:)`, `.buttonStyle(FamilyKit.MenuButtonStyle(color:))`, `FamilyKit.MenuColor` | Squash/Volley, Splash, Spud (`organize`); Pong and Multi Pong `menuSection` (Pong then repaints the panel dark with white headings) |
 | `FamilyMenu.link` | `FamilyMenuLink(title:action:)` (unchanged) | every app |

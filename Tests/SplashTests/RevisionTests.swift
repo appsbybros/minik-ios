@@ -185,9 +185,12 @@ final class RevisionTests: XCTestCase {
         send(e, .walkTo(V(9, 7)))
         let restored = engine()
         WorldCodec.restore(restored, WorldCodec.checkpoint(e))
-        XCTAssertEqual(restored.actor("a")!.settings, s)
+        // Every battle has a court now: "court" always travels and restores as true.
+        var withCourt = s
+        withCourt.court = true
+        XCTAssertEqual(restored.actor("a")!.settings, withCourt)
         XCTAssertEqual(restored.actor("a")!.walkTarget, V(9, 7))
-        XCTAssertEqual(WorldCodec.member("a", WorldCodec.member(e.members[0])).settings, s)
+        XCTAssertEqual(WorldCodec.member("a", WorldCodec.member(e.members[0])).settings, withCourt)
     }
 
     func testNewCommandsRoundTrip() {

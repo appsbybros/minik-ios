@@ -7,7 +7,7 @@ let env;
 const root='minikPongTeams/rooms/QA2345';
 const db=u=>env.authenticatedContext(u).database();
 const value=()=>({meta:{host:'host',protocol:'pong-doubles-v1',mode:'ALTERNATE',humans:{0:true,2:true},roster:['miniko','minik','mia','june'],createdAt:serverTimestamp()},phase:'lobby',seats:{0:'host'},ready:{host:false}});
-test.before(async()=>{assert.match(process.env.FIREBASE_DATABASE_EMULATOR_HOST||'',/^127\.0\.0\.1:[0-9]+$/,'Explicit local emulator required');env=await initializeTestEnvironment({projectId:'demo-pong-team-rules',database:{host:'127.0.0.1',port:Number(process.env.FIREBASE_DATABASE_EMULATOR_HOST.split(':')[1]),rules:fs.readFileSync(__dirname+'/../rules/pong-team.json','utf8')}});await env.clearDatabase()});
+test.before(async()=>{assert.match(process.env.FIREBASE_DATABASE_EMULATOR_HOST||'',/^127\.0\.0\.1:[0-9]+$/,'Explicit local emulator required');env=await initializeTestEnvironment({projectId:'demo-pong-team-rules',database:{host:'127.0.0.1',port:Number(process.env.FIREBASE_DATABASE_EMULATOR_HOST.split(':')[1]),rules:fs.readFileSync(process.env.PINGPONG_RULES_FILE||__dirname+'/../rules/pong-team.json','utf8')}});await env.clearDatabase()});
 test.after(async()=>env.cleanup());
 test('invited seats, ready gate, authority, inputs and immutable configuration',async()=>{
  await yes(set(ref(db('host'),root),value()));
@@ -38,6 +38,17 @@ test('invited seats, ready gate, authority, inputs and immutable configuration',
  await no(set(ref(db('guest'),root+'/inputs/guest/0000000000000002'),{...command,seq:2,kind:'score'}));
  await no(set(ref(db('guest'),root+'/inputs/guest/0000000000000002'),{...command,seq:2,score:7}));
  await no(set(ref(db('guest'),root+'/ready/guest'),false));
+ const ext=root+'/inputs/guest/0000000000000009';
+ await no(set(ref(db('guest'),ext),{...command,seq:9,kind:'stroke'}));
+ await no(set(ref(db('guest'),ext),{...command,seq:9,kind:'control',control:2}));
+ const spin={...command,seq:9,kind:'stroke',control:3,stroke:{aim:1,power:.8,top:.4,side:-.9}};
+ await no(set(ref(db('guest'),ext),{...spin,stroke:{...spin.stroke,power:2}}));
+ await no(set(ref(db('guest'),ext),{...spin,stroke:{...spin.stroke,score:7}}));
+ await no(set(ref(db('outsider'),ext),spin));
+ await no(set(ref(db('host'),ext),spin));
+ await yes(set(ref(db('guest'),ext),spin));
+ await yes(set(ref(db('guest'),root+'/inputs/guest/0000000000000010'),{...command,seq:10,kind:'control',control:4}));
+ await yes(set(ref(db('guest'),root+'/inputs/guest/0000000000000011'),{...command,seq:11,kind:'control',control:1}));
  await yes(remove(ref(db('host'),commandPath)));
  await no(remove(ref(db('host'),root+'/seats/2')));
  await no(update(ref(db('guest'),root),{phase:'finished',result:{left:7,right:3,at:serverTimestamp()}}));
@@ -48,4 +59,18 @@ test('invited seats, ready gate, authority, inputs and immutable configuration',
  await no(set(ref(db('host'),root+'/result'),{left:3,right:7,at:serverTimestamp()}));
  await no(remove(ref(db('host'),root+'/result')));
  assert.equal((await get(ref(db('guest'),root+'/result/left'))).val(),7);
+});
+
+for(const arena of ['beach','indoors','park','castle'])test(`team arena ${arena}: create, join and immutable scenery`,async()=>{
+ await env.clearDatabase();const r=value();r.meta.arena=arena;
+ await yes(set(ref(db('host'),root),r));
+ await yes(set(ref(db('guest'),root+'/seats/2'),'guest'));
+ assert.equal((await get(ref(db('guest'),root+'/meta/arena'))).val(),arena);
+ for(const who of ['host','guest']){
+  await no(set(ref(db(who),root+'/meta/arena'),arena==='park'?'beach':'park'));
+  await no(remove(ref(db(who),root+'/meta/arena')));
+ }
+});
+test('unknown team arena rejected',async()=>{
+ await env.clearDatabase();const r=value();r.meta.arena='unknown';await no(set(ref(db('host'),root),r));
 });

@@ -461,7 +461,7 @@ struct PictureChoices: View {
         }
         // Android: a raised sky card (selected pale blue, otherwise dark navy) outlined 3 or 1 dp, clipped to its outline.
         .buttonStyle(SkyButtonStyle(color: isSelected ? 0xffc5ecff : 0xff153c54, radius: 15, strokeWidth: isSelected ? 3 : 1,
-                                    strokeColor: isSelected ? 0xff72d4ff : 0xff4e748a, clips: true))
+                                    strokeColor: isSelected ? 0xff72d4ff : 0xff4e748a, clips: true, raisedLettering: false))
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(option.name)

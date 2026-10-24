@@ -1,0 +1,99 @@
+<?xml version='1.0' encoding='utf-8'?>
+<question-bank version="1" mode="PROGRAMMING" language="en">
+  <question id="programming_001" level="1">
+    <prompt lang="en">What is a variable in programming?</prompt>
+    <answer correct="true">A name referring to a value or data location used by a program</answer>
+    <answer correct="false">An image file</answer>
+    <answer correct="false">A compilation error</answer>
+    <answer correct="false">A network connection</answer>
+    <explanation lang="en">Variables let programs store and refer to values during execution.</explanation>
+  </question>
+  <question id="programming_002" level="1">
+    <prompt lang="en">In many languages, what is the main difference between == and =?</prompt>
+    <answer correct="true">== compares; = assigns</answer>
+    <answer correct="false">= compares; == deletes</answer>
+    <answer correct="false">There is never any difference</answer>
+    <answer correct="false">Both are only used for strings</answer>
+    <explanation lang="en">In common languages, = is assignment and == is comparison.</explanation>
+  </question>
+  <question id="programming_003" level="1">
+    <prompt lang="en">What is a loop?</prompt>
+    <answer correct="false">A type of image</answer>
+    <answer correct="false">Only a recursive function</answer>
+    <answer correct="false">A configuration file</answer>
+    <answer correct="true">A structure that repeats code according to a condition or collection</answer>
+    <explanation lang="en">For and while are examples of loops.</explanation>
+  </question>
+  <question id="programming_004" level="2">
+    <prompt lang="en">What is a stack overflow in recursion?</prompt>
+    <answer correct="false">A full database</answer>
+    <answer correct="false">A file too large for the disk</answer>
+    <answer correct="false">A network error</answer>
+    <answer correct="true">Exceeding the call-stack limit through too many nested calls</answer>
+    <explanation lang="en">Recursion without a suitable stopping condition can fill the call stack.</explanation>
+  </question>
+  <question id="programming_005" level="1">
+    <prompt lang="en">What is an API?</prompt>
+    <answer correct="false">An image format</answer>
+    <answer correct="true">A defined interface through which software components communicate</answer>
+    <answer correct="false">A specific encryption algorithm</answer>
+    <answer correct="false">A type of RAM</answer>
+    <explanation lang="en">An API defines operations, parameters and contracts between components.</explanation>
+  </question>
+  <question id="programming_006" level="3">
+    <prompt lang="en">What does O(n) time complexity mean?</prompt>
+    <answer correct="true">Runtime grows approximately linearly with input size</answer>
+    <answer correct="false">Exponential time</answer>
+    <answer correct="false">Always constant time</answer>
+    <answer correct="false">The program never ends</answer>
+    <explanation lang="en">O(n) describes an asymptotically linear upper bound.</explanation>
+  </question>
+  <question id="programming_007" level="3">
+    <prompt lang="en">What is the main typical advantage of a hash map?</prompt>
+    <answer correct="false">Keeping duplicate keys without distinction</answer>
+    <answer correct="false">Using zero memory</answer>
+    <answer correct="false">Always sorting automatically</answer>
+    <answer correct="true">Key lookup in average time close to O(1)</answer>
+    <explanation lang="en">Hash tables offer fast average access with a suitable hash function and load.</explanation>
+  </question>
+  <question id="programming_008" level="2">
+    <prompt lang="en">What is a Git commit?</prompt>
+    <answer correct="false">An operating-system deletion command</answer>
+    <answer correct="false">A type of variable</answer>
+    <answer correct="false">A web server</answer>
+    <answer correct="true">A recorded snapshot of repository changes with an identifier and history</answer>
+    <explanation lang="en">A commit records a change in Git history.</explanation>
+  </question>
+  <question id="programming_009" level="2">
+    <prompt lang="en">What is a unit test?</prompt>
+    <answer correct="false">Only a manual test on a device</answer>
+    <answer correct="true">An automated test of a relatively small unit of behavior</answer>
+    <answer correct="false">A database optimization</answer>
+    <answer correct="false">Installing an operating system</answer>
+    <explanation lang="en">Unit tests check functions, classes or other focused units.</explanation>
+  </question>
+  <question id="programming_010" level="4">
+    <prompt lang="en">What is a race condition?</prompt>
+    <answer correct="false">A syntax error</answer>
+    <answer correct="false">A loop that is too fast</answer>
+    <answer correct="false">A variable named race</answer>
+    <answer correct="true">A fault where the outcome depends on uncoordinated timing of concurrent operations</answer>
+    <explanation lang="en">Concurrent access to shared state without suitable synchronization can cause a race condition.</explanation>
+  </question>
+  <question id="programming_011" level="2">
+    <prompt lang="en">What is a null pointer exception?</prompt>
+    <answer correct="true">An error from using a reference that does not point to a valid object</answer>
+    <answer correct="false">A negative calculation result</answer>
+    <answer correct="false">Only a lack of disk space</answer>
+    <answer correct="false">A CSS error</answer>
+    <explanation lang="en">In some languages, accessing an object through null causes a runtime exception.</explanation>
+  </question>
+  <question id="programming_012" level="1">
+    <prompt lang="en">What does a compiler do?</prompt>
+    <answer correct="false">Downloads files from the internet</answer>
+    <answer correct="false">Only draws the UI</answer>
+    <answer correct="true">Translates source code into another representation for execution or further processing</answer>
+    <answer correct="false">Manages passwords</answer>
+    <explanation lang="en">A compiler analyzes and translates programs.</explanation>
+  </question>
+</question-bank>

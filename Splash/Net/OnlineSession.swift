@@ -17,6 +17,8 @@ final class OnlineSession {
     private let rounds: Int
     private let maxPlayers: Int
     private let playerSettings: PlayerSettings
+    /// Android `battleConfig`: the room's court (20 x 20), Paint walls and hit effect; the host's difficulty is added.
+    private let battleConfig: SplashConfig
 
     private var database: SplashDatabase?
     private var roomPath = ""
@@ -55,7 +57,8 @@ final class OnlineSession {
     private var pumpTask: Task<Void, Never>?
 
     init(controller: SplashController, host: String, character: String, hebrew: Bool, mode: GameMode, topic: Topic,
-         rounds: Int = 1, maxPlayers: Int = 6, playerSettings: PlayerSettings = PlayerSettings()) {
+         rounds: Int = 1, maxPlayers: Int = 6, playerSettings: PlayerSettings = PlayerSettings(),
+         battleConfig: SplashConfig = OnlineSession.roomConfig()) {
         self.controller = controller
         self.host = host
         self.character = character
@@ -65,6 +68,17 @@ final class OnlineSession {
         self.rounds = rounds
         self.maxPlayers = maxPlayers
         self.playerSettings = playerSettings
+        self.battleConfig = battleConfig
+    }
+
+    /// Android `SplashConfig(width = 20.0, depth = 20.0, ...)`: online rooms keep the 20 x 20 court.
+    nonisolated static func roomConfig(wallBattle: Bool = false, hitEffect: HitEffect = .cosmetic) -> SplashConfig {
+        var config = SplashConfig()
+        config.width = 20.0
+        config.depth = 20.0
+        config.wallBattle = wallBattle
+        config.hitEffect = hitEffect
+        return config
     }
 
     private func tr(_ en: String, _ he: String) -> String { return AppText.t(en, he, hebrew: hebrew) }
@@ -113,7 +127,7 @@ final class OnlineSession {
         code = String((0..<6).map { _ in alphabet[Int.random(in: 0..<alphabet.count)] })
         roomPath = "minikSplash/rooms/" + code
         let now = SplashClock.currentTimeMillis()
-        var config = SplashConfig()
+        var config = battleConfig
         config.difficulty = playerSettings.difficulty
         let metaNode: Node = ["config": WorldCodec.config(config), "host": uid, "phase": "lobby", "mode": mode.name, "topic": topic.name,
                               "seed": NSNumber(value: now), "createdAt": NSNumber(value: now),
@@ -185,7 +199,8 @@ final class OnlineSession {
 
     private func listen() {
         guard let db = database else { return }
-        SplashPrefs.onlineRoom = code
+        // An unstarted lobby is temporary: only a played room is resumable.
+        SplashPrefs.onlineRoom = nil
         if let profile = controller?.learningProfile() {
             db.set(path("profiles/" + uid), WorldCodec.profile(profile), nil)
         }
@@ -194,6 +209,8 @@ final class OnlineSession {
         watch("meta") { [weak self] n in
             guard let self = self else { return }
             self.meta = n
+            let phase = n.str("phase")
+            SplashPrefs.onlineRoom = phase == "playing" || phase == "finished" ? self.code : nil
             self.syncRole()
             self.maybeStart()
         }
@@ -756,6 +773,7 @@ final class OnlineSession {
 
     func close() {
         if closed { return }
+        if meta.str("phase") == "lobby" { SplashPrefs.onlineRoom = nil }
         background()
         closed = true
         pumpTask?.cancel()

@@ -1,0 +1,99 @@
+<?xml version='1.0' encoding='utf-8'?>
+<question-bank version="1" mode="ARTIFICIAL_INTELLIGENCE" language="en">
+  <question id="artificial_intelligence_001" level="2">
+    <prompt lang="en">What is supervised learning?</prompt>
+    <answer correct="false">Random search without feedback</answer>
+    <answer correct="false">Learning without data</answer>
+    <answer correct="false">Learning only with a physical robot</answer>
+    <answer correct="true">Learning from examples with target answers</answer>
+    <explanation lang="en">Supervised learning uses inputs paired with labels or target values.</explanation>
+  </question>
+  <question id="artificial_intelligence_002" level="3">
+    <prompt lang="en">What is a validation set used for in model development?</prompt>
+    <answer correct="false">Replacing all training data</answer>
+    <answer correct="false">Presenting the model to users</answer>
+    <answer correct="true">Evaluating and tuning development choices without training directly on it</answer>
+    <answer correct="false">Keeping only wrong answers</answer>
+    <explanation lang="en">Validation helps select hyperparameters and detect overfitting.</explanation>
+  </question>
+  <question id="artificial_intelligence_003" level="2">
+    <prompt lang="en">What is overfitting?</prompt>
+    <answer correct="false">Training without a GPU</answer>
+    <answer correct="true">Fitting training data very well but generalizing less well to new data</answer>
+    <answer correct="false">A model too small for memory</answer>
+    <answer correct="false">A model that always returns zero</answer>
+    <explanation lang="en">Overfitting can include learning noise and accidental details of the training data.</explanation>
+  </question>
+  <question id="artificial_intelligence_004" level="1">
+    <prompt lang="en">What is a neural network?</prompt>
+    <answer correct="false">Only a physical computer network</answer>
+    <answer correct="false">An encryption algorithm</answer>
+    <answer correct="true">A computational model with layers of units and learned parameters</answer>
+    <answer correct="false">A database of neurologists</answer>
+    <explanation lang="en">Neural networks use weighted connections and nonlinear functions.</explanation>
+  </question>
+  <question id="artificial_intelligence_005" level="3">
+    <prompt lang="en">What is a Transformer in AI?</prompt>
+    <answer correct="false">A sorting algorithm</answer>
+    <answer correct="true">A network architecture largely based on attention mechanisms</answer>
+    <answer correct="false">An image format</answer>
+    <answer correct="false">Only a type of processor</answer>
+    <explanation lang="en">Transformers underpin many models for language, vision and other tasks.</explanation>
+  </question>
+  <question id="artificial_intelligence_006" level="3">
+    <prompt lang="en">What does an attention mechanism do?</prompt>
+    <answer correct="false">Always deletes half the input</answer>
+    <answer correct="true">Lets a model weight which parts of the input are relevant to each other</answer>
+    <answer correct="false">Enlarges the screen</answer>
+    <answer correct="false">Replaces the loss function</answer>
+    <explanation lang="en">Attention weights representations to collect relevant context.</explanation>
+  </question>
+  <question id="artificial_intelligence_007" level="2">
+    <prompt lang="en">What is an embedding?</prompt>
+    <answer correct="true">A learned vector representation of an item or concept</answer>
+    <answer correct="false">A list of passwords</answer>
+    <answer correct="false">A thumbnail image</answer>
+    <answer correct="false">A backup file</answer>
+    <explanation lang="en">Embeddings map items into a numerical space where relationships can be measured.</explanation>
+  </question>
+  <question id="artificial_intelligence_008" level="2">
+    <prompt lang="en">What is a loss function?</prompt>
+    <answer correct="false">The number of layers</answer>
+    <answer correct="false">The size of the model file</answer>
+    <answer correct="true">A numerical measure of model error that training tries to reduce</answer>
+    <answer correct="false">Internet speed</answer>
+    <explanation lang="en">Optimization adjusts parameters to reduce loss.</explanation>
+  </question>
+  <question id="artificial_intelligence_009" level="3">
+    <prompt lang="en">What is gradient descent?</prompt>
+    <answer correct="false">A way to sort text alphabetically</answer>
+    <answer correct="true">An optimization method that updates parameters to reduce an objective</answer>
+    <answer correct="false">A type of database</answer>
+    <answer correct="false">An image compression method</answer>
+    <explanation lang="en">The gradient points uphill, so the update moves approximately in the opposite direction.</explanation>
+  </question>
+  <question id="artificial_intelligence_010" level="3">
+    <prompt lang="en">What is reinforcement learning?</prompt>
+    <answer correct="false">Saving files in the cloud</answer>
+    <answer correct="false">Learning only from manual labels</answer>
+    <answer correct="false">Only creating graphs</answer>
+    <answer correct="true">Learning through actions, states and rewards</answer>
+    <explanation lang="en">An agent learns a policy that seeks to maximize cumulative reward.</explanation>
+  </question>
+  <question id="artificial_intelligence_011" level="2">
+    <prompt lang="en">What is a hallucination in a language model?</prompt>
+    <answer correct="false">Reducing the parameter count</answer>
+    <answer correct="false">Encrypting text</answer>
+    <answer correct="true">Plausible-sounding output containing unsupported or incorrect information</answer>
+    <answer correct="false">A screen crash</answer>
+    <explanation lang="en">Language models can produce fluent claims without an adequate factual basis.</explanation>
+  </question>
+  <question id="artificial_intelligence_012" level="4">
+    <prompt lang="en">Why keep a test set separate from training and validation?</prompt>
+    <answer correct="true">To obtain a less biased final evaluation on data not used for tuning</answer>
+    <answer correct="false">To increase the number of parameters</answer>
+    <answer correct="false">To train faster on the test set</answer>
+    <answer correct="false">To delete difficult examples</answer>
+    <explanation lang="en">The test set is reserved for the end to avoid repeatedly tuning decisions to it.</explanation>
+  </question>
+</question-bank>

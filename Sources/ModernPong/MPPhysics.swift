@@ -28,7 +28,8 @@ enum MPLevel: Int, Codable, CaseIterable {
     var automaticContact: Bool { self == .beginner }
     /// Android `Difficulty.needsTwoPointLead`: only MEDIUM and HARD (iOS `.hard`, `.superHard`).
     var needsTwoPointLead: Bool { self == .hard || self == .superHard }
-    var targets: [Int] { needsTwoPointLead ? [3, 5, 7, 11] : [3, 5, 7, 10] }
+    /// Android `Difficulty.targets` (2026-10): levels without deuce also offer eleven points.
+    var targets: [Int] { needsTwoPointLead ? [3, 5, 7, 11] : [3, 5, 7, 10, 11] }
     func target(_ n: Int) -> Int { targets.contains(n) ? n : 7 }
     var title: String {
         switch self {
@@ -39,14 +40,18 @@ enum MPLevel: Int, Codable, CaseIterable {
         case .superHard: return "Super hard"
         }
     }
-    /// Android `ControlChoice.normalize`: room/control choices are Beginner (4), Standard (0) or Pro (3).
+    /// Android `ControlChoice.difficulty` (96ae066): room/control choices are Beginner (4), Starter (1, Android EASY =
+    /// iOS `.medium`), Standard (0) or Pro (3); the retired intermediate level 2 plays Standard.
     static func control(_ value: Int) -> MPLevel {
         switch value {
-        case 0, 1, 2: return .easy
+        case 0, 2: return .easy
+        case 1: return .medium
         case 3: return .superHard
         default: return .beginner
         }
     }
+    /// Android PlayActivity / ModernActivity order of the four control choices: Beginner, Starter, Standard, Pro.
+    static let controlChoices: [MPLevel] = [.beginner, .medium, .easy, .superHard]
 }
 enum MPFault: String, Codable {
     case net = "NET", firstBounceOut = "FIRST_BOUNCE_OUT", secondBounce = "SECOND_BOUNCE"
@@ -58,6 +63,10 @@ struct MPContact {
     var velocity: MPPoint; var direction: Double
     /// House-player placement (Android `Contact.targetX`); only a good AI return uses it.
     var targetX: Double? = nil
+    /// Android `Contact.stroke`: a Pro spin gesture, launched by `MPPongSpinShot.solve`.
+    var stroke: MPPongStroke? = nil
+    /// Android `Contact.standardSwipe`: a Standard swipe return, launched by `MPShots.standard`.
+    var standardSwipe = false
     var quality: Double { ((timing + spatial) / 2).mpClamp(0, 1) }
 }
 struct MPShot: Codable, Equatable { var velocity: MPPoint; var arc: Double }
@@ -84,10 +93,13 @@ struct MPScore: Codable, Equatable {
             if level.needsTwoPointLead && deuce { server = server.other }
             else { server = (rallies / 2) % 2 == 0 ? first : first.other }
         }
-        else if level == .easy { server = .minik }
-        else if level == .medium { server = .child }
-        else if deuce { server = server.other }
-        else { server = (rallies / 2) % 2 == 0 ? .child : .minik }
+        else {
+            // Android `Match.award` (2026-10): STARTER (iOS `.easy`) starts with Minik, every other level with the child;
+            // the serve then alternates every two points and only deuce levels alternate every point at deuce.
+            let opening: MPSide = level == .easy ? .minik : .child
+            if level.needsTwoPointLead && deuce { server = server.other }
+            else { server = (rallies / 2) % 2 == 0 ? opening : opening.other }
+        }
         return true
     }
 }
@@ -155,16 +167,33 @@ struct MPTuning {
     }
 }
 enum MPShots {
+    /// Android `Shots.standard`: Standard assists forward landing; lateral direction can still miss a sideline.
+    /// Velocity is normalized to screen size, so identical gestures work on both tables.
+    static func standard(_ c: MPContact, _ t: MPTuning, height: Double) -> MPShot {
+        let speed = hypot(c.velocity.x, c.velocity.y)
+        let power = (speed / 2.5).mpClamp(0, 1)
+        let pace = 0.52 + 0.62 * power
+        let targetY = 0.39 - 0.29 * power
+        let time = max((c.point.y - targetY) / pace, 0.20)
+        let aim = speed > 0.001 ? c.velocity.x / speed : 0
+        let targetX = c.point.x + aim * 0.80
+        return .init(velocity: .init((targetX - c.point.x) / time, -pace), arc: (0.5 * t.gravity * time * time - height) / time)
+    }
     /// Android `Shots.forgivingTap`. Standard converts the gesture speed (`c.velocity`) into a moderate pace boost;
     /// Beginner passes zero velocity. Contact and net clearance are assisted, the sidelines are not:
     /// a genuinely wide aim may leave the table.
-    static func tap(_ c: MPContact, _ t: MPTuning, rally: Int, height: Double, incoming: MPPoint) -> MPShot {
+    /// `safeAim` (Android `safeTap`, Beginner's automatic contact) and a tap without sideways aim choose a legal landing.
+    static func tap(_ c: MPContact, _ t: MPTuning, rally: Int, height: Double, incoming: MPPoint, safeAim: Bool = false) -> MPShot {
         let power = (hypot(c.velocity.x, c.velocity.y) / t.maximumSwipeSpeed).mpClamp(0, 1)
         let pace = min(t.maximumBallSpeed, t.ballBaseSpeed * (1 + 0.35 * power) + min(Double(rally) * t.rallySpeedGrowth, 0.12) + min(hypot(incoming.x, incoming.y) * t.incomingVelocityInfluence, 0.05))
         let time = max(0.45, (c.point.y - 0.26) / pace)
         let inherited = (incoming.x / max(abs(incoming.y), 0.12) * pace * 0.42).mpClamp(-0.25, 0.25)
         let aim = c.direction.mpClamp(-2, 2) * pace * 0.70
-        return .init(velocity: .init(inherited + aim, -pace), arc: (0.5 * t.gravity * time * time - height) / time)
+        // Assisted taps choose a legal landing. Carrying the incoming sideways velocity unchanged made a stationary
+        // Beginner return fly out.
+        let rawLanding = c.point.x + (inherited + aim) * time
+        let landing = safeAim || abs(c.direction) < 0.001 ? rawLanding.mpClamp(0.10, 0.90) : rawLanding
+        return .init(velocity: .init((landing - c.point.x) / time, -pace), arc: (0.5 * t.gravity * time * time - height) / time)
     }
     static func driven(_ c: MPContact, _ t: MPTuning, height: Double, incoming: MPPoint) -> MPShot {
         let forward = max(0, -c.velocity.y), power = (forward / t.maximumSwipeSpeed).mpClamp(0, 3)
@@ -175,10 +204,14 @@ enum MPShots {
     }
     static func ai(_ c: MPContact, _ t: MPTuning, height: Double) -> MPShot {
         let speed = max(c.velocity.y, 0.1)
-        let target = c.quality >= 0.14 ? 0.78 : (c.point.y + 0.5) * 0.5
+        // Android `Shots.aiReturn` (2026-10): a normal return crosses the net; poor contact may go wide, never aims at
+        // its own half.
+        let good = c.quality >= 0.14
+        let target = 0.78
         let time = max(0.05, (target - c.point.y) / speed)
         let requested = c.targetX.map { ($0 - c.point.x) / time } ?? c.direction * speed * 0.48
-        let x = requested.mpClamp((0.06 - c.point.x) / time, (0.94 - c.point.x) / time)
+        let x = good ? requested.mpClamp((0.06 - c.point.x) / time, (0.94 - c.point.x) / time)
+            : ((c.point.x < 0.5 ? -0.28 : 1.28) - c.point.x) / time
         return .init(velocity: .init(x, speed), arc: (0.5 * t.gravity * time * time - height) / time)
     }
     static func serve(_ p: MPPoint, side: MPSide, tuning t: MPTuning) -> MPServe {
@@ -189,6 +222,24 @@ enum MPShots {
         let firstY = child ? (same ? p.y.mpClamp(0.61, 0.83) : 0.72) : (same ? p.y.mpClamp(0.17, 0.39) : 0.28)
         let secondY = child ? (same ? 0.28 : p.y.mpClamp(0.17, 0.39)) : (same ? 0.72 : p.y.mpClamp(0.61, 0.83))
         return .init(server: side, start: .init(0.5, child ? 0.87 : 0.13), first: .init(firstX, firstY), second: .init(x, secondY), speed: t.ballBaseSpeed, arc: 1.05 + t.serveAssistance * 0.22)
+    }
+    /// Android `Shots.riskyTapServe`: optional risk at the two extreme opponent-half serve zones. The chosen outcome is an
+    /// actual flight, shared online, never a popup-only random fault.
+    static func riskyTapServe(_ point: MPPoint, _ t: MPTuning, roll: Double) -> MPServe {
+        let normal = serve(point, side: .child, tuning: t)
+        if point.y > 0.5 || (0.10...0.40).contains(point.y) { return normal }
+        if point.y > 0.40 {
+            let target = MPPoint(point.x.mpClamp(0.04, 0.96), point.y.mpClamp(0.41, 0.47))
+            var short = normal
+            short.first = .init((normal.start.x + target.x) / 2, 0.72); short.second = target; short.speed = 0.25; short.arc = 0.7
+            if roll < 0.75 { return short }
+            // Half the poor contacts hit the net; half die on the server's half.
+            short.shot = .init(velocity: .init((target.x - short.first.x) * 0.35, -0.45), arc: roll < 0.875 ? 0.88 : 0.24)
+            return short
+        }
+        var deep = normal
+        deep.second = .init(point.x.mpClamp(0.04, 0.96), roll < 0.75 ? point.y.mpClamp(0.03, 0.095) : -0.16); deep.speed = 0.72; deep.arc = 0.85
+        return deep
     }
     static func swipeServe(_ c: MPContact, _ t: MPTuning) -> MPServe? {
         let speed = hypot(c.velocity.x, c.velocity.y)
@@ -235,11 +286,38 @@ enum MPShots {
 struct MPFlight: Codable, Equatable {
     var position: MPPoint; var height: Double; var velocity: MPPoint; var lift: Double; var striker: MPSide
     var receiver = false; var resolved = false; var spin = 0.0; var serve: MPServe?
+    /// Android `Flight.topSpin` / `spinAngle` (wire `top`, `angle`; 2026-10). Older checkpoints without them read 0.
+    var topSpin = 0.0; var spinAngle = 0.0
     struct Event { var bounced = false; var recipient: MPSide?; var resolution: MPResolution?; var point: MPPoint? }
+    enum CodingKeys: String, CodingKey {
+        case position, height, velocity, lift, striker, receiver, resolved, spin, serve
+        case topSpin = "top", spinAngle = "angle"
+    }
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        position = try c.decode(MPPoint.self, forKey: .position); height = try c.decode(Double.self, forKey: .height)
+        velocity = try c.decode(MPPoint.self, forKey: .velocity); lift = try c.decode(Double.self, forKey: .lift)
+        striker = try c.decode(MPSide.self, forKey: .striker); receiver = try c.decode(Bool.self, forKey: .receiver)
+        resolved = try c.decode(Bool.self, forKey: .resolved); spin = try c.decode(Double.self, forKey: .spin)
+        serve = try c.decodeIfPresent(MPServe.self, forKey: .serve)
+        topSpin = try c.decodeIfPresent(Double.self, forKey: .topSpin) ?? 0
+        spinAngle = try c.decodeIfPresent(Double.self, forKey: .spinAngle) ?? 0
+    }
+    /// Android `FlightState.valid` (2026-10): top spin 0...2.2 and side spin at most 1 are the only legal spins.
     var valid: Bool {
-        [position.x, position.y, height, velocity.x, velocity.y, lift, spin].allSatisfy(\.isFinite) &&
+        [position.x, position.y, height, velocity.x, velocity.y, lift, spin, topSpin, spinAngle].allSatisfy(\.isFinite) &&
+        (0...2.2).contains(topSpin) && abs(spin) <= 1 &&
         (-0.3...1.3).contains(position.x) && (-0.3...1.3).contains(position.y) && (-0.1...5).contains(height) &&
         abs(velocity.x) < 8 && abs(velocity.y) < 8 && abs(lift) < 12
+    }
+    /// Android `Flight.applySpin`.
+    mutating func applySpin(_ stroke: MPPongStroke) { spin = stroke.side * 0.85; topSpin = stroke.top * 2.2; spinAngle = 0 }
+    /// Android `Flight.setTapSpin`.
+    mutating func setTapSpin(_ aim: Double) { spin = aim.mpClamp(-1, 1) * 0.28 }
+    private static let tableRadius = 0.012
+    /// Android `Flight.overTable`: before its bounce the ball may graze the edge (one ball radius) without leaving.
+    private func overTable(_ v: MPPoint) -> Bool {
+        (-Self.tableRadius...1 + Self.tableRadius).contains(v.x) && (-Self.tableRadius...1 + Self.tableRadius).contains(v.y)
     }
     var reflected: Self {
         var f = self; f.position = position.reflected; f.velocity = velocity.reversed; f.striker = striker.other
@@ -268,23 +346,28 @@ struct MPFlight: Codable, Equatable {
         guard !resolved else { return nil }
         let full = delta.mpClamp(0, 1.0 / 30)
         guard full > 0 else { return nil }
-        let ground = (lift + sqrt(lift * lift + 2 * t.gravity * max(height, 0))) / t.gravity
+        // Android 2026-10: top spin adds to gravity; the drawn spin angle turns with both spins.
+        let gravity = t.gravity + topSpin
+        spinAngle = (spinAngle + (abs(spin) + topSpin) * delta * 720).truncatingRemainder(dividingBy: 360)
+        let ground = (lift + sqrt(lift * lift + 2 * gravity * max(height, 0))) / gravity
         let dt = min(full, max(ground, 0)), hitsGround = ground <= full
         let previous = position, previousHeight = height
         position = .init(position.x + velocity.x * dt + 0.5 * spin * dt * dt, position.y + velocity.y * dt)
         velocity.x += spin * dt; spin *= exp(-1.4 * dt)
-        height += lift * dt - 0.5 * t.gravity * dt * dt; lift -= t.gravity * dt
+        height += lift * dt - 0.5 * gravity * dt * dt; lift -= gravity * dt
         if (previous.y < 0.5 && position.y >= 0.5) || (previous.y > 0.5 && position.y <= 0.5) {
             let fraction = ((0.5 - previous.y) / (position.y - previous.y)).mpClamp(0, 1), time = dt * fraction
-            let netHeight = previousHeight + (lift + t.gravity * dt) * time - 0.5 * t.gravity * time * time
+            let netHeight = previousHeight + (lift + gravity * dt) * time - 0.5 * gravity * time * time
             if netHeight <= t.netHeight {
                 position = .init(previous.x + (position.x - previous.x) * fraction, 0.5); height = max(0, netHeight)
                 return resolve(striker.other, .net)
             }
         }
-        if !position.inside { return resolve(receiver ? striker : striker.other, receiver ? .unreturned : .leftTable) }
+        if !(receiver ? position.inside : overTable(position)) { return resolve(receiver ? striker : striker.other, receiver ? .unreturned : .leftTable) }
         guard hitsGround else { return nil }
         height = 0
+        // Top/edge contact. Keep the recorded bounce on the visible table edge.
+        position = .init(position.x.mpClamp(0, 1), position.y.mpClamp(0, 1))
         var recipient: MPSide?
         if let plan = serve {
             guard position.onSide(striker) else { return resolve(striker.other, .illegalServe) }
@@ -294,7 +377,7 @@ struct MPFlight: Codable, Equatable {
             serve = nil
         } else if !receiver {
             guard position.onSide(striker.other) else { return resolve(striker.other, .firstBounceOut) }
-            receiver = true; lift = abs(lift) * t.bounceRestitution; recipient = striker.other
+            receiver = true; lift = abs(lift) * t.bounceRestitution; topSpin *= 0.55; recipient = striker.other
         } else { return resolve(striker, .secondBounce) }
         let point = position
         let rest = full - dt > 1e-9 ? advance(full - dt, t) : nil
@@ -303,11 +386,24 @@ struct MPFlight: Codable, Equatable {
     private mutating func resolve(_ side: MPSide, _ fault: MPFault) -> Event {
         resolved = true; return .init(resolution: .init(winner: side, fault: fault))
     }
-    mutating func hit(_ c: MPContact, side: MPSide, tuning t: MPTuning, rally: Int, pro: Bool = false) {
+    /// Android `Flight.hit`: a Standard swipe (mirrored for the far side), then a spin stroke, then the existing
+    /// AI / Pro / forgiving-tap returns. `safeTap` = Android `safeTap` (Beginner's automatic contact).
+    mutating func hit(_ c: MPContact, side: MPSide, tuning t: MPTuning, rally: Int, pro: Bool = false, safeTap: Bool = false) {
         guard !resolved else { return }
         height = max(height, 0.055)
-        let shot = side == .minik ? MPShots.ai(c, t, height: height) :
-            pro ? MPShots.driven(c, t, height: height, incoming: velocity) : MPShots.tap(c, t, rally: rally, height: height, incoming: velocity)
-        striker = side; velocity = shot.velocity; lift = shot.arc; receiver = false; serve = nil; spin = 0
+        let shot: MPShot
+        if c.standardSwipe {
+            if side == .child { shot = MPShots.standard(c, t, height: height) }
+            else {
+                var mirrored = c; mirrored.point = .init(1 - c.point.x, 1 - c.point.y); mirrored.velocity = .init(-c.velocity.x, c.velocity.y)
+                let s = MPShots.standard(mirrored, t, height: height)
+                shot = .init(velocity: .init(-s.velocity.x, -s.velocity.y), arc: s.arc)
+            }
+        } else if let stroke = c.stroke { shot = MPPongSpinShot.solve(position, height: height, stroke: stroke, tuning: t, side: side) }
+        else if side == .minik { shot = MPShots.ai(c, t, height: height) }
+        else if pro { shot = MPShots.driven(c, t, height: height, incoming: velocity) }
+        else { shot = MPShots.tap(c, t, rally: rally, height: height, incoming: velocity, safeAim: safeTap) }
+        striker = side; velocity = shot.velocity; lift = shot.arc; receiver = false; serve = nil; spin = 0; topSpin = 0; spinAngle = 0
+        if let stroke = c.stroke { applySpin(stroke) }
     }
 }

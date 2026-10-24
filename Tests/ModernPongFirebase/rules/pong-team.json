@@ -1,7 +1,5 @@
 {
   "rules": {
-    ".read": false,
-    ".write": false,
     "minikPongTeams": {
       "rooms": {
         "$code": {
@@ -9,7 +7,7 @@
           ".write": "(auth != null && !data.exists() && newData.child('meta/host').val() == auth.uid && newData.child('phase').val() == 'lobby' && !newData.child('seats/1').exists() && !newData.child('seats/2').exists() && !newData.child('seats/3').exists() && newData.child('seats/0').val() == auth.uid && newData.child('ready').child(auth.uid).val() == false && !newData.child('snapshot').exists() && !newData.child('presence').exists() && !newData.child('inputs').exists() && !newData.child('result').exists()) || (auth != null && data.child('meta/host').val() == auth.uid && data.child('phase').val() == 'lobby' && !newData.exists())",
           ".validate": "$code.matches(/^[A-Z2-9]{6}$/) && newData.hasChildren(['meta','phase','seats','ready']) && (newData.child('meta/protocol').val() != 'pong-doubles-v1-lobby-v2' || newData.child('lineup').exists())",
           "meta": {
-            ".validate": "newData.hasChildren(['host','protocol','mode','roster','humans','createdAt'])",
+            ".validate": "(newData.hasChildren(['host','protocol','mode','roster','humans','createdAt'])) && (!data.exists() || newData.child('arena').val() == data.child('arena').val())",
             "host": {
               ".validate": "newData.isString() && newData.val().length <= 128"
             },
@@ -36,6 +34,9 @@
             },
             "$other": {
               ".validate": false
+            },
+            "arena": {
+              ".validate": "newData.isString() && newData.val().matches(/^(beach|indoors|park|castle)$/)"
             }
           },
           "phase": {
@@ -77,12 +78,12 @@
             "$uid": {
               "$command": {
                 ".write": "((auth != null && root.child('minikPongTeams').child('rooms').child($code).child('meta/host').val() == auth.uid && !newData.exists()) || (auth != null && auth.uid == $uid && (root.child('minikPongTeams').child('rooms').child($code).child('seats/0').val() == $uid || root.child('minikPongTeams').child('rooms').child($code).child('seats/1').val() == $uid || root.child('minikPongTeams').child('rooms').child($code).child('seats/2').val() == $uid || root.child('minikPongTeams').child('rooms').child($code).child('seats/3').val() == $uid) && root.child('minikPongTeams').child('rooms').child($code).child('phase').val() == 'playing' && !data.exists() && newData.exists())) && (!newData.exists() || !(root.child('minikPongTeams/rooms').child($code).child('meta/protocol').val() == 'pong-doubles-v1-lobby-v2') || (root.child('minikPongTeams/rooms').child($code).child('lineup/slots/0').val() == 'u:' + auth.uid || root.child('minikPongTeams/rooms').child($code).child('lineup/slots/1').val() == 'u:' + auth.uid || root.child('minikPongTeams/rooms').child($code).child('lineup/slots/2').val() == 'u:' + auth.uid || root.child('minikPongTeams/rooms').child($code).child('lineup/slots/3').val() == 'u:' + auth.uid))",
-                ".validate": "$command.matches(/^[0-9]{16}$/) && newData.hasChildren(['seq','kind','x','y'])",
+                ".validate": "$command.matches(/^[0-9]{16}$/) && newData.hasChildren(['seq','kind','x','y']) && (newData.child('kind').val() != 'stroke' || newData.child('stroke').exists()) && (newData.child('kind').val() != 'control' || newData.child('control').exists())",
                 "seq": {
                   ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() < 9007199254740991 && newData.val() % 1 == 0"
                 },
                 "kind": {
-                  ".validate": "newData.val().matches(/^(move|tap)$/)"
+                  ".validate": "newData.isString() && newData.val().matches(/^(move|tap|stroke|control)$/)"
                 },
                 "x": {
                   ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1"
@@ -92,6 +93,27 @@
                 },
                 "$other": {
                   ".validate": false
+                },
+                "control": {
+                  ".validate": "newData.val() == 0 || newData.val() == 1 || newData.val() == 3 || newData.val() == 4"
+                },
+                "stroke": {
+                  ".validate": "newData.hasChildren(['aim','power','top','side'])",
+                  "aim": {
+                    ".validate": "newData.isNumber() && newData.val() >= -1 && newData.val() <= 1"
+                  },
+                  "power": {
+                    ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1"
+                  },
+                  "top": {
+                    ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1"
+                  },
+                  "side": {
+                    ".validate": "newData.isNumber() && newData.val() >= -1 && newData.val() <= 1"
+                  },
+                  "$other": {
+                    ".validate": false
+                  }
                 }
               }
             }

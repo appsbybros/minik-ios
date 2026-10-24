@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='utf-8'?>
+<question-bank version="1" mode="PARADOXES" language="en">
+  <question id="paradoxes_001" level="2">
+    <prompt lang="en">In the liar paradox, why is 'This sentence is false' problematic?</prompt>
+    <answer correct="false">It is always unconditionally true</answer>
+    <answer correct="false">It has no grammatical subject</answer>
+    <answer correct="false">It is too long</answer>
+    <answer correct="true">If it is true, it is false; if false, it is true</answer>
+    <explanation lang="en">The sentence refers to its own truth value, creating a loop.</explanation>
+  </question>
+  <question id="paradoxes_002" level="2">
+    <prompt lang="en">What does the grandfather paradox in time travel illustrate?</prompt>
+    <answer correct="false">That the past cannot be remembered</answer>
+    <answer correct="false">That all time travel is slow</answer>
+    <answer correct="true">A causal conflict if a traveler prevents the conditions that led to the journey</answer>
+    <answer correct="false">That time always stops</answer>
+    <explanation lang="en">If the traveler prevents their own existence, who performed the action?</explanation>
+  </question>
+  <question id="paradoxes_003" level="1">
+    <prompt lang="en">What is the Ship of Theseus paradox?</prompt>
+    <answer correct="false">A contradiction in the laws of buoyancy</answer>
+    <answer correct="false">A question about wind speed</answer>
+    <answer correct="false">A problem calculating a ship's area</answer>
+    <answer correct="true">A question about the identity of something whose parts are gradually replaced</answer>
+    <explanation lang="en">The paradox asks what makes an object the same object through change.</explanation>
+  </question>
+  <question id="paradoxes_004" level="4">
+    <prompt lang="en">In Russell's paradox, which set creates a contradiction?</prompt>
+    <answer correct="true">The set of all sets that do not contain themselves</answer>
+    <answer correct="false">The set of all triangles</answer>
+    <answer correct="false">The set of even numbers</answer>
+    <answer correct="false">The empty set</answer>
+    <explanation lang="en">Asking whether this set contains itself leads to a contradiction in naive set theory.</explanation>
+  </question>
+  <question id="paradoxes_005" level="2">
+    <prompt lang="en">What does the birthday paradox illustrate?</prompt>
+    <answer correct="false">That every group has 366 people</answer>
+    <answer correct="false">That birthdays determine personality</answer>
+    <answer correct="false">That everyone is born in the same month</answer>
+    <answer correct="true">In a fairly small group, the chance of a shared birthday rises faster than intuition suggests</answer>
+    <explanation lang="en">With 23 people, the probability of at least one match exceeds 50% under the usual assumptions.</explanation>
+  </question>
+  <question id="paradoxes_006" level="3">
+    <prompt lang="en">What is the twin paradox in relativity?</prompt>
+    <answer correct="false">One twin disappears</answer>
+    <answer correct="false">Both twins always have the same physical age</answer>
+    <answer correct="true">A twin who travels fast and returns can age less than the twin who stays</answer>
+    <answer correct="false">The traveler necessarily ages faster</answer>
+    <explanation lang="en">The spacetime paths are not symmetric because the traveler changes reference frames.</explanation>
+  </question>
+  <question id="paradoxes_007" level="3">
+    <prompt lang="en">What is the key to Zeno's Achilles and the tortoise paradox?</prompt>
+    <answer correct="false">Distance cannot be measured</answer>
+    <answer correct="false">The tortoise moves at light speed</answer>
+    <answer correct="false">Achilles is slower than a tortoise</answer>
+    <answer correct="true">Infinitely many segments need not require infinite time if the series converges</answer>
+    <explanation lang="en">An infinite sum of shrinking time intervals can be finite.</explanation>
+  </question>
+  <question id="paradoxes_008" level="3">
+    <prompt lang="en">What is Hilbert's hotel paradox?</prompt>
+    <answer correct="false">Rooms cannot be numbered</answer>
+    <answer correct="false">A finite hotel must be empty</answer>
+    <answer correct="true">A hotel with infinitely many occupied rooms can still make room for more guests</answer>
+    <answer correct="false">Every room contains infinitely many people</answer>
+    <explanation lang="en">Reassigning guests systematically illustrates surprising properties of countable infinity.</explanation>
+  </question>
+  <question id="paradoxes_009" level="1">
+    <prompt lang="en">What is the paradox of choice in consumer psychology?</prompt>
+    <answer correct="false">More options always make decisions faster</answer>
+    <answer correct="true">Too many options may make decisions harder and reduce satisfaction</answer>
+    <answer correct="false">Choice does not depend on context</answer>
+    <answer correct="false">People never compare</answer>
+    <explanation lang="en">This is an empirical psychological idea, not a formal logical paradox.</explanation>
+  </question>
+  <question id="paradoxes_010" level="4">
+    <prompt lang="en">What is a strange loop in self-reference paradoxes?</prompt>
+    <answer correct="true">A structure where moving through levels of description returns to the starting point</answer>
+    <answer correct="false">A spelling mistake</answer>
+    <answer correct="false">A for loop that never ends</answer>
+    <answer correct="false">An electrical circuit</answer>
+    <explanation lang="en">Self-reference can create loops between statements, rules or meta-levels.</explanation>
+  </question>
+</question-bank>

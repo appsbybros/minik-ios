@@ -139,6 +139,8 @@ final class MinikMathWebModel: ObservableObject {
     func pageChanged(pingPong: Bool) {
         isPingPong = pingPong
         MinikMathOrientation.apply(pingPong: pingPong)
+        // App Store captures only: the iPhone frame expects the landscape that faces right.
+        if pingPong && StoreScreenshotScene.name != nil { StoreScreenshotScene.applyOrientation() }
     }
 
     func retry() {

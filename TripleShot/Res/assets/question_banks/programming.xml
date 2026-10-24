@@ -1,0 +1,99 @@
+<?xml version='1.0' encoding='utf-8'?>
+<question-bank version="1" mode="PROGRAMMING" language="he">
+  <question id="programming_001" level="1">
+    <prompt lang="he">מהו משתנה בתכנות?</prompt>
+    <answer correct="true">שם שמפנה לערך או לאזור נתונים שניתן להשתמש בו בתוכנית</answer>
+    <answer correct="false">קובץ תמונה</answer>
+    <answer correct="false">שגיאת קומפילציה</answer>
+    <answer correct="false">חיבור רשת</answer>
+    <explanation lang="he">משתנים מאפשרים לשמור ולהתייחס לערכים במהלך הריצה.</explanation>
+  </question>
+  <question id="programming_002" level="1">
+    <prompt lang="he">מה ההבדל העיקרי בין == לבין = בשפות רבות?</prompt>
+    <answer correct="true">== משווה ו-= מבצע השמה</answer>
+    <answer correct="false">= משווה ו-== מוחק</answer>
+    <answer correct="false">אין הבדל לעולם</answer>
+    <answer correct="false">שניהם משמשים רק למחרוזות</answer>
+    <explanation lang="he">בשפות נפוצות = הוא אופרטור השמה ו-== אופרטור השוואה.</explanation>
+  </question>
+  <question id="programming_003" level="1">
+    <prompt lang="he">מהי לולאה?</prompt>
+    <answer correct="false">סוג של תמונה</answer>
+    <answer correct="false">רק פונקציה רקורסיבית</answer>
+    <answer correct="false">קובץ קונפיגורציה</answer>
+    <answer correct="true">מבנה שמאפשר להריץ קטע קוד שוב ושוב לפי תנאי או אוסף</answer>
+    <explanation lang="he">for/while הן דוגמאות למבני לולאה.</explanation>
+  </question>
+  <question id="programming_004" level="2">
+    <prompt lang="he">מהו Stack Overflow בהקשר של רקורסיה?</prompt>
+    <answer correct="false">מסד נתונים מלא</answer>
+    <answer correct="false">קובץ גדול מדי בדיסק</answer>
+    <answer correct="false">שגיאת רשת</answer>
+    <answer correct="true">חריגה מגבול מחסנית הקריאות בגלל עומק קריאות גדול מדי</answer>
+    <explanation lang="he">רקורסיה ללא תנאי עצירה תקין עלולה למלא את מחסנית הקריאות.</explanation>
+  </question>
+  <question id="programming_005" level="1">
+    <prompt lang="he">מהו API?</prompt>
+    <answer correct="false">פורמט תמונה</answer>
+    <answer correct="true">ממשק מוגדר שבאמצעותו רכיבי תוכנה מתקשרים</answer>
+    <answer correct="false">אלגוריתם הצפנה מסוים</answer>
+    <answer correct="false">סוג של RAM</answer>
+    <explanation lang="he">API מגדיר פעולות, פרמטרים וחוזים בין רכיבים.</explanation>
+  </question>
+  <question id="programming_006" level="3">
+    <prompt lang="he">מהי סיבוכיות זמן O(n)?</prompt>
+    <answer correct="true">זמן הריצה גדל בקירוב ליניארית עם גודל הקלט</answer>
+    <answer correct="false">זמן מעריכי</answer>
+    <answer correct="false">זמן קבוע תמיד</answer>
+    <answer correct="false">התוכנית לא מסתיימת</answer>
+    <explanation lang="he">O(n) מתאר גידול ליניארי אסימפטוטי.</explanation>
+  </question>
+  <question id="programming_007" level="3">
+    <prompt lang="he">מה היתרון המרכזי של Hash Map בשימוש טיפוסי?</prompt>
+    <answer correct="false">שמירת מפתחות כפולים ללא הבחנה</answer>
+    <answer correct="false">שימוש באפס זיכרון</answer>
+    <answer correct="false">מיון אוטומטי תמיד</answer>
+    <answer correct="true">חיפוש לפי מפתח בזמן ממוצע קרוב ל-O(1)</answer>
+    <explanation lang="he">טבלת גיבוב מאפשרת גישה מהירה בממוצע אם פונקציית הגיבוב והעומס סבירים.</explanation>
+  </question>
+  <question id="programming_008" level="2">
+    <prompt lang="he">מהו Git commit?</prompt>
+    <answer correct="false">פקודת מחיקת מערכת הפעלה</answer>
+    <answer correct="false">סוג משתנה</answer>
+    <answer correct="false">שרת אינטרנט</answer>
+    <answer correct="true">צילום לוגי של מצב שינויים במאגר עם מזהה והיסטוריה</answer>
+    <explanation lang="he">Commit מתעד שינוי בהיסטוריית Git.</explanation>
+  </question>
+  <question id="programming_009" level="2">
+    <prompt lang="he">מהו Unit Test?</prompt>
+    <answer correct="false">בדיקה ידנית בלבד על מכשיר</answer>
+    <answer correct="true">בדיקה אוטומטית של יחידת התנהגות קטנה יחסית</answer>
+    <answer correct="false">אופטימיזציית מסד נתונים</answer>
+    <answer correct="false">התקנת מערכת הפעלה</answer>
+    <explanation lang="he">Unit tests בודקים פונקציות/מחלקות או יחידות ממוקדות.</explanation>
+  </question>
+  <question id="programming_010" level="4">
+    <prompt lang="he">מהי Race Condition?</prompt>
+    <answer correct="false">שגיאת תחביר</answer>
+    <answer correct="false">לולאה מהירה מדי</answer>
+    <answer correct="false">משתנה בשם race</answer>
+    <answer correct="true">תקלה שבה התוצאה תלויה בתזמון לא-מתואם בין פעולות מקביליות</answer>
+    <explanation lang="he">גישה מקבילית למצב משותף בלי סנכרון מתאים יכולה ליצור race condition.</explanation>
+  </question>
+  <question id="programming_011" level="2">
+    <prompt lang="he">מהו Null Pointer Exception?</prompt>
+    <answer correct="true">שגיאה שנוצרת כשמנסים להשתמש בהפניה שאינה מצביעה על אובייקט תקף</answer>
+    <answer correct="false">תוצאת חישוב שלילית</answer>
+    <answer correct="false">חוסר במקום בדיסק בלבד</answer>
+    <answer correct="false">שגיאת CSS</answer>
+    <explanation lang="he">בשפות מסוימות גישה דרך null גורמת לחריגה בזמן ריצה.</explanation>
+  </question>
+  <question id="programming_012" level="1">
+    <prompt lang="he">מה תפקידו של Compiler?</prompt>
+    <answer correct="false">להוריד קבצים מהאינטרנט</answer>
+    <answer correct="false">לצייר UI בלבד</answer>
+    <answer correct="true">לתרגם קוד מקור לייצוג אחר שניתן להרצה או לעיבוד נוסף</answer>
+    <answer correct="false">לנהל סיסמאות</answer>
+    <explanation lang="he">קומפיילר מנתח ומתרגם תוכניות.</explanation>
+  </question>
+</question-bank>

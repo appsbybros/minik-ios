@@ -35,6 +35,15 @@ enum SplashPrefs {
         defaults.set(value, forKey: key(file, name))
     }
 
+    /// Android `getFloat` / `putFloat` (kept as a 32-bit value, as Android stores it).
+    static func float(_ name: String, _ fallback: Float, file: String = "minik_splash") -> Float {
+        return (defaults.object(forKey: key(file, name)) as? NSNumber)?.floatValue ?? fallback
+    }
+
+    static func setFloat(_ value: Float, _ name: String, file: String = "minik_splash") {
+        defaults.set(value, forKey: key(file, name))
+    }
+
     static func contains(_ name: String, file: String = "minik_splash") -> Bool {
         return defaults.object(forKey: key(file, name)) != nil
     }

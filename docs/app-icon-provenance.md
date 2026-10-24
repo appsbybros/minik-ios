@@ -32,3 +32,13 @@ branding", 9 October); the `plus-english-only` flavour kept the former icon. `Mi
 `98da8992cc8fc03d`), the full-square art behind Android's `launcher_rainbow_foreground` over
 `#2EC8F2`, scaled to 1024 x 1024, RGB. `MinikPlusEnglishAppIcon` now holds the former
 `MinikPlusAppIcon` image, and the `MinikPlusEnglish` target uses it.
+
+## Triple Shot (17 October 2026)
+
+| iOS set | Source |
+| --- | --- |
+| `AppIcon` (target `MinikTripleShot`, `TripleShot/Assets.xcassets`) | Android Triple Shot's launcher master `art/store-ready/launcher-source.png` (TripleShotGame `dd722e5`; 1254 x 1254, RGB, SHA-256 begins `badf56c4c83ae8d0`), Lanczos-scaled to 1024 x 1024, RGB without alpha |
+
+Android's Play icon (`play-store/current/upload/common/app-icon-512.png`) and its legacy `mipmap-*/ic_launcher.png`
+are Lanczos downscales of the same master, so the iOS icon has the store framing (full bleed; Apple applies the
+mask). The adaptive launcher icon (`tripleshot_launcher_art` over `#03122D`, 16 dp inset) shows only its centre.

@@ -438,7 +438,8 @@ targets:
       - path: Resources/ModernPongAudio
         buildPhase: resources
       # Android 739f2f8 art for the daily journey and team table (pong-poses atlases, team celebration, the
-      # tournament remove mark) and the menu music. Standalone app only; Math Plus and Multi do not bundle it.
+      # tournament remove mark), the menu music and (Android a4174b6) the arena scenery in arenas/. Standalone app only;
+      # Math Plus and Multi do not bundle it.
       - path: Resources/ModernPongArt
         type: folder
         buildPhase: resources
@@ -690,8 +691,8 @@ targets:
         CFBundleLocalizations: [en, he, ar, es, hi, nl]
         ITSAppUsesNonExemptEncryption: false
         UILaunchScreen: {}
-        # As on Android: menus are portrait; a battle follows the "Game orientation" setting
-        # (automatic, portrait or landscape) and its rotate button. Full screen on iPad.
+        # As on Android: menus are portrait; a battle rotates automatically and the camera
+        # panel's "Portrait / Landscape" button turns it. Full screen on iPad.
         UIRequiresFullScreen: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
@@ -843,6 +844,97 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.appsbybros.minik.squash.tests
         GENERATE_INFOPLIST_FILE: YES
 
+  MinikTripleShot:
+    # Standalone port of the Android Triple Shot game (TripleShotGame, com.appsbybros.minik.swish, with
+    # MinikFamilyServices and questionenginelib); it shares no code with the Minik apps. The Android app has no
+    # ads or purchases. TripleShot/AndroidKit gives the translated Kotlin the Android framework it was written for.
+    type: application
+    platform: iOS
+    sources:
+      - path: TripleShot
+        excludes:
+          - "Res/**"
+      # Android's res/ and assets/ byte for byte (Scripts/tripleshot-sync-resources.py; raw Ogg Vorbis, which iOS
+      # cannot decode, as CAF/ALAC), read by AResources from the bundle's Res/ folder. A folder reference keeps the subfolders: the Hebrew and English question banks
+      # share file names, which a group would flatten into one bundle folder.
+      - path: TripleShot/Res
+        type: folder
+        buildPhase: resources
+      # The generated R (the Android resource names) is compiled; the folder reference above only copies files.
+      - path: TripleShot/Res/R.swift
+      - path: Family
+      - path: Resources/Privacy/TripleShot/PrivacyInfo.xcprivacy
+        buildPhase: resources
+      # Online play (rooms, leaderboard, progress) needs the iOS app com.appsbybros.minik.swish registered in the
+      # Firebase project minikswish, the Android app's project. Commit its GoogleService-Info.plist at this path
+      # (.gitignore allows it) and uncomment these two lines in the same commit; until then the app runs offline.
+      # - path: Config/Firebase/MinikTripleShot/GoogleService-Info.plist
+      #   buildPhase: resources
+    info:
+      path: GeneratedInfoPlists/MinikTripleShot-Info.plist
+      properties:
+        # Android android:label="Triple Shot", the same in every language (R.string.app_name is unused).
+        CFBundleDisplayName: Triple Shot
+        # Android's default resources (res/values) are Hebrew; res/values-en is English.
+        CFBundleDevelopmentRegion: he
+        # This app's family catalogue key: the "More Minik apps & games" card never promotes the app itself.
+        MinikFamilyCatalogKey: tripleshot
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleLocalizations: [he, en]
+        ITSAppUsesNonExemptEncryption: false
+        UILaunchScreen: {}
+        # One window scene; its delegate (TripleShot/App/TripleShotApp.swift) hosts the Android activities.
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+          UISceneConfigurations:
+            UIWindowSceneSessionRoleApplication:
+              - UISceneConfigurationName: Default Configuration
+                UISceneDelegateClassName: $(PRODUCT_MODULE_NAME).TripleShotSceneDelegate
+        # As on Android: the pages and most games are portrait (manifest screenOrientation="portrait"); a team match
+        # follows the device (SENSOR), 1v1 is portrait or landscape (SENSOR_LANDSCAPE) and the skill journey follows
+        # the device. The app asks for one orientation set at a time, which iPad allows only for a full-screen app.
+        UIRequiresFullScreen: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.appsbybros.minik.swish
+        PRODUCT_NAME: MinikTripleShot
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # Android versionName / versionCode.
+        MINIK_MARKETING_VERSION: "1.0"
+        MINIK_BUILD_NUMBER: "1"
+        OTHER_LDFLAGS: "$(inherited) -ObjC"
+    dependencies:
+      - package: FirebaseApple
+        product: FirebaseCore
+      - package: FirebaseApple
+        product: FirebaseAuth
+      - package: FirebaseApple
+        product: FirebaseDatabase
+
+  TripleShotTests:
+    # Android parity tests for Triple Shot (the JVM unit tests and golden vectors from the Kotlin classes), hosted
+    # in the app so the code finds the bundle's Res/ folder.
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests/TripleShotTests
+    dependencies:
+      - target: MinikTripleShot
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.appsbybros.minik.swish.tests
+        GENERATE_INFOPLIST_FILE: YES
+
   ProductConfigurationTests:
     type: bundle.unit-test
     platform: iOS
@@ -935,3 +1027,12 @@ schemes:
     build:
       targets:
         MinikBeachVolley: all
+
+  MinikTripleShot:
+    build:
+      targets:
+        MinikTripleShot: all
+        TripleShotTests: [test]
+    test:
+      targets:
+        - TripleShotTests

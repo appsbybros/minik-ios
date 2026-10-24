@@ -147,7 +147,11 @@ struct SkySurface: View {
 }
 
 /// Android buttons with a `FamilySkyDrawable` background: the raised face, pushed down while pressed.
-/// `shadow` keeps the Splash buttons' soft elevation shadow.
+/// `shadow` keeps the Splash buttons' soft elevation shadow. Android binds every such Button to
+/// `FamilyButtonAlignment` (the drawable's `bindButtonOwner`), so the label's lettering is centred on
+/// the raised face and lowered 3 points (`FamilyKit.RaisedLettering`; Splash uses the whole raised
+/// face, `FamilyKit.Lettering.fullRaisedFace`, set in `SplashApp`). Every Splash use is a button, never
+/// a panel.
 struct SkyButtonStyle: ButtonStyle {
     let color: UInt32
     var radius: CGFloat = 18
@@ -155,6 +159,7 @@ struct SkyButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
+            .modifier(FamilyKit.RaisedLettering(cornerRadius: radius, pressed: configuration.isPressed))
             .background(
                 SkySurface(color: color, radius: radius, pressed: configuration.isPressed)
                     .shadow(color: Color.black.opacity(shadow ? 0.22 : 0), radius: shadow ? 2 : 0, x: 0, y: shadow ? 1 : 0)
@@ -246,8 +251,11 @@ enum SplashPageLayout {
 
     /// Android `FamilyReadingPanel.contentWidth`: the whole width in portrait; in a landscape window a
     /// centred column of 52% of the width, at least 300 and at most 520 points.
+    /// Splash (Android 2026-10-15) first narrows a tablet's page (smallest width 600 or more) to at most
+    /// 720 points, 12 from each edge.
     static func readingWidth(_ size: CGSize) -> CGFloat {
-        if size.width <= size.height { return size.width }
-        return min(size.width, min(520, max(300, (size.width * 0.52).rounded())))
+        let available = min(size.width, size.height) >= 600 ? min(720, size.width - 24) : size.width
+        if size.width <= size.height { return available }
+        return min(available, min(520, max(300, (available * 0.52).rounded())))
     }
 }

@@ -1,0 +1,99 @@
+<?xml version='1.0' encoding='utf-8'?>
+<question-bank version="1" mode="ARTIFICIAL_INTELLIGENCE" language="he">
+  <question id="artificial_intelligence_001" level="2">
+    <prompt lang="he">מהו 'למידה מפוקחת' (Supervised Learning)?</prompt>
+    <answer correct="false">חיפוש אקראי ללא משוב</answer>
+    <answer correct="false">למידה ללא נתונים</answer>
+    <answer correct="false">למידה רק באמצעות רובוט פיזי</answer>
+    <answer correct="true">למידה מדוגמאות שבהן מצורפת תשובת יעד</answer>
+    <explanation lang="he">בלמידה מפוקחת המודל לומד קלטים יחד עם תוויות או ערכי יעד.</explanation>
+  </question>
+  <question id="artificial_intelligence_002" level="3">
+    <prompt lang="he">מהי מטרת קבוצת Validation באימון מודל?</prompt>
+    <answer correct="false">להחליף את כל נתוני האימון</answer>
+    <answer correct="false">להציג את המודל למשתמשים</answer>
+    <answer correct="true">להעריך ולכוון בחירות במהלך הפיתוח בלי לאמן עליה ישירות</answer>
+    <answer correct="false">לשמור רק תשובות שגויות</answer>
+    <explanation lang="he">Validation עוזר לבחור היפר-פרמטרים ולזהות overfitting.</explanation>
+  </question>
+  <question id="artificial_intelligence_003" level="2">
+    <prompt lang="he">מהו Overfitting?</prompt>
+    <answer correct="false">אימון ללא GPU</answer>
+    <answer correct="true">מצב שבו מודל מתאים מאוד לנתוני האימון אך מכליל פחות טוב לנתונים חדשים</answer>
+    <answer correct="false">מודל קטן מדי לזיכרון</answer>
+    <answer correct="false">מודל שמחזיר תמיד אפס</answer>
+    <explanation lang="he">התאמת יתר מתרחשת כשהמודל לומד גם רעש ופרטים מקריים של האימון.</explanation>
+  </question>
+  <question id="artificial_intelligence_004" level="1">
+    <prompt lang="he">מהי רשת נוירונים?</prompt>
+    <answer correct="false">רשת מחשבים פיזית בלבד</answer>
+    <answer correct="false">אלגוריתם הצפנה</answer>
+    <answer correct="true">מודל חישובי המורכב משכבות של יחידות ופרמטרים נלמדים</answer>
+    <answer correct="false">מאגר נתונים של נוירולוגים</answer>
+    <explanation lang="he">רשתות נוירונים משתמשות בחיבורים משוקללים ובפונקציות לא-ליניאריות.</explanation>
+  </question>
+  <question id="artificial_intelligence_005" level="3">
+    <prompt lang="he">מהו Transformer בהקשר של AI?</prompt>
+    <answer correct="false">אלגוריתם מיון</answer>
+    <answer correct="true">ארכיטקטורת רשת המבוססת במידה רבה על מנגנוני Attention</answer>
+    <answer correct="false">פורמט תמונה</answer>
+    <answer correct="false">סוג מעבד בלבד</answer>
+    <explanation lang="he">Transformers הפכו בסיס למודלים רבים בשפה, ראייה ועוד.</explanation>
+  </question>
+  <question id="artificial_intelligence_006" level="3">
+    <prompt lang="he">מה עושה מנגנון Attention?</prompt>
+    <answer correct="false">מוחק תמיד חצי מהקלט</answer>
+    <answer correct="true">מאפשר למודל לשקלל אילו חלקים מהקלט רלוונטיים זה לזה</answer>
+    <answer correct="false">מגדיל את המסך</answer>
+    <answer correct="false">מחליף את פונקציית ההפסד</answer>
+    <explanation lang="he">Attention מחשב משקלים בין ייצוגים כדי לאסוף הקשר רלוונטי.</explanation>
+  </question>
+  <question id="artificial_intelligence_007" level="2">
+    <prompt lang="he">מהו Embedding?</prompt>
+    <answer correct="true">ייצוג וקטורי נלמד של פריט או מושג</answer>
+    <answer correct="false">רשימת סיסמאות</answer>
+    <answer correct="false">תמונה ממוזערת</answer>
+    <answer correct="false">קובץ גיבוי</answer>
+    <explanation lang="he">Embeddings ממפים פריטים למרחב מספרי שבו ניתן למדוד קשרים.</explanation>
+  </question>
+  <question id="artificial_intelligence_008" level="2">
+    <prompt lang="he">מהי פונקציית Loss?</prompt>
+    <answer correct="false">מספר השכבות</answer>
+    <answer correct="false">גודל קובץ המודל</answer>
+    <answer correct="true">מדד מספרי לשגיאת המודל שעל האימון לנסות לצמצם</answer>
+    <answer correct="false">מהירות האינטרנט</answer>
+    <explanation lang="he">האופטימיזציה משנה פרמטרים כדי להפחית Loss.</explanation>
+  </question>
+  <question id="artificial_intelligence_009" level="3">
+    <prompt lang="he">מהו Gradient Descent?</prompt>
+    <answer correct="false">דרך למיין טקסט אלפביתית</answer>
+    <answer correct="true">שיטת אופטימיזציה שמעדכנת פרמטרים בכיוון שמפחית את פונקציית המטרה</answer>
+    <answer correct="false">סוג של מסד נתונים</answer>
+    <answer correct="false">שיטת דחיסת תמונות</answer>
+    <explanation lang="he">הגרדיאנט מצביע על כיוון העלייה ולכן נעים בקירוב בכיוון ההפוך.</explanation>
+  </question>
+  <question id="artificial_intelligence_010" level="3">
+    <prompt lang="he">מהו Reinforcement Learning?</prompt>
+    <answer correct="false">שמירת קבצים בענן</answer>
+    <answer correct="false">למידה רק מתוויות ידניות</answer>
+    <answer correct="false">יצירת גרפים בלבד</answer>
+    <answer correct="true">למידה באמצעות פעולות, מצבים ותגמולים</answer>
+    <explanation lang="he">סוכן לומד מדיניות שמנסה למקסם תגמול מצטבר.</explanation>
+  </question>
+  <question id="artificial_intelligence_011" level="2">
+    <prompt lang="he">מהי Hallucination במודל שפה?</prompt>
+    <answer correct="false">הקטנת מספר הפרמטרים</answer>
+    <answer correct="false">הצפנת הטקסט</answer>
+    <answer correct="true">פלט שנשמע סביר אך כולל מידע לא מבוסס או שגוי</answer>
+    <answer correct="false">קריסת המסך</answer>
+    <explanation lang="he">מודלי שפה יכולים לייצר טענה שוטפת גם כשאין לה בסיס מתאים.</explanation>
+  </question>
+  <question id="artificial_intelligence_012" level="4">
+    <prompt lang="he">למה מפרידים Test set מקבוצת האימון וה-Validation?</prompt>
+    <answer correct="true">כדי לקבל הערכה פחות מוטה של הביצועים הסופיים על נתונים שלא שימשו לכוונון</answer>
+    <answer correct="false">כדי להגדיל את מספר הפרמטרים</answer>
+    <answer correct="false">כדי שהמודל ילמד מהר יותר מה-Test</answer>
+    <answer correct="false">כדי למחוק דוגמאות קשות</answer>
+    <explanation lang="he">Test נשמר לסוף כדי שלא נכוון החלטות אליו שוב ושוב.</explanation>
+  </question>
+</question-bank>

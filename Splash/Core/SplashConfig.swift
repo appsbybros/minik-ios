@@ -3,9 +3,10 @@ import Foundation
 /// Port of Android core/SplashConfig.kt: physics, gestures, penalties, bot timing, network
 /// cadence and RenderConfig framing. Values are identical to Android.
 struct SplashConfig: Equatable {
-    /// New arenas are 20 x 20 (Android 2026-10-05); restored rooms and saves keep their own size.
-    var width: Double = 20.0
-    var depth: Double = 20.0
+    /// New local battles use the wide 40 x 24 court (Android 2026-10-15); online rooms ask for 20 x 20,
+    /// and restored rooms and saves keep their own size.
+    var width: Double = 40.0
+    var depth: Double = 24.0
     var moveSpeed: Double = 3.8
     var throwSpeed: Double = 7.8
     var gravity: Double = 2.6

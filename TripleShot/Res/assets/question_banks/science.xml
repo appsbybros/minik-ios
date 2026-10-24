@@ -1,0 +1,123 @@
+<?xml version='1.0' encoding='utf-8'?>
+<question-bank version="1" mode="SCIENCE" language="he">
+  <question id="science_001" level="1">
+    <prompt lang="he">מהו התהליך שבו צמחים משתמשים באור כדי לייצר סוכרים?</prompt>
+    <answer correct="false">תסיסה</answer>
+    <answer correct="false">אוסמוזה</answer>
+    <answer correct="true">פוטוסינתזה</answer>
+    <answer correct="false">נשימה תאית</answer>
+    <explanation lang="he">בפוטוסינתזה אנרגיית אור מומרת לאנרגיה כימית.</explanation>
+  </question>
+  <question id="science_002" level="2">
+    <prompt lang="he">איזה גז מהווה את רוב האטמוספרה של כדור הארץ?</prompt>
+    <answer correct="true">חנקן</answer>
+    <answer correct="false">ארגון</answer>
+    <answer correct="false">פחמן דו-חמצני</answer>
+    <answer correct="false">חמצן</answer>
+    <explanation lang="he">כ-78% מהאטמוספרה הם חנקן.</explanation>
+  </question>
+  <question id="science_003" level="2">
+    <prompt lang="he">מהי יחידת ה-SI של כוח?</prompt>
+    <answer correct="false">פסקל</answer>
+    <answer correct="false">ואט</answer>
+    <answer correct="true">ניוטון</answer>
+    <answer correct="false">ג'אול</answer>
+    <explanation lang="he">ניוטון הוא קילוגרם-מטר לשנייה בריבוע.</explanation>
+  </question>
+  <question id="science_004" level="2">
+    <prompt lang="he">איזה אברון מכונה לעיתים 'תחנת הכוח' של התא?</prompt>
+    <answer correct="false">ריבוזום</answer>
+    <answer correct="false">ליזוזום</answer>
+    <answer correct="false">גרעין</answer>
+    <answer correct="true">מיטוכונדריה</answer>
+    <explanation lang="he">מיטוכונדריה מייצרת חלק גדול מה-ATP בתאים אאוקריוטיים.</explanation>
+  </question>
+  <question id="science_005" level="1">
+    <prompt lang="he">מהו pH של תמיסה ניטרלית בקירוב בטמפרטורת חדר?</prompt>
+    <answer correct="true">7</answer>
+    <answer correct="false">0</answer>
+    <answer correct="false">5</answer>
+    <answer correct="false">14</answer>
+    <explanation lang="he">מים טהורים הם ניטרליים בקירוב סביב pH 7.</explanation>
+  </question>
+  <question id="science_006" level="1">
+    <prompt lang="he">איזה חלקיק נושא מטען חשמלי שלילי?</prompt>
+    <answer correct="false">פוטון</answer>
+    <answer correct="false">פרוטון</answer>
+    <answer correct="false">נויטרון</answer>
+    <answer correct="true">אלקטרון</answer>
+    <explanation lang="he">לאלקטרון מטען יסודי שלילי.</explanation>
+  </question>
+  <question id="science_007" level="3">
+    <prompt lang="he">מהי מהירות האור בריק בקירוב?</prompt>
+    <answer correct="false">30,000 ק״מ בשנייה</answer>
+    <answer correct="true">300,000 ק״מ בשנייה</answer>
+    <answer correct="false">3,000 ק״מ בשנייה</answer>
+    <answer correct="false">3,000,000 ק״מ בשנייה</answer>
+    <explanation lang="he">מהירות האור בריק היא כ-299,792 ק״מ לשנייה.</explanation>
+  </question>
+  <question id="science_008" level="3">
+    <prompt lang="he">איזה חוק קושר בין מתח, זרם והתנגדות?</prompt>
+    <answer correct="false">חוק בויל</answer>
+    <answer correct="false">חוק הוק</answer>
+    <answer correct="true">חוק אוהם</answer>
+    <answer correct="false">חוק פסקל</answer>
+    <explanation lang="he">V=IR הוא חוק אוהם.</explanation>
+  </question>
+  <question id="science_009" level="1">
+    <prompt lang="he">איזו מולקולה נושאת את רוב המידע התורשתי בתאים?</prompt>
+    <answer correct="false">כולסטרול</answer>
+    <answer correct="false">גלוקוז</answer>
+    <answer correct="false">ATP</answer>
+    <answer correct="true">DNA</answer>
+    <explanation lang="he">DNA מאחסן מידע גנטי ברוב האורגניזמים.</explanation>
+  </question>
+  <question id="science_010" level="3">
+    <prompt lang="he">איזה סוג קשר מחבר בדרך כלל נתרן וכלור במלח בישול?</prompt>
+    <answer correct="true">קשר יוני</answer>
+    <answer correct="false">קשר מימני</answer>
+    <answer correct="false">קשר מתכתי</answer>
+    <answer correct="false">קשר פפטידי</answer>
+    <explanation lang="he">NaCl מורכב מיוני נתרן וכלוריד.</explanation>
+  </question>
+  <question id="science_011" level="3">
+    <prompt lang="he">מה קורה לנקודת הרתיחה של מים כאשר הלחץ האטמוספרי יורד?</prompt>
+    <answer correct="false">היא נשארת תמיד 100°C</answer>
+    <answer correct="false">המים מפסיקים לרתוח</answer>
+    <answer correct="true">היא יורדת</answer>
+    <answer correct="false">היא עולה</answer>
+    <explanation lang="he">בלחץ נמוך יותר נדרש פחות חום כדי שלחץ האדים ישתווה לסביבה.</explanation>
+  </question>
+  <question id="science_012" level="4">
+    <prompt lang="he">איזה סוג גל הוא קול באוויר?</prompt>
+    <answer correct="false">גל מכני רוחבי בלבד</answer>
+    <answer correct="false">גל אלקטרומגנטי</answer>
+    <answer correct="true">גל מכני אורכי</answer>
+    <answer correct="false">גל כבידה</answer>
+    <explanation lang="he">קול באוויר מתקדם באמצעות דחיסות ודילולים לאורך כיוון ההתפשטות.</explanation>
+  </question>
+  <question id="science_013" level="2">
+    <prompt lang="he">מה תפקידם העיקרי של ריבוזומים?</prompt>
+    <answer correct="false">שכפול DNA</answer>
+    <answer correct="false">ייצור שומנים בלבד</answer>
+    <answer correct="false">פירוק גלוקוז</answer>
+    <answer correct="true">בניית חלבונים</answer>
+    <explanation lang="he">ריבוזומים מתרגמים mRNA לשרשראות חלבון.</explanation>
+  </question>
+  <question id="science_014" level="1">
+    <prompt lang="he">איזה יסוד כימי מסומן O?</prompt>
+    <answer correct="false">זהב</answer>
+    <answer correct="false">אוסמיום</answer>
+    <answer correct="true">חמצן</answer>
+    <answer correct="false">כסף</answer>
+    <explanation lang="he">O הוא הסמל של Oxygen, חמצן.</explanation>
+  </question>
+  <question id="science_015" level="3">
+    <prompt lang="he">מהי אינרציה?</prompt>
+    <answer correct="false">מהירות האור בחומר</answer>
+    <answer correct="false">אנרגיה שנוצרת מחיכוך</answer>
+    <answer correct="false">כוח שמושך תמיד למטה</answer>
+    <answer correct="true">נטייה של גוף להתנגד לשינוי במצב תנועתו</answer>
+    <explanation lang="he">החוק הראשון של ניוטון מתאר אינרציה.</explanation>
+  </question>
+</question-bank>

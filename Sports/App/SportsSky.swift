@@ -175,6 +175,10 @@ struct SportsSkySurface: View {
 }
 
 /// A button on a raised sky surface whose face sinks while it is pressed (Android's pressed state).
+/// Every use is an Android Button with a `FamilySkyDrawable` (`button()`, the carousel and lesson arrows, the
+/// tournament exit choices), which the drawable binds to `FamilyButtonAlignment`: the lettering is centred on
+/// the raised face below the gloss and lowered 3 points (`FamilyKit.RaisedLettering`; Squash and Beach
+/// Volleyball keep the default face, they never call `useFullRaisedFace`).
 struct SportsSkyButtonStyle: ButtonStyle {
     let color: UInt32
     var radius: CGFloat = 18
@@ -182,6 +186,7 @@ struct SportsSkyButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
+            .modifier(FamilyKit.RaisedLettering(cornerRadius: radius, pressed: configuration.isPressed && enabled))
             .background(SportsSkySurface(color: color, radius: radius, pressed: configuration.isPressed && enabled, enabled: enabled))
             .contentShape(Rectangle())
     }

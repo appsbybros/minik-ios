@@ -1,3 +1,4 @@
+import CoreText
 import UIKit
 
 /// Calls the arena once per display frame without the display link retaining the view.
@@ -47,7 +48,7 @@ final class SplashArenaView: UIView {
     var onControlSettings: ((PlayerSettings) -> Void)?
     var sendCommand: ((Command) -> Void)?
     var spectatorSnapshot: (() -> Void)?
-    /// Android `onRotate`: the ↻ button turns the game between portrait and landscape.
+    /// Android `onRotate`: the camera panel's "Portrait / Landscape" turns the game between portrait and landscape.
     var onRotate: (() -> Void)?
     /// Android `rankPoints`: the colour rank of the local name tag and score.
     var rankPoints = 0
@@ -84,8 +85,6 @@ final class SplashArenaView: UIView {
     private let stableLabels = StableLabels()
     /// Android `linkedMapOf`: name tags in drawing order (the local player first).
     private var nameTargets: [(id: String, rect: CGRect)] = []
-    private var focusedOpponent: String? = nil
-    private var focusUntil = 0.0
     private var buttons: [String: CGRect] = [:]
     private var buttonOrder: [String] = []
     private var aimPoints: [CGPoint] = []
@@ -99,8 +98,16 @@ final class SplashArenaView: UIView {
     private var pointerIds: [ObjectIdentifier: Int] = [:]
     private var touchesById: [Int: UITouch] = [:]
 
-    // Camera (Android SplashView 2026-10-05).
-    private var playerCamera = false
+    // Camera (Android SplashView 2026-10-17): the camera panel chooses Follow player / Whole court,
+    // rotates (swipe for yaw and tilt) and zooms; Paint walls keep their zoom between matches.
+    private var playerCamera: Bool
+    private var cameraChoiceMade = false
+    private var cameraPanelOpen = false
+    private var cameraZoom: Double
+    private var orbitTilt = 0.0
+    private var orbitY: CGFloat = 0
+    /// Android `cameraLabelsVisible` (device tests hide the lettering to measure the faces).
+    var cameraLabelsVisible = true
     private var arenaCamera: ArenaCamera
     private var cameraAt: Int64 = 0
     private var activePointers = Set<Int>()
@@ -127,6 +134,9 @@ final class SplashArenaView: UIView {
         self.onFinish = onFinish
         self.onSpeak = onSpeak
         self.local = engine.actor(localId) ?? engine.actors[0]
+        self.playerCamera = !engine.paintSession.active
+        self.cameraZoom = engine.config.wallBattle
+            ? min(max(Double(SplashPrefs.float("paintWallsZoom", 0.85, file: "splash_camera")), 0.62), 1.65) : 1.0
         // Android: ArenaCamera(width / 2, depth / 2, PRO_EDITION ? 24 : 34).
         self.arenaCamera = ArenaCamera(engine.config.width / 2, engine.config.depth / 2,
                                        distance: SplashLaunch.proEdition ? 24.0 : 34.0)
@@ -242,6 +252,7 @@ final class SplashArenaView: UIView {
         if bounds.size != arenaSize {
             // Android onSizeChanged.
             arenaSize = bounds.size
+            if !cameraChoiceMade { playerCamera = bounds.width <= bounds.height && !engine.paintSession.active }
             stableLabels.clear()
             nameTargets.removeAll()
             cameraAt = 0
@@ -299,8 +310,16 @@ final class SplashArenaView: UIView {
         let dt = cameraAt == 0 ? 1.0 : Double(now - cameraAt) / 1000.0
         cameraAt = now
         let target = targetCamera()
-        // The camera holds still while a finger is down, so drags and aims stay where they started.
-        if activePointers.isEmpty { arenaCamera = dt >= 1.0 ? target : arenaCamera.toward(target, dt) }
+        if dt >= 1.0 {
+            arenaCamera = target
+        } else {
+            // The look-at point follows faster (rate 14) than the rest of the camera.
+            let follow = 1 - exp(-min(max(dt, 0.0), 0.1) * 14.0)
+            var next = arenaCamera.toward(target, dt)
+            next.x = arenaCamera.x + (target.x - arenaCamera.x) * follow
+            next.y = arenaCamera.y + (target.y - arenaCamera.y) * follow
+            arenaCamera = next
+        }
         var inset: ArenaInset? = nil
         let area = billboardBounds()
         if !area.isEmpty {
@@ -315,9 +334,9 @@ final class SplashArenaView: UIView {
         let width = Int(viewWidth)
         let height = Int(viewHeight)
         var base = arenaCamera
-        base.yaw = orbitYaw
-        base.centerY = landscape ? 0.61 : 0.68
-        base.tilt = landscape ? 0.96 : 1.02
+        base.yaw = orbitYaw + (engine.paintSession.active || landscape || engine.practice ? 0.0 : Double.pi / 2)
+        base.centerY = landscape ? 0.60 : 0.47
+        base.tilt = min(max((landscape ? 0.96 : 0.88) + orbitTilt, 0.45), 1.2)
         let w = Double(width)
         let h = Double(height)
         if let d = engine.drill {
@@ -353,24 +372,54 @@ final class SplashArenaView: UIView {
             practice.distance = landscape ? 17.0 : 24.0
             return practice
         }
-        if let id = focusedOpponent, let other = engine.actor(id), engine.time < focusUntil {
-            // A tapped opponent: frame both players (feet and heads) between the HUD and the advice.
-            let pts = [GroundPoint(me.x, me.y), GroundPoint(other.position.x, other.position.y)]
-            var c = base.frameGround(pts, max(width, 1), max(height, 1), base.focusHeight)
-            let top = h * (landscape ? 0.20 : 0.42)
-            for _ in 0..<160 {
-                let visible = pts.allSatisfy { v in
-                    [0.0, 4.7].allSatisfy { z in
-                        let p = c.project(v.x, v.y, base.focusHeight + z, width, height)
-                        let px = Double(p.x)
-                        let py = Double(p.y)
-                        return px >= w * 0.08 && px <= w * 0.92 && py >= top && py <= h * 0.82
+        // Follow the player without changing zoom when a balloon is thrown.
+        if playerCamera {
+            var follow = base
+            follow.x = me.x
+            follow.y = me.y
+            follow.distance = (landscape ? 18.0 : 32.0) * cameraZoom
+            follow.focusHeight = 1.0
+            follow.centerY = landscape ? 0.57 : 0.53
+            return follow
+        }
+        if engine.config.wallBattle {
+            // Frame the two upright edge walls, not just their floor points. In
+            // landscape the camera looks across the long side, placing the walls
+            // left and right; portrait looks from the short end, placing them top/bottom.
+            var cam = base
+            cam.x = engine.config.width * 0.5
+            cam.y = engine.config.depth * 0.5
+            cam.distance = landscape ? 35.0 : 61.0
+            cam.focusHeight = 2.8
+            cam.tilt = min(max((landscape ? 1.12 : 0.72) + orbitTilt, 0.45), 1.2)
+            cam.fov = 38.0
+            cam.centerY = landscape ? 0.47 : 0.55
+            cam.yaw = orbitYaw + (landscape ? 0.0 : -Double.pi / 2)
+            func inside(_ pt: ScreenPoint) -> Bool {
+                let px = Double(pt.x)
+                let py = Double(pt.y)
+                return px >= w * 0.045 && px <= w * 0.955 && py >= h * 0.18 && py <= h * 0.95
+            }
+            for _ in 0..<220 {
+                let wallsFit = engine.paintSession.walls.allSatisfy { wall in
+                    [0.0, 1.0].allSatisfy { u in
+                        [0.0, wall.height].allSatisfy { z in
+                            let v = wall.world(u, 0.0)
+                            return inside(cam.project(v.x, v.y, z, width, height))
+                        }
                     }
                 }
-                if visible { return c }
-                c.distance += 0.5
+                let playersFit = engine.actors.allSatisfy { a in inside(cam.project(a.position.x, a.position.y, a.height + 4.7, width, height)) }
+                // The default .85 zoom is the fitted overview, not a second crop after
+                // fitting. A deliberate extra zoom remains available through the panel.
+                if wallsFit && playersFit {
+                    cam.distance *= cameraZoom / 0.85
+                    return cam
+                }
+                cam.distance += 0.5
             }
-            return c
+            cam.distance *= cameraZoom / 0.85
+            return cam
         }
         if engine.paintSession.active || engine.paintSession.passing {
             // Walls (both ends of each) and every player stay in view between the HUD and the advice.
@@ -382,33 +431,58 @@ final class SplashArenaView: UIView {
             cam.focusHeight = landscape ? 2.0 : 0.0
             cam.tilt = landscape ? 1.18 : 1.02
             cam.centerY = landscape ? 0.55 : 0.66
-            let top = h * (landscape ? 0.27 : 0.43)
+            let top = h * (landscape ? 0.18 : 0.20)
             for _ in 0..<120 {
                 let visible = points.allSatisfy { v in
-                    [0.0, 6.4].allSatisfy { z in
+                    [0.0, 5.0].allSatisfy { z in
                         let pt = cam.project(v.x, v.y, z, width, height)
                         let px = Double(pt.x)
                         let py = Double(pt.y)
-                        return px >= w * 0.06 && px <= w * 0.94 && py >= top && py <= h * 0.80
+                        return px >= w * 0.03 && px <= w * 0.97 && py >= top && py <= h * 0.86
                     }
                 }
-                if visible { return cam }
+                if visible {
+                    cam.distance *= cameraZoom
+                    return cam
+                }
                 cam.distance += 0.5
             }
             return cam
         }
-        if playerCamera {
-            var follow = base
-            follow.x = me.x
-            follow.y = me.y
-            follow.distance = landscape ? 19.0 : 27.0
-            return follow
+        // The default view shows the real rectangular court from its long side in
+        // landscape and its short end in portrait. The separate Follow view follows
+        // the local player. All corners and full-height characters remain in frame.
+        let court = [GroundPoint(0.0, 0.0), GroundPoint(engine.config.width, 0.0), GroundPoint(0.0, engine.config.depth),
+                     GroundPoint(engine.config.width, engine.config.depth)]
+        var view = base
+        view.x = engine.config.width / 2
+        view.y = engine.config.depth / 2
+        view.distance = landscape ? 25.0 : 48.0
+        view.focusHeight = 1.2
+        view.centerY = landscape ? 0.50 : 0.47
+        for _ in 0..<160 {
+            // Frame the floor, rather than imaginary full-height characters standing
+            // on every corner; that left the actual players too small in landscape.
+            let floorFits = court.allSatisfy { point in
+                let p = view.project(point.x, point.y, 0.0, width, height)
+                let px = Double(p.x)
+                let py = Double(p.y)
+                return px >= w * 0.025 && px <= w * 0.975 && py >= h * (landscape ? 0.18 : 0.19) && py <= h * (landscape ? 0.81 : 0.82)
+            }
+            let playersFit = engine.actors.allSatisfy { actor in
+                let p = view.project(actor.position.x, actor.position.y, actor.height + 4.7, width, height)
+                let px = Double(p.x)
+                let py = Double(p.y)
+                return px >= w * 0.035 && px <= w * 0.965 && py >= h * (landscape ? 0.18 : 0.19) && py <= h * 0.82
+            }
+            if floorFits && playersFit {
+                view.distance *= cameraZoom * (landscape ? 0.75 : 1.0)
+                if landscape { view.centerY = 0.44 }
+                return view
+            }
+            view.distance += 0.5
         }
-        let places = local.choices.map { GroundPoint($0.position.x, $0.position.y) } + [GroundPoint(me.x, me.y)]
-        var fit = base.frameGround(places, max(width, 1), max(height, 1), 0.0)
-        // Collecting never changes framing; keep the same action context and nearby opponents.
-        fit.distance = max(fit.distance, landscape ? 25.0 : 32.0)
-        return fit
+        return view
     }
 
     /// Android `overviewCamera()`: the whole field (every corner up to 5 high) inside the close-up box.
@@ -437,10 +511,10 @@ final class SplashArenaView: UIView {
 
     private func closeCamera() -> ArenaCamera { return overviewCamera() }
 
-    /// The live whole-field box above the action (none in landscape, practice or drills).
+    /// The live whole-field box above the action: retired (Android 2026-10-15 returns an empty box);
+    /// the camera panel's Whole court view replaced it.
     private func billboardBounds() -> CGRect {
-        if landscape || engine.practice || engine.drill != nil { return .zero }
-        return ltrb(viewWidth * 0.16, 145, viewWidth * 0.84, max(viewHeight * 0.39, 245))
+        return .zero
     }
 
     // MARK: Projection
@@ -552,15 +626,17 @@ final class SplashArenaView: UIView {
     }
 
     /// Android StaticLayout paragraph: centred, bold, at most `maxLines` lines, ellipsised.
-    private func paragraph(_ s: String, _ b: CGRect, _ size: CGFloat, _ color: UInt32, maxLines: Int = 3, rtl: Bool? = nil) {
+    private func paragraph(_ s: String, _ b: CGRect, _ size: CGFloat, _ color: UInt32, maxLines: Int = 3, rtl: Bool? = nil,
+                           startAligned: Bool = false) {
         let isRTL = rtl ?? AppText.rtl
-        let key = "\(s)|\(Int(b.width))|\(size)|\(color)|\(maxLines)|\(isRTL)"
+        let key = "\(s)|\(Int(b.width))|\(size)|\(color)|\(maxLines)|\(isRTL)|\(startAligned)"
         let layout: ParagraphLayout
         if let cached = layouts[key] {
             layout = cached
         } else {
             let style = NSMutableParagraphStyle()
-            style.alignment = .center
+            // Android ALIGN_NORMAL: the start of the text direction (right in RTL).
+            style.alignment = startAligned ? (isRTL ? .right : .left) : .center
             style.baseWritingDirection = isRTL ? .rightToLeft : .natural
             style.lineBreakMode = .byWordWrapping
             let f = font(size, true)
@@ -634,20 +710,13 @@ final class SplashArenaView: UIView {
         drawHud(c)
         if tutorialStep < 0 {
             let bottom = viewHeight - (landscape ? 55 : 104)
-            cameraButton = ltrb(12, bottom - 34, 166, bottom)
-            rounded(c, cameraButton, 10, 0xee1b5668)
-            let cameraTitle: String
             if local.held != nil && local.settings.throwing == .standard {
-                cameraTitle = tr("Throw balloon", "זריקת הבלון")
-            } else if playerCamera {
-                cameraTitle = tr("Your view · switch", "המבט שלכם · החלפה")
+                cameraButton = ltrb(12, bottom - 34, 166, bottom)
+                rounded(c, cameraButton, 10, 0xee1b5668)
+                text(tr("Throw balloon", "זריקת הבלון"), cameraButton.midX, cameraButton.midY, 12, white, bold: true)
             } else {
-                cameraTitle = tr("Action view · switch", "מבט כללי · החלפה")
+                cameraButton = .zero
             }
-            text(cameraTitle, cameraButton.midX, cameraButton.midY, 12, white, bold: true)
-            orbitRect = ltrb(viewWidth - 160, bottom - 34, viewWidth - 12, bottom)
-            rounded(c, orbitRect, 10, 0xee1b5668)
-            text(tr("↔ Rotate view", "↔ סיבוב המבט"), orbitRect.midX, orbitRect.midY, 12, white, bold: true)
         }
         if tutorialStep >= 0 {
             updateLesson()
@@ -774,90 +843,120 @@ final class SplashArenaView: UIView {
         c.fillPath(using: evenOdd ? .evenOdd : .winding)
     }
 
-    private func drawWalls(_ c: CGContext) {
+    /// Android `wallCoversAnswer`: answers from older saves, or a rotated close view, can still fall
+    /// behind a wall. Only then that wall's paint is softened; its rails and team outline stay solid.
+    func wallCoversAnswer(_ wall: PaintWall) -> Bool {
+        if local.held != nil { return false }
+        let polygon = CGMutablePath()
+        for (i, corner) in [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)].enumerated() {
+            let at = wallPoint(wall.id, corner.0, corner.1)
+            if i == 0 { polygon.move(to: at) } else { polygon.addLine(to: at) }
+        }
+        polygon.closeSubpath()
+        let scene = CGRect(x: 0, y: 0, width: sceneWidth, height: sceneHeight)
+        return choiceRects.values.contains { b in
+            // Android Rect(...toInt()) inside a Region clipped to the scene.
+            let answer = ltrb(CGFloat(Int(b.minX + b.width * 0.12)), CGFloat(Int(b.minY + b.height * 0.12)),
+                              CGFloat(Int(b.maxX - b.width * 0.12)), CGFloat(Int(b.maxY - b.height * 0.12))).intersection(scene)
+            if answer.isNull || answer.isEmpty { return false }
+            return polygon.intersects(CGPath(rect: answer, transform: nil))
+        }
+    }
+
+    /// Android `drawWalls(c, front)`: the back walls are drawn before the players and, in Paint walls,
+    /// the wall nearer the camera than the court centre after them.
+    private func drawWalls(_ c: CGContext, front: Bool = false) {
         let session = engine.paintSession
         for wall in session.walls {
+            let middle = wall.world(0.5, 0.5)
+            let wallDepth = arenaCamera.project(middle.x, middle.y, wall.height * 0.5, sceneWidth, sceneHeight).depth
+            let centerDepth = arenaCamera.project(engine.config.width * 0.5, engine.config.depth * 0.5, wall.height * 0.5,
+                                                  sceneWidth, sceneHeight).depth
+            let inFront = engine.config.wallBattle && wallDepth < centerDepth - 1.0
+            if inFront != front { continue }
+            let softened = front && wallCoversAnswer(wall)
             let m = wallMap(wall)
-            let base = CGMutablePath()
-            wallQuad(m, 0, 0, 1, 1, base)
-            fillPath(c, base, 0xfffff5dd)
-            // Cells batched by colour (same rectangles as Android, one fill per colour).
-            var cells: [UInt32: CGMutablePath] = [:]
-            var order: [UInt32] = []
-            let columns = Double(wall.columns)
-            let rows = Double(wall.rows)
-            for i in wall.cells.indices {
-                let x = Double(i % wall.columns) / columns
-                let y = Double(i / wall.columns) / rows
-                let color = wall.cells[i]
-                let ink: UInt32
-                if color >= 0 {
-                    ink = Teams.style(color).color
-                } else if i < session.targetMask.count && !session.targetMask[i] {
-                    ink = 0xffdce8e7
-                } else {
-                    ink = 0xfffff9e9
-                }
-                if cells[ink] == nil {
-                    cells[ink] = CGMutablePath()
-                    order.append(ink)
-                }
-                if let path = cells[ink] { wallQuad(m, x + 0.002, y + 0.003, x + 1 / columns - 0.002, y + 1 / rows - 0.003, path) }
-            }
-            for ink in order { if let path = cells[ink] { fillPath(c, path, ink) } }
-            // A colorful graffiti cornice stays outside the scored wall: decoration is never coverage.
-            let cornice = CGMutablePath()
-            let left = -0.015, top = 1.015, right = 1.015, bottom = 1.22, rx = 0.025, ry = 0.035
-            let arcs: [(Double, Double, Double)] = [(right - rx, top + ry, -Double.pi / 2), (right - rx, bottom - ry, 0),
-                                                    (left + rx, bottom - ry, Double.pi / 2), (left + rx, top + ry, Double.pi)]
-            for (index, arc) in arcs.enumerated() {
-                for step in 0...6 {
-                    let angle = arc.2 + Double(step) * Double.pi / 12
-                    let pt = m.map(arc.0 + cos(angle) * rx, arc.1 + sin(angle) * ry)
-                    if index == 0 && step == 0 { cornice.move(to: pt) } else { cornice.addLine(to: pt) }
-                }
-            }
-            cornice.closeSubpath()
             c.saveGState()
-            c.addPath(cornice)
+            if softened {
+                c.setAlpha(85.0 / 255.0)
+                c.beginTransparencyLayer(auxiliaryInfo: nil)
+            }
+            // A vertical glass gradient and substantial corner rails make the near
+            // boundary visibly upright while leaving the characters behind it legible.
+            // (Android's LinearGradient(0,1 -> 0,0) in wall space, drawn as 16 bands so it follows the perspective.)
+            let glass: [UInt32]
+            if engine.config.wallBattle && wall.id == 0 {
+                glass = [0x759bdfff, 0x4bb0e8ff, 0x709bdfff]
+            } else if engine.config.wallBattle {
+                glass = [0x75ffe298, 0x4bfff1bf, 0x70ffe298]
+            } else {
+                glass = [0x75fff5dd, 0x4bfff5dd, 0x70fff5dd]
+            }
+            c.setShouldAntialias(false)
+            for band in 0..<16 {
+                let low = Double(band) / 16
+                let high = Double(band + 1) / 16
+                // Position 0 of the gradient is the top (v = 1), position 1 the ground (v = 0).
+                let t = 1 - (low + high) / 2
+                let pair = t < 0.5 ? (glass[0], glass[1], t * 2) : (glass[1], glass[2], t * 2 - 1)
+                let strip = CGMutablePath()
+                wallQuad(m, 0, low, 1, high, strip)
+                fillPath(c, strip, SplashArenaView.mix(pair.0, pair.1, pair.2))
+            }
+            c.setShouldAntialias(true)
+            // Preserve paint from older saved matches that have score cells but predate
+            // the per-impact splats. New matches always render the original impacts.
+            var marks = wall.splats
+            if marks.isEmpty {
+                for index in wall.cells.indices where wall.cells[index] >= 0 {
+                    let at = wall.at(index)
+                    marks.append(PaintSplat(at.x, at.y, wall.cells[index], 0.052, 1.0, 0.0))
+                }
+            }
+            c.saveGState()
+            let face = CGMutablePath()
+            wallQuad(m, 0, 0, 1, 1, face)
+            c.addPath(face)
             c.clip()
-            let gradientColors = [SplashPalette.ui(0xff794dcc).cgColor, SplashPalette.ui(0xffee6191).cgColor, SplashPalette.ui(0xff21b9b5).cgColor]
-            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: gradientColors as CFArray, locations: nil) {
-                c.drawLinearGradient(gradient, start: m.map(0, 1), end: m.map(1, 1.2), options: [.drawsBeforeStartLocation, .drawsAfterEndLocation])
+            for s in marks {
+                // Android canvas.rotate(angle, u, v) in wall space, then the wall matrix.
+                let turn = s.angle * Double.pi / 180
+                let x = s.u
+                let y = s.v
+                func mapped(_ px: Double, _ py: Double) -> CGPoint {
+                    let dx = px - x
+                    let dy = py - y
+                    return m.map(x + cos(turn) * dx - sin(turn) * dy, y + sin(turn) * dx + cos(turn) * dy)
+                }
+                let rx = Double(Float(s.radius))
+                let ry = Double(Float(s.radius * s.stretch))
+                let blot = CGMutablePath()
+                for i in 0...47 {
+                    let theta = Double(i) * 2 * Double.pi / 48
+                    let wave = 1 + 0.13 * sin(5 * theta + s.u * 19 + s.v * 13) + 0.08 * cos(9 * theta + s.u * 7)
+                    let pt = mapped(x + cos(theta) * rx * wave, y + sin(theta) * ry * wave)
+                    if i == 0 { blot.move(to: pt) } else { blot.addLine(to: pt) }
+                }
+                blot.closeSubpath()
+                let paint: UInt32 = s.team < 0 ? 0xfff8f7f0 : Teams.style(s.team).color
+                let alpha = s.team < 0 ? 245 : 205
+                c.setFillColor(SplashPalette.ui(paint, alpha: alpha).cgColor)
+                c.addPath(blot)
+                c.fillPath()
+                for i in 0...5 {
+                    let theta = Double(i) * Double.pi * 0.73 + s.u * 9 + s.v * 5
+                    let range = 1.08 + Double(i % 3) * 0.11
+                    let center = (x + cos(theta) * rx * range, y + sin(theta) * ry * range)
+                    let rotated = (x + cos(turn) * (center.0 - x) - sin(turn) * (center.1 - y),
+                                   y + sin(turn) * (center.0 - x) + cos(turn) * (center.1 - y))
+                    let r = rx * Double(Float(0.045) + Float(i % 2) * Float(0.018))
+                    let drop = CGMutablePath()
+                    wallOval(m, rotated.0, rotated.1, r, r, drop)
+                    c.addPath(drop)
+                    c.fillPath()
+                }
             }
             c.restoreGState()
-            for i in 0...6 {
-                let x = 0.065 + Double(i) * 0.145
-                let y = 1.115
-                let shape = CGMutablePath()
-                if i % 2 == 0 {
-                    for j in 0...9 {
-                        let angle = Double(j) * Double.pi / 5
-                        let radius = j % 2 == 0 ? 0.044 : 0.021
-                        let pt = m.map(x + sin(angle) * radius, y + cos(angle) * radius * 1.5)
-                        if j == 0 { shape.move(to: pt) } else { shape.addLine(to: pt) }
-                    }
-                } else {
-                    // Android cubicTo pair (a heart), sampled before the perspective map.
-                    let curves: [[(Double, Double)]] = [[(x, y - 0.055), (x - 0.09, y + 0.02), (x - 0.025, y + 0.105), (x, y + 0.045)],
-                                                        [(x, y + 0.045), (x + 0.025, y + 0.105), (x + 0.09, y + 0.02), (x, y - 0.055)]]
-                    shape.move(to: m.map(x, y - 0.055))
-                    for curve in curves {
-                        for step in 1...12 {
-                            let t = Double(step) / 12
-                            let s = 1 - t
-                            let px = s * s * s * curve[0].0 + 3 * s * s * t * curve[1].0 + 3 * s * t * t * curve[2].0 + t * t * t * curve[3].0
-                            let py = s * s * s * curve[0].1 + 3 * s * s * t * curve[1].1 + 3 * s * t * t * curve[2].1 + t * t * t * curve[3].1
-                            shape.addLine(to: m.map(px, py))
-                        }
-                    }
-                }
-                shape.closeSubpath()
-                fillPath(c, shape, i % 2 == 0 ? 0xffffe796 : 0xffffb5d0)
-                let dot = CGMutablePath()
-                wallOval(m, x + 0.06, y + 0.01, 0.007, 0.007, dot)
-                fillPath(c, dot, 0xccffffff)
-            }
             if session.kind?.isTarget == true {
                 // Stroke width .006 in wall space: each ring is the band between two mapped ovals.
                 for radius in [0.46, 0.30, 0.18, 0.08] {
@@ -867,11 +966,29 @@ final class SplashArenaView: UIView {
                     fillPath(c, ring, 0xff173d60, evenOdd: true)
                 }
             }
-            // The border: stroke width .015 in wall space.
+            // A dark hairline keeps even the yellow team's outline readable on sand (stroke .029,
+            // then the team stroke .018, in wall space).
+            let dark = CGMutablePath()
+            wallQuad(m, -0.0145, -0.0145, 1.0145, 1.0145, dark)
+            wallQuad(m, 0.0145, 0.0145, 0.9855, 0.9855, dark)
+            fillPath(c, dark, 0xff173d60, evenOdd: true)
             let border = CGMutablePath()
-            wallQuad(m, -0.0075, -0.0075, 1.0075, 1.0075, border)
-            wallQuad(m, 0.0075, 0.0075, 0.9925, 0.9925, border)
-            fillPath(c, border, engine.config.wallBattle ? Teams.style(wall.id).color : 0xff19b8b1, evenOdd: true)
+            wallQuad(m, -0.009, -0.009, 1.009, 1.009, border)
+            wallQuad(m, 0.009, 0.009, 0.991, 0.991, border)
+            let rimColor: UInt32 = engine.config.wallBattle ? Teams.style(wall.id).color : 0xff19b8b1
+            fillPath(c, border, rimColor, evenOdd: true)
+            if softened { c.endTransparencyLayer() }
+            c.restoreGState()
+            let baseLeft = wallPoint(wall.id, 0.0, 0.0)
+            let topLeft = wallPoint(wall.id, 0.0, 1.0)
+            let baseRight = wallPoint(wall.id, 1.0, 0.0)
+            let topRight = wallPoint(wall.id, 1.0, 1.0)
+            for (color, stroke) in [(UInt32(0x99163852), CGFloat(5)), (rimColor, CGFloat(3))] {
+                line(c, baseLeft.x, baseLeft.y, topLeft.x, topLeft.y, stroke, color)
+                line(c, baseRight.x, baseRight.y, topRight.x, topRight.y, stroke, color)
+                line(c, topLeft.x, topLeft.y, topRight.x, topRight.y, stroke, color)
+                line(c, baseLeft.x, baseLeft.y, baseRight.x, baseRight.y, stroke, color)
+            }
             if renderWidth == 0 {
                 let at = screen(wall.world(0.5, 1.0), wall.height + 1.3)
                 let title: String
@@ -887,6 +1004,17 @@ final class SplashArenaView: UIView {
                 text(title, at.x, at.y, 12, white, bold: true)
             }
         }
+    }
+
+    /// Android's LinearGradient colour interpolation (per ARGB channel).
+    private static func mix(_ a: UInt32, _ b: UInt32, _ t: Double) -> UInt32 {
+        var out: UInt32 = 0
+        for shift in stride(from: 0, to: 32, by: 8) {
+            let x = Double((a >> UInt32(shift)) & 0xff)
+            let y = Double((b >> UInt32(shift)) & 0xff)
+            out |= UInt32(min(max((x + (y - x) * t).rounded(), 0), 255)) << UInt32(shift)
+        }
+        return out
     }
 
     private func drawGameObjects(_ c: CGContext, inset: Bool = false) {
@@ -910,6 +1038,10 @@ final class SplashArenaView: UIView {
             highlighted = -1
         }
         choiceRects.removeAll()
+        if engine.config.wallBattle && !inset && a.held == nil {
+            layoutWallAnswers()
+            drawAnswerStems(c)
+        }
         // Private choices are drawn only for this user. Never render remote question sets.
         if showChoices {
             for choice in a.choices { drawChoice(c, choice) }
@@ -923,6 +1055,7 @@ final class SplashArenaView: UIView {
         for actor in engine.actors.stableSorted(by: { sy * $0.position.x + cy * $0.position.y < sy * $1.position.x + cy * $1.position.y }) {
             drawActor(c, actor)
         }
+        drawWalls(c, front: true)
         if !inset {
             let ordered = engine.actors.stableSorted { x, y in
                 let rx = x.member.id == localId ? 0 : 1
@@ -936,7 +1069,7 @@ final class SplashArenaView: UIView {
         if showChoices {
             for choice in a.choices {
                 guard let face = choiceRects[choice.index] else { continue }
-                if actorRects.contains(where: { $0.rect.intersects(face) }) { drawChoice(c, choice) }
+                if engine.config.wallBattle || actorRects.contains(where: { $0.rect.intersects(face) }) { drawChoice(c, choice) }
             }
         }
         if !inset && a.held != nil && a.settings.throwing == .standard {
@@ -1000,7 +1133,9 @@ final class SplashArenaView: UIView {
             let pos = screen(b.position)
             let age = engine.time - b.at
             let alpha = min(max(KotlinNumber.int(130 * (1 - age / 7)), 0), 130)
-            art.splash(3, b.color)?.draw(in: ltrb(pos.x - 24, pos.y - 9, pos.x + 24, pos.y + 9), blendMode: .normal, alpha: CGFloat(alpha) / 255)
+            // Colour 6 (white paint) is the last splash filled white (ArtStore).
+            art.splash(3, b.color == 6 ? 6 : min(max(b.color, 0), 5))?.draw(in: ltrb(pos.x - 24, pos.y - 9, pos.x + 24, pos.y + 9),
+                                                                            blendMode: .normal, alpha: CGFloat(alpha) / 255)
         }
     }
 
@@ -1008,9 +1143,8 @@ final class SplashArenaView: UIView {
         return local.question?.skill == .english ? text : AppText.t(text)
     }
 
-    private func drawChoice(_ c: CGContext, _ ch: Choice) {
-        let pos = screen(ch.position)
-        let displayAnswer = displayText(ch.text)
+    /// Android `answerSize()`: one size for all four faces of the current question.
+    private func answerSize() -> (CGFloat, CGFloat) {
         var longest = 0
         for other in local.choices { longest = max(longest, displayText(other.text).utf16.count) }
         let wordChoices = longest > 3
@@ -1020,11 +1154,74 @@ final class SplashArenaView: UIView {
         let reference = sceneWidth > sceneHeight ? Double(sceneHeight) * 1.25 : Double(sceneWidth)
         // The whole-field close-up shows smaller balloons.
         let w = (renderWidth > 0 ? 0.48 : 1) * CGFloat(Float(reference * fraction))
-        let h = w * (wordChoices ? 1.22 : 1.02)
+        return (w, w * (wordChoices ? 1.22 : 1.02))
+    }
+
+    /// Android `layoutWallAnswers()`: keep private answers readable at close zoom. Their world positions
+    /// and pickup distances never change: a displaced face is tethered to its spot. Sorting by projected X
+    /// gives all four faces their own horizontal space; Y remains at the world projection except where
+    /// the fixed HUD would cover it.
+    private func layoutWallAnswers() {
+        let (w, h) = answerSize()
+        let gap: CGFloat = 6
+        let edge: CGFloat = 10
+        let top: CGFloat = landscape ? 78 : 164
+        let bottom = viewHeight - (landscape ? 50 : 72)
+        let ordered = local.choices.stableSorted { a, b in
+            let ax = screen(a.position).x
+            let bx = screen(b.position).x
+            if ax != bx { return ax < bx }
+            return a.index < b.index
+        }
+        var xs = ordered.map { min(max(screen($0.position).x, edge + w / 2), viewWidth - edge - w / 2) }
+        if xs.count > 1 {
+            for i in 1..<xs.count { xs[i] = max(xs[i], xs[i - 1] + w + gap) }
+        }
+        if let last = xs.last { xs[xs.count - 1] = min(last, viewWidth - edge - w / 2) }
+        if xs.count > 1 {
+            for i in stride(from: xs.count - 2, through: 0, by: -1) { xs[i] = min(xs[i], xs[i + 1] - w - gap) }
+        }
+        if let first = xs.first, let last = xs.last {
+            var total = 0.0
+            for i in ordered.indices { total += Double(xs[i] - screen(ordered[i].position).x) }
+            let average = CGFloat(Float(total / Double(ordered.count)))
+            // Kotlin coerceIn(min, max); Swift keeps the upper bound if they cross.
+            let shift = min(max(average, last - (viewWidth - edge - w / 2)), first - (edge + w / 2))
+            for i in xs.indices { xs[i] -= shift }
+        }
+        for (i, ch) in ordered.enumerated() {
+            let bob = CGFloat(sin(engine.time * 2.8 + Double(ch.index)) * 1.3)
+            let y = min(max(screen(ch.position).y + bob, top + h), bottom)
+            choiceRects[ch.index] = ltrb(xs[i] - w / 2, y - h, xs[i] + w / 2, y)
+        }
+    }
+
+    /// Android `drawAnswerStems`: a thin tether from a displaced face to its answer spot.
+    private func drawAnswerStems(_ c: CGContext) {
+        for ch in local.choices {
+            guard let b = choiceRects[ch.index] else { continue }
+            let ground = screen(ch.position)
+            if hypot(b.midX - ground.x, b.maxY - ground.y) <= 6 { continue }
+            line(c, min(max(ground.x, 0), viewWidth), min(max(ground.y, 0), viewHeight - (landscape ? 50 : 72)), b.midX, b.maxY, 1, 0x663c7291)
+        }
+    }
+
+    /// Android `answerBounds()`: the answer faces on screen (UI tests).
+    func answerBounds() -> [Int: CGRect] { return choiceRects }
+
+    private func drawChoice(_ c: CGContext, _ ch: Choice) {
+        let ground = screen(ch.position)
+        let displayAnswer = displayText(ch.text)
+        var longest = 0
+        for other in local.choices { longest = max(longest, displayText(other.text).utf16.count) }
+        let wordChoices = longest > 3
+        let (w, h) = answerSize()
         let age = max(engine.time - local.questionAt, 0)
         let pop = age < 0.35 ? sin(age / 0.35 * Double.pi) * 5 : 0.0
         let bob = CGFloat(sin(engine.time * 2.8 + Double(ch.index)) * 1.3 - pop)
-        let b = ltrb(pos.x - w / 2, pos.y - h + bob, pos.x + w / 2, pos.y + bob)
+        let fixed = engine.config.wallBattle && renderWidth == 0 ? choiceRects[ch.index] : nil
+        let b = fixed ?? ltrb(ground.x - w / 2, ground.y - h + bob, ground.x + w / 2, ground.y + bob)
+        let pos = CGPoint(x: b.midX, y: b.maxY)
         choiceRects[ch.index] = b
         fillOval(c, ltrb(pos.x - w * 0.32, pos.y - 3, pos.x + w * 0.32, pos.y + 5), SplashPalette.ui(0x55302b47))
         if (ch.position - local.position).length() <= engine.config.pickupRadius {
@@ -1052,11 +1249,19 @@ final class SplashArenaView: UIView {
     /// Characters are sized by their visible body (feet to a head 4.7 world units above).
     private func drawActor(_ c: CGContext, _ a: SplashActor) {
         let feet = screen(a.position, a.height)
+        // In the optional close camera, hide nonlocal actors once their feet leave
+        // the playable viewport so a cut-off sprite cannot sit behind the controls.
+        if playerCamera && renderWidth == 0 && a.member.id != localId &&
+            (feet.x < 0 || feet.x > viewWidth || feet.y < viewHeight * 0.18 || feet.y > viewHeight * 0.80) { return }
         let frameIndex = SplashPose.frame(a, engine.time)
         guard let visual = art.visual(a, frameIndex, arenaCamera.yaw) else { return }
         let frame = visual.frame
-        let head = screen(a.position, a.height + 4.7)
-        let minimum: CGFloat = renderWidth > 0 ? 6 : 28
+        // Slender human artwork needs a larger readable silhouette in the wide
+        // wall overview. Scale the intact sprite and its hand anchor together.
+        let human = a.member.character != "minik" && a.member.character != "miniko"
+        let wallOverview = engine.config.wallBattle && !playerCamera && renderWidth == 0
+        let head = screen(a.position, a.height + (wallOverview && human ? 5.8 : 4.7))
+        let minimum: CGFloat = renderWidth > 0 ? 6 : (wallOverview ? (human ? 58 : 42) : 28)
         let visibleHeight = min(max(feet.y - head.y, minimum), CGFloat(sceneHeight) * 0.65)
         let anchor = art.anchor(a.member.character, visual)
         let b = anchor.destination(Float(feet.x), Float(feet.y), Float(visibleHeight), Int(frame.rect.width), Int(frame.rect.height),
@@ -1110,6 +1315,7 @@ final class SplashArenaView: UIView {
     private func drawActorLabel(_ c: CGContext, _ a: SplashActor) {
         let feet = screen(a.position, a.height)
         let ground = screen(a.position)
+        if playerCamera && (feet.x < 0 || feet.x > viewWidth || feet.y < viewHeight * 0.18 || feet.y > viewHeight * 0.80) { return }
         let name: String
         if a.member.id == localId {
             name = tr("You", "אתם")
@@ -1124,7 +1330,7 @@ final class SplashArenaView: UIView {
         let nameSize: CGFloat = engine.actors.count > 6 ? 10.5 : 12
         let labelWidth = measure(label + " · \(a.score)", nameSize) + 18
         if renderWidth > 0 { return }
-        let top: CGFloat = landscape ? 70 : viewHeight * 0.42
+        let top: CGFloat = landscape ? 70 : viewHeight * 0.17
         let bottom: CGFloat = landscape ? viewHeight - 135 : min(viewHeight * 0.84, viewHeight - 144)
         let area = LabelBox(4, Float(top), Float(viewWidth - 8), Float(bottom - top))
         var obstacles: [LabelBox] = []
@@ -1132,6 +1338,8 @@ final class SplashArenaView: UIView {
             obstacles.append(LabelBox(Float(r.minX - 2), Float(r.minY - 2), Float(r.width + 4), Float(r.height + 4)))
         }
         let used = labelRects.map { LabelBox(Float($0.minX), Float($0.minY), Float($0.width), Float($0.height)) }
+        // Keep a label for every player even at the court edge. Prefer directly
+        // below the feet, but stagger crowded teammates instead of covering names.
         let b = stableLabels.place(a.member.id, Float(feet.x), Float(ground.y + 8), Float(min(labelWidth, viewWidth * 0.6)), 22,
                                    area, obstacles, used, 24)
         let tag = CGRect(x: CGFloat(b.x), y: CGFloat(b.y), width: CGFloat(b.w), height: CGFloat(b.h))
@@ -1140,10 +1348,18 @@ final class SplashArenaView: UIView {
             line(c, feet.x, ground.y, CGFloat(b.cx), CGFloat(b.cy), 1, 0x8891e9ed)
         }
         labelRects.append(tag)
-        let rank = SplashRanks.at(rankPoints)
-        let mine = a.member.id == localId
-        rounded(c, tag, 8, mine ? rank.color : (teams ? team.color : 0xe0092037))
-        text(label + " · \(a.score)", tag.midX, tag.midY, nameSize, mine ? rank.ink : (teams ? team.ink : white), bold: true)
+        // Solo battles: gold, silver and bronze tags for the current top three (score, then id).
+        var soloRank = -1
+        if engine.mode == .solo {
+            let ranked = engine.actors.stableSorted { x, y in
+                if x.score != y.score { return x.score > y.score }
+                return x.member.id.javaPrecedes(y.member.id)
+            }
+            soloRank = ranked.firstIndex(where: { $0.member.id == a.member.id }) ?? -1
+        }
+        let medal: UInt32 = soloRank == 0 ? 0xffffd760 : (soloRank == 1 ? 0xffcbd9e5 : (soloRank == 2 ? 0xffd89c67 : 0xe0092037))
+        rounded(c, tag, 8, teams ? team.color : medal)
+        text(label + " · \(a.score)", tag.midX, tag.midY, nameSize, teams ? team.ink : (soloRank >= 0 && soloRank <= 2 ? ink : white), bold: true)
     }
 
     private func drawAim(_ c: CGContext, _ a: SplashActor) {
@@ -1224,10 +1440,10 @@ final class SplashArenaView: UIView {
             let burstCenter = screen(b.position, b.height)
             let size = viewWidth * CGFloat(0.095 * (0.45 + min(age, 0.25) * 3))
             let splashAlpha = CGFloat(KotlinNumber.int((1 - age / 1.1) * 245)) / 255
-            art.splash(age < 0.15 ? 4 : 0, b.color)?.draw(in: ltrb(burstCenter.x - size, burstCenter.y - size, burstCenter.x + size, burstCenter.y + size),
+            art.splash(age < 0.15 ? 4 : 0, b.color == 6 ? 6 : min(max(b.color, 0), 5))?.draw(in: ltrb(burstCenter.x - size, burstCenter.y - size, burstCenter.x + size, burstCenter.y + size),
                                                           blendMode: .normal, alpha: splashAlpha)
             let dropAlpha = KotlinNumber.int((1 - age / 1.1) * 255)
-            let dropColor = SplashPalette.ui(colors[min(max(b.color, 0), 5)], alpha: dropAlpha)
+            let dropColor = SplashPalette.ui(b.color >= 0 && b.color < colors.count ? colors[b.color] : white, alpha: dropAlpha)
             let spin = Double(b.id.javaHashCode % 6)
             for i in 0..<16 {
                 if budget <= 0 { break }
@@ -1251,10 +1467,10 @@ final class SplashArenaView: UIView {
         setButton("back", back)
         rounded(c, back, 12, 0xffe91e63)
         text("❮", back.midX, back.midY, 22, white, bold: true)
-        let rotate = ltrb(60, top + 3, 99, barBottom - 3)
-        setButton("rotate", rotate)
-        rounded(c, rotate, 10, 0xff316577)
-        text("↻", rotate.midX, rotate.midY, 23, white, bold: true)
+        let cameraControl = ltrb(60, top + 3, 99, barBottom - 3)
+        setButton("camera", cameraControl)
+        rounded(c, cameraControl, 10, 0xff316577)
+        text("📷", cameraControl.midX, cameraControl.midY, 20, white, bold: true)
         let left = KotlinNumber.int(ceil(max(engine.config.duration - engine.time, 0.0)))
         if left != timerSecond {
             timerSecond = left
@@ -1290,27 +1506,102 @@ final class SplashArenaView: UIView {
         }
         text(caption, q.midX, q.maxY - 12, 13, 0xff9bf4ec, bold: true)
         setButton("speak", ltrb(q.maxX - 32, q.minY, q.maxX, q.minY + 32))
-        if landscape && !engine.practice { text(timerText, 138, top + 22, 16, white, bold: true) }
+        if landscape && !engine.practice { text(timerText, viewWidth < 900 ? 128 : 138, top + 22, 16, white, bold: true) }
         if engine.mode == .teams {
             for team in 0...1 {
-                let x = team == 0 ? viewWidth * 0.24 : viewWidth * 0.76
-                let y: CGFloat = landscape ? top + 75 : 133
+                // Each team score sits on its own team-coloured plate.
+                let compact = landscape && viewWidth < 900
+                let x = compact ? (team == 0 ? viewWidth * 0.25 : viewWidth * 0.78) : (team == 0 ? viewWidth * 0.24 : viewWidth * 0.76)
+                let y: CGFloat = landscape ? top + 22 : 137
+                let halfWidth: CGFloat = compact ? 35 : 43
                 let style = Teams.style(team)
                 let score = team < engine.teamScores.count ? engine.teamScores[team] : 0
-                text(style.emblem + " \(score)", x, y, 12, style.color, bold: true)
+                rounded(c, ltrb(x - halfWidth, y - 14, x + halfWidth, y + 14), 10, style.color)
+                text(style.emblem + " \(score)", x, y, 16, style.ink, bold: true)
             }
         }
         if !engine.practice {
             let advice = contextAdvice()
             if !advice.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                let b = ltrb(12, viewHeight - (landscape ? 48 : 84), viewWidth - 12, viewHeight - 8)
+                let b = ltrb(12, viewHeight - (landscape ? 42 : 64), viewWidth - 12, viewHeight - 8)
                 rounded(c, b, 12, 0xe6103048)
-                paragraph(advice, ltrb(b.minX + 8, b.minY, b.maxX - 8, b.maxY), landscape ? 13 : 14, white, maxLines: landscape ? 2 : 3)
+                paragraph(advice, ltrb(b.minX + 8, b.minY, b.maxX - 8, b.maxY), landscape ? 13 : 14, white, maxLines: landscape ? 2 : 3,
+                          rtl: AppText.rtl, startAligned: true)
             }
         }
+        if cameraPanelOpen && tutorialStep < 0 { drawCameraPanel(c) }
         if !networkStatus.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             text(networkStatus, viewWidth / 2, viewHeight - 4, 9, 0xffbdf8ff)
         }
+    }
+
+    /// Android `cameraControlText`: the lettering is centred on the whole raised face (its glyphs, not
+    /// the line box); the lower extrusion lies outside `r` and must not pull the lettering down.
+    private func cameraControlText(_ title: String, _ r: CGRect) {
+        if !cameraLabelsVisible { return }
+        let f = font(12, true)
+        let string = NSAttributedString(string: title, attributes: [.font: f, .foregroundColor: SplashPalette.ui(0xff17334f)])
+        let glyphs = CTLineGetBoundsWithOptions(CTLineCreateWithAttributedString(string), .useGlyphPathBounds)
+        let baseline = r.midY + glyphs.midY
+        string.draw(at: CGPoint(x: r.midX - string.size().width / 2, y: baseline - f.ascender))
+    }
+
+    /// Android `cameraControlFaces()`: the panel's raised faces (UI tests).
+    func cameraControlFaces() -> [String: CGRect] {
+        var faces = buttons.filter { $0.key.hasPrefix("camera") && $0.key != "camera" }
+        faces["rotate"] = orbitRect
+        return faces
+    }
+
+    /// Android `drawCameraPanel`: orientation, Follow player / Whole court, rotation and zoom.
+    private func drawCameraPanel(_ c: CGContext) {
+        let top: CGFloat = landscape ? 72 : 142
+        let panelWidth = min(viewWidth - 32, landscape ? 330 : 344)
+        let panelLeft = landscape ? 12 : (viewWidth - panelWidth) / 2
+        let panel = ltrb(panelLeft, top, panelLeft + panelWidth, top + 184)
+        rounded(c, ltrb(panel.minX, panel.minY + 3, panel.maxX, panel.maxY + 3), 17, 0x9910213d)
+        rounded(c, panel, 17, 0xf0194261)
+        c.setStrokeColor(SplashPalette.ui(0xff86d8f8).cgColor)
+        c.setLineWidth(1.5)
+        c.addPath(UIBezierPath(roundedRect: panel, cornerRadius: 17).cgPath)
+        c.strokePath()
+        func raised(_ r: CGRect, _ color: UInt32) {
+            rounded(c, ltrb(r.minX, r.minY + 3, r.maxX, r.maxY + 3), 10, 0xff143c5d)
+            rounded(c, r, 10, color)
+            rounded(c, ltrb(r.minX + 4, r.minY + 3, r.maxX - 4, r.minY + 5), 2, 0x99ffffff)
+        }
+        func control(_ key: String, _ title: String, _ left: CGFloat, _ row: Int, _ w: CGFloat, _ color: UInt32 = 0xffa6dcff) {
+            let y = panel.minY + CGFloat(10 + row * 45)
+            let r = ltrb(left, y, left + w, y + 37)
+            setButton(key, r)
+            raised(r, color)
+            cameraControlText(title, r)
+        }
+        let inset: CGFloat = 12
+        let gap: CGFloat = 8
+        let half = (panel.width - 2 * inset - gap) / 2
+        control("cameraOrientation", tr("Portrait / Landscape", "לאורך / לרוחב"), panel.minX + inset, 0, half, 0xffffe59d)
+        control("cameraView", playerCamera ? tr("Whole court", "כל המגרש") : tr("Follow player", "מעקב אחרי שחקן"),
+                panel.minX + inset + half + gap, 0, half, 0xffb1eddb)
+        let arrow: CGFloat = 38
+        let rotateGap: CGFloat = 8
+        let middle = panel.width - 2 * inset - 2 * arrow - 2 * rotateGap
+        control("cameraLeft", "❮", panel.minX + inset, 1, arrow, 0xffffbb73)
+        orbitRect = ltrb(panel.minX + inset + arrow + rotateGap, panel.minY + 55, panel.minX + inset + arrow + rotateGap + middle, panel.minY + 92)
+        raised(orbitRect, 0xffa6dcff)
+        cameraControlText(tr("Rotate view", "סיבוב המבט"), orbitRect)
+        control("cameraRight", "❯", panel.maxX - inset - arrow, 1, arrow, 0xffffbb73)
+        control("cameraZoomOut", "−", panel.minX + inset, 2, arrow, 0xffffe59d)
+        text(tr("Zoom", "מיקוד") + " · \(Int((100 / cameraZoom).rounded()))%", panel.midX, panel.minY + 118, 13, white, bold: true)
+        control("cameraZoomIn", "+", panel.maxX - inset - arrow, 2, arrow, 0xffffe59d)
+        paragraph(tr("Swipe the rotate control left, right, up or down.", "החליקו על פקד הסיבוב לצדדים, למעלה או למטה."),
+                  ltrb(panel.minX + 12, panel.maxY - 39, panel.maxX - 12, panel.maxY - 7), 11, white, maxLines: 2, rtl: AppText.rtl,
+                  startAligned: true)
+    }
+
+    private func changeCameraZoom(_ value: Double) {
+        cameraZoom = min(max(value, 0.62), 1.65)
+        if engine.config.wallBattle { SplashPrefs.setFloat(Float(cameraZoom), "paintWallsZoom", file: "splash_camera") }
     }
 
     private func setButton(_ key: String, _ rect: CGRect) {
@@ -1619,9 +1910,7 @@ final class SplashArenaView: UIView {
             case .arc: command(.throwBalloon)
             case .balloon: collectOrWalk(e.target)
             case .opponent:
-                focusedOpponent = e.target.actorId
-                focusUntil = engine.time + 4.0
-                playerCamera = false
+                // Keep the current camera while aiming or throwing.
                 if local.settings.throwing == .easy || engine.paintSession.passing {
                     command(.shootAt(e.target.actorId))
                 } else if let other = engine.actor(e.target.actorId) {
@@ -1675,25 +1964,40 @@ final class SplashArenaView: UIView {
             let p = touch.location(in: self)
             if first {
                 // Android ACTION_DOWN: the camera controls and the close-up come before gestures.
-                if buttons["rotate"]?.contains(p) == true {
+                if buttons["camera"]?.contains(p) == true {
                     gesture.cancel()
-                    onRotate?()
+                    cameraPanelOpen.toggle()
+                    if !cameraPanelOpen { orbitRect = .zero }
                     continue
                 }
+                if cameraPanelOpen && tutorialStep < 0 {
+                    if let key = buttonOrder.first(where: { $0.hasPrefix("camera") && $0 != "camera" && buttons[$0]?.contains(p) == true }) {
+                        gesture.cancel()
+                        switch key {
+                        case "cameraOrientation": onRotate?()
+                        case "cameraView":
+                            playerCamera.toggle()
+                            cameraChoiceMade = true
+                        case "cameraLeft": orbitYaw -= Double.pi / 12
+                        case "cameraRight": orbitYaw += Double.pi / 12
+                        case "cameraZoomIn": changeCameraZoom(cameraZoom * 0.85)
+                        case "cameraZoomOut": changeCameraZoom(cameraZoom * 1.18)
+                        default: break
+                        }
+                        continue
+                    }
+                    if orbitRect.contains(p) {
+                        orbitPointer = id
+                        orbitX = p.x
+                        orbitY = p.y
+                        gesture.cancel()
+                        continue
+                    }
+                }
+                // With a balloon in Hard throwing the bottom button is "Throw balloon".
                 if cameraButton.contains(p) && tutorialStep < 0 {
                     gesture.cancel()
-                    // With a balloon in Hard throwing the button is "Throw balloon".
-                    if local.held != nil && local.settings.throwing == .standard {
-                        command(.throwBalloon)
-                    } else {
-                        playerCamera.toggle()
-                    }
-                    continue
-                }
-                if orbitRect.contains(p) && tutorialStep < 0 {
-                    orbitPointer = id
-                    orbitX = p.x
-                    gesture.cancel()
+                    command(.throwBalloon)
                     continue
                 }
                 if !billboard.isEmpty && billboard.contains(p) { continue }
@@ -1794,11 +2098,14 @@ final class SplashArenaView: UIView {
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         if orbitPointer >= 0 {
-            // Android: an orbit drag turns the camera 1 radian per 145 dp and owns the gesture.
+            // Android: an orbit drag turns the camera 1 radian per 145 dp, tilts it 1 per 220 dp
+            // (within +-0.35) and owns the gesture.
             if let touch = touchesById[orbitPointer], touches.contains(touch) {
                 let p = touch.location(in: self)
                 orbitYaw += Double((p.x - orbitX) / 145)
+                orbitTilt = min(max(orbitTilt + Double((p.y - orbitY) / 220), -0.35), 0.35)
                 orbitX = p.x
+                orbitY = p.y
             }
             return
         }

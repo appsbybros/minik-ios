@@ -135,6 +135,9 @@ struct MPSession: Codable, Equatable, Identifiable {
     var state = "WAITING", createdAt: Int64 = 0, lastActivityAt: Int64 = 0
     var format = MPTournamentFormat.roundRobin
     var rounds: [Int: MPKnockoutRound] = [:]
+    /// Android `Session.arena` (a4174b6): "" for older rooms (the original court), otherwise beach / indoors / park /
+    /// castle. Written only when non-empty and immutable once the room exists (live rules).
+    var arena = ""
     var id: String { kind.path + "/" + code }
     var roster: [String] { participants.keys.sorted() }
     var knockout: Bool { kind == .tournament && format == .knockout }
@@ -150,14 +153,18 @@ struct MPSession: Codable, Equatable, Identifiable {
     var activity: Int64 { max(createdAt, lastActivityAt) }
     func expired(_ now: Int64) -> Bool { activity > 0 && now - activity >= 14 * 86_400_000 }
     func warning(_ now: Int64) -> Bool { activity > 0 && now - activity >= 7 * 86_400_000 && !expired(now) }
-    enum CodingKeys: String, CodingKey { case code, kind, host, capacity, legs, winPoints, lossPoints, difficulty, target, participants, matches, connections, departed, state, createdAt, lastActivityAt, format, rounds }
+    enum CodingKeys: String, CodingKey { case code, kind, host, capacity, legs, winPoints, lossPoints, difficulty, target, participants, matches, connections, departed, state, createdAt, lastActivityAt, format, rounds, arena }
     /// Android `PongRules.create`: a knockout has up to nine players and a single leg; only tournaments keep a format.
-    init(code: String, kind: MPSessionKind, host: MPIdentity, capacity: Int = 2, legs: Int = 1, winPoints: Int = 3, difficulty: Int = 0, target: Int = 7, format: MPTournamentFormat = .roundRobin) {
+    /// The arena defaults to Park for tournaments and Beach for friendly games; Android requires one of the four
+    /// choices, iOS falls back to that default for anything else.
+    init(code: String, kind: MPSessionKind, host: MPIdentity, capacity: Int = 2, legs: Int = 1, winPoints: Int = 3, difficulty: Int = 0, target: Int = 7, format: MPTournamentFormat = .roundRobin, arena: String? = nil) {
         self.code = code; self.kind = kind; self.host = host.id
         self.capacity = kind == .friendly ? 2 : min(format == .knockout ? MPKnockout.maxPlayers : 8, max(2, capacity))
         self.legs = format == .knockout ? 1 : min(2, max(1, legs)); self.winPoints = min(10, max(0, winPoints))
         self.difficulty = min(4, max(0, difficulty)); self.target = self.level.target(target)
         self.format = kind == .tournament ? format : .roundRobin
+        let fallback = kind == .tournament ? MPArena.park : MPArena.beach
+        self.arena = MPArena.choices.first { $0.wire == arena }?.wire ?? fallback.wire
         participants[host.id] = .init(identity: host); createdAt = MPClock.now; lastActivityAt = createdAt
     }
     /// Room level (Android `Difficulty.entries[difficulty]`), including Beginner = 4.
@@ -181,6 +188,8 @@ struct MPSession: Codable, Equatable, Identifiable {
         var decodedRounds: [Int: MPKnockoutRound] = [:]
         for (key, round) in rawRounds ?? [:] { if let index = Int(key) { decodedRounds[index] = round } }
         rounds = decodedRounds
+        // Android PongCodec: `w.text("arena")`, so a missing or non-text value is an older room.
+        arena = (try? c.decodeIfPresent(String.self, forKey: .arena)) ?? ""
     }
     /// Same keys as the synthesized encoding, plus Android's knockout-only `format` and `rounds`
     /// (the Firebase rules reject both on a round robin or friendly room).
@@ -193,6 +202,8 @@ struct MPSession: Codable, Equatable, Identifiable {
         try c.encode(participants, forKey: .participants); try c.encode(matches, forKey: .matches)
         try c.encode(connections, forKey: .connections); try c.encode(departed, forKey: .departed)
         try c.encode(state, forKey: .state); try c.encode(createdAt, forKey: .createdAt); try c.encode(lastActivityAt, forKey: .lastActivityAt)
+        // Android PongCodec writes `arena` only when it is not blank.
+        if !arena.trimmingCharacters(in: .whitespaces).isEmpty { try c.encode(arena, forKey: .arena) }
         if knockout {
             try c.encode(format, forKey: .format)
             if !rounds.isEmpty {
@@ -244,6 +255,26 @@ enum MPRules {
         guard !s.participants.values.contains(where: { $0.bot?.characterId == player.id }) else { throw MPError.duplicate }
         var n = s; let id = "bot_" + player.id
         n.participants[id] = .init(identity: .init(id: id, name: player.name(hebrew: hebrew), characterId: player.id), bot: player.profile); return n
+    }
+    /// Android `PongRules.addFriendlyHousePlayer`: the human join and the house-player choice compete for the same
+    /// single seat, so a full or started friendly game is returned unchanged.
+    static func addFriendlyHousePlayer(_ s: MPSession, actor: String, player: MPParticipant) throws -> MPSession {
+        guard s.kind == .friendly, actor == s.host else { throw MPError.permission }
+        if s.state != "WAITING" || s.participants.count >= s.capacity { return s }
+        guard let bot = player.bot, player.id.hasPrefix("bot_"), s.participants[player.id] == nil else { throw MPError.permission }
+        guard bot.characterId.isEmpty || !s.participants.values.contains(where: { $0.bot?.characterId == bot.characterId }) else { throw MPError.duplicate }
+        var n = s; n.participants[player.id] = player; return n
+    }
+    /// Android `PongRules.friendlyHouseReady`: pressing Start on a house player is the host's Ready.
+    static func friendlyHouseReady(_ s: MPSession, actor: String) -> MPSession {
+        guard s.kind == .friendly, s.state == "ACTIVE", actor == s.host, s.participants.values.filter({ $0.bot != nil }).count == 1,
+            s.matches.count == 1, let m = s.matches.values.first, m.phase == .waiting, m.starts == 0 else { return s }
+        return (try? ready(s, match: m.id, uid: actor, value: true)) ?? s
+    }
+    /// A house player as a room participant: Android's random `bot_<uuid>` id and the character's English name.
+    static func housePlayer(_ bot: MPBot) -> MPParticipant {
+        let character = MPRoster.find(bot.characterId) ?? MPRoster.all[0]
+        return MPParticipant(identity: .init(id: "bot_" + UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased(), name: character.english, characterId: character.id), bot: bot)
     }
     /// Android PlayActivity "Remove <house player>": the host edits a tournament roster before it starts.
     static func removeHouse(_ s: MPSession, actor: String, id: String) throws -> MPSession {

@@ -73,6 +73,9 @@ final class SplashActor {
     var direction = V(0, -1)
     var move = V(0, 0)
     var held: Int? = nil
+    /// Andromeda: at most three floating steps per match, the first 24-40 s in (Kotlin hashCode of the id).
+    var floatCount = 0
+    var nextFloatAt: Double
     var height = 0.0
     var verticalSpeed = 0.0
     var crouchUntil = 0.0
@@ -117,6 +120,7 @@ final class SplashActor {
         self.position = position
         self.profile = profile
         self.settings = member.settings
+        self.nextFloatAt = 24.0 + Double((Int64(member.id.javaHashCode) & 0x7fff_ffff) % 17)
     }
 }
 
@@ -132,6 +136,8 @@ struct Shot {
     let velocity: V
     var vz: Double
     var age: Double = 0
+    /// Paint walls: a wrong answer throws white paint that erases opposing paint and never scores a hit.
+    var whitePaint: Bool = false
 }
 
 struct Burst {
@@ -229,7 +235,14 @@ final class SplashEngine {
         self.questionSalt = Int64.random(in: Int64.min...Int64.max)
         var created: [SplashActor] = []
         for (i, m) in members.enumerated() {
-            let position = V(config.width * (0.18 + Double(i % 3) * 0.32), config.depth * (i < 3 ? 0.73 : 0.27))
+            let position: V
+            if config.wallBattle {
+                let slot = members.prefix(i).filter { $0.team == m.team }.count
+                let count = max(members.filter { $0.team == m.team }.count, 1)
+                position = V(config.width * (m.team == 0 ? 0.25 : 0.75), config.depth * (0.20 + 0.60 * (Double(slot) + 0.5) / Double(count)))
+            } else {
+                position = V(config.width * (0.18 + Double(i % 3) * 0.32), config.depth * (i < 3 ? 0.73 : 0.27))
+            }
             created.append(SplashActor(member: m, position: position, profile: profiles[m.id] ?? LearningProfile()))
         }
         self.actors = created
@@ -348,7 +361,6 @@ final class SplashEngine {
             guard wallIndex >= 0 && wallIndex < paintSession.walls.count else { return false }
             let wall = paintSession.walls[wallIndex]
             if a.held == nil || !u.isFinite || !v.isFinite || u < 0.0 || u > 1.0 || v < 0.0 || v > 1.0 { return false }
-            if config.wallBattle && wallIndex == a.member.team { return false }
             let delta = wall.world(u, v) - a.position
             a.direction = delta.unit()
             a.facing = a.direction
@@ -415,9 +427,20 @@ final class SplashEngine {
                 a.aimHeight = nil
                 nextQuestion(a)
             } else {
-                burst(id, q.id, a.position, a.height + 0.9, c.color, id)
-                applyPaint(a, c.color, false)
+                if config.wallBattle {
+                    let direction = a.direction.unit()
+                    let shotId = "\(matchId)-white\(nextSerial())"
+                    shots.append(Shot(id: shotId, owner: id, questionId: q.id, answer: q.answer,
+                                      explanation: q.explanation(a.member.hebrew), color: c.color,
+                                      position: a.position + direction * 0.42, height: a.height + (time < a.crouchUntil ? 0.48 : 1.15),
+                                      velocity: direction * throwSpeed(a), vz: launchLift(a), whitePaint: true))
+                    onEvent?("throw", id)
+                } else {
+                    burst(id, q.id, a.position, a.height + 0.9, c.color, id)
+                    applyPaint(a, c.color, false)
+                }
                 a.score = max(a.score - config.mistakePoints, 0)
+                if mode == .teams && !config.wallBattle { teamScores[team(a)] = max(teamScores[team(a)] - config.mistakePoints, 0) }
                 a.recoveryUntil = time + config.mistakeRecovery
                 onEvent?("wrong", id)
                 nextQuestion(a)
@@ -425,7 +448,7 @@ final class SplashEngine {
         case .jump:
             let ground = a.settings.arena == .andromeda ? 0.15 : 0.01
             if a.height < ground && time >= a.cleanUntil {
-                a.verticalSpeed = config.jumpVelocity
+                a.verticalSpeed = characterJumpSpeed(a)
                 a.crouchUntil = 0
                 onEvent?("jump", id)
             }
@@ -443,6 +466,13 @@ final class SplashEngine {
         return true
     }
 
+    /// Reflexes set the jump: 1.23x the base at 3/5, 7.5% per level, and 1.32x more on Andromeda.
+    func characterJumpSpeed(_ a: SplashActor) -> Double {
+        let reflexes = Characters.get(a.member.character).qualities.reflexes
+        let base = config.jumpVelocity * (1.23 + Double(reflexes - 3) * 0.075)
+        return a.settings.arena == .andromeda ? base * 1.32 : base
+    }
+
     private func nextQuestion(_ a: SplashActor) {
         a.sequence += 1
         let mixed = seed ^ questionSalt ^ Int64(a.member.id.javaHashCode) ^ (Int64(a.sequence) &* 0x9E37_79B9)
@@ -458,7 +488,7 @@ final class SplashEngine {
         a.question = question
         let colors = Array(Array(0...5).kotlinShuffled(r).prefix(4))
         let spots = GroundBalloons.place(config.width, config.depth, a.position, practice || a.settings.balloons == .onePlace,
-                                         practice ? 1.8 : config.answerRing, r)
+                                         practice ? 1.8 : config.answerRing, r, paintSession.active, config.wallBattle)
         var made: [Choice] = []
         for (i, text) in question.options.enumerated() where i < spots.count && i < colors.count {
             made.append(Choice(index: i, text: text, position: spots[i], color: colors[i]))
@@ -518,7 +548,11 @@ final class SplashEngine {
                 a.position = clamp(a.position + PlayFeel.advance(a, movementSpeed(a), dt), a)
                 if a.move.length() > 0.05 && time - a.windupAt > 0.35 && time - a.throwAt > 0.3 { a.facing = a.move.unit() }
                 if a.settings.arena == .andromeda && a.move.length() > 0.1 && a.height < 0.005 && a.verticalSpeed <= 0 && time >= a.crouchUntil {
-                    a.verticalSpeed = 0.95
+                    if a.floatCount < 3 && time >= a.nextFloatAt {
+                        a.verticalSpeed = 4.35
+                        a.floatCount += 1
+                        a.nextFloatAt = time + 30.0 + random.nextDouble() * 18.0
+                    }
                 }
                 // Distance travelled drives the four-frame locomotion loop.
                 a.gait += (a.position - before).length() * 2.7
@@ -564,15 +598,19 @@ final class SplashEngine {
             drill?.flight(self, s, old, oldH)
             var wallHit = false
             for wall in paintSession.walls {
-                let dy = s.position.y - old.y
-                if abs(dy) < 0.000001 { continue }
-                let t = (wall.y - old.y) / dy
+                let previous = wall.alongY ? old.x : old.y
+                let advance = wall.alongY ? s.position.x - old.x : s.position.y - old.y
+                if abs(advance) < 0.000001 { continue }
+                let t = (wall.line - previous) / advance
                 if t < 0.0 || t > 1.0 { continue }
                 let impact = old + (s.position - old) * t
                 let z = oldH + (s.height - oldH) * t
-                let uv = wall.uv(impact.x, z)
+                let uv = wall.uv(wall.alongY ? impact.y : impact.x, z)
                 if uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0 {
-                    if let owner = actor(s.owner) { paintSession.hit(wall.id, uv.x, uv.y, owner.member.team, !owner.member.bot) }
+                    if let owner = actor(s.owner) {
+                        paintSession.hit(wall.id, uv.x, uv.y, owner.member.team, !owner.member.bot, erase: s.whitePaint || s.color == 6,
+                                         impactSpeed: s.velocity.length(), impactSlope: s.vz)
+                    }
                     s.position = impact
                     s.height = z
                     explode(s, nil)
@@ -601,6 +639,11 @@ final class SplashEngine {
                     target = a
                     nearest = t
                 }
+            }
+            if target != nil && (s.whitePaint || s.color == 6) {
+                explode(s, nil)
+                shots.remove(at: index)
+                continue
             }
             if let catcher = target, paintSession.passing {
                 if s.vz < 0 && s.height >= 0.3 && s.height <= 1.85 {
@@ -657,7 +700,12 @@ final class SplashEngine {
         }
     }
 
+    /// Team walls stand on the X edges. The old 3 m Y exclusion belongs only
+    /// to the end-wall drills; keeping it in wall battles stranded bots at reachable answers.
     private func clamp(_ p: V, _ a: SplashActor) -> V {
+        if config.wallBattle {
+            return V(min(max(p.x, 0.8), config.width - 0.8), min(max(p.y, 0.8), config.depth - 0.8))
+        }
         if paintSession.active {
             return V(min(max(p.x, 0.8), config.width - 0.8), min(max(p.y, 3.0), config.depth - 3.0))
         }
@@ -722,7 +770,7 @@ final class SplashEngine {
     }
 
     private func explode(_ s: Shot, _ hit: String?) {
-        burst(s.owner, s.questionId, s.position, max(s.height, 0.0), s.color, hit)
+        burst(s.owner, s.questionId, s.position, max(s.height, 0.0), s.whitePaint ? 6 : s.color, hit)
         // Feedback references its original question; never rewrites a newer question.
         guard let owner = actor(s.owner) else { return }
         var keepWrong = false
@@ -733,9 +781,10 @@ final class SplashEngine {
         }
     }
 
-    /// Avatar speed stars change house players' movement; humans move at the full speed.
+    /// Avatar speed stars change house players' movement; a human's avatar moves at 0.85 + 0.05 per speed star.
     func movementSpeed(_ a: SplashActor) -> Double {
-        let bot = a.member.bot ? Characters.get(a.member.character).qualities.movementFactor * (practice ? 1.0 : config.difficulty.speed) : 1.0
+        let q = Characters.get(a.member.character).qualities
+        let bot = a.member.bot ? q.movementFactor * (practice ? 1.0 : config.difficulty.speed) : 0.85 + 0.05 * Double(q.speed)
         return config.moveSpeed * bot * (1.0 - 0.11 * Double(a.slowHits.filter { $0 > time }.count))
     }
 

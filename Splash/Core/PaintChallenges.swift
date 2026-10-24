@@ -157,28 +157,53 @@ struct ChallengeProgress: Equatable {
     }
 }
 
+/// Android `PaintSplat`: the low-resolution cells score the match; visible splashes follow each real impact.
+struct PaintSplat: Equatable {
+    let u: Double
+    let v: Double
+    let team: Int
+    let radius: Double
+    let stretch: Double
+    let angle: Double
+
+    init(_ u: Double, _ v: Double, _ team: Int, _ radius: Double, _ stretch: Double, _ angle: Double) {
+        self.u = u
+        self.v = v
+        self.team = team
+        self.radius = radius
+        self.stretch = stretch
+        self.angle = angle
+    }
+}
+
 /// Android `PaintWall`: authoritative coverage cells; decoration never counts as paint.
+/// Daily targets span X at `line` (a Y position); team walls (`alongY`) span Y at the court's short ends.
 final class PaintWall {
     let id: Int
-    let y: Double
-    let width: Double
+    let line: Double
+    let span: Double
     let height: Double
     let columns: Int
     let rows: Int
+    let alongY: Bool
     var cells: [Int]
+    var splats: [PaintSplat] = []
 
-    init(_ id: Int, _ y: Double, _ width: Double, height: Double = 5.0, columns: Int = 14, rows: Int = 8) {
+    init(_ id: Int, _ line: Double, _ span: Double, height: Double = 5.0, columns: Int = 14, rows: Int = 8, alongY: Bool = false) {
         self.id = id
-        self.y = y
-        self.width = width
+        self.line = line
+        self.span = span
         self.height = height
         self.columns = columns
         self.rows = rows
+        self.alongY = alongY
         cells = Array(repeating: -1, count: columns * rows)
     }
 
-    func world(_ u: Double, _ v: Double) -> V { return V(width * (0.14 + 0.72 * u), y) }
-    func uv(_ x: Double, _ z: Double) -> V { return V((x / width - 0.14) / 0.72, z / height) }
+    func world(_ u: Double, _ v: Double) -> V {
+        return alongY ? V(line, span * (0.025 + 0.95 * u)) : V(span * (0.025 + 0.95 * u), line)
+    }
+    func uv(_ lateral: Double, _ z: Double) -> V { return V((lateral / span - 0.025) / 0.95, z / height) }
     func at(_ index: Int) -> V { return V((Double(index % columns) + 0.5) / Double(columns), (Double(index / columns) + 0.5) / Double(rows)) }
 
     @discardableResult
@@ -220,9 +245,9 @@ final class PaintSession {
         if !active {
             walls = []
         } else if config.wallBattle {
-            walls = [PaintWall(0, 1.2, config.width), PaintWall(1, config.depth - 1.2, config.width)]
+            walls = [PaintWall(0, 0.35, config.depth, height: 7.0, alongY: true), PaintWall(1, config.width - 0.35, config.depth, height: 7.0, alongY: true)]
         } else {
-            walls = [PaintWall(0, 1.2, config.width)]
+            walls = [PaintWall(0, 0.35, config.width)]
         }
         radius = max(0.20 - Double(config.chapter) * 0.007, 0.12)
         let challenge = config.challenge
@@ -275,7 +300,8 @@ final class PaintSession {
         return Double(painted) / Double(max(total, 1))
     }
 
-    func hit(_ wall: Int, _ u: Double, _ v: Double, _ team: Int, _ human: Bool = true) {
+    func hit(_ wall: Int, _ u: Double, _ v: Double, _ team: Int, _ human: Bool = true, erase: Bool = false, impactSpeed: Double? = nil, impactSlope: Double = 0.0) {
+        let impactSpeed = impactSpeed ?? config.throwSpeed
         if u < 0.0 || u > 1.0 || v < 0.0 || v > 1.0 { return }
         guard wall >= 0 && wall < walls.count else { return }
         let w = walls[wall]
@@ -307,7 +333,20 @@ final class PaintSession {
                 return
             }
         }
-        w.paint(u, v, team, radius)
+        let size = min(max(radius * (0.82 + impactSpeed / config.throwSpeed * 0.18), 0.09), 0.27)
+        let stretch = min(max(1.0 + abs(impactSlope) * 0.17, 1.0), 1.7)
+        let angle = atan2(impactSlope, impactSpeed) * 180 / Double.pi
+        // Convert old saved coverage once, before the first new impact, so
+        // opening an older match never makes its existing paint vanish.
+        if w.splats.isEmpty {
+            for index in w.cells.indices where w.cells[index] >= 0 {
+                let at = w.at(index)
+                w.splats.append(PaintSplat(at.x, at.y, w.cells[index], 0.052, 1.0, 0.0))
+            }
+        }
+        w.paint(u, v, erase ? -1 : team, size)
+        w.splats.append(PaintSplat(u, v, erase ? -1 : team, size, stretch, angle))
+        if w.splats.count > 180 { w.splats.remove(at: 0) }
     }
 
     func complete() -> Bool { return cooperative && coverage(0) >= 0.999 }

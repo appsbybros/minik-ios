@@ -1,0 +1,163 @@
+<?xml version='1.0' encoding='utf-8'?>
+<question-bank version="1" mode="ENGLISH" language="en">
+  <question id="english_en_000" level="1">
+    <prompt lang="en">Which word names a fruit?</prompt>
+    <answer correct="true">Apple</answer>
+    <answer correct="false">Chair</answer>
+    <answer correct="false">Shoe</answer>
+    <answer correct="false">Cloud</answer>
+    <explanation lang="en">The correct answer is: Apple</explanation>
+  </question>
+  <question id="english_en_001" level="1">
+    <prompt lang="en">Which word means the opposite of hot?</prompt>
+    <answer correct="false">Tall</answer>
+    <answer correct="false">Happy</answer>
+    <answer correct="false">Fast</answer>
+    <answer correct="true">Cold</answer>
+    <explanation lang="en">The correct answer is: Cold</explanation>
+  </question>
+  <question id="english_en_002" level="1">
+    <prompt lang="en">Which animal says meow?</prompt>
+    <answer correct="false">Cow</answer>
+    <answer correct="false">Duck</answer>
+    <answer correct="true">Cat</answer>
+    <answer correct="false">Dog</answer>
+    <explanation lang="en">The correct answer is: Cat</explanation>
+  </question>
+  <question id="english_en_003" level="1">
+    <prompt lang="en">Which word names a color?</prompt>
+    <answer correct="false">Sleep</answer>
+    <answer correct="true">Blue</answer>
+    <answer correct="false">Run</answer>
+    <answer correct="false">Book</answer>
+    <explanation lang="en">The correct answer is: Blue</explanation>
+  </question>
+  <question id="english_en_004" level="2">
+    <prompt lang="en">Which word means more than one child?</prompt>
+    <answer correct="true">Children</answer>
+    <answer correct="false">Childs</answer>
+    <answer correct="false">Childes</answer>
+    <answer correct="false">Childrens</answer>
+    <explanation lang="en">The correct answer is: Children</explanation>
+  </question>
+  <question id="english_en_005" level="2">
+    <prompt lang="en">Choose the past tense of go.</prompt>
+    <answer correct="false">Goed</answer>
+    <answer correct="false">Going</answer>
+    <answer correct="false">Goes</answer>
+    <answer correct="true">Went</answer>
+    <explanation lang="en">The correct answer is: Went</explanation>
+  </question>
+  <question id="english_en_006" level="2">
+    <prompt lang="en">Choose the word: She ___ happy.</prompt>
+    <answer correct="false">am</answer>
+    <answer correct="false">be</answer>
+    <answer correct="true">is</answer>
+    <answer correct="false">are</answer>
+    <explanation lang="en">The correct answer is: is</explanation>
+  </question>
+  <question id="english_en_007" level="2">
+    <prompt lang="en">Which word means the opposite of empty?</prompt>
+    <answer correct="false">Soft</answer>
+    <answer correct="true">Full</answer>
+    <answer correct="false">Wide</answer>
+    <answer correct="false">Quiet</answer>
+    <explanation lang="en">The correct answer is: Full</explanation>
+  </question>
+  <question id="english_en_008" level="3">
+    <prompt lang="en">Which word means almost the same as quick?</prompt>
+    <answer correct="true">Fast</answer>
+    <answer correct="false">Slow</answer>
+    <answer correct="false">Heavy</answer>
+    <answer correct="false">Late</answer>
+    <explanation lang="en">The correct answer is: Fast</explanation>
+  </question>
+  <question id="english_en_009" level="3">
+    <prompt lang="en">Choose the word: I have ___ apple.</prompt>
+    <answer correct="false">a</answer>
+    <answer correct="false">two</answer>
+    <answer correct="false">many</answer>
+    <answer correct="true">an</answer>
+    <explanation lang="en">The correct answer is: an</explanation>
+  </question>
+  <question id="english_en_010" level="3">
+    <prompt lang="en">Which word describes something you can hear?</prompt>
+    <answer correct="false">Sweet</answer>
+    <answer correct="false">Round</answer>
+    <answer correct="true">Loud</answer>
+    <answer correct="false">Smooth</answer>
+    <explanation lang="en">The correct answer is: Loud</explanation>
+  </question>
+  <question id="english_en_011" level="3">
+    <prompt lang="en">Choose the word: Yesterday, we ___ football.</prompt>
+    <answer correct="false">plays</answer>
+    <answer correct="true">played</answer>
+    <answer correct="false">play</answer>
+    <answer correct="false">playing</answer>
+    <explanation lang="en">The correct answer is: played</explanation>
+  </question>
+  <question id="english_en_012" level="4">
+    <prompt lang="en">Which word means to look at something carefully?</prompt>
+    <answer correct="true">Examine</answer>
+    <answer correct="false">Forget</answer>
+    <answer correct="false">Hide</answer>
+    <answer correct="false">Drop</answer>
+    <explanation lang="en">The correct answer is: Examine</explanation>
+  </question>
+  <question id="english_en_013" level="4">
+    <prompt lang="en">Which word means the opposite of generous?</prompt>
+    <answer correct="false">Helpful</answer>
+    <answer correct="false">Patient</answer>
+    <answer correct="false">Honest</answer>
+    <answer correct="true">Selfish</answer>
+    <explanation lang="en">The correct answer is: Selfish</explanation>
+  </question>
+  <question id="english_en_014" level="4">
+    <prompt lang="en">Choose the word: If it rains, we ___ stay inside.</prompt>
+    <answer correct="false">has</answer>
+    <answer correct="false">did</answer>
+    <answer correct="true">will</answer>
+    <answer correct="false">was</answer>
+    <explanation lang="en">The correct answer is: will</explanation>
+  </question>
+  <question id="english_en_015" level="4">
+    <prompt lang="en">Which sentence uses their correctly?</prompt>
+    <answer correct="false">Their is a cat.</answer>
+    <answer correct="true">Their dog is asleep.</answer>
+    <answer correct="false">Their going home.</answer>
+    <answer correct="false">Look over their.</answer>
+    <explanation lang="en">The correct answer is: Their dog is asleep.</explanation>
+  </question>
+  <question id="english_en_016" level="5">
+    <prompt lang="en">Which word means able to recover after difficulty?</prompt>
+    <answer correct="true">Resilient</answer>
+    <answer correct="false">Fragile</answer>
+    <answer correct="false">Careless</answer>
+    <answer correct="false">Rigid</answer>
+    <explanation lang="en">The correct answer is: Resilient</explanation>
+  </question>
+  <question id="english_en_017" level="5">
+    <prompt lang="en">Which word means uncertain or open to more than one interpretation?</prompt>
+    <answer correct="false">Obvious</answer>
+    <answer correct="false">Exact</answer>
+    <answer correct="false">Definite</answer>
+    <answer correct="true">Ambiguous</answer>
+    <explanation lang="en">The correct answer is: Ambiguous</explanation>
+  </question>
+  <question id="english_en_018" level="5">
+    <prompt lang="en">Choose the correct sentence.</prompt>
+    <answer correct="false">Neither answers is correct.</answer>
+    <answer correct="false">Neither answer be correct.</answer>
+    <answer correct="true">Neither answer is correct.</answer>
+    <answer correct="false">Neither answer are correct.</answer>
+    <explanation lang="en">The correct answer is: Neither answer is correct.</explanation>
+  </question>
+  <question id="english_en_019" level="5">
+    <prompt lang="en">Which word means brief and clearly expressed?</prompt>
+    <answer correct="false">Repetitive</answer>
+    <answer correct="true">Concise</answer>
+    <answer correct="false">Lengthy</answer>
+    <answer correct="false">Confusing</answer>
+    <explanation lang="en">The correct answer is: Concise</explanation>
+  </question>
+</question-bank>

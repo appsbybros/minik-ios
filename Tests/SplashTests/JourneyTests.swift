@@ -158,6 +158,8 @@ final class PaintFeedbackTests: XCTestCase {
         let members = wall ? (0...3).map { Member("p\($0)", Characters.all[$0].id, team: $0 / 2) }
             : [Member("p0", "miniko", team: 0), Member("p1", "minik", team: 1)]
         var config = SplashConfig()
+        config.width = 20.0
+        config.depth = 20.0
         config.challenge = kind
         config.wallBattle = wall
         config.hitEffect = effect
@@ -322,6 +324,7 @@ final class PaintFeedbackTests: XCTestCase {
         let restored = SplashEngine(members: e.members, mode: e.mode, config: WorldCodec.config(WorldCodec.config(e.config)))
         WorldCodec.restore(restored, WorldCodec.checkpoint(e))
         XCTAssertEqual(e.paintSession.walls[1].cells, restored.paintSession.walls[1].cells)
+        XCTAssertEqual(e.paintSession.walls[1].splats, restored.paintSession.walls[1].splats)
         XCTAssertEqual(e.actor("p0")!.slowHits, restored.actor("p0")!.slowHits)
     }
 
@@ -424,6 +427,8 @@ final class PaintFeedbackTests: XCTestCase {
 
     func testUnattendedWidePassFailsRatherThanBeingAnAutomaticSuccess() {
         var config = SplashConfig()
+        config.width = 20.0
+        config.depth = 20.0
         config.challenge = .passing
         config.chapter = 10
         let e = SplashEngine(members: [Member("p0", "miniko", team: 0), Member("p1", "minik", team: 1, bot: true)], config: config)
@@ -431,6 +436,97 @@ final class PaintFeedbackTests: XCTestCase {
         for _ in 0..<100 { e.tick(0.1) }
         XCTAssertTrue(e.paintSession.failed)
         XCTAssertNotNil(e.result)
+    }
+
+    func testWallBalloonColorIsIndependentOfTeamPaintAndWhiteErasesOnlyOpponentWall() {
+        let e = engine(nil, wall: true)
+        let a = e.actor("p0")!
+        let correct = a.choices.first { $0.text == a.question?.answer }!
+        let wrong = a.choices.first { $0.text != a.question?.answer }!
+        XCTAssertTrue((0...5).contains(correct.color))
+        XCTAssertTrue((0...5).contains(wrong.color))
+        let wall = e.paintSession
+        wall.hit(1, 0.5, 0.5, 0)
+        let painted = wall.walls[1].fraction(0)
+        XCTAssertGreaterThan(painted, 0.0)
+        wall.hit(0, 0.5, 0.5, 0, erase: true)
+        XCTAssertEqual(painted, wall.walls[1].fraction(0))
+        wall.hit(1, 0.5, 0.5, 0, erase: true)
+        XCTAssertEqual(wall.walls[1].fraction(0), 0.0)
+        XCTAssertTrue(wall.walls[1].splats.contains { $0.team < 0 })
+        a.position = wrong.position
+        a.held = wrong.index
+        XCTAssertTrue(e.command("p0", "white-aim", .paintAt(wall: 1, u: 0.5, v: 0.5)))
+        XCTAssertTrue(e.command("p0", "white-throw", .throwBalloon))
+        XCTAssertEqual(e.shots.count, 1)
+        XCTAssertEqual(e.shots.first?.color, wrong.color)
+        XCTAssertEqual(e.shots.first?.whitePaint, true)
+    }
+
+    func testOlderSavedWallPaintRemainsVisibleAfterNewImpact() {
+        let e = engine(nil, wall: true)
+        let old = e.paintSession.walls[1]
+        old.cells[0] = 0
+        e.paintSession.hit(1, 0.5, 0.5, 0)
+        XCTAssertTrue(old.splats.contains { $0.u < 0.1 && $0.team == 0 })
+        XCTAssertTrue(old.splats.contains { $0.u == 0.5 && $0.team == 0 })
+    }
+
+    func testPaintWallsStandAtTheArenaEdgesAndPlayerSkillsAffectJump() {
+        let e = engine(nil, wall: true)
+        let walls = e.paintSession.walls
+        XCTAssertTrue(walls.allSatisfy { $0.alongY })
+        XCTAssertLessThan(walls[0].line, 0.5)
+        XCTAssertGreaterThan(walls[1].line, e.config.width - 0.5)
+        for wall in walls {
+            for u in [0.0, 0.5, 1.0] {
+                let point = wall.world(u, 0.5)
+                XCTAssertEqual(wall.line, point.x, accuracy: 1e-9)
+                XCTAssertEqual(u, wall.uv(point.y, 2.5).x, accuracy: 1e-9)
+            }
+        }
+        let kyra = SplashEngine(members: [Member("child", "kyra"), Member("other", "miniko", bot: true)]).actor("child")!
+        let miniko = SplashEngine(members: [Member("child", "miniko"), Member("other", "kyra", bot: true)]).actor("child")!
+        XCTAssertGreaterThan(e.characterJumpSpeed(kyra), e.characterJumpSpeed(miniko))
+        XCTAssertGreaterThan(e.characterJumpSpeed(kyra) * e.characterJumpSpeed(kyra) / (2 * e.config.jumpGravity), 1.5)
+    }
+
+    func testAndromedaWalksNormallyBetweenHighJumpsAndOccasionalFloats() {
+        let settings = PlayerSettings(arena: .andromeda)
+        var config = SplashConfig()
+        config.duration = 240.0
+        let e = SplashEngine(members: [Member("child", "kyra", settings: settings), Member("other", "miniko", bot: true)], config: config)
+        e.practice = true
+        let child = e.actor("child")!
+        child.move = V(1.0, 0.0)
+        for _ in 0..<100 { e.tick(0.1) }
+        XCTAssertEqual(child.height, 0.0, accuracy: 1e-9)
+        XCTAssertEqual(child.floatCount, 0)
+        XCTAssertTrue(e.command("child", "jump", .jump))
+        var peak = 0.0
+        for _ in 0..<70 {
+            e.tick(0.1)
+            peak = max(peak, child.height)
+        }
+        XCTAssertGreaterThan(peak, 2.5)
+        child.position = V(e.config.width * 0.5, e.config.depth * 0.5)
+        child.move = V(1.0, 0.0)
+        child.nextFloatAt = e.time
+        for _ in 0..<5 { e.tick(0.1) }
+        XCTAssertEqual(child.floatCount, 1)
+        XCTAssertGreaterThan(child.height, 0.0)
+    }
+
+    func testWallBotsGetReachableChoicesAndKeepPlaying() {
+        let members = (0...3).map { Member("p\($0)", Characters.all[$0].id, team: $0 / 2, bot: true) }
+        var config = SplashConfig()
+        config.width = 20.0
+        config.depth = 20.0
+        config.wallBattle = true
+        let e = SplashEngine(members: members, mode: .teams, seed: 12, config: config)
+        XCTAssertTrue(e.actors.flatMap { $0.choices }.allSatisfy { $0.position.x >= 6.0 && $0.position.x <= 14.0 })
+        for _ in 0..<250 { e.tick(0.1) }
+        XCTAssertTrue(e.actors.contains { $0.sequence > 1 })
     }
 }
 

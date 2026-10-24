@@ -42,7 +42,7 @@ import unicodedata
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DOC = ROOT / 'docs' / 'multi-pong-ios-handoff.md'
 CATALOG = ROOT / 'MultiPong' / 'MPTextCatalog.swift'
-ANDROID_COMMIT = '1dbfe336d39da5cf8a6e396541ff60378303d210'
+ANDROID_COMMIT = 'e93f86a1caf770fb1cee51910c6716b24f7ba6e7'
 APP_TEXT = 'app/src/main/java/com/appsbybros/minik/localization/AppText.kt'
 STRINGS = 'app/src/main/res/values{}/strings.xml'
 JOURNEY = 'app/src/main/res/values{}/journey.xml'

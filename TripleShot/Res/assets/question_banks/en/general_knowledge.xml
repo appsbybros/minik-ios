@@ -1,0 +1,163 @@
+<?xml version='1.0' encoding='utf-8'?>
+<question-bank version="1" mode="GENERAL_KNOWLEDGE" language="en">
+  <question id="general_knowledge_001" level="2">
+    <prompt lang="en">What is the capital of Australia?</prompt>
+    <answer correct="false">Perth</answer>
+    <answer correct="false">Melbourne</answer>
+    <answer correct="true">Canberra</answer>
+    <answer correct="false">Sydney</answer>
+    <explanation lang="en">Canberra is Australia's capital; Sydney and Melbourne are larger but are not the capital.</explanation>
+  </question>
+  <question id="general_knowledge_002" level="1">
+    <prompt lang="en">Which ocean is the largest?</prompt>
+    <answer correct="true">Pacific Ocean</answer>
+    <answer correct="false">Arctic Ocean</answer>
+    <answer correct="false">Atlantic Ocean</answer>
+    <answer correct="false">Indian Ocean</answer>
+    <explanation lang="en">The Pacific is the largest and deepest ocean.</explanation>
+  </question>
+  <question id="general_knowledge_003" level="1">
+    <prompt lang="en">In which country is Kyoto?</prompt>
+    <answer correct="true">Japan</answer>
+    <answer correct="false">China</answer>
+    <answer correct="false">South Korea</answer>
+    <answer correct="false">Thailand</answer>
+    <explanation lang="en">Kyoto was Japan's capital for more than a thousand years.</explanation>
+  </question>
+  <question id="general_knowledge_004" level="1">
+    <prompt lang="en">What is Japan's official currency?</prompt>
+    <answer correct="false">Won</answer>
+    <answer correct="false">Yuan</answer>
+    <answer correct="true">Yen</answer>
+    <answer correct="false">Rupee</answer>
+    <explanation lang="en">Japan's currency is the yen.</explanation>
+  </question>
+  <question id="general_knowledge_005" level="1">
+    <prompt lang="en">Which continent has the largest area?</prompt>
+    <answer correct="true">Asia</answer>
+    <answer correct="false">Africa</answer>
+    <answer correct="false">South America</answer>
+    <answer correct="false">Europe</answer>
+    <explanation lang="en">Asia is the largest continent by area and population.</explanation>
+  </question>
+  <question id="general_knowledge_006" level="2">
+    <prompt lang="en">What is Brazil's main official language?</prompt>
+    <answer correct="false">Spanish</answer>
+    <answer correct="true">Portuguese</answer>
+    <answer correct="false">French</answer>
+    <answer correct="false">Italian</answer>
+    <explanation lang="en">Brazil was a Portuguese colony, and Portuguese is its official language.</explanation>
+  </question>
+  <question id="general_knowledge_007" level="2">
+    <prompt lang="en">Which country is called the Land of the Rising Sun?</prompt>
+    <answer correct="false">Norway</answer>
+    <answer correct="false">Egypt</answer>
+    <answer correct="true">Japan</answer>
+    <answer correct="false">Mexico</answer>
+    <explanation lang="en">The name relates to Japan's location east of mainland Asia.</explanation>
+  </question>
+  <question id="general_knowledge_008" level="2">
+    <prompt lang="en">What is the capital of Canada?</prompt>
+    <answer correct="false">Montreal</answer>
+    <answer correct="false">Toronto</answer>
+    <answer correct="false">Vancouver</answer>
+    <answer correct="true">Ottawa</answer>
+    <explanation lang="en">Ottawa is Canada's federal capital.</explanation>
+  </question>
+  <question id="general_knowledge_009" level="3">
+    <prompt lang="en">Which city's Buda and Pest sides are divided by the Danube?</prompt>
+    <answer correct="false">Belgrade</answer>
+    <answer correct="false">Vienna</answer>
+    <answer correct="false">Prague</answer>
+    <answer correct="true">Budapest</answer>
+    <explanation lang="en">Buda and Pest united in the 19th century to form Budapest.</explanation>
+  </question>
+  <question id="general_knowledge_010" level="2">
+    <prompt lang="en">Which modern musical instrument usually has 88 keys?</prompt>
+    <answer correct="false">Violin</answer>
+    <answer correct="false">Flute</answer>
+    <answer correct="true">Piano</answer>
+    <answer correct="false">Cello</answer>
+    <explanation lang="en">A standard modern piano has 88 keys.</explanation>
+  </question>
+  <question id="general_knowledge_011" level="2">
+    <prompt lang="en">Which sport uses love to mean a score of zero?</prompt>
+    <answer correct="false">Golf</answer>
+    <answer correct="false">Volleyball</answer>
+    <answer correct="false">Cricket</answer>
+    <answer correct="true">Tennis</answer>
+    <explanation lang="en">In tennis, love means zero points.</explanation>
+  </question>
+  <question id="general_knowledge_012" level="1">
+    <prompt lang="en">How many rings are in the Olympic symbol?</prompt>
+    <answer correct="true">5</answer>
+    <answer correct="false">6</answer>
+    <answer correct="false">4</answer>
+    <answer correct="false">7</answer>
+    <explanation lang="en">The Olympic symbol has five interlocking rings.</explanation>
+  </question>
+  <question id="general_knowledge_013" level="3">
+    <prompt lang="en">Who wrote The Little Prince?</prompt>
+    <answer correct="false">Victor Hugo</answer>
+    <answer correct="true">Antoine de Saint-Exupery</answer>
+    <answer correct="false">Albert Camus</answer>
+    <answer correct="false">Jules Verne</answer>
+    <explanation lang="en">Saint-Exupery published the book in 1943.</explanation>
+  </question>
+  <question id="general_knowledge_014" level="2">
+    <prompt lang="en">Which natural material is hardest on the Mohs scale?</prompt>
+    <answer correct="false">Quartz</answer>
+    <answer correct="false">Topaz</answer>
+    <answer correct="true">Diamond</answer>
+    <answer correct="false">Granite</answer>
+    <explanation lang="en">Diamond ranks 10 on the Mohs scale.</explanation>
+  </question>
+  <question id="general_knowledge_015" level="1">
+    <prompt lang="en">On which side of the road do people drive in Britain?</prompt>
+    <answer correct="false">Only in the city center</answer>
+    <answer correct="false">It varies by county</answer>
+    <answer correct="false">Right</answer>
+    <answer correct="true">Left</answer>
+    <explanation lang="en">Traffic drives on the left in Britain.</explanation>
+  </question>
+  <question id="general_knowledge_016" level="1">
+    <prompt lang="en">Which sea separates Europe and Africa?</prompt>
+    <answer correct="true">Mediterranean Sea</answer>
+    <answer correct="false">Baltic Sea</answer>
+    <answer correct="false">Caribbean Sea</answer>
+    <answer correct="false">Bering Sea</answer>
+    <explanation lang="en">The Mediterranean lies between southern Europe and northern Africa.</explanation>
+  </question>
+  <question id="general_knowledge_017" level="1">
+    <prompt lang="en">Which country is the largest by area?</prompt>
+    <answer correct="false">United States</answer>
+    <answer correct="false">China</answer>
+    <answer correct="true">Russia</answer>
+    <answer correct="false">Canada</answer>
+    <explanation lang="en">Russia has the largest total area of any country.</explanation>
+  </question>
+  <question id="general_knowledge_018" level="1">
+    <prompt lang="en">Which color results from mixing blue and yellow in traditional paints?</prompt>
+    <answer correct="false">Purple</answer>
+    <answer correct="true">Green</answer>
+    <answer correct="false">Red</answer>
+    <answer correct="false">Orange</answer>
+    <explanation lang="en">In basic pigment mixing, blue and yellow make green.</explanation>
+  </question>
+  <question id="general_knowledge_019" level="1">
+    <prompt lang="en">What number does the Roman numeral X represent?</prompt>
+    <answer correct="false">5</answer>
+    <answer correct="false">50</answer>
+    <answer correct="false">100</answer>
+    <answer correct="true">10</answer>
+    <explanation lang="en">X represents ten in Roman numerals.</explanation>
+  </question>
+  <question id="general_knowledge_020" level="1">
+    <prompt lang="en">Which board game has kings, queens, bishops and knights?</prompt>
+    <answer correct="true">Chess</answer>
+    <answer correct="false">Checkers</answer>
+    <answer correct="false">Go</answer>
+    <answer correct="false">Backgammon</answer>
+    <explanation lang="en">These are names of chess pieces.</explanation>
+  </question>
+</question-bank>

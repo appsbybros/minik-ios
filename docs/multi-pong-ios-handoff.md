@@ -948,3 +948,32 @@ a6b3f5e85b4f708e16206ceed4eac994e3b0b2583f066b4222f417620f709ff6  app/src/test/j
 785cf61bb55eb5552fc8195dfc469d5471a9f1c44cdfe269976dd02b45381a7a  firebase/tests/configuration.test.cjs
 5c4a348cbcdaff548222a868910cb270c54fc1d0c154d3c57a3507bc6e28d0e2  firebase/tests/reception-preferences.test.cjs
 ```
+
+## Update 2026-10-23: Android 59e364d, 7e30425, 0e65d75, 613e95d, e93f86a
+
+Source: `C:\Projects\MinikCrossPong` after `a247226`: `59e364d`, `7e30425` and `613e95d` (version only), `0e65d75`
+(result-dialog buttons) and `e93f86a` (selectors and expandable labels). The store captures, QA files and `BUILD_STATUS.md`
+are not part of the app; `AppText.kt`, the string resources, the tests and the rules did not change.
+
+| Android | iOS |
+| --- | --- |
+| `MatchResultDialog.kt` (`0e65d75`): each sky button calls `FamilyButtonAlignment.bind`, so its lettering is centred on the raised face below the gloss and lowered 3 dp (MinikFamilyServices `31e380d`) | `MPXResultCard.button` already draws on `FamilyKit.SkyButtonStyle`. The lettering alignment is a family service: the iOS Family update gives `SkyButtonStyle` the same alignment for every button that uses it, so Multi Ping Pong needs no change of its own (adding one here would move the letters twice). |
+| `SettingSelector.kt` (`e93f86a`): the selected text has a transparent background over the white sky gradient, a 20 dp chevron (2.25 dp stroke, points .29/.42, .5/.62, .71/.42 of a 48 dp box), and the text is aligned with the sky surface | No counterpart: the iOS forms use native pickers (segmented, or the menu style), not a white sky selector with a drawn chevron, as since `5c1aa4d`. |
+| `multiplayer/ExpandButton.kt` (`e93f86a`): the caption and the +/− sign take the raised-face alignment of the button's sky surface | No counterpart yet: `ModernPongView.expandHeader` and `MPXSection` draw flat rounded fills, not sky surfaces, and Android's alignment does nothing without a sky surface. They take it once they move to sky surfaces. |
+| `app/build.gradle.kts`: versionCode 7, versionName 7.0 | Not applicable (iOS versions are set at release) |
+
+### SHA-256 of the Android files used at e93f86a
+
+The audit now checks the committed files at `e93f86a`. These are the files that changed since `1dbfe33`
+(`LocalizedActivity.kt` and `PlayActivity.kt` in `18cd99d`/`a247226`, already ported in iOS `5a4a2c5`); every other
+committed hash above is unchanged at `e93f86a`.
+
+```
+29f36e060573430895922f6bf6d47cd614bb1b225fd56426b7c42758c0e81a56  BUILD_STATUS.md
+19a77c01193103a6584e096931dcac52595b827f87dbc7ad06309cf77ac3bf21  app/build.gradle.kts
+2c7e54f9fa2c051c4424e9301392e65aab4580cacf57e1f860f0026529c056aa  app/src/main/java/com/appsbybros/minik/pingpong/LocalizedActivity.kt
+74c112915ed142bfb2c04927e4e8b64c4099013bc7d207ad903f90edc6e263f6  app/src/main/java/com/appsbybros/minik/pingpong/MatchResultDialog.kt
+43f05a3faeb25c11d7d4821eea8464c7eaa527603f468b80fb8012302686eed5  app/src/main/java/com/appsbybros/minik/pingpong/SettingSelector.kt
+df1f8690e1253bd6846f8c76b32e5e82e7501c370b8395f4c6c8c2861f1b9d40  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/ExpandButton.kt
+ce2064514165207079bfe849053e6dd8d5339c4de2441520027c2170824ef916  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/PlayActivity.kt
+```

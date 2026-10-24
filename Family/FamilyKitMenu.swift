@@ -66,7 +66,8 @@ extension FamilyKit {
     }
 
     /// Android `FamilyMenu.style`: a section button on a raised face in the section colour, ink text,
-    /// 15-point corners. The label keeps its own font, padding and height (the apps use 54 or 64).
+    /// 15-point corners. The label keeps its own font, padding and height (the apps use 54 or 64); its
+    /// lettering is centred on the raised face (Android `FamilyButtonAlignment.bind`).
     struct MenuButtonStyle: ButtonStyle {
         let color: UInt32
 
@@ -77,6 +78,7 @@ extension FamilyKit {
         func makeBody(configuration: Configuration) -> some View {
             configuration.label
                 .foregroundColor(FamilyKit.color(MenuColor.ink))
+                .modifier(RaisedLettering(cornerRadius: 15, pressed: configuration.isPressed))
                 .background(SkySurface(color: color, cornerRadius: 15, pressed: configuration.isPressed))
                 .contentShape(Rectangle())
         }

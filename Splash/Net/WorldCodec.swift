@@ -15,8 +15,8 @@ enum WorldCodec {
 
     static func config(_ n: Node) -> SplashConfig {
         var c = SplashConfig()
-        c.width = min(max(n.num("width", 12.0), 8.0), 28.0)
-        c.depth = min(max(n.num("depth", 12.0), 8.0), 28.0)
+        c.width = min(max(n.num("width", 12.0), 8.0), 64.0)
+        c.depth = min(max(n.num("depth", 12.0), 8.0), 64.0)
         c.duration = min(max(n.num("duration", 180.0), 30.0), 3600.0)
         c.difficulty = Difficulty(rawValue: n.str("difficulty")) ?? .standard
         c.wallBattle = n.flag("wallBattle")
@@ -44,7 +44,7 @@ enum WorldCodec {
     // MARK: Settings and members
 
     static func settings(_ s: PlayerSettings) -> Node {
-        return ["walk": s.walk.name, "throwing": s.throwing.name, "arena": s.arena.name, "court": s.court,
+        return ["walk": s.walk.name, "throwing": s.throwing.name, "arena": s.arena.name, "court": true,
                 "balloons": s.balloons.name, "subjects": s.orderedSubjects.map { $0.name }, "difficulty": s.difficulty.name]
     }
 
@@ -55,7 +55,7 @@ enum WorldCodec {
         }
         if subjects.isEmpty { subjects = [.math] }
         return PlayerSettings(walk: option(n, "walk", WalkMode.easy), throwing: option(n, "throwing", ThrowMode.easy),
-                              arena: option(n, "arena", Arena.beach), court: NodeValue.bool(n["court"]) ?? true,
+                              arena: option(n, "arena", Arena.beach), court: true,
                               balloons: option(n, "balloons", BalloonMode.onePlace), subjects: subjects,
                               difficulty: option(n, "difficulty", Difficulty.easy))
     }
@@ -321,13 +321,18 @@ enum WorldCodec {
         let paint = e.paintSession
         out["paintCatches"] = paint.catches
         out["paintWalls"] = paint.walls.map { $0.cells }
+        out["paintSplats"] = paint.walls.map { w -> [Node] in
+            return w.splats.map { s -> Node in
+                return ["u": s.u, "v": s.v, "team": s.team, "radius": s.radius, "stretch": s.stretch, "angle": s.angle]
+            }
+        }
         out["paintPoints"] = paint.points
         out["paintThrows"] = paint.throwsTaken
         out["paintSpills"] = paint.spills
         out["paintFailed"] = paint.failed
         out["shots"] = e.shots.map { s -> Node in
             return ["id": s.id, "owner": s.owner, "questionId": s.questionId, "position": v(s.position), "height": s.height,
-                    "velocity": v(s.velocity), "vz": s.vz, "color": s.color, "age": s.age]
+                    "velocity": v(s.velocity), "vz": s.vz, "color": s.color, "age": s.age, "whitePaint": s.whitePaint]
         }
         out["bursts"] = e.bursts.map { b -> Node in
             var burst: Node = ["id": b.id, "owner": b.owner, "questionId": b.questionId, "position": v(b.position),
@@ -349,6 +354,15 @@ enum WorldCodec {
                 wall.cells[j] = NodeValue.number(value).map { KotlinNumber.int($0) } ?? -1
             }
         }
+        for (i, raw) in n.list("paintSplats").enumerated() where i < paint.walls.count {
+            let wall = paint.walls[i]
+            wall.splats.removeAll()
+            for item in NodeValue.list(raw) {
+                let s = NodeValue.node(item)
+                wall.splats.append(PaintSplat(s.num("u"), s.num("v"), KotlinNumber.int(s.num("team")), s.num("radius", 0.18),
+                                              s.num("stretch", 1.0), s.num("angle")))
+            }
+        }
         for (i, value) in n.list("paintPoints").prefix(2).enumerated() { paint.points[i] = KotlinNumber.int(NodeValue.number(value) ?? 0) }
         for (i, value) in n.list("paintThrows").prefix(2).enumerated() { paint.throwsTaken[i] = KotlinNumber.int(NodeValue.number(value) ?? 0) }
         paint.spills = KotlinNumber.int(n.num("paintSpills"))
@@ -365,7 +379,7 @@ enum WorldCodec {
             let s = NodeValue.node(item)
             return Shot(id: s.str("id"), owner: s.str("owner"), questionId: s.str("questionId"), answer: "", explanation: "",
                         color: KotlinNumber.int(s.num("color")), position: vector(s, "position"), height: s.num("height"),
-                        velocity: vector(s, "velocity"), vz: s.num("vz"), age: s.num("age"))
+                        velocity: vector(s, "velocity"), vz: s.num("vz"), age: s.num("age"), whitePaint: s.flag("whitePaint"))
         }
         e.bursts = n.list("bursts").map { item -> Burst in
             let b = NodeValue.node(item)
