@@ -324,6 +324,7 @@ struct MPConnectedFriend: Identifiable { let id: String; let identity: MPTeamIde
 struct MPTeamTableView: View {
     @ObservedObject var model: MPOnlineTeamsController
     @ObservedObject var room: MPTeamRoom
+    @State private var scenery = MPArenaScenery()
     private func t(_ en: String, _ he: String) -> String { model.tr(en, he) }
     var body: some View {
         GeometryReader { proxy in
@@ -334,12 +335,14 @@ struct MPTeamTableView: View {
                 let court = MPPracticeCourt(game: g, hebrew: model.hebrew, localSeat: max(room.localSeat, 0), simulate: false, running: model.resumed, names: names,
                                             controlOverride: control, soundsEnabled: { MPJourneyController.soundsOn },
                                             onMove: { point in link.input("move", point) }, onTap: { point in link.input("tap", point) },
-                                            onStroke: { stroke in link.input("stroke", MPPoint(0.5, 0.5), control: control, stroke: stroke) })
+                                            onStroke: { stroke in link.input("stroke", MPPoint(0.5, 0.5), control: control, stroke: stroke) }, scenery: scenery)
                 ZStack {
                     if wide {
                         // Android PongCourtStyle.landscape: tools and coaching in the start gutter, an equal empty gutter.
+                        // The court also draws into both gutters (`clipChildren = false`).
                         let side = min(max(proxy.size.width * 0.19, 144), 192)
-                        HStack(spacing: 0) { sidebar.frame(width: side); court; Color.clear.frame(width: side) }
+                        court.withGutter(side)
+                        HStack(spacing: 0) { sidebar.frame(width: side); Spacer(minLength: 0) }
                     } else { VStack(spacing: 6) { controls; court } }
                     MPOrientationToast(hebrew: model.hebrew)
                 }
@@ -348,7 +351,7 @@ struct MPTeamTableView: View {
             }
         }
         .padding(.horizontal, 6).padding(.bottom, 6)
-        .background { MPArenaBackdrop(arena: room.arena) }
+        .background { MPArenaBackdrop(arena: room.arena, scenery: scenery) }
     }
     private var score: some View {
         Group {

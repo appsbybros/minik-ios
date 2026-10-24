@@ -24,6 +24,11 @@ final class MPPracticeCourtView: UIView {
     /// Android `controlOverride`: the online player's chosen control (the friend's snapshot may lag behind it).
     var controlOverride: Int?
     var onFrame: (() -> Void)?
+    /// Android `PongCourtStyle.landscape` (`clipChildren = false`): in landscape the view spans the side gutters too, so
+    /// players who yield outward stay visible there; the table itself is laid out between them.
+    var gutter: CGFloat = 0 { didSet { if gutter != oldValue { setNeedsLayout(); setNeedsDisplay() } } }
+    /// Android `ReceptionCamera.scenery` / `ArenaBackdrop.foreground`: the arena scenery behind the table, if any.
+    var scenery: MPArenaScenery?
     private var control: Int { controlOverride ?? (game.controls.indices.contains(localSeat) ? game.controls[localSeat] : 0) }
     private let atlas = MPPoseAtlas()
     private let tableArt = MPPracticeTableArt()
@@ -45,6 +50,13 @@ final class MPPracticeCourtView: UIView {
     /// Android `VelocityTracker`: recent finger samples (time, point) for the swipe velocity in points per second.
     private var samples: [(CFTimeInterval, CGPoint)] = []
     private var laidOut: (CGSize, Bool) = (.zero, false)
+    /// The court View of Android: the view without its gutters.
+    private var courtSize: CGSize { CGSize(width: max(bounds.width - gutter * 2, 1), height: bounds.height) }
+    /// The court origin in the scenery's points, while both are on screen.
+    private var sceneryOffset: CGPoint? {
+        guard let view = scenery?.view, let window, view.window === window else { return nil }
+        return convert(CGPoint(x: gutter, y: 0), to: view)
+    }
     private let ink = UIColor(red: 0x17 / 255, green: 0x3e / 255, blue: 0x56 / 255, alpha: 1)
 
     init(game: MPPlay) {
@@ -103,8 +115,9 @@ final class MPPracticeCourtView: UIView {
         if game.actors.indices.contains(receiver) {
             let a = project(game.actors[receiver].at)
             let b = game.flight.map { project($0.position, $0.height) } ?? a
-            camera.update(cameraElapsed, assist: game.reception, local: localSeat, focus: CGPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2), size: bounds.size, holding: downAt != 0, reduceMotion: UIAccessibility.isReduceMotionEnabled)
+            camera.update(cameraElapsed, assist: game.reception, local: localSeat, focus: CGPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2), size: courtSize, holding: downAt != 0, reduceMotion: UIAccessibility.isReduceMotionEnabled)
         }
+        if let offset = sceneryOffset { scenery?.view?.follow(camera, offset: offset) }
         onFrame?()
         setNeedsDisplay()
     }
@@ -113,9 +126,10 @@ final class MPPracticeCourtView: UIView {
     /// near player's feet and label.
     private func relayout() {
         let flags = game.team && game.alternate
-        if laidOut.0 == bounds.size && laidOut.1 == flags { return }
-        laidOut = (bounds.size, flags)
-        let g = MPPracticeTableLayout.fit(Double(bounds.width), Double(bounds.height)); layout = g
+        let size = courtSize
+        if laidOut.0 == size && laidOut.1 == flags { return }
+        laidOut = (size, flags)
+        let g = MPPracticeTableLayout.fit(Double(size.width), Double(size.height)); layout = g
         tw = CGFloat(g.width); left = CGFloat(g.left); actorHeight = CGFloat(g.actorHeight); floorDrop = CGFloat(g.floorDrop)
         depth = CGFloat(g.depth); lift = CGFloat(g.lift); top = CGFloat(g.top)
         if flags {
@@ -241,16 +255,19 @@ final class MPPracticeCourtView: UIView {
         let size = min(13, bounds.height * 0.035)
         let font = UIFont.systemFont(ofSize: size, weight: .bold)
         let half = (name as NSString).size(withAttributes: [.font: font]).width / 2 + 12
-        // When reception zoom moves a player out of frame, their label leaves too.
-        if at.y < -size * 0.8 || at.y > bounds.height + size * 0.8 || at.x < -half || at.x > bounds.width + half { return }
-        var cx = min(max(at.x, half + 2), bounds.width - half - 2), cy = min(max(at.y, size * 0.8 + 2), bounds.height - size * 0.8 - 2)
+        // When reception zoom moves a player out of frame, their label leaves too. Clamping it onto the tabletop makes an
+        // off-screen player look submerged. In landscape players may yield into the side gutters: their labels stay
+        // with those bodies rather than clipping at the court (Android then drops any that leave it, in `fits`).
+        let width = courtSize.width, visibleLeft = -gutter, visibleRight = width + gutter
+        if at.y < -size * 0.8 || at.y > bounds.height + size * 0.8 || at.x < visibleLeft - half || at.x > visibleRight + half { return }
+        var cx = min(max(at.x, visibleLeft + half + 2), visibleRight - half - 2), cy = min(max(at.y, size * 0.8 + 2), bounds.height - size * 0.8 - 2)
         // A shallow landscape window can clamp an above-head label onto the head: place it beside that player.
         if game.actors[index].team != nearTeam, let body = bodyBoxes[index] {
             let head = camera.painted(CGPoint(x: body.midX, y: body.minY))
             if cy + size * 0.8 > head.y - 3 {
-                let outward: CGFloat = head.x < bounds.width * 0.5 ? -1 : 1
+                let outward: CGFloat = head.x < width * 0.5 ? -1 : 1
                 let edge = camera.painted(CGPoint(x: outward < 0 ? body.minX : body.maxX, y: body.minY + size))
-                cx = min(max(edge.x + outward * (half + 6), half + 2), bounds.width - half - 2)
+                cx = min(max(edge.x + outward * (half + 6), half + 2), width - half - 2)
                 cy = min(max(edge.y, size * 0.8 + 2), bounds.height - size * 0.8 - 2)
             }
         }
@@ -260,7 +277,7 @@ final class MPPracticeCourtView: UIView {
             let a = camera.painted(CGPoint(x: r.minX, y: r.minY)), b = camera.painted(CGPoint(x: r.maxX, y: r.maxY))
             return CGRect(x: a.x, y: a.y, width: b.x - a.x, height: b.y - a.y)
         } + Array(labels.values)
-        if !MPNameSpace.fits(box, width: bounds.width, height: bounds.height, obstacles: obstacles) { return }
+        if !MPNameSpace.fits(box, width: width, height: bounds.height, obstacles: obstacles) { return }
         labels[index] = box
         let fill: UInt32 = game.team ? MPTeamColors.fill(game.actors[index].team, seed: game.seed) : active ? 0xffffd665 : 0xf4ffffff
         c.setFillColor(color(fill).cgColor)
@@ -275,7 +292,7 @@ final class MPPracticeCourtView: UIView {
         let raw = renderedBallPoint(position, z)
         var shadow = project(position); if !position.inside { shadow.y += floorDrop }
         let r = max(5, tw * 0.012)
-        let at = CGPoint(x: min(max(raw.x, r * 2), bounds.width - r * 2), y: min(max(raw.y, r * 2), bounds.height - r * 2))
+        let at = CGPoint(x: min(max(raw.x, r * 2), courtSize.width - r * 2), y: min(max(raw.y, r * 2), bounds.height - r * 2))
         c.setFillColor(color(0x65001d2a).cgColor)
         c.fillEllipse(in: CGRect(x: shadow.x - r, y: shadow.y - r * 0.35, width: r * 2, height: r * 0.7))
         if let g = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: [UIColor.white.cgColor, color(0xffffe084).cgColor, color(0xffe7aa35).cgColor] as CFArray, locations: [0, 0.5, 1]) {
@@ -302,6 +319,7 @@ final class MPPracticeCourtView: UIView {
             let travel = hypot(a.at.x - prior.x, (a.at.y - prior.y) * MPTeamMovement.depthScale)
             if travel > 0.0003 { walked[i] = (walked[i] ?? 0) + travel; stepAt[i] = now }
         }
+        c.saveGState(); c.translateBy(x: gutter, y: 0); defer { c.restoreGState() }
         c.saveGState(); camera.apply(c)
         for i in game.actors.indices {
             let f = floorFoot(i), r = actorHeight * 0.19
@@ -366,16 +384,23 @@ final class MPPracticeCourtView: UIView {
         for i in game.actors.indices.filter({ game.actors[$0].team == nearTeam }).sorted(by: { screen(game.actors[$0].at).y < screen(game.actors[$1].at).y }) { drawActor(c, i) }
         if !farEnding && !behindNet { drawBall(c) }
         c.restoreGState()
+        // Android `ArenaBackdrop.foreground`: the castle's foreground foliage, through the same camera, covers the
+        // table and the players; the names stay above it.
+        if let backdrop = scenery?.view, let offset = sceneryOffset, !backdrop.foliage.isEmpty {
+            c.saveGState(); camera.apply(c); c.translateBy(x: -offset.x, y: -offset.y)
+            for (piece, box) in backdrop.foliage { piece.draw(in: box) }
+            c.restoreGState()
+        }
         for (index, point, active) in labelRequests { drawLabel(c, index, camera.painted(point), active) }
         if game.showServeFaultBadge {
             let message = hebrew ? "הגשה פסולה" : "Fault"
             let size = min(27, bounds.height * 0.085)
             let font = UIFont.systemFont(ofSize: size, weight: .bold)
             let half = (message as NSString).size(withAttributes: [.font: font]).width / 2 + size * 0.75, cy = bounds.height * 0.32
-            let box = CGRect(x: bounds.width / 2 - half, y: cy - size, width: half * 2, height: size * 2)
+            let box = CGRect(x: courtSize.width / 2 - half, y: cy - size, width: half * 2, height: size * 2)
             c.setFillColor(color(0xf2e91e63).cgColor)
             c.addPath(UIBezierPath(roundedRect: box, cornerRadius: size * 0.55).cgPath); c.fillPath()
-            text(message, at: CGPoint(x: bounds.width / 2, y: cy), size: size, color: .white, rounded: false)
+            text(message, at: CGPoint(x: courtSize.width / 2, y: cy), size: size, color: .white, rounded: false)
         }
     }
     // MARK: Input (Android `worldTouch`: a drag moves the player, a tap aims a serve or return, a Standard swipe
@@ -385,9 +410,15 @@ final class MPPracticeCourtView: UIView {
         let dt = CGFloat(last.0 - first.0)
         return CGPoint(x: (last.1.x - first.1.x) / dt, y: (last.1.y - first.1.y) / dt)
     }
+    /// A point in court coordinates (without the gutter).
+    private func court(_ p: CGPoint) -> CGPoint { CGPoint(x: p.x - gutter, y: p.y) }
+    /// Android: the gutters belong to the sidebar, not to the court View.
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        super.point(inside: point, with: event) && point.x >= gutter && point.x <= bounds.width - gutter
+    }
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
-        let p = camera.base(touch.location(in: self))
+        let p = camera.base(court(touch.location(in: self)))
         down = p; downAt = touch.timestamp; dragging = false
         if game.actors.indices.contains(localSeat) { dragStart = game.actors[localSeat].at }
         dragOrigin = ground(p); tapSent = false; samples = [(touch.timestamp, p)]
@@ -396,10 +427,10 @@ final class MPPracticeCourtView: UIView {
     }
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
-        let p = camera.base(touch.location(in: self))
+        let p = camera.base(court(touch.location(in: self)))
         samples.append((touch.timestamp, p)); samples.removeAll { touch.timestamp - $0.0 > 0.15 }
         let moved = hypot(p.x - down.x, p.y - down.y) > 12
-        let scale = Double(max(min(bounds.width, bounds.height), 1)) * 0.82
+        let scale = Double(max(min(courtSize.width, courtSize.height), 1)) * 0.82
         if game.stage?.standard == true && !tapSent && moved {
             let v = velocity()
             tapSent = game.standardSwipe(MPPoint(Double(v.x) / scale, Double(v.y) / scale))
@@ -413,7 +444,7 @@ final class MPPracticeCourtView: UIView {
             }
         }
         if tapSent { return }
-        for t in event?.coalescedTouches(for: touch) ?? [touch] { strokePath.append(camera.base(t.location(in: self))) }
+        for t in event?.coalescedTouches(for: touch) ?? [touch] { strokePath.append(camera.base(court(t.location(in: self)))) }
         if moved { dragging = true }
         if dragging && (control != 3 || playerDrag) {
             let at = ground(p), delta = MPPoint(at.x - dragOrigin.x, at.y - dragOrigin.y)
@@ -425,12 +456,12 @@ final class MPPracticeCourtView: UIView {
     }
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
-        let p = camera.base(touch.location(in: self))
+        let p = camera.base(court(touch.location(in: self)))
         samples = []; strokePath.append(p)
         defer { downAt = 0 }
         if playerDrag { return }
         if control == 3 {
-            let scale = Double(max(min(bounds.width, bounds.height), 1)) * 0.82
+            let scale = Double(max(min(courtSize.width, courtSize.height), 1)) * 0.82
             let points = strokePath.map { MPPoint(Double($0.x) / scale, Double($0.y) / scale) }
             if let stroke = MPPongStroke.read(points, durationMs: Int64((touch.timestamp - downAt) * 1000)) {
                 let world = nearTeam == 0 ? stroke : stroke.reflected
@@ -457,13 +488,17 @@ struct MPPracticeCourt: UIViewRepresentable {
     var onTap: ((MPPoint) -> Void)? = nil
     var onStroke: ((MPPongStroke) -> Void)? = nil
     var onFrame: (() -> Void)? = nil
+    var gutter: CGFloat = 0
+    var scenery: MPArenaScenery? = nil
     func makeUIView(context: Context) -> MPPracticeCourtView { MPPracticeCourtView(game: game) }
     func updateUIView(_ view: MPPracticeCourtView, context: Context) {
         view.game = game; view.hebrew = hebrew; view.localSeat = localSeat; view.simulate = simulate; view.names = names
-        view.controlOverride = controlOverride
+        view.controlOverride = controlOverride; view.gutter = gutter; view.scenery = scenery
         view.soundsEnabled = soundsEnabled; view.onMove = onMove; view.onTap = onTap; view.onStroke = onStroke; view.onFrame = onFrame
         view.accessibilityLabel = hebrew ? "שולחן האימון. גררו כדי לזוז והקישו על יעד כדי לחבוט." : "Practice table. Drag to move and tap a target to hit."
         view.setRunning(running)
     }
+    /// Android `PongCourtStyle.landscape`: the court spans `value` points of gutter on each side.
+    func withGutter(_ value: CGFloat) -> MPPracticeCourt { var court = self; court.gutter = value; return court }
     static func dismantleUIView(_ view: MPPracticeCourtView, coordinator: ()) { view.setRunning(false); view.game.contactReach = nil }
 }

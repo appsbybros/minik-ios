@@ -15,7 +15,8 @@
   "defaultProducts": ["MinikPlus", "MinikPlusEnglish", "MinikMathPlus", "MinikMath", "MinikRetroPingPong", "MinikMultiPingPong", "MinikAmudu", "MinikSplash", "MinikSquash", "MinikBeachVolley", "MinikTripleShot"],
   "groups": {
     "minik": ["MinikPlus", "MinikPlusEnglish", "MinikMathPlus"],
-    "math-pong": ["MinikMath", "MinikRetroPingPong", "MinikMultiPingPong", "MinikPingPong"],
+    "math": ["MinikMath"],
+    "pong": ["MinikRetroPingPong", "MinikMultiPingPong", "MinikPingPong"],
     "spud-splash": ["MinikAmudu", "MinikSplash"],
     "sports": ["MinikSquash", "MinikBeachVolley"],
     "tripleshot": ["MinikTripleShot"]

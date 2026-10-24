@@ -395,27 +395,78 @@ struct MPOrientationToast: View {
 
 /// Android `safeContent(arena = …)` with `ArenaBackdrop`: game-only scenery behind a team match, aspect-filled (the
 /// landscape beach keeps its shoreline above the far baseline) with a dark fade at the top for the white captions.
-/// Original/Indoors keep the screen's own background; without the bundled art nothing is drawn.
+/// Original/Indoors keep the screen's own background; without the bundled art nothing is drawn. With `scenery` the
+/// table moves it with the reception camera and draws the castle's foreground foliage over itself.
 struct MPArenaBackdrop: View {
     let arena: MPArena
-    var body: some View {
-        GeometryReader { proxy in
-            let size = proxy.size, wide = size.width > size.height
-            if let image = arena.backdrop(wide: wide), image.size.width > 0, image.size.height > 0 {
-                let scale = max(size.width / image.size.width, size.height / image.size.height)
-                let w = image.size.width * scale, h = image.size.height * scale
-                let top = wide && arena == .beach ? min(max(size.height * 0.12 - h * 0.26, size.height - h), 0) : 0
-                ZStack(alignment: .topLeading) {
-                    Image(uiImage: image).resizable().frame(width: w, height: h).offset(x: (size.width - w) / 2, y: top)
-                    LinearGradient(colors: [MPColor.color(0x9c10243b), .clear], startPoint: .top, endPoint: .bottom).frame(height: size.height * 0.25)
-                }.frame(width: size.width, height: size.height, alignment: .topLeading).clipped()
+    var scenery: MPArenaScenery? = nil
+    var body: some View { MPArenaBackdropLayer(arena: arena, scenery: scenery).ignoresSafeArea().accessibilityHidden(true) }
+}
+
+/// Android `ReceptionCamera.scenery` / `ArenaBackdrop.foreground`: how a team table finds the scenery behind it.
+final class MPArenaScenery {
+    fileprivate(set) weak var view: MPArenaBackdropView?
+}
+
+private struct MPArenaBackdropLayer: UIViewRepresentable {
+    let arena: MPArena
+    let scenery: MPArenaScenery?
+    func makeUIView(context: Context) -> MPArenaBackdropView { MPArenaBackdropView() }
+    func updateUIView(_ view: MPArenaBackdropView, context: Context) { view.arena = arena; scenery?.view = view }
+}
+
+final class MPArenaBackdropView: UIView {
+    var arena = MPArena.legacy { didSet { if arena != oldValue { laidOut = nil; setNeedsLayout() } } }
+    /// The castle's foreground foliage, cut from the scenery once per layout: images and their rects in this view.
+    private(set) var foliage: [(UIImage, CGRect)] = []
+    // A still copy under the moving one fills any edge the zoom uncovers (as `MPScene` does).
+    private let still = CALayer(), camera = CALayer(), moving = CALayer(), shade = CAGradientLayer()
+    private var laidOut: CGSize?
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        isUserInteractionEnabled = false; backgroundColor = .clear; clipsToBounds = true
+        camera.anchorPoint = .zero; camera.addSublayer(moving)
+        shade.colors = [MPSinglesArena.captionShade.cgColor, UIColor.clear.cgColor]
+        [still, camera, shade].forEach(layer.addSublayer)
+    }
+    required init?(coder: NSCoder) { return nil }
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let size = bounds.size
+        guard laidOut != size else { return }
+        laidOut = size
+        CATransaction.begin(); CATransaction.setDisableActions(true); defer { CATransaction.commit() }
+        let wide = size.width > size.height
+        let image = size.width > 1 && size.height > 1 ? arena.backdrop(wide: wide) : nil
+        let rect = image.map { MPSinglesArena.destination($0.size, in: size, arena: arena) } ?? .zero
+        for piece in [still, moving] { piece.contents = image?.cgImage; piece.frame = rect }
+        camera.bounds = CGRect(origin: .zero, size: size); camera.position = .zero
+        shade.frame = CGRect(x: 0, y: 0, width: size.width, height: size.height * 0.25); shade.isHidden = image == nil
+        foliage = image.map { image in
+            MPSinglesArena.foliage(arena, wide: wide).compactMap { polygon in
+                let path = UIBezierPath()
+                for (i, p) in polygon.enumerated() {
+                    let q = CGPoint(x: rect.minX + p.x * rect.width, y: rect.minY + p.y * rect.height)
+                    if i == 0 { path.move(to: q) } else { path.addLine(to: q) }
+                }
+                path.close()
+                let box = path.bounds.integral
+                guard box.width >= 1, box.height >= 1 else { return nil }
+                return (UIGraphicsImageRenderer(bounds: box).image { _ in path.addClip(); image.draw(in: rect) }, box)
             }
-        }.ignoresSafeArea().accessibilityHidden(true)
+        } ?? []
+    }
+    /// Android `ReceptionCamera.scenery`: `offset` is the court's origin in this view.
+    func follow(_ reception: MPReceptionCamera, offset: CGPoint) {
+        let t = reception.transform(offset: offset)
+        guard camera.affineTransform() != t else { return }
+        CATransaction.begin(); CATransaction.setDisableActions(true); camera.setAffineTransform(t); CATransaction.commit()
     }
 }
 
 struct MPJourneyScreen: View {
     @ObservedObject var journey: MPJourneyController
+    @State private var scenery = MPArenaScenery()
     private var he: Bool { journey.hebrew }
     private func t(_ en: String, _ he: String) -> String { journey.tr(en, he) }
     private func text(_ value: String, size: CGFloat = 17, bold: Bool = false, start: Bool = false) -> some View {
@@ -544,13 +595,15 @@ struct MPJourneyScreen: View {
         GeometryReader { proxy in
             let wide = proxy.size.width > proxy.size.height
             if let g = journey.game {
-                let court = MPPracticeCourt(game: g, hebrew: he, running: journey.running, soundsEnabled: { MPJourneyController.soundsOn }, onFrame: { journey.frame() })
+                let court = MPPracticeCourt(game: g, hebrew: he, running: journey.running, soundsEnabled: { MPJourneyController.soundsOn }, onFrame: { journey.frame() }, scenery: scenery)
                 ZStack {
                     if wide {
                         // Android PongCourtStyle.landscape: a full-height court with coaching in its start-side
-                        // gutter; an equal empty gutter keeps the court centred.
+                        // gutter; an equal empty gutter keeps the court centred. The court also draws into both
+                        // gutters (`clipChildren = false`), so players who yield outward stay visible.
                         let side = min(max(proxy.size.width * 0.19, 144), 192)
-                        HStack(spacing: 0) { MPJourneySidebar(journey: journey, game: g).frame(width: side); court; Color.clear.frame(width: side) }
+                        court.withGutter(side)
+                        HStack(spacing: 0) { MPJourneySidebar(journey: journey, game: g).frame(width: side); Spacer(minLength: 0) }
                     } else {
                         VStack(spacing: 6) { MPJourneyHud(journey: journey, game: g); court }
                     }
@@ -561,7 +614,7 @@ struct MPJourneyScreen: View {
             }
         }
         .padding(.horizontal, 6).padding(.bottom, 6)
-        .background { if let g = journey.game, g.stage == nil, !g.openPaint { MPArenaBackdrop(arena: MPArena.read(g.arena)) } }
+        .background { if let g = journey.game, g.stage == nil, !g.openPaint { MPArenaBackdrop(arena: MPArena.read(g.arena), scenery: scenery) } }
     }
     private var result: some View {
         GeometryReader { proxy in

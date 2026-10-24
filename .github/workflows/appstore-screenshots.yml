@@ -141,7 +141,34 @@ jobs:
           PRODUCTS: ${{ matrix.products }}
           LANGUAGES: ${{ inputs.languages }}
         run: |
-          set -uo pipefail
+          # GitHub runs this with -e; one failing simctl call must not end the whole job.
+          set +e -uo pipefail
+          # A struggling Simulator can hang simctl (a launch once waited 19 minutes and then
+          # found the iPad shut down), so no call may wait long.
+          limit() { perl -e 'alarm shift; exec @ARGV' "$@"; }
+          running() {
+            xcrun simctl list devices < /dev/null | grep -F "$1" | grep -q "(Booted)" && return 0
+            echo "::warning::Simulator $1 had shut down; starting it again"
+            xcrun simctl boot "$1" < /dev/null > /dev/null 2>&1
+            limit 900 xcrun simctl bootstatus "$1" -b < /dev/null > /dev/null 2>&1
+            xcrun simctl status_bar "$1" override --time "9:41" \
+              --dataNetwork wifi --wifiMode active --wifiBars 3 \
+              --cellularMode active --cellularBars 4 \
+              --batteryState charged --batteryLevel 100 < /dev/null > /dev/null 2>&1
+          }
+          shot() {
+            rm -f "$OUT"
+            limit 60 xcrun simctl terminate "$UDID" "$BUNDLE" < /dev/null > /dev/null 2>&1
+            # -MinikOfflineSmoke keeps Modern Ping Pong away from production Firebase.
+            limit 180 xcrun simctl launch "$UDID" "$BUNDLE" \
+              -MinikScreenshotScene "$SCENE" \
+              -MinikScreenshotOrientation "$ORIENTATION" \
+              -MinikOfflineSmoke YES \
+              -AppleLanguages "($LANGUAGE)" \
+              -AppleLocale "$LOCALE" < /dev/null > /dev/null 2>&1 || return 1
+            sleep "$WAIT"
+            limit 60 xcrun simctl io "$UDID" screenshot "$OUT" < /dev/null > /dev/null 2>&1 && [ -s "$OUT" ]
+          }
           missing=0
           for SCHEME in $PRODUCTS; do
             case " $FAILED_BUILDS " in *" $SCHEME "*) continue ;; esac
@@ -150,24 +177,17 @@ jobs:
             python3 Scripts/appstore-screenshots.py scenes "$SCHEME" > "build/$SCHEME-scenes.txt"
             python3 Scripts/appstore-screenshots.py languages "$SCHEME" --only $LANGUAGES > "build/$SCHEME-languages.txt"
             while IFS=$'\t' read -r DEVICE UDID NAME; do
-              xcrun simctl uninstall "$UDID" "$BUNDLE" < /dev/null > /dev/null 2>&1 || true
-              xcrun simctl install "$UDID" "$APP" < /dev/null
+              running "$UDID"
+              limit 120 xcrun simctl uninstall "$UDID" "$BUNDLE" < /dev/null > /dev/null 2>&1
+              limit 300 xcrun simctl install "$UDID" "$APP" < /dev/null
               while IFS='|' read -r LANGUAGE LOCALE; do
                 while IFS='|' read -r ID SCENE WAIT IPHONE_ORIENTATION IPAD_ORIENTATION; do
                   ORIENTATION="$IPHONE_ORIENTATION"
                   [ "$DEVICE" = "ipad" ] && ORIENTATION="$IPAD_ORIENTATION"
                   OUT="build/appstore-raw/$SCHEME/$LANGUAGE/$DEVICE/$ID.png"
                   mkdir -p "$(dirname "$OUT")"
-                  xcrun simctl terminate "$UDID" "$BUNDLE" < /dev/null > /dev/null 2>&1 || true
-                  # -MinikOfflineSmoke keeps Modern Ping Pong away from production Firebase.
-                  xcrun simctl launch "$UDID" "$BUNDLE" \
-                    -MinikScreenshotScene "$SCENE" \
-                    -MinikScreenshotOrientation "$ORIENTATION" \
-                    -MinikOfflineSmoke YES \
-                    -AppleLanguages "($LANGUAGE)" \
-                    -AppleLocale "$LOCALE" < /dev/null > /dev/null
-                  sleep "$WAIT"
-                  if xcrun simctl io "$UDID" screenshot "$OUT" < /dev/null > /dev/null 2>&1 && [ -s "$OUT" ]; then
+                  # One retry, after restarting the Simulator if it shut down.
+                  if shot || { running "$UDID"; shot; }; then
                     echo "Captured $SCHEME $LANGUAGE $DEVICE $ID"
                   else
                     echo "::warning::No capture for $SCHEME $LANGUAGE $DEVICE $ID"
@@ -175,7 +195,7 @@ jobs:
                   fi
                 done < "build/$SCHEME-scenes.txt"
               done < "build/$SCHEME-languages.txt"
-              xcrun simctl terminate "$UDID" "$BUNDLE" < /dev/null > /dev/null 2>&1 || true
+              limit 60 xcrun simctl terminate "$UDID" "$BUNDLE" < /dev/null > /dev/null 2>&1
             done < build/simulators.tsv
           done
           echo "Missing captures: $missing"
@@ -183,6 +203,7 @@ jobs:
             echo "::error::Not captured because the build failed:$FAILED_BUILDS"
             exit 1
           fi
+          exit 0
 
       - name: Upload raw captures
         if: ${{ always() }}
@@ -199,7 +220,8 @@ jobs:
     needs: [plan, capture]
     if: ${{ always() && needs.plan.result == 'success' && needs.capture.result != 'cancelled' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # Framing every language of every app took longer than 45 minutes (2026-10-24).
+    timeout-minutes: 150
     steps:
       - name: Check out repository
         uses: actions/checkout@v4

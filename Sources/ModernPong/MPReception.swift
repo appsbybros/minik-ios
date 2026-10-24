@@ -171,6 +171,11 @@ struct MPReceptionCamera {
     }
     /// A world point's position on screen.
     func painted(_ p: CGPoint) -> CGPoint { CGPoint(x: x + (p.x - x) * zoom + tx, y: y + (p.y - y) * zoom + ty) }
+    /// Android `ReceptionCamera.scenery`: the same transform for a view whose points are `offset` from the court's
+    /// (`translate(offset); begin; translate(-offset)`); `offset` is the court origin in that view.
+    func transform(offset: CGPoint) -> CGAffineTransform {
+        CGAffineTransform(a: zoom, b: 0, c: 0, d: zoom, tx: (offset.x + x) * (1 - zoom) + tx, ty: (offset.y + y) * (1 - zoom) + ty)
+    }
     /// The world point under a screen point (touch input).
     func base(_ p: CGPoint) -> CGPoint { CGPoint(x: x + (p.x - tx - x) / zoom, y: y + (p.y - ty - y) / zoom) }
 }
