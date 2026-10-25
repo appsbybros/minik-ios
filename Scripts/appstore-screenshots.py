@@ -163,7 +163,9 @@ def plan(products, languages):
     for group, members in CONFIG["groups"].items():
         selected = [name for name in members if name in chosen]
         if selected:
-            include.append({"group": group, "products": " ".join(selected)})
+            # A group of web apps (Bounce) is drawn in WebKit, not the Simulator.
+            web = all("web" in apps[name] for name in selected)
+            include.append({"group": group, "products": " ".join(selected), "web": web})
     if not include:
         sys.exit("Nothing to capture.")
     print(json.dumps({"include": include}))

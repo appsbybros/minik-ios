@@ -143,6 +143,8 @@
     },
     "MinikRetroPingPong": {
       "name": "Minik Bounce",
+      "web": "Resources/RetroPong",
+      "web-scene-prefix": "bounce.",
       "palette": "bounce",
       "languages": ["en", "he"],
       "orientation": {"iphone": "landscape", "ipad": "portrait"},
