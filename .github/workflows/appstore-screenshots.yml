@@ -133,6 +133,9 @@ jobs:
               --dataNetwork wifi --wifiMode active --wifiBars 3 \
               --cellularMode active --cellularBars 4 \
               --batteryState charged --batteryLevel 100 < /dev/null
+            # Only one Simulator runs at a time while capturing: two at once starved a runner
+            # until GitHub lost it (the pong job, 2026-10-24).
+            xcrun simctl shutdown "$UDID" < /dev/null
           done < build/simulators.tsv
 
       - name: Capture scenes
@@ -160,7 +163,7 @@ jobs:
             rm -f "$OUT"
             limit 60 xcrun simctl terminate "$UDID" "$BUNDLE" < /dev/null > /dev/null 2>&1
             # -MinikOfflineSmoke keeps Modern Ping Pong away from production Firebase.
-            limit 180 xcrun simctl launch "$UDID" "$BUNDLE" \
+            limit "${LAUNCH_LIMIT:-180}" xcrun simctl launch "$UDID" "$BUNDLE" \
               -MinikScreenshotScene "$SCENE" \
               -MinikScreenshotOrientation "$ORIENTATION" \
               -MinikOfflineSmoke YES \
@@ -168,18 +171,31 @@ jobs:
               -AppleLocale "$LOCALE" < /dev/null > /dev/null 2>&1 || return 1
             sleep "$WAIT"
             limit 60 xcrun simctl io "$UDID" screenshot "$OUT" < /dev/null > /dev/null 2>&1 && [ -s "$OUT" ]
+            local captured=$?
+            # A game left running keeps the Simulator busy until the next launch.
+            limit 60 xcrun simctl terminate "$UDID" "$BUNDLE" < /dev/null > /dev/null 2>&1
+            return $captured
           }
           missing=0
-          for SCHEME in $PRODUCTS; do
-            case " $FAILED_BUILDS " in *" $SCHEME "*) continue ;; esac
-            APP="build/DerivedData/Shared/Build/Products/Debug-iphonesimulator/$SCHEME.app"
-            BUNDLE="$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP/Info.plist")"
-            python3 Scripts/appstore-screenshots.py scenes "$SCHEME" > "build/$SCHEME-scenes.txt"
-            python3 Scripts/appstore-screenshots.py languages "$SCHEME" --only $LANGUAGES > "build/$SCHEME-languages.txt"
-            while IFS=$'\t' read -r DEVICE UDID NAME; do
+          # Devices outside, apps inside: each Simulator boots once and is shut down after use.
+          while IFS=$'\t' read -r DEVICE UDID NAME; do
+            for SCHEME in $PRODUCTS; do
+              case " $FAILED_BUILDS " in *" $SCHEME "*) continue ;; esac
+              APP="build/DerivedData/Shared/Build/Products/Debug-iphonesimulator/$SCHEME.app"
+              BUNDLE="$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP/Info.plist")"
+              python3 Scripts/appstore-screenshots.py scenes "$SCHEME" > "build/$SCHEME-scenes.txt"
+              python3 Scripts/appstore-screenshots.py languages "$SCHEME" --only $LANGUAGES > "build/$SCHEME-languages.txt"
               running "$UDID"
               limit 120 xcrun simctl uninstall "$UDID" "$BUNDLE" < /dev/null > /dev/null 2>&1
               limit 300 xcrun simctl install "$UDID" "$APP" < /dev/null
+              # The first launch after an install can take minutes (three apps missed their first
+              # scene's 180-second limit), so the first scene runs once as a warm-up.
+              IFS='|' read -r LANGUAGE LOCALE < "build/$SCHEME-languages.txt"
+              IFS='|' read -r ID SCENE WAIT IPHONE_ORIENTATION IPAD_ORIENTATION < "build/$SCHEME-scenes.txt"
+              ORIENTATION="$IPHONE_ORIENTATION"
+              [ "$DEVICE" = "ipad" ] && ORIENTATION="$IPAD_ORIENTATION"
+              OUT="build/warm-up.png"
+              LAUNCH_LIMIT=900 shot || echo "::warning::Warm-up launch failed for $SCHEME on $DEVICE"
               while IFS='|' read -r LANGUAGE LOCALE; do
                 while IFS='|' read -r ID SCENE WAIT IPHONE_ORIENTATION IPAD_ORIENTATION; do
                   ORIENTATION="$IPHONE_ORIENTATION"
@@ -195,9 +211,9 @@ jobs:
                   fi
                 done < "build/$SCHEME-scenes.txt"
               done < "build/$SCHEME-languages.txt"
-              limit 60 xcrun simctl terminate "$UDID" "$BUNDLE" < /dev/null > /dev/null 2>&1
-            done < build/simulators.tsv
-          done
+            done
+            limit 120 xcrun simctl shutdown "$UDID" < /dev/null > /dev/null 2>&1
+          done < build/simulators.tsv
           echo "Missing captures: $missing"
           if [ -n "$FAILED_BUILDS" ]; then
             echo "::error::Not captured because the build failed:$FAILED_BUILDS"

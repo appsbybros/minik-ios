@@ -16,7 +16,8 @@
   "groups": {
     "minik": ["MinikPlus", "MinikPlusEnglish", "MinikMathPlus"],
     "math": ["MinikMath"],
-    "pong": ["MinikRetroPingPong", "MinikMultiPingPong", "MinikPingPong"],
+    "bounce": ["MinikRetroPingPong"],
+    "pong": ["MinikMultiPingPong", "MinikPingPong"],
     "spud-splash": ["MinikAmudu", "MinikSplash"],
     "sports": ["MinikSquash", "MinikBeachVolley"],
     "tripleshot": ["MinikTripleShot"]
