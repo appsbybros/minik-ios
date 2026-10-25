@@ -84,6 +84,9 @@ struct MinikActivityHubView: View {
     /// it may open by itself.
     private let publicRecordsConfigured: Bool
     @State private var outcomeDispatcher: ActivityOutcomeDispatcher
+    /// Runs only while a practice or game screen is open and the app is active; the
+    /// dispatcher measures each answer's practice time with it.
+    @State private var practiceClock: PracticeTimeClock
 
     private let learnedLanguageRepository: LearnedLanguageRepository
     private let languageLevelRepository: LanguageParentLevelSettingsRepository
@@ -139,6 +142,8 @@ struct MinikActivityHubView: View {
         _languageRewards = State(initialValue: ((try? rewardRepository.loadLedger()) ?? RewardLedger()).state(
             for: RewardScope(ownerID: .localDefault, product: configuration.variant)
         ))
+        let practiceClock = PracticeTimeClock()
+        _practiceClock = State(initialValue: practiceClock)
         _outcomeDispatcher = State(initialValue: ActivityOutcomeDispatcher(
             progressSink: progressRepository,
             rewardHandler: { event in
@@ -152,7 +157,8 @@ struct MinikActivityHubView: View {
                     _ = try rewardService.process(rewardEvent, policy: .androidPictureMemoryReference)
                 }
                 try wordRewardService.processAttempt(event)
-            }
+            },
+            practiceClock: practiceClock
         ))
         self.mathM1Factory = configuration.variant == .minikMath
             ? MathM1ActivitySessionFactory(configuration: configuration)
@@ -284,6 +290,9 @@ struct MinikActivityHubView: View {
                   newPhase == .background else { return }
             languageAutoState.applicationDidStop()
             languageAutoRepository.save(languageAutoState)
+        }
+        .onChange(of: practiceIsOnScreen, initial: true) { _, onScreen in
+            practiceClock.setRunning(onScreen)
         }
         .onChange(of: hasShownLanguageOpening) { _, hasShown in
             if hasShown {
@@ -422,6 +431,15 @@ struct MinikActivityHubView: View {
                 highlightedPlacements: highlightedPlacements,
                 onClose: returnToHub
             )
+        }
+    }
+
+    /// A practice or game screen is open and the app is active: practice time runs.
+    private var practiceIsOnScreen: Bool {
+        guard scenePhase == .active else { return false }
+        switch route {
+        case .language, .math, .ticTacToe, .pingPong: return true
+        case .parentArea, .progress, .records, .recordsLeaderboard, .mathDaily, .none: return false
         }
     }
 
@@ -1575,22 +1593,11 @@ struct MinikActivityHubView: View {
                         Button {
                             selectPublicAlias(alias)
                         } label: {
-                            HStack(spacing: 12) {
-                                if let avatar = alias.avatar {
-                                    Image(systemName: avatar.symbolName)
-                                        .frame(width: 24)
-                                }
-                                Text(verbatim: alias.publicAlias)
-                                    .font(.headline)
-                                Spacer()
-                                Image(systemName: "checkmark.circle")
-                                    .accessibilityHidden(true)
-                            }
-                            .frame(maxWidth: .infinity)
+                            publicAliasChoiceLabel(alias)
                         }
-                        .buttonStyle(.bordered)
-                        .controlSize(.large)
+                        .buttonStyle(MinikPretty.PressScaleStyle())
                         .disabled(publicAliasIsSaving)
+                        .opacity(publicAliasIsSaving ? 0.5 : 1)
                     }
                 }
 
@@ -1616,13 +1623,49 @@ struct MinikActivityHubView: View {
                         .accessibilityLabel(String(localized: "Choosing alias"))
                 }
             }
-            .padding(28)
+            // Narrower margins than the other notices, so the aliases keep the width
+            // of a 375-point iPhone (the owner's QA, 25 October 2026: they were cut).
+            .padding(20)
             .frame(maxWidth: 480)
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
-            .padding(24)
+            // The fixed teal and navy text needs the light card in Dark Mode too.
+            .environment(\.colorScheme, .light)
+            .padding(16)
         }
         .transition(.opacity)
         .accessibilityAddTraits(.isModal)
+    }
+
+    /// One alias to choose: the whole alias, wrapped onto a second line when it
+    /// is too wide (never cut), in navy on white with the design's lavender rim.
+    private func publicAliasChoiceLabel(_ alias: PublicLeaderboardAlias) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+        return HStack(spacing: 10) {
+            if let avatar = alias.avatar {
+                Image(systemName: avatar.symbolName)
+                    .foregroundStyle(MinikPretty.purple)
+                    .frame(width: 24)
+            }
+            Text(verbatim: alias.publicAlias)
+                .font(.headline)
+                .foregroundStyle(MinikPretty.navy)
+                .multilineTextAlignment(.leading)
+                .lineLimit(2)
+                .minimumScaleFactor(0.75)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .layoutPriority(1)
+            Image(systemName: "checkmark.circle")
+                .foregroundStyle(MinikPretty.purple)
+                .accessibilityHidden(true)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, minHeight: 50)
+        .background(Color.white, in: shape)
+        .overlay {
+            shape.strokeBorder(MinikPretty.lavenderRim, lineWidth: 1.5)
+        }
+        .contentShape(shape)
     }
 
     private var pendingPublicationNotice: some View {

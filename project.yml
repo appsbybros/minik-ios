@@ -42,8 +42,14 @@ targetTemplates:
         MINIK_ADS_APPLICATION_IDENTIFIER: "ca-app-pub-3940256099942544~1458002511"
         MINIK_INTERSTITIAL_AD_UNIT_IDENTIFIER: ""
         MINIK_PRIVACY_POLICY_URL: https://miniklearn.com/privacy
-        MINIK_TERMS_OF_USE_URL: https://www.easycallandanswer.com/terms.html
+        # No Terms of Use link: the apps sell only the one-time Remove Ads (no subscription),
+        # so Apple's standard EULA applies. The earlier link was Easy Call & Answer's terms.
+        MINIK_TERMS_OF_USE_URL: ""
         MINIK_SUPPORT_URL: https://miniklearn.com/contact
+        # The app's App Store ID (App Store Connect > App Information > Apple ID), digits only.
+        # Set per target: Parent Area > Rate this app then opens the App Store's review page;
+        # left empty, it asks StoreKit for the rating prompt (which TestFlight never shows).
+        MINIK_APP_STORE_ID: ""
         MINIK_LEGAL_NOTICE: "© Apps by Bros. All rights reserved."
     sources:
       - path: Sources
@@ -72,6 +78,7 @@ targetTemplates:
         MinikPrivacyPolicyURL: $(MINIK_PRIVACY_POLICY_URL)
         MinikTermsOfUseURL: $(MINIK_TERMS_OF_USE_URL)
         MinikSupportURL: $(MINIK_SUPPORT_URL)
+        MinikAppStoreID: $(MINIK_APP_STORE_ID)
         MinikLegalNotice: $(MINIK_LEGAL_NOTICE)
         # The apps use only the operating system's standard HTTPS encryption.
         ITSAppUsesNonExemptEncryption: false

@@ -5,6 +5,9 @@ struct LanguageActivityLayout {
     let height: CGFloat
     let wide: Bool
     let accessibility: Bool
+    /// The content height the panel shows without scrolling. `height` can be larger
+    /// (the board's minimum, or the small-viewport board), and the panel then scrolls.
+    let viewportHeight: CGFloat
 }
 
 /// The space between a Language panel's edges and its content.
@@ -86,7 +89,8 @@ struct LanguageActivityScreen<Content: View>: View {
             let layout = LanguageActivityLayout(
                 width: contentWidth,
                 height: max(minimumContentHeight(contentWidth, wide), boardHeight),
-                wide: wide, accessibility: dynamicTypeSize.isAccessibilitySize
+                wide: wide, accessibility: dynamicTypeSize.isAccessibilitySize,
+                viewportHeight: viewportHeight
             )
             LanguageSkyPanel(
                 width: panelWidth,
@@ -102,6 +106,8 @@ struct LanguageActivityScreen<Content: View>: View {
                         .padding(.vertical, verticalInset)
                 }
                 .scrollBounceBehavior(.basedOnSize)
+                // Feedback layers find the panel's visible area through this space.
+                .coordinateSpace(.named(LanguagePanelViewport.coordinateSpace))
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
         }
@@ -112,6 +118,24 @@ struct LanguageActivityScreen<Content: View>: View {
         .background {
             MinikSkyBackground()
         }
+    }
+}
+
+/// The panel as the child sees it, for the layers drawn over a scrolling board.
+enum LanguagePanelViewport {
+    /// LanguageActivityScreen's scroll view: its bounds are the visible panel.
+    static let coordinateSpace = "languagePanelViewport"
+}
+
+extension GeometryProxy {
+    /// The whole panel as it looks when nothing scrolls, in this proxy's coordinates,
+    /// wherever the board has been scrolled to: Minik's success jump, the try-again
+    /// Minik and the stars are placed in it, so they never depend on scrolling (owner
+    /// QA, 25 October 2026: on a small phone the jumping Minik stood too low). Outside
+    /// a LanguageActivityScreen it is this view's bounds widened by `outset`.
+    func languageVisiblePanel(outset: CGSize) -> CGRect {
+        bounds(of: .named(LanguagePanelViewport.coordinateSpace))
+            ?? CGRect(origin: .zero, size: size).insetBy(dx: -outset.width, dy: -outset.height)
     }
 }
 
@@ -306,7 +330,9 @@ struct LanguagePanelNavigation: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Close exercise")
-                .padding(.top, showsLogo ? 10 : 0)
+                // Level with the wordmark's upper part; 5 points since the owner's
+                // QA of the Cards header (25 October 2026) halved its margins.
+                .padding(.top, showsLogo ? 5 : 0)
             }
             if let onReplay {
                 LanguageReplayButton(action: onReplay)

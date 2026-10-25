@@ -405,7 +405,7 @@ struct ChildProfileDialog: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, 8)
         }
-        HStack(spacing: 14) {
+        dialogButtons(sizes) {
             Button(action: save) {
                 Text(verbatim: interfaceLocaleID.text("Save"))
                     .frame(maxWidth: .infinity)
@@ -416,17 +416,7 @@ struct ChildProfileDialog: View {
                 minHeight: sizes.buttonHeight
             ))
             .disabled(ChildProfileLimits.normalizedName(draft).isEmpty)
-            Button(action: cancel) {
-                Text(verbatim: interfaceLocaleID.text("Cancel"))
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(MinikPretty.HeroButtonStyle(
-                look: MinikPretty.PillLook.white,
-                fontSize: sizes.button,
-                minHeight: sizes.buttonHeight
-            ))
         }
-        .padding(.top, sizes.buttonsGap)
     }
 
     @ViewBuilder
@@ -458,7 +448,7 @@ struct ChildProfileDialog: View {
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity)
             .padding(.top, 6)
-        HStack(spacing: 14) {
+        dialogButtons(sizes) {
             Button {
                 confirmDeletion(of: child)
             } label: {
@@ -470,6 +460,17 @@ struct ChildProfileDialog: View {
                 fontSize: sizes.button,
                 minHeight: sizes.buttonHeight
             ))
+        }
+    }
+
+    /// Cancel and the dialog's main action side by side. The main action is the
+    /// trailing button, so it is on the left in Hebrew and Arabic and on the
+    /// right in left-to-right languages, as on every two-button row in the app.
+    private func dialogButtons<Primary: View>(
+        _ sizes: ChildProfileDialogSizes,
+        @ViewBuilder primary: () -> Primary
+    ) -> some View {
+        HStack(spacing: 14) {
             Button(action: cancel) {
                 Text(verbatim: interfaceLocaleID.text("Cancel"))
                     .frame(maxWidth: .infinity)
@@ -479,6 +480,7 @@ struct ChildProfileDialog: View {
                 fontSize: sizes.button,
                 minHeight: sizes.buttonHeight
             ))
+            primary()
         }
         .padding(.top, sizes.buttonsGap)
     }

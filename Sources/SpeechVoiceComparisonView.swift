@@ -38,6 +38,12 @@ struct SpeechVoiceComparisonView: View {
             : voices.first(where: { $0.identifier == voiceID })
     }
 
+    /// The voice's name when every voice of the language on this device is the same
+    /// voice (Hebrew has only Carmit, in Standard and perhaps Enhanced quality).
+    private var onlyVoiceName: String? {
+        SpeechVoiceTestSamples.onlyVoiceName(among: voices)
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -69,6 +75,12 @@ struct SpeechVoiceComparisonView: View {
                     } else {
                         Text(verbatim: interfaceLocale.text("No voice on this device"))
                             .foregroundStyle(.red)
+                    }
+                    if let onlyVoiceName {
+                        Text(verbatim: String(format: interfaceLocale.text(SpeechVoiceTestSamples.singleVoiceNoteKey), onlyVoiceName))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                     Button {
                         player.stop()

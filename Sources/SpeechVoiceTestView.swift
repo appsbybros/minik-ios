@@ -49,6 +49,11 @@ struct SpeechVoiceTestView: View {
                                 .environment(\.layoutDirection, .leftToRight)
                         }
                     }
+                    if let onlyVoiceName = SpeechVoiceTestSamples.onlyVoiceName(among: player.voices) {
+                        Text(verbatim: String(format: interfaceLocale.text(SpeechVoiceTestSamples.singleVoiceNoteKey), onlyVoiceName))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
                     if !player.canPlay(id: selectedVoiceID, locale: testLocale) {
                         Text("No matching voice is available. Choose a downloaded voice or refresh the list.")
                             .foregroundStyle(.red)

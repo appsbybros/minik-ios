@@ -36,6 +36,12 @@ enum LanguageEncouragementCopy {
         "Great game!", "Success!", "Great job!", "Nice!",
         "Fun game", "Awesome!", "Excellent!", "Fantastic!"
     ]
+    // Owner QA: game-level praise belongs only at the end of a practice, so a
+    // single pair is praised without "Great game!" or "Fun game".
+    static let singleMatch: [String.LocalizationValue] = [
+        "Success!", "Great job!", "Nice!", "Awesome!", "Excellent!", "Fantastic!"
+    ]
+    static let gameCompleted: String.LocalizationValue = "Great game!"
 }
 
 enum LanguageWordEncouragement {

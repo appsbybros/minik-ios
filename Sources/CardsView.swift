@@ -157,13 +157,16 @@ struct CardsView: View {
 
     /// Android puts the title 56/123 points below the top edge (phone/sw600dp),
     /// level with the lower part of the wordmark, and the X image 28/62 down.
+    /// Owner QA (25 October 2026): the X and the wordmark sit half as far from the
+    /// top and side edges as before, and the title a little lower, clear of the
+    /// wordmark (60/129 points down).
     /// Android has only the X and the wordmark here: no speaker or replay button,
     /// since each word is spoken automatically.
     private func cardsHeader(wide: Bool) -> some View {
         ZStack(alignment: .top) {
             LanguagePanelNavigation(wide: wide, showsLogo: true,
                                     onReplay: nil, onExit: exit)
-                .padding(.horizontal, wide ? 46 : 26)
+                .padding(.horizontal, wide ? 23 : 13)
             Text("Cards")
                 .font(.system(size: titleSize(wide: wide), weight: .bold))
                 .foregroundStyle(wide
@@ -173,12 +176,12 @@ struct CardsView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, wide ? 75 : 44)
+                .padding(.top, wide ? 105 : 56)
                 // Clear of the wordmark and X beside it.
                 .padding(.horizontal, wide ? 140 : 94)
                 .allowsHitTesting(false)
         }
-        .padding(.top, wide ? 48 : 12)
+        .padding(.top, wide ? 24 : 4)
         // As on Android, a tap anywhere outside the X advances; the X keeps its
         // own tap.
         .contentShape(Rectangle())

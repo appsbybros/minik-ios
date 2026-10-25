@@ -312,8 +312,13 @@ struct PairsView: View {
             if lastAudibleLanguagePairID != pending.id {
                 lastAudibleLanguagePairID = pending.id
                 feedbackSoundPlayer.play(pending.result == .correct ? .correct : .incorrect)
-                if pending.result == .correct, encouragementEnabled,
-                   let phrase = LanguageEncouragementCopy.phrases.randomElement() {
+                if pending.result == .correct, encouragementEnabled {
+                    // The last pair finishes the board and earns the game-level
+                    // praise; every other pair gets a single-match phrase.
+                    let completesBoard = session.matchedGroupIndices.count == session.equivalenceSets.count
+                    let phrase = completesBoard
+                        ? LanguageEncouragementCopy.gameCompleted
+                        : LanguageEncouragementCopy.singleMatch.randomElement() ?? "Great job!"
                     speechPlayer.enqueueInterfaceSpeech(interfaceLocaleID.text(phrase), interfaceLocale: interfaceLocaleID)
                 }
             }

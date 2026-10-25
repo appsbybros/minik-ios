@@ -255,7 +255,7 @@ Require-Pattern $privacyWebsiteReplacement 'child.s local or real profile name i
 Require-Pattern $privacyDataInventory 'MinikPlus[\s\S]*MinikPlusEnglish[\s\S]*MinikMathPlus[\s\S]*MinikMath\b[\s\S]*MinikPingPong' 'Privacy inventory must cover all five products.'
 Require-Pattern $appleReleaseChecklist 'READY IN REPO[\s\S]*OWNER ACTION[\s\S]*LEGAL/POLICY DECISION[\s\S]*MAC/XCODE REQUIRED' 'Apple release checklist must classify repository, owner, legal/policy, and Mac work.'
 Require-Pattern $project 'MINIK_REMOVE_ADS_PRODUCT_IDENTIFIER: remove_ads' 'Established Remove Ads product identifier is not configured.'
-Require-Pattern $project 'MINIK_PRIVACY_POLICY_URL: https://miniklearn\.com/privacy[\s\S]*MINIK_TERMS_OF_USE_URL: https://www\.easycallandanswer\.com/terms\.html[\s\S]*MINIK_SUPPORT_URL: https://miniklearn\.com/contact' 'Established release destinations are not configured.'
+Require-Pattern $project 'MINIK_PRIVACY_POLICY_URL: https://miniklearn\.com/privacy[\s\S]*MINIK_TERMS_OF_USE_URL: ""[\s\S]*MINIK_SUPPORT_URL: https://miniklearn\.com/contact' 'Established release destinations are not configured.'
 
 Write-Output "RELEASE_APPICON_SETS_FOUND=$($iconSets.Count)"
 Write-Output "RELEASE_ENTITLEMENT_FILES_FOUND=$($entitlementFiles.Count)"

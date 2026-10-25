@@ -44,27 +44,44 @@ struct LanguageBuildPage: View {
             // bottom; taller when the rows need more, and the panel then scrolls.
             let boardLayout = BuildBoardFillLayout(minimumHeight: layout.height)
             boardLayout {
-                ZStack(alignment: .bottom) {
-                    board(sizes, wide: layout.wide)
-                    if feedback == .correct && feedbackBonusRun >= 3 {
-                        LanguagePracticeStars(startedAt: feedbackStartedAt, usesFaces: true,
-                                              duration: encouragementEnabled ? 4 : 1.2).id(feedbackStartedAt)
-                    }
-                    if let feedback {
-                        // Android pins the try-again and success artwork to the card's
-                        // bottom edge, below the content's inset.
-                        LanguagePracticeReaction(correct: feedback == .correct, startedAt: feedbackStartedAt,
-                                                 successAsset: successAsset, direction: successDirection)
-                            .padding(.bottom, -sizes.feedbackDrop)
-                            .allowsHitTesting(false)
-                    }
-                }
+                board(sizes, wide: layout.wide)
+            }
+            .overlay {
+                feedbackLayer(sizes, wide: layout.wide)
             }
         }
         // Android answers a wrong letter with a reject haptic as well as the sound.
         .sensoryFeedback(.error, trigger: feedbackStartedAt, condition: { _, _ in
             feedback == .incorrect
         })
+    }
+
+    /// The stars and Minik's reaction over the board (and the Next pill), placed in the
+    /// panel the child sees: as the board looks when nothing scrolls, wherever it has
+    /// been scrolled to. The stars cover the content area; Android pins the try-again
+    /// and success artwork to the card's bottom edge, below the content's inset.
+    private func feedbackLayer(_ sizes: BuildBoardMetrics, wide: Bool) -> some View {
+        let insetX = LanguagePanelInsets.horizontal(wide: wide)
+        let insetY = sizes.feedbackDrop
+        return GeometryReader { geometry in
+            let panel = geometry.languageVisiblePanel(outset: CGSize(width: insetX, height: insetY))
+            ZStack(alignment: .bottom) {
+                if feedback == .correct && feedbackBonusRun >= 3 {
+                    LanguagePracticeStars(startedAt: feedbackStartedAt, usesFaces: true,
+                                          duration: encouragementEnabled ? 4 : 1.2).id(feedbackStartedAt)
+                        .padding(.bottom, insetY)
+                }
+                if let feedback {
+                    LanguagePracticeReaction(correct: feedback == .correct, startedAt: feedbackStartedAt,
+                                             successAsset: successAsset, direction: successDirection)
+                }
+            }
+            .padding(.horizontal, insetX)
+            .padding(.top, insetY)
+            .frame(width: panel.width, height: panel.height)
+            .position(x: panel.midX, y: panel.midY)
+        }
+        .allowsHitTesting(false)
     }
 
     private func board(_ sizes: BuildBoardMetrics, wide: Bool) -> some View {
@@ -486,12 +503,15 @@ private struct BuildBoardMetrics {
 
         // Next: 18 sp (40 sp on iPad), 38 dp (43 dp) under the circles, on the design's
         // glossy pill: 9 points above the label and 12 below it, at least 52 points tall.
+        // The tight variant keeps at least 20 points (24 on iPad) above the pill and, as
+        // the spacer's minimum, 18 (22) under it, like the choice pages.
         let nextGrowth: CGFloat = min(max(1, growth.next), accessible ? 2 : 1.35)
         let nextFontSize: CGFloat = (wide ? 40 * scale : 18) * nextGrowth
         let pillHeight: CGFloat = max(52, (nextFontSize * 1.3).rounded(.up) + 21)
         let nextSlotHeight: CGFloat = max(44, pillHeight)
         let nextDistance: CGFloat = (wide ? 43 : 38) * gapScale
-        let nextGap: CGFloat = max(0, nextDistance - (nextSlotHeight - pillHeight) / 2)
+        let nextGapFloor: CGFloat = (wide ? 24 : 20) * scale
+        let nextGap: CGFloat = max(nextGapFloor, nextDistance - (nextSlotHeight - pillHeight) / 2)
 
         // Statistics: LanguagePracticeStats' badge height (LanguageStatsMetrics.height
         // with the board's scale), 15 dp (30 dp) above the panel's bottom edge.
@@ -502,7 +522,7 @@ private struct BuildBoardMetrics {
         let statsMinimum: CGFloat = (wide ? 95 : 65) * scale
         let statsHeight: CGFloat = max(statsMinimum, statsLines + 15)
         let statsBottom: CGFloat = max(0, (wide ? 30 : 15) * scale - insetY)
-        let spacerMinimum: CGFloat = tight ? 6 : 12
+        let spacerMinimum: CGFloat = (wide ? 22 : 18) * scale
 
         // Android's gaps: 10 dp (20 dp) under the speaker; on phones actionsRow3's
         // 15 dp under the instruction, on iPad the clue's 8 dp margin; the picture's

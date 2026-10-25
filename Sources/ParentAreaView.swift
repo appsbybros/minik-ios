@@ -178,19 +178,13 @@ struct ParentAreaView: View {
         .task { await publicLeaderboardController.refresh() }
     }
 
-    /// The card centred on the screen, as Android centres its dialog, with the
-    /// footer at the bottom. An invisible copy of the footer above the card keeps
-    /// the card centred on the whole screen and clear of the footer. Accessibility
-    /// text sizes keep the links at the end of the scrolling card instead.
+    /// The card centred in the space above the footer, with the footer at the
+    /// bottom, lifted off the screen's bottom edge (iPhone SE has no home
+    /// indicator inset). Accessibility text sizes keep the links at the end of
+    /// the scrolling card instead.
     private func languageDialogLayer(metrics: LanguageParentDialogMetrics) -> some View {
         VStack(spacing: 0) {
-            if !metrics.usesAccessibilityLayout {
-                languageFooter(metrics: metrics)
-                    .hidden()
-                    .accessibilityHidden(true)
-            }
-
-            Spacer(minLength: 16)
+            Spacer(minLength: 10)
 
             languageDialogCard(
                 width: metrics.dialogWidth,
@@ -207,6 +201,7 @@ struct ParentAreaView: View {
 
             if !metrics.usesAccessibilityLayout {
                 languageFooter(metrics: metrics)
+                    .padding(.bottom, metrics.footerBottomMargin)
             }
         }
         // The card and its footer are one modal for VoiceOver.
@@ -1508,7 +1503,9 @@ struct ParentAreaView: View {
                 settingsHeading("Privacy, support & legal")
             }
 
-            ForEach(MinikExternalDestination.allCases) { destination in
+            // Only the links this build has: a page it does not have (Terms of Use, as these
+            // apps use Apple's standard EULA) is left out rather than shown disabled.
+            ForEach(MinikExternalDestination.allCases.filter { releaseInformation.url(for: $0) != nil }) { destination in
                 Button {
                     gatedParentAction = .external(destination)
                 } label: {
@@ -1521,12 +1518,7 @@ struct ParentAreaView: View {
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(ParentAreaActionButtonStyle(look: MinikPretty.PillLook.white))
-                .disabled(releaseInformation.url(for: destination) == nil)
-                .accessibilityHint(
-                    releaseInformation.url(for: destination) == nil
-                        ? String(localized: "Not configured for this build")
-                        : String(localized: "Opens a grown-up check before leaving the app")
-                )
+                .accessibilityHint(String(localized: "Opens a grown-up check before leaving the app"))
             }
 
             if !releaseInformation.hasExternalDestinations {
@@ -1622,6 +1614,9 @@ struct ParentAreaView: View {
         }
     }
 
+    private static let ratingPromptNoteKey: String.LocalizationValue =
+        "No rating window? The App Store shows it only in the published app, and not every time."
+
     private func requestKeepInTouch(_ action: MinikKeepInTouchAction) {
         keepInTouchProblem = nil
         gatedParentAction = .keepInTouch(action)
@@ -1635,7 +1630,19 @@ struct ParentAreaView: View {
         let product = configuration.variant
         switch action {
         case .rate:
-            MinikAppFeedback.requestReview()
+            if let url = MinikAppFeedback.reviewURL() {
+                let problem = interfaceLocaleController.selectedLocale.text("No suitable app is installed")
+                openURL(url) { accepted in
+                    if !accepted {
+                        keepInTouchProblem = problem
+                    }
+                }
+            } else {
+                MinikAppFeedback.requestReview()
+                // The App Store's prompt may not appear (never in TestFlight), and the app
+                // cannot tell, so the grown-up is told why nothing may have opened.
+                keepInTouchProblem = interfaceLocaleController.selectedLocale.text(Self.ratingPromptNoteKey)
+            }
         case .share:
             shareRequest = MinikShareText(text: MinikAppFeedback.shareText(for: product))
         case .feedback:
@@ -1912,6 +1919,9 @@ struct LanguageParentDialogMetrics {
     let footerHeight: CGFloat
     let footerMaxWidth: CGFloat
     let footerPillGap: CGFloat
+    /// The footer pills' distance from the bottom of the safe area: more where the
+    /// screen has no home indicator inset (iPhone SE), so they do not sit on the edge.
+    let footerBottomMargin: CGFloat
 
     init(
         containerSize: CGSize,
@@ -2005,6 +2015,7 @@ struct LanguageParentDialogMetrics {
         footerHeight = tablet ? 58 : 46
         footerMaxWidth = 900
         footerPillGap = tablet ? 32 : 20
+        footerBottomMargin = safeAreaInsets.bottom > 0 ? (tablet ? 12 : 8) : (tablet ? 28 : 22)
     }
 }
 

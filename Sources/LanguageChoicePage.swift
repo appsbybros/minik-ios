@@ -91,23 +91,24 @@ struct LanguageChoicePage: View {
     /// Android draws them: the try-again Minik covers everything while he shows (owner
     /// report, 14 October 2026), and Next is seen once he leaves after 1.5 seconds.
     private func reactionLayer(pillAnchor: Anchor<CGRect>?, wide: Bool, sizes: LanguageChoiceMetrics) -> some View {
-        let insetX = LanguagePanelInsets.horizontal(wide: wide)
-        let insetY = LanguagePanelInsets.vertical(wide: wide)
+        let outset = CGSize(width: LanguagePanelInsets.horizontal(wide: wide),
+                            height: LanguagePanelInsets.vertical(wide: wide))
         return GeometryReader { geometry in
             let pill: CGRect? = pillAnchor.map { geometry[$0] }
-            let pillMiddle: CGFloat? = pill.map { $0.midY + insetY }
+            // Android's feedback spans the panel itself: the try-again Minik stands on the
+            // panel's bottom edge and the success jump crosses the whole panel. When the
+            // board scrolls, that is the panel the child sees, not the board's full height.
+            let panel = geometry.languageVisiblePanel(outset: outset)
+            let pillMiddle: CGFloat? = pill.map { $0.midY - panel.minY }
             ZStack {
-                // Android's feedback spans the panel itself, so the layer takes the panel's
-                // insets back: the try-again Minik stands on the panel's bottom edge and the
-                // success jump crosses the whole panel.
                 if canSkip, let pill {
                     nextButton(sizes)
                         .frame(width: pill.width, height: pill.height)
                         .position(x: pill.midX, y: pill.midY)
                 }
                 feedbackLayer(sizes: sizes, pillMiddle: pillMiddle)
-                    .padding(.horizontal, -insetX)
-                    .padding(.vertical, -insetY)
+                    .frame(width: panel.width, height: panel.height)
+                    .position(x: panel.midX, y: panel.midY)
             }
         }
     }
@@ -452,14 +453,18 @@ private struct LanguageChoiceMetrics {
 
         // Next: 18 sp (40 sp on tablets), up to 35 dp under the answers, on the design's
         // glossy pill: 9 points above the label and 12 below it, at least 52 points tall.
+        // Even a squeezed board keeps 20 points (24 on tablets) above the pill and 18 (22)
+        // between it and the statistics (owner QA, 25 October 2026: the pill sat tight
+        // between the last answer and the statistics on the iPhone SE).
         let nextBase: CGFloat = (wide ? 40 : 18) * boardScale
         let nextLimit: CGFloat = accessible ? 2 : 1.3
         let nextFontSize = nextBase * min(LanguageTypeRamp.scale(.body, typeSize), nextLimit)
         let pillHeight = max(52, LanguageTypeRamp.lineHeight(nextFontSize) + 21)
         let nextHitPadding = max(0, (44 - pillHeight) / 2)
-        let nextGapFloor: CGFloat = (wide ? 10 : 6) * boardScale
+        let nextGapFloor: CGFloat = (wide ? 24 : 20) * boardScale
         let nextGapSmallest = max(nextGapFloor, nextHitPadding)
         let nextGapPreferred = max(nextGapSmallest, 35 * boardScale)
+        let nextBelow = max(nextHitPadding, (wide ? 22 : 18) * boardScale)
 
         // The statistics sit 15 dp above the panel's bottom (25 dp on tablets).
         let statsMargin: CGFloat = (wide ? 25 : 15) * boardScale
@@ -470,7 +475,7 @@ private struct LanguageChoiceMetrics {
         // Rows that keep their height: header, instruction, the gaps, the Next row at its
         // smallest gap and the statistics with their bottom margin.
         let upperHeight = headerHeight + instructionGap + instructionHeight + promptGap * prompts + answersGap
-        let lowerHeight = rowGaps + nextGapSmallest + pillHeight + nextHitPadding + statisticsHeight
+        let lowerHeight = rowGaps + nextGapSmallest + pillHeight + nextBelow + statisticsHeight
         let fixedHeight = upperHeight + lowerHeight
 
         let available = height - fixedHeight
@@ -523,7 +528,7 @@ private struct LanguageChoiceMetrics {
         self.nextFontSize = nextFontSize
         self.nextTop = nextGap - nextHitPadding
         self.nextHitPadding = nextHitPadding
-        self.nextSlotHeight = nextGap + pillHeight + nextHitPadding
+        self.nextSlotHeight = nextGap + pillHeight + nextBelow
         self.statsBottom = statsBottom
         self.minimumHeight = accessible
             ? 0 : fixedHeight + smallestPrompt * prompts + smallestAnswer * rowCount

@@ -168,15 +168,15 @@ struct MemoryView: View {
     // "flip two cards" status, the pairs count and a 3 x 4 board of square cards
     // pinned under them. The lower part of the panel stays free as on Android,
     // which hides the Minik boy in this mode. Larger text shrinks the cards a
-    // little instead of pushing the board off the panel; at accessibility sizes
-    // the panel scrolls once the cards would get too small. The panel is the glass
-    // panel over the sky with the light wash inside it (applyGameBackgrounds).
+    // little instead of pushing the board off the panel; the panel scrolls only
+    // once the cards would get too small, and then only as far as the board's
+    // bottom. The board is laid out for the panel's visible height, never for
+    // the screen's taller small-viewport board: that made the content taller
+    // than the cards needed, so the panel scrolled into empty space (owner QA,
+    // 25 October 2026). The panel is the glass panel over the sky with the
+    // light wash inside it (applyGameBackgrounds).
     private var languagePictureBody: some View {
-        LanguageActivityScreen(
-            washed: true,
-            panelStyle: .rounded,
-            minimumContentHeight: { _, wide in wide ? 600 : 540 }
-        ) { layout in
+        LanguageActivityScreen(washed: true, panelStyle: .rounded) { layout in
             languagePictureContent(layout)
         }
     }
@@ -201,9 +201,19 @@ struct MemoryView: View {
                 .padding(.top, metrics.boardTopGap)
                 .padding(.bottom, metrics.boardBottomGap)
         }
-        .frame(maxWidth: .infinity, minHeight: layout.height, alignment: .top)
+        .frame(maxWidth: .infinity, minHeight: layout.viewportHeight, alignment: .top)
         .overlay {
-            languageCelebrationOverlay
+            // The celebration covers the content area the child sees, wherever the
+            // board has been scrolled to.
+            GeometryReader { geometry in
+                let insetX = LanguagePanelInsets.horizontal(wide: layout.wide)
+                let insetY = LanguagePanelInsets.vertical(wide: layout.wide)
+                let panel = geometry.languageVisiblePanel(outset: CGSize(width: insetX, height: insetY))
+                languageCelebrationOverlay
+                    .frame(width: max(1, panel.width - 2 * insetX), height: max(1, panel.height - 2 * insetY))
+                    .position(x: panel.midX, y: panel.midY)
+            }
+            .allowsHitTesting(false)
         }
         .overlay(alignment: .topTrailing) {
             languageCloseButton(metrics)
@@ -1262,6 +1272,9 @@ private struct LanguageMemoryBoardMetrics {
         pairsLineHeight: CGFloat
     ) {
         let wide = layout.wide
+        // The panel's visible content height: the board fits it, and the content
+        // grows past it (and scrolls) only when the cards reach minimumSide.
+        let height = layout.viewportHeight
         // iPads at least 800 pt wide (a content width of about 700 pt) take
         // Android's sw800dp text sizes; the iPad mini keeps sw700dp's.
         let largeTablet = wide && layout.width >= 680
@@ -1283,7 +1296,7 @@ private struct LanguageMemoryBoardMetrics {
         // sizes), 45 dp at 25 / 37 dp on sw600dp; the touch area is at least
         // 44 pt. On phones that area reaches a few points past the content
         // edge into the panel's inset, so the X itself keeps Android's 20 dp.
-        let phoneCloseSide: CGFloat = layout.height < 660 ? 23 : 27
+        let phoneCloseSide: CGFloat = height < 660 ? 23 : 27
         let closeSide: CGFloat = wide ? 45 : phoneCloseSide
         let closeHitSide = max(44, closeSide)
         let closeInset = (closeHitSide - closeSide) / 2
@@ -1306,7 +1319,7 @@ private struct LanguageMemoryBoardMetrics {
         let textHeight = titleTop + scaledTitleLineHeight + statusGap + statusHeight
             + pairsGap + scaledPairsLineHeight
         let boardMargins = boardTopGap + boardBottomGap + 8
-        let availableHeight = max(0, layout.height - textHeight - boardMargins)
+        let availableHeight = max(0, height - textHeight - boardMargins)
         let boardTarget: CGFloat
         if wide {
             boardTarget = min((layout.width + 42) * 0.75, layout.width - 28)
@@ -1318,7 +1331,10 @@ private struct LanguageMemoryBoardMetrics {
         let rows = (max(1, cardCount) + columns - 1) / columns
         let rowGaps = spacing * CGFloat(rows - 1)
         let heightLimitedSide = max(0, (availableHeight - rowGaps) / CGFloat(rows))
-        var side = min(widthLimitedSide, heightLimitedSide)
+        // The smallest cards before the panel scrolls: smaller ones would be hard
+        // to read and tap, so a shorter panel scrolls to the board's bottom instead.
+        let minimumSide: CGFloat = wide ? 84 : 60
+        var side = min(widthLimitedSide, max(heightLimitedSide, minimumSide))
         if accessibilityText {
             // The panel scrolls at these sizes, so the text rows may not
             // squeeze the cards far below their width-limited size.

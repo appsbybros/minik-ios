@@ -485,8 +485,9 @@ struct LanguageMenuView: View {
         scrollHintEligible && contentContinuesBelow
     }
 
-    /// The logo at the start; Home and Trophy as white round buttons centred in the
-    /// space beside it (plusMenuTopButtons).
+    /// The logo at the start; Home and Trophy as white round buttons at the end
+    /// (plusMenuTopButtons). Owner QA (25 October 2026): the trophy sits at the far
+    /// edge, level with the logo at the other edge, and Home stays beside it.
     private func header(_ metrics: LanguagePrettyMetrics) -> some View {
         HStack(alignment: .center, spacing: 0) {
             MinikLanguageLogo()
@@ -514,7 +515,6 @@ struct LanguageMenuView: View {
                     }
                 }
             }
-            Spacer(minLength: 0)
         }
         .padding(.horizontal, metrics.screenMargin)
         .padding(.top, metrics.topMargin)

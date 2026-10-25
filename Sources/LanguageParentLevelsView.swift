@@ -185,7 +185,9 @@ struct LanguageParentLevelsView: View {
     }
 
     /// "Level" and its description at the start, the value box (165/200 dp wide)
-    /// at the end. Accessibility text sizes put the box under the text.
+    /// at the end. Where that leaves the text too narrow a column (phones, where
+    /// Hebrew wrapped a few letters a line) and at accessibility text sizes, the
+    /// box goes under the text.
     private func levelRow(
         description: LocalizedStringKey,
         selection: Binding<String>,
@@ -194,9 +196,10 @@ struct LanguageParentLevelsView: View {
         metrics: LanguageParentDialogMetrics
     ) -> some View {
         outlinedCard {
-            if metrics.usesAccessibilityLayout {
+            if metrics.usesAccessibilityLayout || levelTextWidth(metrics) < Self.minimumLevelTextWidth {
                 VStack(alignment: .leading, spacing: 10) {
                     levelTexts(description: description, metrics: metrics)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     levelValue(selection: selection, options: options, isEnabled: isEnabled, metrics: metrics)
                         .frame(maxWidth: .infinity)
                 }
@@ -209,6 +212,15 @@ struct LanguageParentLevelsView: View {
                 }
             }
         }
+    }
+
+    /// The narrowest text column beside the value box that still reads well.
+    private static let minimumLevelTextWidth: CGFloat = 170
+
+    /// The text column beside the value box: the card (the dialog less 14 a side)
+    /// less its 16 padding a side, the row's 14 padding a side and the 10 gap.
+    private func levelTextWidth(_ metrics: LanguageParentDialogMetrics) -> CGFloat {
+        metrics.dialogWidth - 28 - 32 - 28 - 10 - metrics.levelValueWidth
     }
 
     private func levelTexts(

@@ -61,8 +61,27 @@ enum MinikAppFeedback {
         return mail.url
     }
 
-    /// Android opens the store listing to rate the app; iOS asks the App Store for its own
-    /// rating prompt, as the other iPhone ports do.
+    /// The Info.plist key with the app's App Store ID (its Apple ID in App Store Connect,
+    /// digits only), from the MINIK_APP_STORE_ID build setting.
+    static let appStoreIDInfoKey = "MinikAppStoreID"
+
+    /// The app's App Store ID, when this build has one.
+    static func appStoreID(bundle: Bundle = .main) -> String? {
+        let raw = (bundle.object(forInfoDictionaryKey: appStoreIDInfoKey) as? String) ?? ""
+        let value = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty, value.allSatisfy({ $0.isASCII && $0.isNumber }) else { return nil }
+        return value
+    }
+
+    /// Android opens the store listing to rate the app; iOS opens the App Store's
+    /// "Write a Review" page when the app's App Store ID is known (as Ivrit Together does).
+    static func reviewURL(bundle: Bundle = .main) -> URL? {
+        guard let id = appStoreID(bundle: bundle) else { return nil }
+        return URL(string: "https://apps.apple.com/app/id\(id)?action=write-review")
+    }
+
+    /// Without the App Store ID, iOS asks the App Store for its own rating prompt. The App
+    /// Store decides whether to show it: never in TestFlight, and only a few times a year.
     @MainActor
     static func requestReview() {
         guard let scene = UIApplication.shared.connectedScenes

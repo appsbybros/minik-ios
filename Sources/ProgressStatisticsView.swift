@@ -11,7 +11,6 @@ struct ProgressStatisticsView: View {
         MinikHomeScreen { metrics in
             VStack(alignment: .leading, spacing: metrics.compact ? 18 : 24) {
                 header(compact: metrics.compact)
-                localOnlyNotice(compact: metrics.compact)
 
                 if model.product == .minikMath {
                     mathStatus(compact: metrics.compact)
@@ -21,41 +20,49 @@ struct ProgressStatisticsView: View {
                     emptyState(compact: metrics.compact)
                 } else {
                     overview(compact: metrics.compact, width: metrics.contentMaxWidth)
-                    recentPractice(compact: metrics.compact)
                     activityProgress(compact: metrics.compact)
                 }
             }
         }
     }
 
+    /// The title centred on the screen with the red close X at the end (the left in
+    /// Hebrew), as on the other screens; the subtitle below says where this is kept.
     private func header(compact: Bool) -> some View {
-        HStack(alignment: .top, spacing: 16) {
-            VStack(alignment: .leading, spacing: 6) {
+        let closeArtwork: CGFloat = compact ? 34 : 48
+        let closeTarget: CGFloat = compact ? 44 : 56
+        return VStack(spacing: 6) {
+            ZStack {
+                // The same inset on both sides keeps the title centred on the screen
+                // and clear of the close button.
                 Text("Progress & Statistics")
                     .font(compact ? .title.bold() : .largeTitle.bold())
                     .foregroundStyle(Color(red: 0.11, green: 0.36, blue: 0.45))
-                Text("A clear view of practice completed on this device.")
-                    .font(.body.weight(.medium))
-                    .foregroundStyle(Color(red: 0.31, green: 0.49, blue: 0.57))
-            }
-            Spacer(minLength: 12)
-            Button(action: onBack) {
-                Image(systemName: "chevron.backward.circle.fill")
-                    .font(.system(size: compact ? 34 : 40, weight: .semibold))
-                    .symbolRenderingMode(.hierarchical)
-                    .frame(width: compact ? 44 : 48, height: compact ? 44 : 48)
-            }
-            .accessibilityLabel("Back to Parent Area")
-            .accessibilityHint("Returns to learning settings")
-        }
-    }
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.7)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, closeTarget + 4)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityAddTraits(.isHeader)
 
-    private func localOnlyNotice(compact: Bool) -> some View {
-        MinikHomeSectionCard(compact: compact) {
-            Label("Stored on this device", systemImage: "iphone")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Color(red: 0.18, green: 0.43, blue: 0.52))
-                .accessibilityHint("This progress is not synchronized to the cloud")
+                Button(action: onBack) {
+                    MinikArtworkImage(name: MinikVisualAsset.close)
+                        .frame(width: closeArtwork, height: closeArtwork)
+                        .frame(width: closeTarget, height: closeTarget)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Back to Parent Area")
+                .accessibilityHint("Returns to learning settings")
+                .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+            Text("A clear view of practice completed on this device. This information is saved only on this device, not online.")
+                .font(.body.weight(.medium))
+                .foregroundStyle(Color(red: 0.31, green: 0.49, blue: 0.57))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity)
         }
     }
 
@@ -93,31 +100,6 @@ struct ProgressStatisticsView: View {
         }
     }
 
-    private func recentPractice(compact: Bool) -> some View {
-        MinikHomeSectionCard(compact: compact) {
-            VStack(alignment: .leading, spacing: 14) {
-                sectionHeading("Recent practice", symbol: "clock.arrow.circlepath")
-                ForEach(model.recentPractice) { item in
-                    // The time moves under the title when larger text leaves no
-                    // room beside it, instead of squeezing the title.
-                    ViewThatFits(in: .horizontal) {
-                        HStack(alignment: .firstTextBaseline, spacing: 12) {
-                            recentPracticeTitle(item)
-                            Spacer()
-                            recentPracticeTime(item)
-                        }
-                        VStack(alignment: .leading, spacing: 4) {
-                            recentPracticeTitle(item)
-                            recentPracticeTime(item)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .accessibilityElement(children: .combine)
-                }
-            }
-        }
-    }
-
     private func activityProgress(compact: Bool) -> some View {
         MinikHomeSectionCard(compact: compact) {
             VStack(alignment: .leading, spacing: 14) {
@@ -144,16 +126,6 @@ struct ProgressStatisticsView: View {
                 }
             }
         }
-    }
-
-    private func recentPracticeTitle(_ item: EducationalRecentPracticeItem) -> some View {
-        Text(item.title).font(.body.weight(.semibold))
-    }
-
-    private func recentPracticeTime(_ item: EducationalRecentPracticeItem) -> some View {
-        Text(item.practicedAt, style: .relative)
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
     }
 
     @ViewBuilder

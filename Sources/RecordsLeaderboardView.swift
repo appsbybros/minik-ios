@@ -473,7 +473,7 @@ struct RecordsLeaderboardView: View {
             } else {
                 HStack(spacing: 10) {
                     rankBadge(row)
-                    nameLabel(row, maximumLines: 1)
+                    nameLabel(row, maximumLines: 2)
                     Spacer(minLength: 8)
                     valueText(row, type: type)
                 }
@@ -518,6 +518,9 @@ struct RecordsLeaderboardView: View {
             }
     }
 
+    /// The name wraps onto a second line rather than being cut, and the "New"
+    /// badge sits under it, so a new record's name keeps the row's full width on
+    /// a 375-point iPhone (the owner's QA, 25 October 2026).
     private func nameLabel(_ row: RecordRow, maximumLines: Int) -> some View {
         HStack(spacing: 7) {
             if let avatar = row.avatar {
@@ -526,18 +529,22 @@ struct RecordsLeaderboardView: View {
                     .foregroundStyle(MinikPretty.purple)
                     .accessibilityHidden(true)
             }
-            Text(displayName(for: row))
-                .font(MinikPretty.bodyFont(nameFontSize))
-                .foregroundStyle(MinikPretty.navy)
-                .lineLimit(maximumLines)
-                .minimumScaleFactor(0.7)
-            if row.isHighlighted {
-                newRecordBadge
+            VStack(alignment: .leading, spacing: 3) {
+                Text(displayName(for: row))
+                    .font(MinikPretty.bodyFont(nameFontSize))
+                    .foregroundStyle(MinikPretty.navy)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(maximumLines)
+                    .minimumScaleFactor(0.7)
+                if row.isHighlighted {
+                    newRecordBadge
+                }
             }
+            .layoutPriority(1)
         }
     }
 
-    /// records_new_badge: "New" on gold beside the new record's name.
+    /// records_new_badge: "New" on gold under the new record's name.
     private var newRecordBadge: some View {
         Text(interfaceLocaleID.text("New"))
             .font(.caption2.weight(.bold))
