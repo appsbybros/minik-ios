@@ -415,6 +415,9 @@ enum MPRoute { case menu, lobby, game, guide, result, journey, createTournament,
     func startChallenge(bot: MPBot, target: Int, champion: Bool) {
         let state = ranking.state
         guard !busy, state.eligible, state.next == target else { return }
+        // Android c9f5fa6: a completed part of the qualification cannot be started again.
+        if champion && state.championWins >= state.requirement.champions { return }
+        if !champion && (state.requirement.streak ? state.streak : state.botWins) >= state.requirement.bots { return }
         let choices = [1, 0, 3].filter { MPRankPromotion.allowedControl(target, $0) }
         let control = choices.contains(challengeControl) ? challengeControl : choices[0]
         let local = localRooms, uid = local.uid, character = identity?.characterId ?? "miniko"
@@ -581,6 +584,10 @@ enum MPRoute { case menu, lobby, game, guide, result, journey, createTournament,
     func back() {
         if route == .journey { journey.back(); return }
         if route == .createTournament || route == .createFriendly || route == .colorChallenge { route = .menu; return }
+        // Android c9f5fa6: Back from a friendly room whose game never started leaves it (deletes it), as Cancel did.
+        if route == .lobby, let s = session, s.kind == .friendly, !s.matches.values.contains(where: { $0.phase == .playing || $0.phase == .finished }) {
+            Task { await leave(delete: true) }; return
+        }
         // Android: leaving an unfinished tournament's room asks whether to keep it.
         if route == .lobby, let s = session, s.kind == .tournament, !s.complete { tournamentExitPrompt = true; return }
         audio.stop(); scene?.setActive(false)

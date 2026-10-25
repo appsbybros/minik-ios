@@ -113,12 +113,24 @@ enum MPRankPromotion {
         if s.eligible && won, let target = s.next {
             let validBot = bot.map { p in bots(target).contains { $0.id == p.characterId && p.strength >= $0.profile.strength - 0.001 } } ?? false
             if trial == target && !champion && validBot { n.botWins = min(n.botWins + 1, 5); n.streak = min(n.streak + 1, 5) }
-            if trial == target && champion && bot == championProfile(target) { n.championWins = min(n.championWins + 1, 5) }
+            // A champion match started before Android c9f5fa6 still counts with the earlier (legacy) champion.
+            if trial == target && champion && (bot == championProfile(target) || bot == legacyChampionProfile(target)) { n.championWins = min(n.championWins + 1, 5) }
         }
         return advance(n)
     }
-    /// The champion for `target`: skill 7...10 and Gaya, Flare or Kyra in turn.
+    /// Android c9f5fa6 `championProfile`: the legacy champion, but never weaker in any skill than that character's own
+    /// house-player profile.
     static func championProfile(_ target: Int) -> MPBot {
+        var p = legacyChampionProfile(target)
+        guard let base = MPRoster.find(p.characterId)?.profile else { return p }
+        p.speed = max(p.speed, base.speed); p.reaction = max(p.reaction, base.reaction); p.accuracy = max(p.accuracy, base.accuracy)
+        p.power = max(p.power, base.power); p.agility = max(p.agility, base.agility)
+        p.forehandSkill = max(p.forehandSkill, base.forehandSkill); p.backhandSkill = max(p.backhandSkill, base.backhandSkill)
+        p.serveSkill = max(p.serveSkill, base.serveSkill)
+        return p
+    }
+    /// The champion before c9f5fa6: skill 7...10 and Gaya, Flare or Kyra in turn.
+    private static func legacyChampionProfile(_ target: Int) -> MPBot {
         let over = max(target - 5, 0)
         let skill = min(max(7 + over * 3 / 6, 7), 10)
         let character = ["gaya", "flare", "kyra"][over % 3]
@@ -129,7 +141,8 @@ enum MPRankPromotion {
     /// and hits up to 12 % faster. Any other level (Android passes -1) keeps the tuning.
     static func championTuning(_ base: MPTuning, _ target: Int) -> MPTuning {
         guard (5...11).contains(target) else { return base }
-        let strength = Double(target - 5) / 6.0
+        // Android c9f5fa6: even the first champion (level 5) is a quarter strengthened.
+        let strength = 0.25 + 0.75 * Double(target - 5) / 6.0
         func boost(_ c: MPChance) -> MPChance {
             MPChance(min(1 - (1 - c.answer) * (1 - 0.55 * strength), 0.992), min(1 - (1 - c.good) * (1 - 0.4 * strength), 0.985))
         }

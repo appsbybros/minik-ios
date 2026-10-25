@@ -11,12 +11,20 @@ checks=[]
 def check(condition,message):
     if not condition: raise AssertionError(message)
     checks.append(message)
-# Android commit this port matches. Every Android source/rules file the audit reads must equal its committed blob there
-# (the Android working tree may carry an uncommitted version bump only).
-ANDROID_COMMIT='29f5dc7'
+# Android commit this port matches. Android sources and rules are read from that commit itself (git show, read-only),
+# so uncommitted work in the Android checkout never changes what the port is compared with; the working copies that
+# differ are only listed in the report. Binary assets are still compared with the checkout's files.
+ANDROID_COMMIT='6c8c757'
 android_reads=set()
+import subprocess
+def android_blob(p):
+    rel=Path(p).resolve().relative_to(args.android.resolve()).as_posix()
+    out=subprocess.run(['git','--no-optional-locks','-C',str(args.android),'show',ANDROID_COMMIT+':'+rel],capture_output=True)
+    if out.returncode!=0: raise AssertionError('Android file missing at '+ANDROID_COMMIT+': '+rel)
+    return out.stdout
 def read(p):
-    if args.android.exists() and Path(p).resolve().is_relative_to(args.android.resolve()): android_reads.add(Path(p).resolve())
+    if args.android.exists() and Path(p).resolve().is_relative_to(args.android.resolve()):
+        android_reads.add(Path(p).resolve()); return android_blob(p).decode('utf-8-sig')
     return p.read_text(encoding='utf-8-sig')
 project=read(root/'project.yml')
 pong=project.split('  MinikPingPong:\n',1)[1].split('  ProductConfigurationTests:',1)[0]
@@ -147,7 +155,7 @@ if args.android.exists():
             if not hebrew.search(text): continue
             for fragment in re.split(r'\$\{[^}]*\}|\$[A-Za-z_]\w*',text):
                 if len(fragment.strip())>1 and fragment not in ios_text: missing.append(name+': '+fragment)
-    play_added=['שיטת הטורניר','בכל סיבוב מוגרלים זוגות מחדש. כשמספר השחקנים אי־זוגי, שחקן אחד נבחר באקראי ועולה בלי לשחק. מנצחים וממשיכים!','מתחילים: מזיזים את המחבט למקום לחבטה אוטומטית; החלקה קטנה הצידה מכוונת אותה.','נינוחה: חלון תזמון רחב יותר מאפשר להכין החלקה מכוונת מוקדם. רגילה: זזים לכדור ומחליקים כשהוא מגיע.','יכולת היריב נקבעת לפי שחקן הבית שתבחרו.','רמת השליטה: ','משחקים שנותרו בסיבוב הזה: ','המשחקים שלכם הסתיימו. ממתינים לשאר השחקנים לסיום הטורניר.','עץ הטורניר','החליקו לצדדים לצפייה בעץ. הזוגות מוגרלים מחדש בכל סיבוב.','חזרה לטורניר','ניצחתם במשחק!']
+    play_added=['שיטת הטורניר','בכל סיבוב מוגרלים זוגות מחדש. כשמספר השחקנים אי־זוגי, שחקן אחד נבחר באקראי ועולה בלי לשחק. מנצחים וממשיכים!','שולחן גדול','שולחן קומפקטי','רמת השליטה: ','משחקים שנותרו בסיבוב הזה: ','המשחקים שלכם הסתיימו. ממתינים לשאר השחקנים לסיום הטורניר.','עץ הטורניר','החליקו לצדדים לצפייה בעץ. הזוגות מוגרלים מחדש בכל סיבוב.','חזרה לטורניר','ניצחתם במשחק!']
     play_src=read(src/'multiplayer/PlayActivity.kt')+read(src/'multiplayer/PrivateMatchActivity.kt')
     for text in play_added:
         if text not in play_src: missing.append('Android reference changed: '+text)
@@ -220,11 +228,38 @@ tests=read(root/'Tests/ProductConfigurationTests/ModernPongParityTests.swift')+r
 test_count=len(re.findall(r'func test\w+\(',tests))
 check(test_count>=20,'Focused XCTest cases registered: '+str(test_count))
 if args.android.exists():
-    import subprocess
-    changed=[]
+    # Android 29f5dc7..6c8c757 (2026-10-25): edge serves and returns, grounded house players, recovery, earned team
+    # colours, the daily journey's control cycles, champions and serve taps.
+    src=args.android/'app/src/main/java/com/appsbybros/minik/pingpong'
+    k={n:code(read(src/n)) for n in ['PongServeDifficulty.kt','ActorPresentation.kt','ModernEngine.kt','ModernGame.kt','MinikMotion.kt','GroundedRival.kt','PongJourney.kt','PongPlay.kt','PongTeamColors.kt','ChampionKit.kt','RankPromotion.kt','ModernCourt.kt','PongPracticeView.kt','ColorChallengeActivity.kt','multiplayer/ControlChoice.kt']}
+    ios={n:code(read(modern/n)) for n in ['MPTableMotion.swift','MPEngine.swift','MPPhysics.swift','MPGroundedRival.swift','MPPlay.swift','MPArena.swift','MPPracticeTable.swift','MPRanking.swift','MPScene.swift','MPPracticeView.swift','MPColorChallengeView.swift','MPController.swift']}
+    def both(kt_name,kt_keys,swift_name,swift_keys,message):
+        check(all(x in k[kt_name] for x in kt_keys) and all(x in ios[swift_name] for x in swift_keys),message)
+    both('PongServeDifficulty.kt',['-.20)/.23','.45+.25*skill','((handSkill-2)/8)','/.44','.75+.25*shortness'],'MPTableMotion.swift',['- 0.20) / 0.23','0.45 + 0.25 * skill','(($0 - 2) / 8)','/ 0.44','0.75 + 0.25 * shortness'],'Sharp-edge serve returns: one 45-70 % roll by hand skill (Android c9f5fa6)')
+    both('ActorPresentation.kt',['TABLE_SIDE_LIMIT=650.0','-220.0..(CourtProjection.TABLE_LEFT-65)','(CourtProjection.TABLE_LEFT+CourtProjection.TABLE_WIDTH+65)..1200.0'],'MPEngine.swift',['(45...650)','(-220...(left - 65))','((left + tableWidth + 65)...1200)'],'House player may stand beside the table (Android besideTable)')
+    both('ModernEngine.kt',['x in -.24..1.24 && y in .72..1.22','crossingX in -.025..1.025','position.x in -.30..1.30 && position.y in -.24..1.24','max(height,.001)'],'MPPhysics.swift',['(-0.24...1.24).contains(x) && (0.72...1.22).contains(y)','(-0.025...1.025).contains(crossingX)','(-0.30...1.30).contains(position.x) && (-0.24...1.24).contains(position.y)','max(height, 0.001)'],'Flight: sideline returns judged at landing, net posts, low contacts (Android c9f5fa6/496a709)')
+    both('ModernGame.kt',['850*(botProfile?.movementMultiplier?:1.0)','1100*(bot?.movementMultiplier?:1.0)','PongServeDifficulty.zone(x,receivingStartX,1)'],'MPEngine.swift',['850 * (bot?.movement ?? 1)','1100 * (bot?.movement ?? 1)','MPServeDifficulty.zone(ballX: x, playerX: receivingStartX, team: 1)'],'House recovery and interception speeds; served hand from the receiver (Android f0ea4aa)')
+    both('MinikMotion.kt',['*1.5/maxSpeed','if(ActorPresentation.besideTable(plan.body))return plan'],'MPEngine.swift',['* 1.5 / maxSpeed','if MPProjection.besideTable(plan.body) { return plan }'],'Bounded, cornered house footwork and sideline interception (Android MinikMotion)')
+    both('GroundedRival.kt',['1.6*(engine.botProfile?.movementMultiplier?:1.0)','height*.025f','gap/height*.12+(if(phase==2)0.0 else .015)','Vec(.5,-.10),.7,recovering=true'],'MPGroundedRival.swift',['1.6 * (engine.bot?.movement ?? 1)','height * 0.025','gap / Double(height) * 0.12 + (phase == 2 ? 0 : 0.015)','MPPoint(0.5, -0.10), 0.7, recovering: true'],'Grounded house player (Android GroundedRival)')
+    both('PongJourney.kt',['listOf(4,1,0,3)[(step/count).coerceIn(0,3)]'],'MPPlay.swift',['[4, 1, 0, 3][min(max(step / count, 0), 3)]','practiceInput'],'Daily journey cycles Beginner, Starter, Standard and Pro (Android c9f5fa6)')
+    check('if(mistakes>=3' not in k['PongPlay.kt'] and 'mistakes >= 3' not in ios['MPPlay.swift'],'Practice never ends after three misses (Android c9f5fa6)')
+    both('PongTeamColors.kt',['0xff80d7ff.toInt(),0xffffafcf.toInt(),0xffffb46a.toInt(),0xffffdf75.toInt()','distance(color,it)>100','(channel*.52)','(255-channel)*.62','<145'],'MPArena.swift',['[0xff80d7ff, 0xffffafcf, 0xffffb46a, 0xffffdf75]','distance(color, $0) > 100','channel * 0.52','(255 - channel) * 0.62','< 145'],'Earned team colours (Android PongTeamColors.local/online/ink)')
+    both('ChampionKit.kt',['hsv[0] in 195f..295f','hsv[1]<.32f','hsv[2]<.72f','.34f+hsv[2]*.80f','palette[1]*.88f'],'MPPracticeTable.swift',['hue >= 195 && hue <= 295','sat < 0.32','value < 0.72','0.34 + value * 0.80','palette.1 * 0.88'],'Champion fabric recolouring (Android ChampionKit)')
+    both('RankPromotion.kt',['.25+.75*(target-5)/6.0','legacyChampionProfile(target)'],'MPRanking.swift',['0.25 + 0.75 * Double(target - 5) / 6.0','legacyChampionProfile(target)'],'Stronger champions; legacy champion wins still count (Android c9f5fa6)')
+    both('ModernCourt.kt',['private fun serveTouch','coerceIn(-.24,1.24)'],'MPScene.swift',['positioningServe','mpClamp(-0.24, 1.24)'],'Serve taps separate from repositioning drags; sideline footwork (Android 838c209/c9f5fa6)')
+    check('positioningServe' in k['PongPracticeView.kt'] and 'positioningServe' in ios['MPPracticeView.swift'],'Team/practice table: serve taps separate from drags (Android 838c209)')
+    check('champion&&state.championWins>=state.requirement.champions' in k['ColorChallengeActivity.kt'] and 'champion && state.championWins >= state.requirement.champions' in ios['MPController.swift'],'Completed qualification parts cannot be replayed (Android c9f5fa6)')
+    strings=read(args.android/'app/src/main/res/values/strings.xml')+read(args.android/'app/src/main/res/values-iw/strings.xml')
+    serve_text=['Drag to move. Lift your finger, then tap to serve.','גררו כדי לזוז. הרימו את האצבע, ואז הקישו כדי להגיש.']
+    check(all(x in strings and x in read(modern/'ModernPongView.swift') for x in serve_text),'Pro serve hint (swipe_serve) matches Android 838c209 in English and Hebrew')
+    missing=[]
+    for text in hebrew_literals(read(src/'ColorChallengeActivity.kt')):
+        for fragment in re.split(r'\$\{[^}]*\}|\$[A-Za-z_]\w*',text):
+            if len(fragment.strip())>1 and fragment not in ios_all: missing.append(fragment)
+    check(not missing,'Every Android Color Challenge Hebrew text is in the iOS port'+('' if not missing else ': '+'; '.join(missing)))
+uncommitted=[]
+if args.android.exists():
     for f in sorted(android_reads):
-        rel=f.relative_to(args.android.resolve()).as_posix()
-        blob=subprocess.run(['git','--no-optional-locks','-C',str(args.android),'show',ANDROID_COMMIT+':'+rel],capture_output=True).stdout
-        if blob.replace(b'\r\n',b'\n')!=f.read_bytes().replace(b'\r\n',b'\n'): changed.append(rel)
-    check(not changed,'Android files read by this audit equal their committed blobs at '+ANDROID_COMMIT+' ('+str(len(android_reads))+' files)'+('' if not changed else ': '+', '.join(changed)))
-print(json.dumps({'status':'PASS','source_asset_config_checks':len(checks),'swift_tests_authored_not_executed':test_count,'asset_bytes':sum(p.stat().st_size for p in assets),'checks':checks},ensure_ascii=True,indent=2))
+        if android_blob(f).replace(b'\r\n',b'\n')!=f.read_bytes().replace(b'\r\n',b'\n'): uncommitted.append(f.relative_to(args.android.resolve()).as_posix())
+    check(len(android_reads)>=40,'Android sources and rules compared at commit '+ANDROID_COMMIT+' ('+str(len(android_reads))+' files, read with git show)')
+print(json.dumps({'status':'PASS','android_commit':ANDROID_COMMIT,'android_working_copy_differs_from_commit':uncommitted,'source_asset_config_checks':len(checks),'swift_tests_authored_not_executed':test_count,'asset_bytes':sum(p.stat().st_size for p in assets),'checks':checks},ensure_ascii=True,indent=2))

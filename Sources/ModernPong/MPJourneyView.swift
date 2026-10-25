@@ -48,12 +48,16 @@ import UIKit
     var hasSaved: Bool { defaults.string(forKey: MPJourneyController.prefix + "saved") != nil }
     func tr(_ en: String, _ he: String) -> String { hebrew ? he : en }
     /// Android `PongTeamColors.score` for SwiftUI: "a : b", each number in its team colour, the separator white.
-    static func teamScore(_ first: Int, _ second: Int, firstTeam: Int = 0, seed: Int64) -> AttributedString {
+    /// `palette` (Android f0ea4aa): the table's earned colours.
+    static func teamScore(_ first: Int, _ second: Int, firstTeam: Int = 0, seed: Int64, palette: MPTeamColors.Palette? = nil) -> AttributedString {
         var a = AttributedString(String(first)), gap = AttributedString(" : "), b = AttributedString(String(second))
-        a.foregroundColor = MPColor.color(MPTeamColors.fill(firstTeam, seed: seed)); gap.foregroundColor = .white
-        b.foregroundColor = MPColor.color(MPTeamColors.fill(1 - firstTeam, seed: seed))
+        a.foregroundColor = MPColor.color(palette?.fill(firstTeam) ?? MPTeamColors.fill(firstTeam, seed: seed)); gap.foregroundColor = .white
+        b.foregroundColor = MPColor.color(palette?.fill(1 - firstTeam) ?? MPTeamColors.fill(1 - firstTeam, seed: seed))
         return a + gap + b
     }
+    /// Android f0ea4aa `PongTeamColors.local(PongRanking.rank.color, seed)`: a local team table keeps the player's
+    /// earned colour for their team.
+    static func localPalette(_ seed: Int64) -> MPTeamColors.Palette { MPTeamColors.local(MPRanking().rank.color, seed: seed) }
     /// Android `levels`: the order of the control choices in the team setup.
     static let controlLevels = [4, 1, 0, 3]
 
@@ -129,8 +133,8 @@ import UIKit
         let s = MPJourney.stage(step)
         var used: Set<String> = [ids[0]], roster = [ids[0]]
         for _ in 0..<3 { let b = s.partner(step / MPJourney.count, exclude: used); used.insert(b.id); roster.append(b.id) }
-        let g = MPPlay(step: step, roster: roster)
-        play(g); showInstructions(g)
+        // Android c9f5fa6: practice starts directly; the instructions stay one tap away.
+        play(MPPlay(step: step, roster: roster))
     }
     func play(_ g: MPPlay) {
         game = g; page = .game; handled = false; hud = ""; hudScore = nil; hint = ""
@@ -152,9 +156,9 @@ import UIKit
     func showInstructions(_ g: MPPlay) {
         g.paused = true; running = false; frame()
         let title = g.stage.map { $0.title(hebrew) } ?? tr("Team match", "משחק קבוצתי")
-        let controls = g.stage?.controlDescription(hebrew) ?? tr("Starter: prepare an aimed swipe early. Standard: tap or swipe when the ball approaches your paddle; otherwise drag to move. Pro: swipe and curve for spin.", "נינוחה: מכינים החלקה מכוונת מוקדם. רגילה: מקישים או מחליקים כשהכדור מתקרב למחבט; בשאר הזמן גוררים כדי לזוז. מקצועני: מחליקים בקשת כדי לסובב.")
-        let message = (g.stage?.briefing(hebrew) ?? MPJourney.stages[g.alternate ? 15 : 16].briefing(hebrew)) + "\n\n" + controls +
-            MPHelpTips.next(he: hebrew, eligible: g.stage == nil || g.stage?.skill == .serve)
+        // Android c9f5fa6: the briefing, then only the control in use and its explanation.
+        let controls = tr("Control difficulty: ", "רמת השליטה: ") + MPControlChoice.title(g.controls[0], hebrew: hebrew) + "\n" + MPControlChoice.explanation(g.controls[0], hebrew: hebrew)
+        let message = (g.stage?.briefing(hebrew) ?? MPJourney.stages[g.alternate ? 15 : 16].briefing(hebrew)) + "\n\n" + controls
         instructions = (g, title, message)
     }
     func closeInstructions() {
@@ -172,15 +176,17 @@ import UIKit
         if g.stage?.territory == true { score = "\(Int(g.remaining))s · \(Int(g.paint.coverage(0) * 100))% : \(Int(g.paint.coverage(1) * 100))%" }
         else if g.stage == nil { score = "\(g.points[0]) : \(g.points[1])" }
         else if g.openPaint { score = "★ \(g.successes)" }
-        else { score = "\(g.successes) / \(g.goal)  · " + tr("Misses", "החטאות") + " \(g.mistakes)/3" }
+        else { score = "\(g.successes) / \(g.goal)  · " + tr("Misses", "החטאות") + " \(g.mistakes)" }
         if hud != score {
             hud = score
             // Team scores are drawn in the two team colours.
-            hudScore = g.stage == nil ? MPJourneyController.teamScore(g.points[0], g.points[1], seed: g.seed) : nil
+            hudScore = g.stage == nil ? MPJourneyController.teamScore(g.points[0], g.points[1], seed: g.seed, palette: MPJourneyController.localPalette(g.seed)) : nil
         }
         let advice: String
         if g.paused { advice = tr("Paused", "מושהה") }
         else if let ending = g.ending { advice = ending.message(hebrew) }
+        // Android c9f5fa6: a practice stage names its control difficulty.
+        else if g.stage != nil { advice = tr("Control difficulty: ", "רמת השליטה: ") + MPControlChoice.title(g.controls[0], hebrew: hebrew) }
         else if g.stage?.skill == .serve { advice = tr("Land the serve inside the golden island", "הנחיתו את ההגשה בתוך האי הזהוב") }
         else if g.waitingServe { advice = tr("Tap the far side to serve", "הקישו בצד הרחוק כדי להגיש") }
         else if g.team && g.alternate && g.nextHitter[0] != 0 { advice = tr("Your teammate’s turn. Drag aside to make room.", "תור חבר הקבוצה. גררו הצדה כדי לפנות מקום.") }
@@ -218,7 +224,7 @@ import UIKit
                 let today = String(format: "%04d-%02d-%02d", parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
                 let bonus = defaults.string(forKey: p + "day") != today ? 30 : 0
                 defaults.set(Array(receipts), forKey: p + "receipts"); defaults.set(today, forKey: p + "day")
-                defaults.set(stars + 40 + g.cycle * 10 + bonus, forKey: p + "stars"); defaults.set(g.step + 1, forKey: p + "step")
+                defaults.set(stars + 40 + g.cycle * 10 + bonus, forKey: p + "stars"); defaults.set(MPJourney.nextStep(g.step), forKey: p + "step")
             }
         }
         if g.won && MPJourneyController.soundsOn { resultAudio.play("minik_claps") }
@@ -347,7 +353,8 @@ struct MPJourneySelector<Value: Hashable>: View {
             }
         } label: {
             HStack {
-                Text(options.first { $0.value == selection }?.label ?? "").font(.system(size: 17, weight: .semibold)).foregroundStyle(MPJourneyStyle.ink)
+                // Android 838c209: the selected value is 20 sp.
+                Text(options.first { $0.value == selection }?.label ?? "").font(.system(size: 20, weight: .semibold)).foregroundStyle(MPJourneyStyle.ink)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 Image(systemName: "chevron.down").font(.system(size: 15, weight: .bold)).foregroundStyle(Color(red: 79 / 255, green: 53 / 255, blue: 126 / 255))
             }
@@ -469,8 +476,10 @@ struct MPJourneyScreen: View {
     @State private var scenery = MPArenaScenery()
     private var he: Bool { journey.hebrew }
     private func t(_ en: String, _ he: String) -> String { journey.tr(en, he) }
-    private func text(_ value: String, size: CGFloat = 17, bold: Bool = false, start: Bool = false) -> some View {
-        Text(value).font(.system(size: size, weight: bold ? .bold : .regular)).foregroundStyle(MPJourneyStyle.ink)
+    /// Android c9f5fa6: body text reads from the start edge unless it is bold (`start = !bold`).
+    private func text(_ value: String, size: CGFloat = 17, bold: Bool = false, start explicit: Bool? = nil) -> some View {
+        let start = explicit ?? !bold
+        return Text(value).font(.system(size: size, weight: bold ? .bold : .regular)).foregroundStyle(MPJourneyStyle.ink)
             .multilineTextAlignment(start ? .leading : .center).frame(maxWidth: .infinity, alignment: start ? .leading : .center)
             .padding(.vertical, 6).fixedSize(horizontal: false, vertical: true)
     }
@@ -516,35 +525,35 @@ struct MPJourneyScreen: View {
             }).preferredColorScheme(.light)
         }
     }
+    /// Android c9f5fa6: the stages of the current cycle (plus the current one), in catalogue order.
+    private static func shown(_ step: Int) -> [Int] { Array(Set(MPJourney.available(step) + [step % MPJourney.count])).sorted() }
+    /// Android c9f5fa6 `brief`: the stage number within this cycle, its control difficulty, the briefing and the partner.
     private var brief: some View {
         let n = journey.step, count = MPJourney.count, s = MPJourney.stage(n), partner = s.partner(n / count, exclude: [journey.ids[0]])
+        let shown = MPJourneyScreen.shown(n), number = (shown.firstIndex(of: n % count) ?? n % count) + 1
         return MPJourneyPanel {
-            text(t("Practice a little each day. Your first completed stage each day earns a bonus. Play more whenever you like; missing a day never erases progress.", "מתאמנים קצת בכל יום. השלב הראשון שתשלימו ביום מזכה בבונוס. אפשר להמשיך לשחק מתי שרוצים; יום ללא משחק אינו מוחק התקדמות."), size: 15, start: true)
-            text("\(n % count + 1) / \(count) · " + t("Cycle", "מסלול") + " \(n / count + 1)", size: 18, bold: true)
+            // The stage counter always reads left to right.
+            text(MPMatchText.ordered("\(number) / \(shown.count)"), size: 18, bold: true)
             text(s.title(he), size: 24, bold: true)
-            MPAvatar(character: partner.id, icon: 0).frame(height: 130).accessibilityLabel(partner.name(hebrew: he))
-            text(partner.name(hebrew: he), size: 19, bold: true)
-            text(s.role(he), size: 15, start: true)
+            text(t("Control difficulty: ", "רמת השליטה: ") + MPControlChoice.title(MPJourney.control(n), hebrew: he), size: 18, bold: true, start: true)
             text(s.briefing(he), start: true)
-            text(s.controlDescription(he), size: 17, bold: true, start: true)
-            text(t("New completion: +\(MPRanks.daily(n)) color-rank points", "השלמה חדשה: +\(MPRanks.daily(n)) נקודות לדירוג הצבע"), size: 15)
-            text(s.territory ? t("90 seconds · Capture more area to win", "90 שניות · כובשים יותר שטח כדי לנצח") : t("Goal: \(s.goal(n / count)) · 3 misses before a retry", "מטרה: \(s.goal(n / count)) · אחרי 3 החטאות מנסים שוב"), bold: true)
-            if s.streak { text(t("Keep a streak: a miss resets the counter.", "שומרים על רצף: החטאה מאפסת את המונה."), size: 15) }
-            MPJourneyButton(title: t("Start challenge", "מתחילים באתגר"), accent: true) { journey.startJourney(n) }
-            if journey.hasSaved { MPJourneyButton(title: t("Resume practice", "המשך אימון")) { journey.resume() } }
-            MPJourneyButton(title: t("Your journey", "המסע שלכם")) { journey.journeyList() }
-            text(t("Optional free practice. Paint the table with your shots—no timer and no effect on journey progress.", "אימון חופשי לבחירה: צובעים את השולחן בחבטות, בלי הגבלת זמן ובלי לשנות את ההתקדמות באתגרים."), size: 15, start: true)
-            MPJourneyButton(title: t("Free practice · paint the table", "אימון חופשי · צובעים את השולחן")) { journey.paintPlayground() }
+            text(t("Practice partner: ", "שותף לאימון: ") + partner.name(hebrew: he), size: 18, bold: true, start: true)
+            MPAvatar(character: partner.id, icon: 0).frame(height: 110).accessibilityLabel(partner.name(hebrew: he))
+            MPJourneyButton(title: t("Start challenge", "מתחילים באתגר"), face: MPCourtStyle.startFace) { journey.startJourney(n) }
+            if journey.hasSaved { MPJourneyButton(title: t("Resume practice", "המשך אימון"), face: MPCourtStyle.startFace) { journey.resume() } }
+            MPJourneyButton(title: t("Your journey", "המסע שלכם"), fill: MPColor.color(0xffa6dcff)) { journey.journeyList() }
             Text(t("Practice stars", "כוכבי אימון") + ": \(journey.stars)").font(.system(size: 16)).foregroundStyle(MPJourneyStyle.ink).frame(maxWidth: .infinity, minHeight: 72)
         }
     }
+    /// Android c9f5fa6 `journeyList`: this cycle's control difficulty and its stages (Back returns to the briefing).
     private var list: some View {
-        let n = journey.step % MPJourney.count
+        let step = journey.step, n = step % MPJourney.count, shown = MPJourneyScreen.shown(step)
         return MPJourneyPanel {
-            ForEach(MPJourney.stages.indices, id: \.self) { i in
-                text((i < n ? "✓" : i == n ? "★" : "○") + " \(i + 1). " + MPJourney.stages[i].title(he))
+            text(t("Control difficulty: ", "רמת השליטה: ") + MPControlChoice.title(MPJourney.control(step), hebrew: he), size: 18, bold: true, start: true)
+            text(t("Complete this journey to practise with the next control difficulty.", "משלימים את המסלול כדי להתאמן ברמת השליטה הבאה."), start: true)
+            ForEach(Array(shown.enumerated()), id: \.element) { number, i in
+                text((i < n ? "✓" : i == n ? "★" : "○") + " \(number + 1). " + MPJourney.stages[i].title(he), start: true)
             }
-            MPJourneyButton(title: t("Back to your challenge", "חזרה לאתגר שלכם")) { journey.brief() }
         }
     }
     private var teams: some View {
@@ -557,13 +566,16 @@ struct MPJourneyScreen: View {
                     text(journey.mode.explanation(he), size: 16)
                     text(t("Control difficulty", "רמת השליטה"), size: 19, bold: true)
                     MPJourneySelector(title: t("Control difficulty", "רמת השליטה"), options: MPJourneyController.controlLevels.map { (value: $0, label: MPJourneyScreen.controlTitle($0, he)) }, selection: $journey.teamControl)
-                    text(t("Beginner: assisted returns. Starter: prepare your aimed swipe early. Standard: tap or swipe as the ball reaches you. Pro: swipe to aim and spin.", "מתחילים: החזרות בסיוע. נינוחה: מכינים החלקה מכוונת מוקדם. רגילה: מקישים או מחליקים כשהכדור מגיע. מקצועני: מחליקים כדי לכוון ולסובב."), size: 15)
+                    // Android c9f5fa6: only the selected control is explained.
+                    text(MPControlChoice.explanation(journey.teamControl, hebrew: he), size: 16)
                     text(t("Arena", "זירה"), size: 19, bold: true)
                     MPJourneySelector(title: t("Arena", "זירה"), options: MPArena.choices.map { (value: $0, label: $0.title(he: he)) }, selection: $journey.teamArena)
                     ForEach(1..<4, id: \.self) { i in
                         let role = i == 1 ? t("Your teammate", "חבר הקבוצה שלכם") : t("Opponent", "יריב") + " \(i - 1)"
+                        // Android f0ea4aa: the player's team wears the earned colour; ink contrasts with each fill.
+                        let fill = MPJourneyController.localPalette(journey.teamSeed).fill(i == 1 ? 0 : 1)
                         MPJourneyButton(title: role + ": " + (MPRoster.find(journey.ids[i]) ?? MPRoster.all[0]).name(hebrew: he),
-                                        fill: MPColor.color(MPTeamColors.fill(i == 1 ? 0 : 1, seed: journey.teamSeed))) { journey.picking = i }
+                                        fill: MPColor.color(fill), textColor: MPColor.color(MPTeamColors.ink(fill))) { journey.picking = i }
                     }
                     MPJourneyButton(title: t("Start team match", "מתחילים במשחק קבוצתי"), face: MPCourtStyle.startFace) { journey.teamBrief = true }
                 }
@@ -643,9 +655,10 @@ struct MPJourneyScreen: View {
     /// Android `winning-team`: the winners' names on their team colour.
     @ViewBuilder private var winningCaption: some View {
         if let caption = journey.winningTeam, let g = journey.game {
-            Text(caption).font(.system(size: 23, weight: .bold)).foregroundStyle(MPJourneyStyle.ink).multilineTextAlignment(.center)
+            let fill = MPJourneyController.localPalette(g.seed).fill(journey.resultWinner)
+            Text(caption).font(.system(size: 23, weight: .bold)).foregroundStyle(MPColor.color(MPTeamColors.ink(fill))).multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity).padding(14)
-                .background(MPColor.color(MPTeamColors.fill(journey.resultWinner, seed: g.seed)), in: RoundedRectangle(cornerRadius: 18))
+                .background(MPColor.color(fill), in: RoundedRectangle(cornerRadius: 18))
                 .padding(.vertical, 12)
         }
     }
@@ -754,8 +767,8 @@ struct MPInstructionDialog: View {
             ScrollView {
                 VStack(spacing: 0) {
                     Text(title).font(.system(size: 24, weight: .bold)).foregroundStyle(MPJourneyStyle.ink).multilineTextAlignment(.center)
+                        // Android c9f5fa6: the title is plain text, no longer on a raised menu face.
                         .frame(maxWidth: .infinity).padding(.horizontal, 12).padding(.top, 14).padding(.bottom, 16)
-                        .background(MPCourtStyle.menuFace.gradient, in: RoundedRectangle(cornerRadius: 18))
                     Text(message).font(.system(size: 18)).foregroundStyle(MPJourneyStyle.ink).multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 4).padding(.top, 18).padding(.bottom, 10)
                         .fixedSize(horizontal: false, vertical: true)

@@ -7,7 +7,9 @@ struct MPPoint: Codable, Equatable {
     init(_ x: Double, _ y: Double) { self.x = x; self.y = y }
     static let zero = MPPoint(0, 0)
     var inside: Bool { (0...1).contains(x) && (0...1).contains(y) }
-    var strikeZone: Bool { (0...1).contains(x) && (0.72...1).contains(y) }
+    /// Android `Vec.strikeZone` (c9f5fa6): the near strip includes sideline footwork beside the table (x -0.24...1.24)
+    /// and a little floor behind the end line (y up to 1.22).
+    var strikeZone: Bool { (-0.24...1.24).contains(x) && (0.72...1.22).contains(y) }
     func distance(_ p: Self) -> Double { hypot(x - p.x, y - p.y) }
     func onSide(_ s: MPSide) -> Bool { s == .child ? y > 0.5 : y < 0.5 }
     var reflected: Self { .init(1 - x, 1 - y) }
@@ -358,14 +360,22 @@ struct MPFlight: Codable, Equatable {
         if (previous.y < 0.5 && position.y >= 0.5) || (previous.y > 0.5 && position.y <= 0.5) {
             let fraction = ((0.5 - previous.y) / (position.y - previous.y)).mpClamp(0, 1), time = dt * fraction
             let netHeight = previousHeight + (lift + gravity * dt) * time - 0.5 * gravity * time * time
-            if netHeight <= t.netHeight {
+            // Android 496a709: a ball passing beside a net post is not a net fault.
+            let crossingX = previous.x + (position.x - previous.x) * fraction
+            if netHeight <= t.netHeight && (-0.025...1.025).contains(crossingX) {
                 position = .init(previous.x + (position.x - previous.x) * fraction, 0.5); height = max(0, netHeight)
                 return resolve(striker.other, .net)
             }
         }
-        if !(receiver ? position.inside : overTable(position)) { return resolve(receiver ? striker : striker.other, receiver ? .unreturned : .leftTable) }
+        // Android c9f5fa6/496a709: a bounced ball may still be returned beside the table; a legal return can start
+        // outside a sideline and fly back over the table, so it is judged at its first LANDING, not in the air.
+        if receiver && !((-0.30...1.30).contains(position.x) && (-0.24...1.24).contains(position.y)) { return resolve(striker, .unreturned) }
         guard hitsGround else { return nil }
+        if !receiver && !overTable(position) { return resolve(striker.other, .leftTable) }
         height = 0
+        // A post-bounce ball can be returned beyond an edge, but it cannot bounce a second time on an imaginary
+        // extension of the tabletop.
+        if receiver && !position.inside { return resolve(striker, .unreturned) }
         // Top/edge contact. Keep the recorded bounce on the visible table edge.
         position = .init(position.x.mpClamp(0, 1), position.y.mpClamp(0, 1))
         var recipient: MPSide?
@@ -390,7 +400,8 @@ struct MPFlight: Codable, Equatable {
     /// AI / Pro / forgiving-tap returns. `safeTap` = Android `safeTap` (Beginner's automatic contact).
     mutating func hit(_ c: MPContact, side: MPSide, tuning t: MPTuning, rally: Int, pro: Bool = false, safeTap: Bool = false) {
         guard !resolved else { return }
-        height = max(height, 0.055)
+        // Android 496a709: a low paddle contact keeps its real height (was raised to 0.055).
+        height = max(height, 0.001)
         let shot: MPShot
         if c.standardSwipe {
             if side == .child { shot = MPShots.standard(c, t, height: height) }

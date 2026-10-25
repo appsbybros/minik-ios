@@ -23,8 +23,13 @@ import FirebaseDatabase
     private(set) var game: MPPlay?
     private(set) var lineupBusy = false
     var failed: ((String) -> Void)?
-    private let identity: MPTeamIdentity
+    private var identity: MPTeamIdentity
     private let defaults = UserDefaults.standard
+    /// Android f0ea4aa: every seated player's shared colour (`minikPingPong/profiles/<uid>/{rankPoints, rankLevel}`).
+    private var ranks: [String: MPRankBadge] = [:], rankWatching: Set<String> = []
+    private let ownRank = MPRanking().badge
+    /// The language a first-ever nickname is reserved in (Android `profileHebrew`).
+    var hebrew = false
     private var rawLineup: Any?
     private var receptionOptions: [String: Bool] = [:], receptionWatching: Set<String> = []
     private var authority: MPTeamAuthority?
@@ -101,6 +106,14 @@ import FirebaseDatabase
         return members.keys.filter { profiles[$0] != nil && present($0) }.allSatisfy { lineup.seen.contains($0) }
     }
     var waiting: Bool { phase == "playing" && (!everyoneHere || !active) }
+    /// Android f0ea4aa `palette`: the host keeps the exact earned colour; the other team shows its first seated
+    /// player's colour, or a distinct tint of the same hue when both have the same rank.
+    func palette(_ seed: Int64 = 0) -> MPTeamColors.Palette {
+        let owner = (meta["host"] as? String) ?? "", ownerTeam = (seats[owner] ?? 0) / 2
+        let opponent = seats.filter { $0.value / 2 != ownerTeam }.min { $0.value < $1.value }?.key
+        func color(_ id: String) -> UInt32 { MPRanks.all[(ranks[id] ?? (id == uid ? ownRank : MPRankBadge())).safe.level].color }
+        return MPTeamColors.online(host: color(owner), guest: opponent.map(color), hostTeam: ownerTeam, seed: seed)
+    }
     private func now() -> Int64 { MPClock.now + offset }
     private func changed() { revision &+= 1 }
     private func fail(_ message: String) { if !closed { failed?(message) } }
@@ -123,7 +136,8 @@ import FirebaseDatabase
                 if self.connected { self.publishIdentity(); self.publishPresence() }
                 self.changed()
             }
-            self.startPump(); done()
+            self.ranks[user.uid] = self.ownRank
+            self.startPump(); self.prepareRank(done)
         }
         if auth.currentUser == nil {
             auth.signInAnonymously { [weak self] _, error in
@@ -298,6 +312,52 @@ import FirebaseDatabase
             changed()
         } catch { fail("The shared match could not be restored. Reopen this room.") }
     }
+    /// Android f0ea4aa `prepareRank`: publish this player's colour on their Ping Pong profile before the room opens.
+    /// Teams may be someone's first online game: without a profile, the ordinary nickname registration creates one
+    /// first, since rank-only writes cannot create a valid profile.
+    private func prepareRank(_ done: @escaping () -> Void) {
+        #if MINIK_PING_PONG && canImport(FirebaseDatabase) && canImport(FirebaseAuth)
+        guard let database else { return }
+        let ref = database.reference(withPath: "minikPingPong/profiles/" + uid), badge = ownRank
+        let publish: () -> Void = { [weak self] in
+            ref.updateChildValues(badge.wire) { error, _ in
+                MainActor.assumeIsolated {
+                    guard let self, !self.closed else { return }
+                    if let error { self.fail(error) } else { done() }
+                }
+            }
+        }
+        ref.getData { [weak self] error, snapshot in
+            MainActor.assumeIsolated {
+                guard let self, !self.closed else { return }
+                if let error { self.fail(error); return }
+                if snapshot?.exists() == true { publish(); return }
+                guard let repository = MPFirebaseRepository.configured() else { self.fail(nil); return }
+                let preferences = MPPreferences(), stored = preferences.identity, character = self.identity.character, hebrew = self.hebrew
+                Task { @MainActor [weak self] in
+                    do {
+                        let reserved = try await repository.profile(index: 0, hebrew: hebrew, avatar: stored?.avatar ?? 0, character: character)
+                        guard let self, !self.closed else { return }
+                        self.identity.name = reserved.name; preferences.identity = reserved
+                        publish()
+                    } catch { self?.fail(error) }
+                }
+            }
+        }
+        #endif
+    }
+    private func watchRanks() {
+        #if MINIK_PING_PONG && canImport(FirebaseDatabase) && canImport(FirebaseAuth)
+        guard let database else { return }
+        for player in seats.keys.sorted() where !rankWatching.contains(player) {
+            rankWatching.insert(player)
+            watch(database.reference(withPath: "minikPingPong/profiles/" + player)) { [weak self] s in
+                guard let self else { return }
+                self.ranks[player] = MPRankBadge(wire: MPCodec.map(s.value)); self.changed()
+            }
+        }
+        #endif
+    }
     private func receptionPreferences() {
         #if MINIK_PING_PONG && canImport(FirebaseDatabase) && canImport(FirebaseAuth)
         guard !uid.isEmpty, let database else { return }
@@ -320,7 +380,7 @@ import FirebaseDatabase
         #endif
     }
     private func listenInputs() {
-        receptionPreferences()
+        receptionPreferences(); watchRanks()
         #if MINIK_PING_PONG && canImport(FirebaseDatabase) && canImport(FirebaseAuth)
         guard host, let room, authority != nil else { return }
         for player in seats.keys.sorted() where commands[player] == nil {

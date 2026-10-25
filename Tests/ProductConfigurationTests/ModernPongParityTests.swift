@@ -159,6 +159,70 @@ final class ModernPongParityTests: XCTestCase {
         state.rally = 1; state.status = "RETURN_BALL"
         engine.restore(state); return engine
     }
+    /// Android c9f5fa6 EdgeDailyReviewTest.liveShortEdgeServesHaveActualInterceptions: a short serve to either sideline
+    /// is answered at 45–70 % by the receiving hand's skill, with real contact (Kyra 70 %; Moshiko 51 % / 45 %).
+    func testShortEdgeServesAreAnsweredByHandSkill() {
+        for id in ["moshiko", "kyra"] { for x in [0.04, 0.96] {
+            var legal = 0, contacts = 0
+            for seed in 0..<500 {
+                let g = MPEngine(level: .medium, target: 11, bot: MPRoster.find(id)!.profile, houseControls: true, seed: UInt64(seed + 1))
+                g.touch(.init(x, 0.46)); g.endTouch()
+                tick: for _ in 0...2000 {
+                    g.advance(1.0 / 120)
+                    for event in g.drainEvents() {
+                        if case .bounce(.minik?, _) = event { legal += 1 }
+                        if case .contact(.minik, _, _, _) = event { contacts += 1; break tick }
+                        if case .point = event { break tick }
+                    }
+                }
+            }
+            let expected = id == "kyra" ? 0.70 : x < 0.5 ? 0.5125 : 0.45
+            XCTAssertEqual(Double(contacts) / Double(max(legal, 1)), expected, accuracy: 0.07, "Physical return rate: \(id)/\(x)")
+            XCTAssertLessThan(contacts, legal, "No random misses: \(id)/\(x)")
+        } }
+    }
+    /// Android 496a709 EdgeRallyFollowupTest.botCanReturnTheNextBallAfterReceivingAnEdgeServe.
+    func testHousePlayerReturnsAgainAfterAnEdgeServe() {
+        for baseline in [0.90, 0.96] { for x in [0.04, 0.96] {
+            var human = 0, again = 0
+            for seed in 0..<150 {
+                let g = MPEngine(level: .medium, target: 11, bot: MPRoster.find("kyra")!.profile, houseControls: true, seed: UInt64(seed + 1))
+                g.returnBaseline = baseline
+                g.touch(.init(x, 0.46)); g.endTouch()
+                var bots = 0, returned = false
+                tick: for _ in 0...2500 {
+                    if !returned && g.childReturnOpen, let f = g.flight, f.position.y >= 0.90 { g.prepareGesture(f.position); g.touch(f.position); g.endTouch() }
+                    g.advance(1.0 / 120)
+                    let events = g.drainEvents()
+                    for event in events {
+                        if case .contact(let side, _, _, _) = event {
+                            if side == .minik { bots += 1; if bots > 1 { again += 1 } } else if bots > 0 { returned = true; human += 1 }
+                        }
+                    }
+                    if bots >= 2 || events.contains(where: { if case .point = $0 { return true }; return false }) { break tick }
+                }
+            }
+            XCTAssertGreaterThan(human, 50, "Human returns were not exercised")
+            XCTAssertGreaterThan(Double(again), Double(human) * 0.30, "Receiving a serve leaves the bot unable to return the next ball (\(baseline), \(x))")
+        } }
+    }
+    /// Android f0ea4aa TeamColorRecoveryTest.botStartsRecoveringBeforeTheHumanReturns.
+    func testHousePlayerRecoversDuringItsOutgoingFlight() {
+        var recovered = 0
+        for seed in 0..<80 {
+            let g = MPEngine(level: .medium, target: 11, bot: MPRoster.find("kyra")!.profile, houseControls: true, seed: UInt64(seed + 1))
+            g.touch(.init(0.04, 0.46)); g.endTouch()
+            var hit: MPPoint?
+            for _ in 0...1600 {
+                g.advance(1.0 / 120)
+                for event in g.drainEvents() { if case .contact(.minik, _, _, _) = event { hit = g.motion.body } }
+                if let origin = hit, g.flight?.striker == .minik, g.minikStroke.age > 0.48,
+                   g.motion.body.distance(MPMotion.home) < origin.distance(MPMotion.home) - 1 { recovered += 1; break }
+                if g.score.child > 0 || g.score.minik > 0 { break }
+            }
+        }
+        XCTAssertGreaterThan(recovered, 20, "A returning bot should already recover during its outgoing flight: \(recovered)")
+    }
     /// Android ModernFollowupTest.controlledHybridShotsRemainReachableWhileWideAnglesCanMiss.
     func testControlledHybridShotsRemainReachableWhileWideAnglesCanMiss() {
         for level in [MPLevel.easy, .medium, .hard] { for x in [0.15, 0.5, 0.85] {

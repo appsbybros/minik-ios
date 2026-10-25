@@ -39,32 +39,66 @@ enum MPProjection {
     static func body(_ point: MPPoint, _ height: Double, _ left: Bool) -> MPPoint {
         let p = ball(point, height), o = offset(left); return .init(p.x - o.x, p.y - o.y)
     }
-    static func reachable(_ body: MPPoint) -> Bool { (45...186).contains(body.y) && (250...691).contains(body.x) }
+    /// Android `ActorPresentation.behindTable` (BACK_LIMIT 45 ... FRONT_LIMIT = the table's far edge, 186).
+    static func reachable(_ body: MPPoint) -> Bool { (45...top).contains(body.y) && (250...691).contains(body.x) }
+    /// Android `ActorPresentation.besideTable` (c9f5fa6): outside a sideline (65 px clear of it), down to y 650, for a
+    /// short wide return.
+    static func besideTable(_ body: MPPoint) -> Bool {
+        (45...650).contains(body.y) && ((-220...(left - 65)).contains(body.x) || ((left + tableWidth + 65)...1200).contains(body.x))
+    }
+    /// Android `legalBody`: behind the table or beside it.
+    static func legalBody(_ body: MPPoint) -> Bool { reachable(body) || besideTable(body) }
+    /// Android `clampBody`: a sideline position is kept; anything else is held behind the table.
+    static func clampBody(_ body: MPPoint) -> MPPoint { besideTable(body) ? body : .init(body.x.mpClamp(250, 691), body.y.mpClamp(45, top)) }
+    /// Android `racketCentre`.
+    static func racket(_ body: MPPoint, _ left: Bool) -> MPPoint { let o = offset(left); return .init(body.x + o.x, body.y + o.y) }
 }
 struct MPMotion {
     static let home = MPPoint(470.5, 176)
     var body = home, left = false, walkAge = 0.0
     private var origin = home, target = home, age = 0.0, duration = 0.0
+    /// Android `MinikMotion.route` (c9f5fa6/496a709): a move to or from the sideline goes around the table's far
+    /// corners, never through the tabletop.
+    private var route = [home]
     var moving: Bool { age < duration }
-    mutating func approach(_ p: MPPoint, seconds: Double, left: Bool) {
-        self.left = left; origin = body; target = .init(p.x.mpClamp(250, 691), p.y.mpClamp(45, 186))
-        duration = max(0.08, seconds); age = 0; walkAge = 0
+    /// Android f0ea4aa `maxSpeed` (body pixels per second): smoothstep peaks at 1.5 times the average speed, so the
+    /// duration is at least 1.5 × route length / maxSpeed.
+    mutating func approach(_ p: MPPoint, seconds: Double, left: Bool, maxSpeed: Double = .infinity) {
+        self.left = left; origin = body; target = MPProjection.clampBody(p)
+        let front = MPProjection.top
+        var points = [origin]
+        let cross = (origin.x < 470) != (target.x < 470)
+        if origin.y > front && (target.y <= front || cross) { points.append(.init(origin.x, front)) }
+        if target.y > front && (origin.y <= front || cross) { points.append(.init(target.x, front)) }
+        points.append(target); route = points
+        duration = max(seconds, 0.08, Self.length(route) * 1.5 / maxSpeed); age = 0; walkAge = 0
     }
+    private static func length(_ route: [MPPoint]) -> Double { zip(route, route.dropFirst()).reduce(0) { $0 + $1.0.distance($1.1) } }
     mutating func advance(_ dt: Double) {
         guard moving else { return }; age = min(duration, age + dt); walkAge += dt
-        let f = age / duration, e = f * f * (3 - 2 * f)
-        body = .init(origin.x + (target.x - origin.x) * e, origin.y + (target.y - origin.y) * e)
+        let t = age / duration
+        var remaining = Self.length(route) * (t * t * (3 - 2 * t))
+        for (a, b) in zip(route, route.dropFirst()) {
+            let length = a.distance(b)
+            if remaining <= length {
+                let part = length < 0.001 ? 1 : remaining / length
+                body = .init(a.x + (b.x - a.x) * part, a.y + (b.y - a.y) * part); return
+            }
+            remaining -= length
+        }
+        body = target
     }
-    mutating func settle() { if target != Self.home { approach(Self.home, seconds: 0.45, left: left) } }
+    mutating func settle(maxSpeed: Double = .infinity) { if target != Self.home { approach(Self.home, seconds: 0.45, left: left, maxSpeed: maxSpeed) } }
     func error(_ p: MPPoint, _ height: Double) -> Double {
         let offset = MPProjection.offset(left)
         return MPPoint(body.x + offset.x, body.y + offset.y).distance(MPProjection.ball(p, height))
     }
 }
-struct MPIntercept {
+struct MPIntercept: Equatable {
     var after: Double; var point: MPPoint; var height: Double; var left: Bool; var reachable: Bool
     var body: MPPoint { MPProjection.body(point, height, left) }
-    static func predict(_ live: MPFlight, _ t: MPTuning) -> Self? {
+    /// `visibleReach` (Android 496a709 `botCanReach`): the drawn grounded rival must also be able to reach the ball.
+    static func predict(_ live: MPFlight, _ t: MPTuning, visibleReach: ((MPPoint, Double) -> Bool)? = nil) -> Self? {
         guard live.striker == .child, !live.resolved else { return nil }
         var future = live, bounced = future.receiver, fallback: Self?, reachable: Self?
         for tick in 1...720 {
@@ -72,12 +106,22 @@ struct MPIntercept {
             if future.resolved { return reachable ?? fallback }
             if event?.recipient == .minik { bounced = true }
             guard bounced, elapsed + 1e-9 >= t.minikReactionInterval else { continue }
-            let point = future.position, left = point.x < 0.5
-            let plan = Self(after: elapsed, point: point, height: future.height, left: left,
-                reachable: MPProjection.reachable(MPProjection.body(point, future.height, left)))
-            // Android MinikIntercept.predict (920caca): keep the latest reachable contact; only a ball already at the far
-            // end line (y <= 0.10) is taken at once.
-            if plan.reachable { reachable = plan; if point.y <= 0.10 { return plan } }
+            let point = future.position
+            // Android c9f5fa6: either hand, behind or beside the table (the natural hand first).
+            let choices = [point.x < 0.5, point.x >= 0.5].map { left in
+                Self(after: elapsed, point: point, height: future.height, left: left,
+                     reachable: MPProjection.legalBody(MPProjection.body(point, future.height, left)))
+            }
+            var plan = choices.first { $0.reachable } ?? choices[0]
+            if plan.reachable && visibleReach?(point, future.height) == false { plan.reachable = false }
+            if plan.reachable {
+                // Short wide serves need a sideline interception before they disappear past that edge; don't wait for
+                // the far end line.
+                if MPProjection.besideTable(plan.body) { return plan }
+                // Android MinikIntercept.predict (920caca): keep the latest reachable contact; only a ball already at
+                // the far end line (y <= 0.10) is taken at once.
+                reachable = plan; if point.y <= 0.10 { return plan }
+            }
             if fallback == nil { fallback = plan }
         }
         return reachable ?? fallback
@@ -197,6 +241,12 @@ final class MPEngine {
     private var touchTuning: MPTuning { var t = tuning; t.swipeCollisionForgiveness = swipeTouchTolerance; return t }
     /// Android `childCanReach`: the large table's visible reach test (nil on the compact court).
     var childCanReach: ((MPPoint, Double) -> Bool)?
+    /// Android 496a709 `botCanReach`: the grounded rival's drawn racket must reach a planned contact (local matches; nil
+    /// online and in the guide).
+    var botCanReach: ((MPPoint, Double) -> Bool)?
+    /// Android `botIntercept` / `botContactAfter`: the house player's current plan, for the grounded rival.
+    var botIntercept: MPIntercept? { plan }
+    var botContactAfter: Double? { minikDelay }
     /// Android `looseBall` / `visibleBodies` / `visibleFloor` (920caca): after a point the ball keeps its real motion,
     /// may rebound off a drawn player (`visibleBodies`, set by the court every frame) and comes to rest on the floor.
     private(set) var looseBall: MPLooseBall?
@@ -244,6 +294,8 @@ final class MPEngine {
     private var committedStroke: MPPongStroke?
     /// Android `receivingStartX`: where the house player stood when the child hit (`MPReturnPlacement`).
     private var receivingStartX = 0.5
+    /// Android `serveLanding` (c9f5fa6): the child's planned serve landing, which sets its edge pressure.
+    private var serveLanding: MPPoint?
     private var previousX: Double?, responses = 0, userServed = false, returnSpeeds: [Double?] = [nil, nil]
     private var correction = MPPoint.zero, correctionAge = 0.0, pendingFault: MPResolution?, faultTime = 0.0
     private var strategy: MPHouseStrategy, serveReliability = MPServeReliability(), rallyVariation = MPRallyVariation()
@@ -343,7 +395,12 @@ final class MPEngine {
         tapAge += delta; if exercise != nil { trainingTime += delta }
         childStroke.advance(delta); minikStroke.advance(delta); motion.advance(delta)
         if gestureStart == nil && !childStroke.active { paddle = nil; velocity = .zero }
-        if (pointDelay != nil || awaitingServe) && plan == nil && serveDelay == nil && !minikStroke.active { motion.settle() }
+        // Android f0ea4aa: recover after the follow-through, during the outgoing ball's flight. The route stays outside
+        // the table; its peak speed is bounded by ability.
+        let recovering = flight?.striker == .minik && minikStroke.age >= 0.44
+        if !networked && (pointDelay != nil || awaitingServe || recovering) && plan == nil && serveDelay == nil && (!minikStroke.active || recovering) {
+            motion.settle(maxSpeed: 850 * (bot?.movement ?? 1))
+        }
         bounceAge += delta; netAge += delta; faultAge += delta
         if score.winner != nil { winnerAge += delta }
         if let ball = looseBall {
@@ -414,19 +471,25 @@ final class MPEngine {
     private func planReturn() {
         guard !networked, exercise == nil, let flight else { return }
         receivingStartX = ((motion.body.x - MPProjection.left) / MPProjection.tableWidth).mpClamp(0, 1)
-        plan = MPIntercept.predict(flight, tuning)
+        serveLanding = flight.serve?.second
+        plan = MPIntercept.predict(flight, tuning, visibleReach: botCanReach)
         if var next = plan {
             minikDelay = next.after
             if let bot, bot.characterId != "minik", motion.body.distance(next.body) / max(0.08, next.after - 0.20) > 850 * bot.movement { next.reachable = false; plan = next }
-            motion.approach(next.body, seconds: max(0.08, next.after - 0.20), left: next.left)
+            // Arrive before winding up; the interception's peak speed is bounded by ability (Android f0ea4aa).
+            motion.approach(next.body, seconds: max(0.08, next.after - 0.20), left: next.left, maxSpeed: 1100 * (bot?.movement ?? 1))
         }
     }
     private func minikReturn() {
         guard var f = flight, !f.resolved, pointDelay == nil, f.receiver, f.striker == .child, f.position.onSide(.minik) else { return }
-        let p = tuning.profile, x = f.position.x.mpClamp(0, 1), zone = MPZone.at(x)
-        let firstMiddle = (bot == nil || bot?.characterId == "minik") && (houseControls || level == .easy) && !userServed && responses == 0 && zone == .middle
+        let p = tuning.profile, x = f.position.x.mpClamp(0, 1)
         let receivingServe = userServed && responses == 0
-        let base = firstMiddle ? MPChance(1, 0.95) : receivingServe ? p.serveReceive[zone.rawValue] : p.chance(zone, cross: false)
+        // Android c9f5fa6: a served ball's hand is judged from where the receiver stood, and its sharp-edge return is
+        // one 45–70 % roll by that hand's skill (no extra placement adjustment).
+        let zone = receivingServe ? MPServeDifficulty.zone(ballX: x, playerX: receivingStartX, team: 1) : MPZone.at(x)
+        let firstMiddle = (bot == nil || bot?.characterId == "minik") && (houseControls || level == .easy) && !userServed && responses == 0 && zone == .middle
+        let rawBase = firstMiddle ? MPChance(1, 0.95) : receivingServe ? p.serveReceive[zone.rawValue] : p.chance(zone, cross: false)
+        let base = receivingServe ? MPServeDifficulty.adjust(rawBase, landing: serveLanding ?? f.position, receivingTeam: 1, handSkill: MPServeDifficulty.handSkill(bot, zone)) : rawBase
         let cross = firstMiddle || receivingServe ? base : p.chance(zone, cross: true)
         let hand = zone == .forehand || (zone == .middle && x >= 0.5) ? 0 : 1
         let pace = p.speed(base: tuning.ballBaseSpeed, previous: returnSpeeds[hand], forehand: hand == 0, random: &random)
@@ -434,7 +497,8 @@ final class MPEngine {
         guard plan?.reachable == true, minikStroke.active, motion.error(f.position, f.height) <= 6 else { status = "MINIK_MISSED"; return }
         // Android bcee181: placement-aware returns (ready in place, corner, opposite corner).
         guard var c = MPShots.aiContact(x: x, speed: hypot(f.velocity.x, f.velocity.y), depth: f.position.y, tuning: tuning,
-            base: MPReturnPlacement.adjust(base, startX: receivingStartX, contactX: x), cross: MPReturnPlacement.adjust(cross, startX: receivingStartX, contactX: x),
+            base: receivingServe ? base : MPReturnPlacement.adjust(base, startX: receivingStartX, contactX: x),
+            cross: receivingServe ? base : MPReturnPlacement.adjust(cross, startX: receivingStartX, contactX: x),
             previousX: previousX, response: index, answerRoll: random.unit(), qualityRoll: random.unit(), pace: pace)
             else { status = "MINIK_MISSED"; return }
         c.point = f.position; contact(.minik, f.position, f.height)
@@ -459,7 +523,7 @@ final class MPEngine {
             let v = result.fault == .net ? MPPoint(f.velocity.x, -f.velocity.y * 0.2) : f.velocity
             looseBall = MPLooseBall(position: f.position, height: max(f.height, 0), velocity: v, lift: f.lift, floor: visibleFloor)
             outBall = f.position; outHeight = max(f.height, 0)
-            if result.fault == .firstBounceOut || result.fault == .secondBounce { faultMark = f.position; faultAge = 0 }
+            if [.leftTable, .firstBounceOut, .secondBounce].contains(result.fault) { faultMark = f.position; faultAge = 0 }
         }
         childReturnOpen = false; awaitingServe = false; release(); minikDelay = nil; plan = nil; serveDelay = nil; pendingServe = nil; pendingTap = nil; pendingSwipe = nil
         events.append(.point(result, striker, score.streak)); if let winner = score.winner { events.append(.victory(winner)) }

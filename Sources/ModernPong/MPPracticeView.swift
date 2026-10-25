@@ -24,6 +24,15 @@ final class MPPracticeCourtView: UIView {
     /// Android `controlOverride`: the online player's chosen control (the friend's snapshot may lag behind it).
     var controlOverride: Int?
     var onFrame: (() -> Void)?
+    /// Android f0ea4aa `teamColors`: the table's team colours — locally the player's earned colour and a distinct
+    /// opponent colour; an online room sets the host's palette (`MPTeamRoom.palette`).
+    var paletteOverride: MPTeamColors.Palette?
+    private var localPalette: (seed: Int64, palette: MPTeamColors.Palette)?
+    var teamColors: MPTeamColors.Palette {
+        if let paletteOverride { return paletteOverride }
+        if let cached = localPalette, cached.seed == game.seed { return cached.palette }
+        let palette = MPJourneyController.localPalette(game.seed); localPalette = (game.seed, palette); return palette
+    }
     /// Android `PongCourtStyle.landscape` (`clipChildren = false`): in landscape the view spans the side gutters too, so
     /// players who yield outward stay visible there; the table itself is laid out between them.
     var gutter: CGFloat = 0 { didSet { if gutter != oldValue { setNeedsLayout(); setNeedsDisplay() } } }
@@ -47,6 +56,9 @@ final class MPPracticeCourtView: UIView {
     private var down = CGPoint.zero, downAt: CFTimeInterval = 0, dragging = false
     private var dragStart = MPPoint(0.5, 0.88), dragOrigin = MPPoint(0.5, 0.88)
     private var strokePath: [CGPoint] = [], tapSent = false, playerDrag = false
+    /// Android 838c209 `positioningServe`: a touch that began while a serve was awaited only repositions (a drag) or
+    /// serves at finger-up (a tap); it never prepares a rally swipe.
+    private var positioningServe = false
     /// Android `VelocityTracker`: recent finger samples (time, point) for the swipe velocity in points per second.
     private var samples: [(CFTimeInterval, CGPoint)] = []
     private var laidOut: (CGSize, Bool) = (.zero, false)
@@ -279,10 +291,10 @@ final class MPPracticeCourtView: UIView {
         } + Array(labels.values)
         if !MPNameSpace.fits(box, width: width, height: bounds.height, obstacles: obstacles) { return }
         labels[index] = box
-        let fill: UInt32 = game.team ? MPTeamColors.fill(game.actors[index].team, seed: game.seed) : active ? 0xffffd665 : 0xf4ffffff
+        let fill: UInt32 = game.team ? teamColors.fill(game.actors[index].team) : active ? 0xffffd665 : 0xf4ffffff
         c.setFillColor(color(fill).cgColor)
         c.addPath(UIBezierPath(roundedRect: box, cornerRadius: 12).cgPath); c.fillPath()
-        text(name, at: CGPoint(x: cx, y: cy), size: size, color: ink)
+        text(name, at: CGPoint(x: cx, y: cy), size: size, color: game.team ? color(MPTeamColors.ink(fill)) : ink)
     }
     private var farEnding: Bool { game.flight == nil && (game.ending.map { screen($0.position).y < 0 } ?? false) }
     private func drawBall(_ c: CGContext) {
@@ -353,12 +365,6 @@ final class MPPracticeCourtView: UIView {
             c.setStrokeColor(color(0xff8ef5df).cgColor); c.setLineWidth(max(2, tw * 0.005))
             c.strokeEllipse(in: CGRect(x: q.x - tw * 0.025, y: q.y - tw * 0.012, width: tw * 0.05, height: tw * 0.024))
         }
-        if let ending = game.ending, ending.fault == .leftTable {
-            let q = project(ending.outAt), r = tw * 0.018
-            c.setStrokeColor(color(0xffff5b67).cgColor); c.setLineWidth(max(3, tw * 0.007)); c.setLineCap(.butt)
-            c.move(to: CGPoint(x: q.x - r, y: q.y - r)); c.addLine(to: CGPoint(x: q.x + r, y: q.y + r))
-            c.move(to: CGPoint(x: q.x - r, y: q.y + r)); c.addLine(to: CGPoint(x: q.x + r, y: q.y - r)); c.strokePath()
-        }
         // When reaching around a sideline, the authored paddle may extend over the tabletop. Reveal only the
         // contacting hand, never the whole far body.
         if game.clock - game.lastContact < 0.10, game.actors.indices.contains(game.hitter), game.actors[game.hitter].team != nearTeam,
@@ -392,6 +398,19 @@ final class MPPracticeCourtView: UIView {
             c.restoreGState()
         }
         for (index, point, active) in labelRequests { drawLabel(c, index, camera.painted(point), active) }
+        // Android f0ea4aa: the OUT cross is an explanatory overlay — players and scenery never hide it. White under
+        // red, kept inside the court.
+        if let ending = game.ending, ending.fault == .leftTable {
+            let q = camera.painted(project(ending.outAt)), r = max(8, tw * 0.018)
+            let x = min(max(q.x, r + 4), courtSize.width - r - 4), y = min(max(q.y, r + 4), bounds.height - r - 4)
+            c.setLineCap(.round)
+            for (argb, width) in [(UInt32(0xffffffff), CGFloat(7)), (0xffc61f47, 3.5)] {
+                c.setStrokeColor(color(argb).cgColor); c.setLineWidth(width)
+                c.move(to: CGPoint(x: x - r, y: y - r)); c.addLine(to: CGPoint(x: x + r, y: y + r))
+                c.move(to: CGPoint(x: x - r, y: y + r)); c.addLine(to: CGPoint(x: x + r, y: y - r)); c.strokePath()
+            }
+            c.setLineCap(.butt)
+        }
         if game.showServeFaultBadge {
             let message = hebrew ? "הגשה פסולה" : "Fault"
             let size = min(27, bounds.height * 0.085)
@@ -419,7 +438,7 @@ final class MPPracticeCourtView: UIView {
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
         let p = camera.base(court(touch.location(in: self)))
-        down = p; downAt = touch.timestamp; dragging = false
+        down = p; downAt = touch.timestamp; dragging = false; positioningServe = game.waitingServe
         if game.actors.indices.contains(localSeat) { dragStart = game.actors[localSeat].at }
         dragOrigin = ground(p); tapSent = false; samples = [(touch.timestamp, p)]
         playerDrag = control == 3 && screen(ground(p)).y > 1.0
@@ -431,11 +450,12 @@ final class MPPracticeCourtView: UIView {
         samples.append((touch.timestamp, p)); samples.removeAll { touch.timestamp - $0.0 > 0.15 }
         let moved = hypot(p.x - down.x, p.y - down.y) > 12
         let scale = Double(max(min(courtSize.width, courtSize.height), 1)) * 0.82
-        if game.stage?.standard == true && !tapSent && moved {
+        if !positioningServe && game.stage?.standard == true && !tapSent && moved {
             let v = velocity()
             tapSent = game.standardSwipe(MPPoint(Double(v.x) / scale, Double(v.y) / scale))
         }
-        if game.stage == nil && !tapSent && (control == 0 || control == 1) && game.canPrepareStandard(localSeat) && moved {
+        // Android c9f5fa6: Starter/Standard practice stages also prepare an aimed swipe.
+        if !positioningServe && !tapSent && (control == 0 || control == 1) && game.canPrepareStandard(localSeat) && moved {
             let v = velocity(), vx = Double(v.x) / scale, vy = Double(v.y) / scale, speed = hypot(vx, vy)
             if speed > 0.045 {
                 let stroke = MPPongStroke(aim: (vx / max(speed, 0.001)).mpClamp(-1, 1), power: 1 - exp(-speed / 1.15))
@@ -446,7 +466,7 @@ final class MPPracticeCourtView: UIView {
         if tapSent { return }
         for t in event?.coalescedTouches(for: touch) ?? [touch] { strokePath.append(camera.base(court(t.location(in: self)))) }
         if moved { dragging = true }
-        if dragging && (control != 3 || playerDrag) {
+        if dragging && (positioningServe || control != 3 || playerDrag) {
             let at = ground(p), delta = MPPoint(at.x - dragOrigin.x, at.y - dragOrigin.y)
             // Relative drags never pull a player back to the finger's starting point. Small vertical finger wobble
             // must not move the player off the hitting line.
@@ -459,6 +479,11 @@ final class MPPracticeCourtView: UIView {
         let p = camera.base(court(touch.location(in: self)))
         samples = []; strokePath.append(p)
         defer { downAt = 0 }
+        if positioningServe {
+            if hypot(p.x - down.x, p.y - down.y) > 12 { dragging = true }
+            if !dragging && game.waitingServe { tap(ground(p)) }
+            positioningServe = false; return
+        }
         if playerDrag { return }
         if control == 3 {
             let scale = Double(max(min(courtSize.width, courtSize.height), 1)) * 0.82
@@ -469,7 +494,7 @@ final class MPPracticeCourtView: UIView {
             } else if game.waitingServe { tap(ground(p)) }
         } else if !dragging && !tapSent { tap(ground(p)) }
     }
-    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) { samples = []; downAt = 0; dragging = false }
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) { samples = []; downAt = 0; dragging = false; positioningServe = false }
     private func move(_ to: MPPoint) { if let onMove { onMove(to) } else { game.moveSeat(localSeat, to) } }
     private func tap(_ to: MPPoint) { if let onTap { onTap(to) } else { game.tapSeat(localSeat, to) } }
 }
@@ -490,10 +515,12 @@ struct MPPracticeCourt: UIViewRepresentable {
     var onFrame: (() -> Void)? = nil
     var gutter: CGFloat = 0
     var scenery: MPArenaScenery? = nil
+    /// Android f0ea4aa `court.teamColors`: an online room's palette (nil: the local earned colours).
+    var palette: MPTeamColors.Palette? = nil
     func makeUIView(context: Context) -> MPPracticeCourtView { MPPracticeCourtView(game: game) }
     func updateUIView(_ view: MPPracticeCourtView, context: Context) {
         view.game = game; view.hebrew = hebrew; view.localSeat = localSeat; view.simulate = simulate; view.names = names
-        view.controlOverride = controlOverride; view.gutter = gutter; view.scenery = scenery
+        view.controlOverride = controlOverride; view.gutter = gutter; view.scenery = scenery; view.paletteOverride = palette
         view.soundsEnabled = soundsEnabled; view.onMove = onMove; view.onTap = onTap; view.onStroke = onStroke; view.onFrame = onFrame
         view.accessibilityLabel = hebrew ? "שולחן האימון. גררו כדי לזוז והקישו על יעד כדי לחבוט." : "Practice table. Drag to move and tap a target to hit."
         view.setRunning(running)

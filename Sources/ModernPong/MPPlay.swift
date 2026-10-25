@@ -91,7 +91,7 @@ struct MPStage {
             case .standardPace: return "כשהכדור מגיע למחבט, החליקו בעדינות קדימה כדי להנחית קרוב לרשת, ואז מהר יותר כדי להנחית עמוק. האי מראה את היעד הבא. המהירות משפיעה גם על הזמן שיש ליריב להחזיר."
             case .topspin: return "אתגר מתקדם: כשהכדור מתקרב, החליקו בקשת קדימה ושחררו כדי לתת סיבוב קדמי. הכדור עולה ואז צולל לשולחן. תנועה מהירה מחזקת את הסיבוב. נספרות רק חבטות מסובבות שנוחתות בצד השני."
             case .sidespin: return "אתגר מתקדם: החליקו שמאלה ואז ימינה ושחררו. הכיוון האחרון מכוון את החבטה, והסיבוב מעקם את המסלול לצד הנגדי. אפשר גם להפוך את הכיוונים. נספרות רק נחיתות עם סיבוב צדדי."
-            case .serve: return "הקישו על האי הזהוב כדי להגיש אליו. הכדור חייב לקפוץ פעם בצד שלכם ואז לנחות בתוך האי בצד השני. רק פגיעה באי נספרת; החטאה משתמשת בניסיון אחד. אחרי שלוש החטאות אפשר לנסות שוב."
+            case .serve: return "הקישו על האי הזהוב כדי להגיש אליו. רק נחיתה בתוך האי בצד השני נספרת. החטאתם? ממשיכים להתאמן."
             case .returning: return "גררו את הדמות אל הכדור. אחרי הקפיצה בצד שלכם, הקישו על יעד בצד הרחוק כדי להחזיר. רק ההחזרות שלכם נספרות."
             case .direction: return "האי הזהוב מציג לאן לכוון. זוזו לכדור והקישו על האי בזמן ההחזרה. הוא יחליף מקום אחרי כל הצלחה."
             case .backhand: return "השותף מוסר לצד שמאל. השאירו את הכדור משמאל לגוף וחבטו בגב כף היד. כוונו לאי הזהוב."
@@ -110,7 +110,7 @@ struct MPStage {
         case .standardPace: return "As the ball reaches your paddle, swipe gently forward for a short landing, then faster for a deeper landing. The island shows the next target. Pace also changes how much time the opponent has to return."
         case .topspin: return "Advanced skill: as the ball approaches, swipe a forward arc and release for topspin. The ball rises, then dips onto the table. Faster gestures add spin. Only spinning returns that land on the far half count."
         case .sidespin: return "Advanced skill: swipe left then right and release. The final direction aims the shot; the spin bends its path the opposite way. Reverse the gesture to reverse the shot. Only landings with sidespin count."
-        case .serve: return "Tap the golden island to serve towards it. Bounce once on your half, then land inside the island on the far half. Only a landing inside counts; a miss uses one attempt. After three misses you can retry."
+        case .serve: return "Tap the golden island to serve towards it. Only a landing inside the island on the far half counts. Missed? Keep practising."
         case .returning: return "Drag your player toward the ball. After its bounce on your half, tap a far-side target to return. Only your own returns count."
         case .direction: return "The golden island shows where to aim. Move to the ball and tap the island as you return. It changes after each success."
         case .backhand: return "Your partner feeds the left side. Keep the ball to the left of your body and use a backhand. Aim for the golden island."
@@ -168,6 +168,27 @@ enum MPJourney {
         MPStage("standard_pace", "Short and deep", "קצר ועמוק", .standardPace, 6)
     ]
     static var count: Int { stages.count }
+    /// Android `cycleControl` (c9f5fa6): each completed journey is revisited with the next control difficulty —
+    /// Beginner, Starter, Standard, then Pro. Stored stage ids and ordinals never change.
+    static func cycleControl(_ step: Int) -> Int { [4, 1, 0, 3][min(max(step / count, 0), 3)] }
+    /// Android `control`: spin stages always use Pro; Standard swipe stages use Standard (or Pro in the Pro cycle).
+    static func control(_ step: Int) -> Int {
+        let s = stage(step)
+        if s.spin { return 3 }
+        if s.standard { return cycleControl(step) == 3 ? 3 : 0 }
+        return cycleControl(step)
+    }
+    /// Android `available`: the stages of this cycle; skills that need a control not taught yet are skipped.
+    static func available(_ step: Int) -> [Int] {
+        let c = cycleControl(step)
+        return stages.indices.filter { (!stages[$0].spin || c == 3) && (!stages[$0].standard || c == 0 || c == 3) }
+    }
+    /// Android `nextStep`: the next available stage after a completion.
+    static func nextStep(_ step: Int) -> Int {
+        var n = step + 1
+        while !available(n).contains(n % count) { n += 1 }
+        return n
+    }
     /// Android `migrateStep`: a saved step of an older catalog keeps its cycle and its stage index.
     static func migrateStep(_ step: Int, _ oldSize: Int) -> Int { step < 0 || oldSize == count ? step : (step / oldSize) * count + (step % oldSize) }
     static func stage(_ step: Int) -> MPStage { stages[((step % stages.count) + stages.count) % stages.count] }
@@ -227,7 +248,8 @@ struct MPRallyEnding: Equatable {
     var wire: MPWire { ["outX": outAt.x, "outY": outAt.y, "x": position.x, "y": position.y, "z": height, "vx": velocity.x, "vy": velocity.y, "lift": lift, "fault": fault.rawValue, "winner": winner, "remaining": remaining] }
     static func from(_ f: MPFlight, _ r: MPResolution) -> MPRallyEnding {
         let v = r.fault == .net ? MPPoint(f.velocity.x * 0.35, -f.velocity.y * 0.22) : f.velocity
-        let lift = f.height <= 0.001 ? abs(f.lift) * 0.6 : f.lift
+        // Android c9f5fa6: only a ball resting on the tabletop bounces up; one beside the table keeps falling.
+        let lift = f.height <= 0.001 && f.position.inside ? abs(f.lift) * 0.6 : f.lift
         return .init(position: f.position, height: max(0, f.height), velocity: v, lift: lift, fault: r.fault, winner: r.winner == .child ? 0 : 1)
     }
     static func read(_ w: MPWire) throws -> MPRallyEnding {
@@ -299,8 +321,12 @@ final class MPPlay {
     private(set) var bounceTime = -10.0
     private var botTried: [Bool], botResponses: [Int], botPreviousX: [Double?]
     private let botTunings: [MPTuning]
-    /// Android `controls`: each seat's ControlChoice (4 Beginner, 1 Starter, 0 Standard, 3 Pro); spin stages use Pro.
+    /// Android `controls`: each seat's ControlChoice (4 Beginner, 1 Starter, 0 Standard, 3 Pro); a journey stage uses
+    /// its cycle's control (`MPJourney.control`, c9f5fa6).
     var controls: [Int]
+    /// Android `practiceInput` (c9f5fa6): a Beginner practice stage hits automatically only after the learner moved
+    /// since their last hit.
+    private var practiceInput = false
     var seatStrokes: [MPPongStroke?]
     private var seatStandard: [MPPoint?]
     var lastHumanStroke: MPPongStroke?
@@ -361,7 +387,7 @@ final class MPPlay {
         botTried = Array(repeating: false, count: count); botResponses = Array(repeating: 0, count: count)
         botPreviousX = Array(repeating: nil, count: count)
         botTunings = table.map { (MPRoster.find($0.character) ?? MPRoster.all[0]).profile.tuning(.easy, houseControls: true) }
-        let normalized = stage?.spin == true ? 3 : MPControlChoice.normalize(control)
+        let normalized = step >= 0 ? MPJourney.control(step) : MPControlChoice.normalize(control)
         controls = Array(repeating: normalized, count: count)
         seatStrokes = Array(repeating: nil, count: count); seatStandard = Array(repeating: nil, count: count)
         seatAims = table.map { MPPoint(0.5, $0.team == 0 ? 0.25 : 0.75) }
@@ -404,6 +430,7 @@ final class MPPlay {
         // Alternating teammates may step back to make room; every other table keeps the baseline.
         let y = team && alternate ? MPTeamMovement.kotlinCoerce(to.y, min(base, back), max(base, back)) : base
         actors[seat].goal = .init(laneX(seat, to.x), y)
+        if stage != nil { practiceInput = true }
     }
     @discardableResult func tap(_ to: MPPoint) -> Bool { tapSeat(0, to) }
     @discardableResult func tapSeat(_ seat: Int, _ to: MPPoint) -> Bool {
@@ -442,7 +469,7 @@ final class MPPlay {
     /// Android `strokeSeat`: Starter/Standard swipes become a prepared Standard return; Pro strokes aim a tap.
     @discardableResult func strokeSeat(_ seat: Int, _ stroke: MPPongStroke) -> Bool {
         guard humanSeats.contains(seat), stroke.valid else { return false }
-        if (controls[seat] == 0 || controls[seat] == 1) && stage == nil {
+        if controls[seat] == 0 || controls[seat] == 1 {
             if !canPrepareStandard(seat) { return false }
             let speed = -1.15 * log(max(1 - stroke.power, 0.015))
             seatStandard[seat] = MPPoint(stroke.aim * speed, -sqrt(max(0, 1 - stroke.aim * stroke.aim)) * speed)
@@ -576,8 +603,12 @@ final class MPPlay {
         }
         if let resolution = outcome?.resolution { resolve(resolution); return }
         for seat in humanSeats.sorted() {
-            // Beginner (control 4) in a team match: the paddle in reach is enough; the return aims like a house player.
-            if stage == nil && controls[seat] == 4 && canHit(seat) { seatAims[seat] = botAim(seat); seatArmedUntil[seat] = clock + 0.1 }
+            // Beginner (control 4): the paddle in reach is enough. A team return aims like a house player; a practice
+            // stage keeps the learner's own aim and needs a move since the last hit (Android c9f5fa6).
+            if controls[seat] == 4 && (stage == nil || practiceInput) && canHit(seat) {
+                if stage == nil { seatAims[seat] = botAim(seat) }
+                seatArmedUntil[seat] = clock + 0.1
+            }
             if seatArmedUntil[seat] >= clock { _ = attemptSeat(seat) }
         }
         guard let live = flight else { return }
@@ -615,8 +646,8 @@ final class MPPlay {
     private func miss() {
         mistakes += 1
         if stage?.streak == true { successes = 0 }
+        // Android c9f5fa6: practice continues after misses; there is no three-miss retry.
         event("miss")
-        if mistakes >= 3 && !openPaint { ended = true; won = false; event("retry") }
     }
     private func resolve(_ result: MPResolution) {
         if stage == nil && rally == 0 && result.fault == .secondBounce && result.winner == (server == 0 ? .child : .minik) { notice = "serve-double-bounce-\(server)" }
@@ -686,7 +717,8 @@ final class MPPlay {
         let serving = rally == 0
         let zone = serving ? MPServeDifficulty.zone(ballX: f.position.x, playerX: actors[i].at.x, team: actors[i].team) : MPZone.at(x)
         let wideServe = serving && (f.position.x < 0.22 || f.position.x > 0.78)
-        let base = serving ? MPServeDifficulty.adjust(profile.serveReceive[zone.rawValue], landing: bounceAt ?? f.position, receivingTeam: actors[i].team) : profile.chance(zone, cross: false)
+        let base = serving ? MPServeDifficulty.adjust(profile.serveReceive[zone.rawValue], landing: bounceAt ?? f.position, receivingTeam: actors[i].team,
+                                                      handSkill: MPServeDifficulty.handSkill((MPRoster.find(actors[i].character) ?? MPRoster.all[0]).profile, zone)) : profile.chance(zone, cross: false)
         let cross = serving ? base : profile.chance(zone, cross: true)
         let mixed = Int64(attempts) &* 1000003 &+ Int64(rally) &* 1009 &+ Int64(i) &* 9176
         var random = MPKotlinRandom(seed: seed ^ mixed)
@@ -703,6 +735,7 @@ final class MPPlay {
         hit(i, contact.quality >= 0.14 ? target : MPPoint(target.x, actors[i].team == 0 ? -0.15 : 1.15))
     }
     private func hit(_ i: Int, _ target: MPPoint) {
+        if i == 0 { practiceInput = false }
         guard var f = flight else { return }
         actors[i].backhand = f.position.x < actors[i].at.x - 0.012
         contactAt = f.position; contactHeight = f.height
@@ -716,7 +749,7 @@ final class MPPlay {
             f.hit(MPContact(point: f.position, timing: 1, spatial: 1, velocity: standard ?? .zero, direction: 0, stroke: stroke, standardSwipe: standard != nil), side: side, tuning: tuning, rally: rally)
         } else {
             // Android Flight.hit(practice = true), whose pace and loft this table replaces below.
-            f.height = max(f.height, 0.055); f.striker = side
+            f.height = max(f.height, 0.001); f.striker = side
             f.receiver = false; f.serve = nil; f.spin = 0; f.topSpin = 0; f.spinAngle = 0
         }
         let speed = stage?.fast == true ? min(0.75 + Double(successes) * 0.022 + Double(cycle) * 0.02, 1.08) : (team ? 1.10 : 0.65)
@@ -891,6 +924,7 @@ final class MPPlay {
     /// Android `PongPlay.save()`; version 2 carries every seat's aim and input deadline (keys of Android 29f5dc7).
     func save() -> MPWire {
         var w: MPWire = [:]
+        w["practiceInput"] = practiceInput
         w["serveRead"] = serveRead.map(MPPlay.pair); w["serveReadCount"] = serveReadCount; w["bounceAt"] = MPPlay.pair(bounceAt)
         w["bounceTime"] = bounceTime; w["wrongServeHalf"] = wrongServeHalf; w["botPlanAt"] = botPlanAt; w["catalogSize"] = MPJourney.count
         w["lastStroke"] = MPPlay.strokeWire(lastHumanStroke); w["controls"] = controls
@@ -974,6 +1008,7 @@ final class MPPlay {
                 e.botPlanAt[i] = t.flatMap { $0.isFinite ? $0 : nil } ?? 0
             }
         }
+        e.practiceInput = MPPlayWire.flag(w, "practiceInput")
         e.reception = try MPReceptionAssist(wire: MPCodec.map(w["reception"]))
         if let list = w["serveRead"] as? [Any] {
             for (i, v) in list.prefix(2).enumerated() {

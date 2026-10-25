@@ -266,13 +266,13 @@ import StoreKit
                 .opacity(valid ? 1 : 0.55).disabled(!model.connected || model.busy || !valid)
         }
     }
-    /// Android PlayActivity.friendlyOptions (305914e, f0f27c4): arena, controls and points (kept for a replay), the house
-    /// player, Start, inviting a friend with a new code, joining with a code, and a pink Cancel.
+    /// Android PlayActivity.friendlyOptions (305914e, f0f27c4, c9f5fa6): arena, controls and points (kept for a replay),
+    /// the house player, Start, inviting a friend with a new code and joining with a code. Back leaves (no Cancel).
     private var createFriendlyPage: some View {
         ScrollView {
             VStack(spacing: gap) {
                 card {
-                    Text(t("Create a game, then share its code with a friend or choose a house player.", "צרו משחק, ואז שתפו את הקוד עם חבר או בחרו שחקן בית.")).font(.callout).multilineTextAlignment(.center)
+                    Text(t("Create a game, then share its code with a friend or choose a house player.", "צרו משחק, ואז שתפו את הקוד עם חבר או בחרו שחקן בית.")).font(.callout).leadingText()
                     arenaChoice($model.friendlyArena)
                     controlsSection(roomTargets: true)
                     carousel
@@ -283,24 +283,24 @@ import StoreKit
                         joinForm(code: $friendlyCode, label: t("Or join with a code", "או הצטרפו באמצעות קוד"), button: t("Join with a code", "הצטרפות באמצעות קוד"), requireValid: true)
                     }
                 }
-                action(t("Cancel", "ביטול"), color: MPStyle.pink) { model.back() }.foregroundStyle(.white).padding(.top, 12)
             }.frame(maxWidth: 680).padding(.horizontal, 16).padding(.vertical, 12).frame(maxWidth: .infinity)
         }.scrollDismissesKeyboard(.interactively)
     }
-    /// Android createForm "Arena" with the table-size note (a4174b6).
+    /// Android createForm "Arena" (c9f5fa6): the selected arena and its table size ("selected-arena-info").
     private func arenaChoice(_ selection: Binding<MPArena>) -> some View {
-        VStack(spacing: 10) {
+        let arena = selection.wrappedValue
+        return VStack(spacing: 10) {
             Text(t("Arena", "זירה")).font(.system(size: 19, weight: .bold))
             MPChoiceGrid(title: t("Arena", "זירה"), options: MPArena.choices.map { (value: $0, label: $0.title(he: he)) }, selection: selection)
-            Text(t("Beach and Ping Pong Castle: compact table. Indoors and Park: large table.", "בחוף הים ובטירת הפינג פונג: שולחן קומפקטי. בבית ובפארק: שולחן גדול.")).font(.system(size: 14)).multilineTextAlignment(.center)
+            Text(arena.title(he: he) + " · " + (arena == .park || arena == .indoors ? t("large table", "שולחן גדול") : t("compact table", "שולחן קומפקטי")))
+                .font(.system(size: 16, weight: .bold)).leadingText()
         }
     }
-    /// Android PlayActivity.tournamentOptions: the host's settings, Create room, and a pink Cancel.
+    /// Android PlayActivity.tournamentOptions (c9f5fa6): the host's settings and Create room; Back leaves (no Cancel).
     private var createTournamentPage: some View {
         ScrollView {
             VStack(spacing: gap) {
                 tournamentForm
-                action(t("Cancel", "ביטול"), color: MPStyle.pink) { model.back() }.foregroundStyle(.white)
             }.frame(maxWidth: 680).padding(.horizontal, 16).padding(.vertical, 12).frame(maxWidth: .infinity)
         }
     }
@@ -339,8 +339,9 @@ import StoreKit
         VStack(spacing: gap, content: content).padding(16).frame(maxWidth: .infinity).background(.white.opacity(0.82), in: RoundedRectangle(cornerRadius: 18))
     }
     private var controls: some View { controlsSection(roomTargets: false) }
-    /// Android PlayActivity createForm (96ae066): Beginner, Starter, Standard and Pro with the full description and the
-    /// serve note. `roomTargets`: rooms offer 3, 5, 7 or 11 points; a local match keeps its level's own targets.
+    /// Android PlayActivity createForm (96ae066, c9f5fa6): Beginner, Starter, Standard and Pro, and only the selected
+    /// control's explanation ("selected-control-info"). `roomTargets`: rooms offer 3, 5, 7 or 11 points; a local match
+    /// keeps its level's own targets.
     private func controlsSection(roomTargets: Bool) -> some View {
         let targets = roomTargets ? [3, 5, 7, 11] : model.level.targets
         return VStack(spacing: 14) {
@@ -350,9 +351,7 @@ import StoreKit
                          options: MPLevel.controlChoices.map { (value: $0, label: MPControlChoice.title($0.rawValue, hebrew: he)) },
                          selection: $model.level, columns: 4)
                 .onChange(of: model.level) { _, _ in model.saveControls() }
-            Text(t("Beginner: move into place for an automatic hit; a small sideways swipe aims it. Starter: a larger timing window lets you prepare an aimed swipe early. Standard: move into reach, then swipe as the ball arrives. Swipe direction aims; speed sets pace and depth. A tap gives a simple return. Pro: precise timing and power. Opponent skill comes from your chosen house player.", "מתחילים: מזיזים את המחבט למקום לחבטה אוטומטית; החלקה קטנה הצידה מכוונת אותה. נינוחה: חלון תזמון רחב יותר מאפשר להכין החלקה מכוונת מוקדם. רגילה: זזים לכדור ומחליקים כשהוא מגיע. הכיוון מכוון; המהירות קובעת עוצמה ועומק. הקשה נותנת החזרה פשוטה. מקצועני: תזמון ועוצמה מדויקים. יכולת היריב נקבעת לפי שחקן הבית שתבחרו."))
-                .font(.system(size: 14)).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
-            Text(t("Serve near the net or far edge: 75% accurate, 25% fault. The middle is safer.", "הגשה קרובה לרשת או לקצה הרחוק: 75% הצלחה ו־25% שגיאה. המרכז בטוח יותר.")).font(.system(size: 14)).frame(maxWidth: .infinity, alignment: .leading).fixedSize(horizontal: false, vertical: true)
+            Text(MPControlChoice.explanation(model.level.rawValue, hebrew: he)).font(.system(size: 16)).leadingText()
             HStack { Text(t("Points to win", "נקודות לניצחון")).font(.system(size: 19, weight: .bold)); Spacer(); Picker(t("Points", "נקודות"), selection: $model.target) { ForEach(targets, id: \.self) { Text(String($0)).tag($0) } }.pickerStyle(.menu).font(.title3.bold()) }
         }
         .onAppear { if roomTargets && !targets.contains(model.target) { model.target = 7 } }
@@ -377,7 +376,7 @@ import StoreKit
     private func cycle(_ offset: Int) { carouselDirection = offset; withAnimation(.easeInOut(duration: 0.22)) { model.playerIndex = (model.playerIndex + offset + MPRoster.all.count) % MPRoster.all.count } }
     private var tournamentForm: some View {
         card {
-            Text(t("Invite friends with the code and add house players to the same tournament.", "הזמינו חברים באמצעות הקוד והוסיפו שחקני בית לאותו טורניר.")).font(.callout).multilineTextAlignment(.center)
+            Text(t("Invite friends with the code and add house players to the same tournament.", "הזמינו חברים באמצעות הקוד והוסיפו שחקני בית לאותו טורניר.")).font(.callout).leadingText()
             // Android PlayActivity "Tournament format": round robin, or a knockout redrawn each round (2…9 players).
             Text(t("Tournament format", "שיטת הטורניר")).font(.headline)
             MPChoiceBar(title: t("Tournament format", "שיטת הטורניר"),
@@ -386,7 +385,7 @@ import StoreKit
                 .onChange(of: tournamentFormat) { _, value in model.preferences.knockoutFormat = value == .knockout }
             if tournamentFormat == .knockout {
                 Stepper(t("Players: \(knockoutCapacity)", "שחקנים: \(knockoutCapacity)"), value: $knockoutCapacity, in: 2...MPKnockout.maxPlayers).font(.headline)
-                Text(t("Pairs are drawn again each round. With an odd number of players, one randomly chosen player advances without playing. Win to stay in!", "בכל סיבוב מוגרלים זוגות מחדש. כשמספר השחקנים אי־זוגי, שחקן אחד נבחר באקראי ועולה בלי לשחק. מנצחים וממשיכים!")).font(.callout).multilineTextAlignment(.center)
+                Text(t("Pairs are drawn again each round. With an odd number of players, one randomly chosen player advances without playing. Win to stay in!", "בכל סיבוב מוגרלים זוגות מחדש. כשמספר השחקנים אי־זוגי, שחקן אחד נבחר באקראי ועולה בלי לשחק. מנצחים וממשיכים!")).font(.callout).leadingText()
             } else {
                 Stepper(t("Players: \(capacity)", "שחקנים: \(capacity)"), value: $capacity, in: 2...8).font(.headline)
                 MPChoiceBar(title: t("Rounds", "סבבים"),
@@ -396,8 +395,8 @@ import StoreKit
             }
             arenaChoice($model.tournamentArena)
             controlsSection(roomTargets: true)
-            Text(t("Choose your house players on the next screen.", "במסך הבא בחרו את שחקני הבית.")).font(.callout).multilineTextAlignment(.center)
-            if !model.hasSpace(.tournament) { Text(t("You have three open tournaments. Finish or leave one before creating another.", "יש לכם שלושה טורנירים פתוחים. סיימו או עזבו אחד מהם לפני יצירת טורניר נוסף.")).font(.callout).multilineTextAlignment(.center) }
+            Text(t("Choose your house players on the next screen.", "במסך הבא בחרו את שחקני הבית.")).font(.callout).leadingText()
+            if !model.hasSpace(.tournament) { Text(t("You have three open tournaments. Finish or leave one before creating another.", "יש לכם שלושה טורנירים פתוחים. סיימו או עזבו אחד מהם לפני יצירת טורניר נוסף.")).font(.callout).leadingText() }
             action(t("Create room", "יצירת חדר")) {
                 let knockout = tournamentFormat == .knockout
                 Task { await model.create(.tournament, capacity: knockout ? knockoutCapacity : capacity, legs: legs, winPoints: winPoints, format: tournamentFormat, house: nil) }
@@ -445,7 +444,7 @@ import StoreKit
             }.buttonStyle(.plain).background(MPFaceBackground(face: MPCourtStyle.savedFace, radius: MPCourtStyle.savedItemRadius))
             if open {
                 // Android keeps this line although an empty list no longer opens.
-                if rooms.isEmpty { Text(t("Nothing here yet. Start one above!", "עוד אין כאן משחקים. אפשר להתחיל למעלה!")).foregroundStyle(MPStyle.ink).multilineTextAlignment(.center).padding(12) }
+                if rooms.isEmpty { Text(t("Nothing here yet. Start one above!", "עוד אין כאן משחקים. אפשר להתחיל למעלה!")).foregroundStyle(MPStyle.ink).leadingText().padding(12) }
                 ForEach(rooms) { s in
                     Button { model.enter(s) } label: {
                         VStack(spacing: 6) { Text((kind == .friendly ? t("Friendly game", "משחק ידידות") : t("Tournament", "טורניר")) + " (\(s.code))").font(.headline); Text(s.complete ? t("Finished", "הסתיים") : t("Continue", "המשך")).font(.callout) }.foregroundStyle(MPStyle.ink).frame(maxWidth: .infinity).padding(12)
@@ -510,12 +509,12 @@ import StoreKit
         }
         ForEach(s.matches.values.filter { $0.contains(model.userID) && !$0.terminal }.sorted { $0.id < $1.id }) { match in fixtureRow(s, match) }
         ForEach(s.matches.values.filter { $0.terminal }.sorted { $0.id < $1.id }) { fixtureRow(s, $0, interactive: false) }
-        // Android PlayActivity.friendly (2026-10): "Save for later" only once play has started; before that the pink
-        // button cancels (deletes) the unstarted game, afterwards it finishes it.
+        // Android PlayActivity.friendly (2026-10, c9f5fa6): "Save for later" and the pink Finish only once play has started;
+        // Back leaves (deletes) an unstarted game.
         let played = s.matches.values.contains { $0.phase == .playing || $0.phase == .finished }
         if played { action(t("Save for later", "שמירה להמשך"), face: MPCourtStyle.menuFace) { model.saveFriendlyForLater() } }
-        if MPRules.canFinishFriendly(s, actor: model.userID) {
-            action(played ? t("Finish", "סיום") : t("Cancel", "ביטול"), color: MPStyle.pink) { Task { await model.leave(delete: true) } }.foregroundStyle(.white).padding(.top, 12)
+        if played && MPRules.canFinishFriendly(s, actor: model.userID) {
+            action(t("Finish", "סיום"), color: MPStyle.pink) { Task { await model.leave(delete: true) } }.foregroundStyle(.white).padding(.top, 12)
         }
     }
     /// Android PlayActivity.tournament (2026-10): the waiting roster with skills, a persistent house-player picker and
@@ -538,7 +537,7 @@ import StoreKit
                 action(t("Start tournament", "התחלת הטורניר"), color: MPStyle.mint) { Task { await model.startTournament() } }
                     .disabled(s.participants.count != s.capacity).opacity(s.participants.count == s.capacity ? 1 : 0.5)
             } else {
-                card { Text(t("The host will start when everyone has joined.", "המארח יתחיל לאחר שכולם יצטרפו.")).multilineTextAlignment(.center) }
+                card { Text(t("The host will start when everyone has joined.", "המארח יתחיל לאחר שכולם יצטרפו.")).leadingText() }
             }
             tournamentExitButton(s)
         } else {
@@ -556,7 +555,7 @@ import StoreKit
             if !s.knockout { standings(s) }
             VStack(spacing: gap) {
                 if s.knockout { Text(MPKnockout.playerStatus(s, model.userID, hebrew: he)).font(.headline).multilineTextAlignment(.center) }
-                else if mine.isEmpty { Text(t("Your matches are complete. Waiting for the other players to finish the tournament.", "המשחקים שלכם הסתיימו. ממתינים לשאר השחקנים לסיום הטורניר.")).multilineTextAlignment(.center) }
+                else if mine.isEmpty { Text(t("Your matches are complete. Waiting for the other players to finish the tournament.", "המשחקים שלכם הסתיימו. ממתינים לשאר השחקנים לסיום הטורניר.")).leadingText() }
                 else { Text(t("Next / playable games", "המשחקים הבאים שאפשר לשחק")).font(.title3.bold()).multilineTextAlignment(.center).frame(maxWidth: .infinity, minHeight: 64) }
             }.padding(16).frame(maxWidth: .infinity).background(MPStyle.mint, in: RoundedRectangle(cornerRadius: 18))
             ForEach(mine) { match in fixtureRow(s, match) }
@@ -580,7 +579,7 @@ import StoreKit
         return card {
             Text(t("Players", "שחקנים")).font(.title3.bold())
             Text(t("\(count) players · Skills out of 10", "\(count) שחקנים · יכולות מתוך 10")).font(.callout).multilineTextAlignment(.center)
-            Text(t("Swipe sideways to see every skill", "החליקו לצדדים כדי לראות את כל היכולות")).font(.caption).multilineTextAlignment(.center)
+            Text(t("Swipe sideways to see every skill", "החליקו לצדדים כדי לראות את כל היכולות")).font(.caption).leadingText()
             ScrollView(.horizontal) {
                 VStack(spacing: 5) {
                     HStack(spacing: 0) {
@@ -619,7 +618,7 @@ import StoreKit
     private func bracket(_ s: MPSession) -> some View {
         card {
             Text(s.complete ? t("Tournament bracket", "עץ הטורניר") : MPKnockout.stage(s, hebrew: he)).font(.title2.bold())
-            Text(t("Swipe sideways to follow the bracket. Pairs are drawn again each round.", "החליקו לצדדים לצפייה בעץ. הזוגות מוגרלים מחדש בכל סיבוב.")).font(.caption).multilineTextAlignment(.center)
+            Text(t("Swipe sideways to follow the bracket. Pairs are drawn again each round.", "החליקו לצדדים לצפייה בעץ. הזוגות מוגרלים מחדש בכל סיבוב.")).font(.caption).leadingText()
             ScrollView(.horizontal) { MPKnockoutBracketView(session: s, hebrew: he) }
                 .defaultScrollAnchor(he ? UnitPoint.trailing : UnitPoint.leading)
                 .environment(\.layoutDirection, .leftToRight)
@@ -644,7 +643,7 @@ import StoreKit
                 Text(t("Not started", "טרם התחיל")).font(.headline)
                 if interactive {
                     let busy = s.matches.values.contains { $0.id != match.id && $0.phase == .playing && $0.contains(model.userID) }
-                    if busy { Text(t("Finish your current match before starting another.", "סיימו את המשחק הנוכחי לפני התחלת משחק נוסף.")).multilineTextAlignment(.center) }
+                    if busy { Text(t("Finish your current match before starting another.", "סיימו את המשחק הנוכחי לפני התחלת משחק נוסף.")).leadingText() }
                     action(t("Start", "התחלה"), color: MPStyle.mint) { Task { await model.startHouseMatch(match) } }.disabled(busy).opacity(busy ? 0.5 : 1)
                 }
             }
@@ -781,7 +780,8 @@ import StoreKit
         switch model.status {
         case "WAITING": return opponentIsHouse ? t("Waiting for the internet connection…", "ממתינים לחיבור לאינטרנט…") : t("Waiting for the other player to return…", "ממתינים לחזרת השחקן השני…")
         case "TAP_SERVE": return t("Tap a point on the table to aim your serve", "געו בנקודה בשולחן כדי לכוון את ההגשה")
-        case "SWIPE_SERVE": return t("Tap to serve, or swipe upward for power", "הקישו כדי להגיש, או החליקו למעלה לעוצמה")
+        // Android 838c209: a serve drag repositions; a separate tap serves.
+        case "SWIPE_SERVE": return t("Drag to move. Lift your finger, then tap to serve.", "גררו כדי לזוז. הרימו את האצבע, ואז הקישו כדי להגיש.")
         case "RETURN_BALL": return t("Return the ball", "החזירו את הכדור")
         case "AUTO_HINT": return t("Move your paddle to the ball on your side. It hits automatically!", "הזיזו את המחבט אל הכדור בצד שלכם. החבטה אוטומטית!")
         case "CHILD_WIN", "MINIK_WIN":
@@ -1011,9 +1011,11 @@ struct MPRemoveMark: View {
 }
 struct MPAvatar: View {
     let character: String; let icon: Int
+    /// Android c9f5fa6 `BotPortrait.championRank`: a Champion's portrait wears its colour (-1: as authored).
+    var championRank = -1
     var body: some View {
         Group {
-            if MPRoster.find(character) != nil, let pose = MPPoseAtlas.portrait(character) { Image(uiImage: pose).resizable().scaledToFit().padding(.vertical, 2) }
+            if MPRoster.find(character) != nil, let pose = MPPoseAtlas.portrait(character, championRank: championRank) { Image(uiImage: pose).resizable().scaledToFit().padding(.vertical, 2) }
             else if character == "minik" { Image("mp_minik_motion_ready").resizable().scaledToFit() }
             else if let image = Self.image(character) { Image(uiImage: image).resizable().scaledToFit() }
             else { Text(MPNames.icons[max(0, icon) % MPNames.icons.count]).font(.system(size: 48)) }
@@ -1102,4 +1104,9 @@ struct MPIllustratedBackground: View {
         }
         .accessibilityHidden(true)
     }
+}
+
+extension View {
+    /// Android c9f5fa6 (`center = false`): an explanation reads from the start edge of its card.
+    func leadingText() -> some View { multilineTextAlignment(.leading).frame(maxWidth: .infinity, alignment: .leading).fixedSize(horizontal: false, vertical: true) }
 }

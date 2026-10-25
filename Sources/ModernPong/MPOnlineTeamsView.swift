@@ -65,7 +65,7 @@ import UIKit
     func join() { let value = code; connect { $0.join(value) } }
     private func connect(_ action: @escaping (MPTeamRoom) -> Void) {
         close(); sentControl = false; pane = .connecting
-        let r = MPTeamRoom(identity: identity)
+        let r = MPTeamRoom(identity: identity); r.hebrew = hebrew
         r.failed = { [weak self] message in
             guard let self else { return }
             if self.pane == .connecting { self.connectionError(message) }
@@ -112,7 +112,7 @@ import UIKit
     func coloredHud(_ r: MPTeamRoom) -> AttributedString? {
         guard let g = r.game, g.actors.indices.contains(r.localSeat) else { return nil }
         let own = g.actors[r.localSeat].team
-        return MPJourneyController.teamScore(g.points[own], g.points[1 - own], firstTeam: own, seed: g.seed)
+        return MPJourneyController.teamScore(g.points[own], g.points[1 - own], firstTeam: own, seed: g.seed, palette: r.palette(g.seed))
     }
     /// The control the table reads input with: older hosts only understand taps.
     func tableControl(_ r: MPTeamRoom) -> Int { r.supportsSpinControls ? control : 0 }
@@ -140,16 +140,17 @@ import UIKit
 struct MPOnlineTeamsScreen: View {
     @ObservedObject var model: MPOnlineTeamsController
     private func t(_ en: String, _ he: String) -> String { model.tr(en, he) }
-    private func text(_ value: String, size: CGFloat = 18) -> some View {
-        Text(value).font(.system(size: size, weight: .bold)).foregroundStyle(MPJourneyStyle.ink).multilineTextAlignment(.center)
-            .frame(maxWidth: .infinity).padding(.vertical, 6).fixedSize(horizontal: false, vertical: true)
+    /// Android c9f5fa6: explanations read from the start edge (`start`).
+    private func text(_ value: String, size: CGFloat = 18, start: Bool = false) -> some View {
+        Text(value).font(.system(size: size, weight: .bold)).foregroundStyle(MPJourneyStyle.ink).multilineTextAlignment(start ? .leading : .center)
+            .frame(maxWidth: .infinity, alignment: start ? .leading : .center).padding(.vertical, 6).fixedSize(horizontal: false, vertical: true)
     }
     var body: some View {
         Group {
             switch model.pane {
             case .setup: setup
             case .connecting: MPJourneyPanel { text(t("Finding your table…", "מחפשים את השולחן שלכם…")); ProgressView() }
-            case .error: MPJourneyPanel { text(model.errorText); MPJourneyButton(title: t("Back to team rooms", "חזרה לחדרים הקבוצתיים"), accent: true) { model.setup() } }
+            case .error: MPJourneyPanel { text(model.errorText, start: true); MPJourneyButton(title: t("Back to team rooms", "חזרה לחדרים הקבוצתיים"), accent: true) { model.setup() } }
             case .bench: MPJourneyPanel { text(t("This match has started with the selected players.", "המשחק התחיל עם השחקנים שנבחרו.")); MPJourneyButton(title: t("Back", "חזרה")) { model.leaveTable() } }
             case .lobby: if let room = model.room { MPTeamLobbyView(model: model, room: room) }
             case .game: if let room = model.room { MPTeamTableView(model: model, room: room) }
@@ -170,7 +171,7 @@ struct MPOnlineTeamsScreen: View {
             MPChoiceBar(title: t("Team rules", "חוקי הקבוצה"), options: MPTeamMode.allCases.map { (value: $0, label: $0.title(model.hebrew)) }, selection: $model.mode)
             text(t("Control difficulty", "רמת השליטה"))
             MPJourneySelector(title: t("Control difficulty", "רמת השליטה"), options: MPJourneyController.controlLevels.map { (value: $0, label: MPJourneyScreen.controlTitle($0, model.hebrew)) }, selection: $model.control)
-            text(model.mode.explanation(model.hebrew), size: 15)
+            text(model.mode.explanation(model.hebrew), size: 15, start: true)
             text(t("Arena", "זירה"))
             MPJourneySelector(title: t("Arena", "זירה"), options: MPArena.choices.map { (value: $0, label: $0.title(he: model.hebrew)) }, selection: $model.arena)
             MPJourneyButton(title: t("Create team room", "יצירת חדר קבוצתי"), accent: true) { model.create() }.padding(.top, 10)
@@ -179,8 +180,8 @@ struct MPOnlineTeamsScreen: View {
                 .textInputAutocapitalization(.characters).autocorrectionDisabled().font(.title3.bold()).multilineTextAlignment(.center)
                 .foregroundStyle(MPJourneyStyle.ink).padding(12).frame(minHeight: 52)
                 .background(Color.white, in: RoundedRectangle(cornerRadius: 8)).environment(\.layoutDirection, .leftToRight)
-            MPJourneyButton(title: t("Join team room", "הצטרפות לחדר קבוצתי")) { model.join() }.padding(.top, 8)
-            MPJourneyButton(title: t("Cancel", "ביטול"), fill: MPStyle.pink, textColor: .white) { model.cancelRoom() }.padding(.top, 24)
+            // Android c9f5fa6: no Cancel button; Back leaves.
+            MPJourneyButton(title: t("Join team room", "הצטרפות לחדר קבוצתי")) { model.join() }.padding(.top, 32).padding(.bottom, 16)
         }
     }
 }
@@ -215,7 +216,7 @@ struct MPTeamLobbyView: View {
                     .disabled(!room.canStart).opacity(room.canStart ? 1 : 0.42).padding(.top, 12)
                     .accessibilityLabel(room.canStart ? t("Start match", "מתחילים במשחק") : t("Choose every player and wait for selected friends to connect", "בחרו שחקן לכל מקום והמתינו לחיבור החברים שבחרתם"))
             }
-            MPJourneyButton(title: t("Cancel", "ביטול"), fill: MPStyle.pink, textColor: .white) { model.cancelRoom() }.padding(.top, 20)
+            // Android c9f5fa6: the lobby has no Cancel button; Back cancels the room.
         }
         .sheet(isPresented: Binding(get: { model.picking != nil }, set: { if !$0 { model.picking = nil } })) {
             if let seat = model.picking { MPTeamPlayerPicker(model: model, room: room, seat: seat) }
@@ -225,15 +226,17 @@ struct MPTeamLobbyView: View {
     private var board: some View {
         let groups = room.localSeat >= 2 ? [[2, 3], [0, 1]] : [[0, 1], [2, 3]]
         let editable = room.host && room.flexible
+        // Android f0ea4aa: each column on its team's colour, its text in a contrasting ink.
+        let palette = room.palette(), colors = groups.map { palette.fill($0[0] / 2) }
         return HStack(alignment: .top, spacing: 12) {
             ForEach(groups.indices, id: \.self) { index in
                 VStack(spacing: 12) {
                     ForEach(groups[index], id: \.self) { seat in tile(seat, editable: editable) }
-                    Text(index == 0 ? t("Your team", "הקבוצה שלכם") : t("Other team", "הקבוצה היריבה")).font(.system(size: 18, weight: .bold)).foregroundStyle(MPJourneyStyle.ink)
-                    Text(editable ? t("Tap a player to change", "הקישו על שחקן כדי להחליף") : t("The host arranges the teams", "המארח מסדר את הקבוצות")).font(.system(size: 14, weight: .bold)).foregroundStyle(MPJourneyStyle.ink).multilineTextAlignment(.center)
+                    Text(index == 0 ? t("Your team", "הקבוצה שלכם") : t("Other team", "הקבוצה היריבה")).font(.system(size: 18, weight: .bold)).foregroundStyle(MPColor.color(MPTeamColors.ink(colors[index])))
+                    Text(editable ? t("Tap a player to change", "הקישו על שחקן כדי להחליף") : t("The host arranges the teams", "המארח מסדר את הקבוצות")).font(.system(size: 14, weight: .bold)).foregroundStyle(MPColor.color(MPTeamColors.ink(colors[index]))).multilineTextAlignment(.center)
                 }
                 .padding(.horizontal, 6).padding(.vertical, 8).frame(maxWidth: .infinity)
-                .background(index == 0 ? Color(red: 0xfc / 255, green: 0xe5 / 255, blue: 0xf1 / 255) : Color(red: 0xe3 / 255, green: 0xef / 255, blue: 1), in: RoundedRectangle(cornerRadius: 18))
+                .background(MPColor.color(colors[index]), in: RoundedRectangle(cornerRadius: 18))
             }
         }.environment(\.layoutDirection, model.hebrew ? .rightToLeft : .leftToRight)
     }
@@ -335,7 +338,8 @@ struct MPTeamTableView: View {
                 let court = MPPracticeCourt(game: g, hebrew: model.hebrew, localSeat: max(room.localSeat, 0), simulate: false, running: model.resumed, names: names,
                                             controlOverride: control, soundsEnabled: { MPJourneyController.soundsOn },
                                             onMove: { point in link.input("move", point) }, onTap: { point in link.input("tap", point) },
-                                            onStroke: { stroke in link.input("stroke", MPPoint(0.5, 0.5), control: control, stroke: stroke) }, scenery: scenery)
+                                            onStroke: { stroke in link.input("stroke", MPPoint(0.5, 0.5), control: control, stroke: stroke) }, scenery: scenery,
+                                            palette: room.palette(g.seed))
                 ZStack {
                     if wide {
                         // Android PongCourtStyle.landscape: tools and coaching in the start gutter, an equal empty gutter.

@@ -133,12 +133,17 @@ final class MPPoseSprites {
         }
         return (rects, (0..<3).map { visible[$0 * 4] })
     }
-    private func entry(_ id: String) -> Entry? {
-        if let e = entries[id] { return e }
-        guard let (rects, heights) = Self.rects(id), let image = MPArtFiles.image("pong-poses/" + id + ".png") else { return nil }
+    /// `championRank` (Android c9f5fa6 `PongPlayerAtlas.championRank`): the Champion's atlas dressed in its colour.
+    private func entry(_ id: String, championRank: Int = -1) -> Entry? {
+        let base = id.hasSuffix("-walk") ? String(id.dropLast(5)) : id
+        let dressed = MPChampionKit.dresses(base, rank: championRank)
+        let key = dressed ? id + "/champion" + String(championRank) : id
+        if let e = entries[key] { return e }
+        guard let (rects, heights) = Self.rects(id),
+              let image = (dressed ? MPPoseAtlas.championAtlas(id, rank: championRank) : nil) ?? MPArtFiles.image("pong-poses/" + id + ".png") else { return nil }
         let texture = SKTexture(image: image); texture.filteringMode = .linear
         let e = Entry(texture: texture, rects: rects, heights: heights, size: image.size)
-        entries[id] = e; return e
+        entries[key] = e; return e
     }
     func available(_ id: String) -> Bool { entry(id) != nil }
     /// Android `PongPlayerAtlas.geometry(id, facing, mirror, foot, height, phase)`; `foot` in view points, y down.
@@ -148,13 +153,17 @@ final class MPPoseSprites {
         return MPPoseAtlas.Geometry(bounds: CGRect(x: 2 * foot.x - g.bounds.maxX, y: g.bounds.minY, width: g.bounds.width, height: g.bounds.height),
                                     racket: CGPoint(x: 2 * foot.x - g.racket.x, y: g.racket.y), radius: g.radius, frame: g.frame)
     }
+    /// Android 496a709 `PongPlayerAtlas.floorSupports` (view points, y down).
+    func floorSupports(_ id: String, _ facing: MPPoseAtlas.Facing, mirror: Bool, foot: CGPoint, height: CGFloat, phase: Int) -> [CGPoint] {
+        atlas.floorSupports(id, facing, mirror: mirror, foot: foot, height: height, phase: phase)
+    }
     /// Android `PongPlayerAtlas.draw`: configures `node` to show the pose with its foot at `foot` (view points, y down),
     /// converted by `scene` into the node's (y-up) coordinates. Returns the pose geometry, or nil (node hidden).
     @discardableResult func show(_ node: SKSpriteNode, _ id: String, _ facing: MPPoseAtlas.Facing, mirror: Bool, foot: CGPoint, height: CGFloat,
-                                 phase: Int, lean: CGFloat = 0, scene: (CGPoint) -> CGPoint) -> MPPoseAtlas.Geometry? {
+                                 phase: Int, lean: CGFloat = 0, championRank: Int = -1, scene: (CGPoint) -> CGPoint) -> MPPoseAtlas.Geometry? {
         let index = facing.rawValue * 4 + min(max(phase, 0), 3)
-        guard let e = entry(id), index < e.rects.count, let f = atlas.foot(id, facing, phase: phase) else { node.isHidden = true; return nil }
-        let r = e.rects[index], key = id + "/" + String(index)
+        guard let e = entry(id, championRank: championRank), index < e.rects.count, let f = atlas.foot(id, facing, phase: phase) else { node.isHidden = true; return nil }
+        let r = e.rects[index], key = id + "/" + String(index) + "/" + String(championRank)
         let texture: SKTexture
         if let cached = frames[key] { texture = cached }
         else {

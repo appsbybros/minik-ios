@@ -130,11 +130,26 @@ enum MPServeDifficulty {
         let towardRight = (ballX - playerX) * (team == 0 ? 1 : -1) * (leftHanded ? -1 : 1)
         return towardRight > 0.025 ? .forehand : towardRight < -0.025 ? .backhand : .middle
     }
-    static func adjust(_ base: MPChance, landing: MPPoint, receivingTeam: Int) -> MPChance {
-        let edge = ((abs(landing.x - 0.5) - 0.22) / 0.28).mpClamp(0, 1)
-        let shortness = ((receivingTeam == 1 ? landing.y : 1 - landing.y) / 0.5).mpClamp(0, 1)
-        let pressure = edge * (0.55 + 0.45 * shortness)
-        return MPChance((base.answer * (1 - 0.32 * pressure)).mpClamp(0.03, 0.995), (base.good * (1 - 0.18 * pressure)).mpClamp(0.03, 0.995))
+    /// Android c9f5fa6: at the legal outer aiming edge (0.07/0.93), 45–70 % by receiving-hand skill (`handSkill`, 2...10;
+    /// nil derives it from the authored chance). The central serve keeps the normal authored chance. One roll only:
+    /// court size and the current animation pose must not alter this probability.
+    static func adjust(_ base: MPChance, landing: MPPoint, receivingTeam: Int, handSkill: Double? = nil) -> MPChance {
+        let edge = ((abs(landing.x - 0.5) - 0.20) / 0.23).mpClamp(0, 1)
+        let skill = handSkill.map { (($0 - 2) / 8).mpClamp(0, 1) } ?? ((base.answer - 0.4) / 0.6).mpClamp(0, 1)
+        let edgeAnswer = 0.45 + 0.25 * skill
+        let shortness = ((receivingTeam == 1 ? landing.y : 1 - landing.y) / 0.44).mpClamp(0, 1)
+        let pressure = edge * (0.75 + 0.25 * shortness)
+        let answer = base.answer + (min(base.answer, edgeAnswer) - base.answer) * pressure
+        return MPChance(answer, (answer * (base.good / max(base.answer, 0.001))).mpClamp(0, answer))
+    }
+    /// Android `handSkill`: the receiving hand's authored skill (Minik's profile when no house player is given).
+    static func handSkill(_ profile: MPBot?, _ zone: MPZone) -> Double {
+        guard let p = profile ?? MPRoster.find("minik")?.profile else { return 6 }
+        switch zone {
+        case .forehand: return Double(p.forehandSkill)
+        case .backhand: return Double(p.backhandSkill)
+        case .middle: return Double(p.forehandSkill + p.backhandSkill) / 2
+        }
     }
 }
 

@@ -176,6 +176,15 @@ enum MPControlChoice {
         default: return he ? "מתחילים" : "Beginner"
         }
     }
+    /// Android `ControlChoice.explanation` (c9f5fa6): only the selected control is explained on setup pages.
+    static func explanation(_ value: Int, hebrew he: Bool) -> String {
+        switch normalize(value) {
+        case 4: return he ? "זזים אל הכדור לחבטה אוטומטית. החלקה קטנה הצדה מכוונת את החבטה." : "Move into reach for an automatic hit. A small sideways swipe aims it."
+        case 1: return he ? "זזים אל הכדור ומכינים החלקה מכוונת מוקדם, עם חלון תזמון רחב. אפשר גם להקיש להחזרה פשוטה." : "Move into reach and prepare an aimed swipe early, with a generous timing window. You can also tap for a simple return."
+        case 0: return he ? "זזים אל הכדור ומחליקים כשהוא מגיע. הכיוון מכוון; המהירות קובעת עוצמה ועומק. אפשר גם להקיש להחזרה פשוטה." : "Move into reach, then swipe as the ball arrives. Direction aims; swipe speed sets pace and depth. A tap gives a simple return."
+        default: return he ? "זזים אל הכדור ומחליקים כדי לחבוט. הכיוון והמהירות קובעים את החבטה; החלקה בקשת מוסיפה סיבוב." : "Move into reach and swipe to return. Direction and speed shape the shot; a curved swipe adds spin."
+        }
+    }
 }
 
 /// Android `MatchText.result`: canonical player/score order even when a nickname has the opposite direction.

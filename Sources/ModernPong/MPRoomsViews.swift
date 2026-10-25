@@ -18,7 +18,7 @@ struct MPRoomsStandings: View {
         let rows = MPRules.standings(s)
         VStack(spacing: 10) {
             Text(t("Tournament table", "טבלת הטורניר")).font(.system(size: 19, weight: .bold)).foregroundStyle(MPStyle.ink).multilineTextAlignment(.center)
-            Text(t("Swipe sideways to see every column", "החליקו לצדדים כדי לראות את כל העמודות")).font(.system(size: 13)).foregroundStyle(MPStyle.ink).multilineTextAlignment(.center)
+            Text(t("Swipe sideways to see every column", "החליקו לצדדים כדי לראות את כל העמודות")).font(.system(size: 13)).foregroundStyle(MPStyle.ink).leadingText()
             Text(t("Ranking: tournament points, wins, point difference, then points scored. A complete tie keeps the same stable order.", "הדירוג נקבע לפי נקודות הטורניר, ניצחונות, הפרש נקודות ואז נקודות זכות. בשוויון מלא נשמר סדר קבוע."))
                 .font(.system(size: 14)).foregroundStyle(MPStyle.ink).frame(maxWidth: .infinity, alignment: .leading).fixedSize(horizontal: false, vertical: true)
             ScrollView(.horizontal) {

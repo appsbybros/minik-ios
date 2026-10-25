@@ -63,6 +63,45 @@ enum MPTeamColors {
         return palettes[Int(mixed & 3)][min(max(team, 0), 1) ^ Int((mixed >> 2) & 1)]
     }
     static func uiFill(_ team: Int, seed: Int64 = 0) -> UIColor { MPColor.ui(fill(team, seed: seed)) }
+    /// Android f0ea4aa `PongTeamColors.Palette`: the two team colours of one table.
+    struct Palette: Equatable {
+        let first: UInt32, second: UInt32
+        func fill(_ team: Int) -> UInt32 { team == 0 ? first : second }
+    }
+    /// Android `ink`: white on a dark team colour, the usual dark ink on a light one.
+    static func ink(_ color: UInt32) -> UInt32 {
+        let r = Double((color >> 16) & 255), g = Double((color >> 8) & 255), b = Double(color & 255)
+        return r * 0.299 + g * 0.587 + b * 0.114 < 145 ? 0xffffffff : 0xff173e56
+    }
+    private static func distance(_ a: UInt32, _ b: UInt32) -> Int {
+        [0, 8, 16].reduce(0) { $0 + abs(Int((a >> UInt32($1)) & 255) - Int((b >> UInt32($1)) & 255)) }
+    }
+    /// Android `local`: the player's earned colour, and a clearly different opponent colour chosen by `seed`.
+    static func local(_ color: UInt32, seed: Int64 = 0) -> Palette {
+        let options: [UInt32] = [0xff80d7ff, 0xffffafcf, 0xffffb46a, 0xffffdf75].filter { distance(color, $0) > 100 }
+        guard !options.isEmpty else { return Palette(first: color, second: fill(1, seed: seed)) }
+        // Kotlin Math.floorMod(mix(seed), options.size) of the signed value.
+        let mixed = Int64(bitPattern: mix(seed)), n = Int64(options.count)
+        return Palette(first: color, second: options[Int(((mixed % n) + n) % n)])
+    }
+    /// Android `online`: the host keeps the exact earned colour. A guest of the same rank receives a distinct tint of
+    /// that hue; an unknown guest gets the local opponent colour.
+    static func online(host hostColor: UInt32, guest guestColor: UInt32?, hostTeam: Int, seed: Int64 = 0) -> Palette {
+        let guest: UInt32
+        if let guestColor, guestColor != hostColor { guest = guestColor }
+        else if guestColor == nil { guest = local(hostColor, seed: seed).second }
+        else {
+            let light = ink(hostColor) == 0xff173e56
+            var result: UInt32 = 0xff000000
+            for shift: UInt32 in [0, 8, 16] {
+                let channel = Double((hostColor >> shift) & 255)
+                let tint = light ? Int(channel * 0.52) : Int(channel + (255 - channel) * 0.62)
+                result |= UInt32(tint) << shift
+            }
+            guest = result
+        }
+        return hostTeam == 0 ? Palette(first: hostColor, second: guest) : Palette(first: guest, second: hostColor)
+    }
     /// Android `PongTeamColors.named`: "first · second" (or stacked) with each name in its team colour.
     static func named(_ first: String, _ second: String, stacked: Bool = false, firstColor: UInt32 = fill(0), secondColor: UInt32 = fill(1)) -> NSAttributedString {
         let text = NSMutableAttributedString(string: first + (stacked ? "\n" : " · ") + second)
@@ -72,11 +111,11 @@ enum MPTeamColors {
         return text
     }
     /// Android `PongTeamColors.score`: "a : b" in the two team colours.
-    static func score(_ first: Int, _ second: Int, firstTeam: Int = 0, seed: Int64 = 0) -> NSAttributedString {
+    static func score(_ first: Int, _ second: Int, firstTeam: Int = 0, seed: Int64 = 0, palette: Palette? = nil) -> NSAttributedString {
         let a = String(first), b = String(second)
         let text = NSMutableAttributedString(string: a + " : " + b)
-        text.addAttribute(.foregroundColor, value: MPColor.ui(fill(firstTeam, seed: seed)), range: NSRange(location: 0, length: a.count))
-        text.addAttribute(.foregroundColor, value: MPColor.ui(fill(1 - firstTeam, seed: seed)), range: NSRange(location: a.count + 3, length: b.count))
+        text.addAttribute(.foregroundColor, value: MPColor.ui(palette?.fill(firstTeam) ?? fill(firstTeam, seed: seed)), range: NSRange(location: 0, length: a.count))
+        text.addAttribute(.foregroundColor, value: MPColor.ui(palette?.fill(1 - firstTeam) ?? fill(1 - firstTeam, seed: seed)), range: NSRange(location: a.count + 3, length: b.count))
         return text
     }
 }

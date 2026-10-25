@@ -234,6 +234,28 @@ final class ModernPongTeamsTests: XCTestCase {
         XCTAssertEqual(MPJourney.stage(0).controlDescription(false), "Guided serving practice: tap the target to serve.")
         XCTAssertEqual(MPPlay(step: 30).controls, [3, 3]); XCTAssertEqual(MPPlay(step: 32).controls, [0, 0])
     }
+    /// EdgeDailyReviewTest.completedJourneysAdvanceControlsAndSaveStableStageIds (Android c9f5fa6).
+    func testCompletedJourneysAdvanceControlsAndKeepStableStageIds() {
+        var step = 0
+        for (cycle, size) in [30, 30, 32, 34].enumerated() {
+            XCTAssertEqual(MPJourney.cycleControl(step), [4, 1, 0, 3][cycle])
+            for _ in 0..<size { XCTAssertEqual(step / MPJourney.count, cycle); step = MPJourney.nextStep(step) }
+        }
+        XCTAssertEqual(step / MPJourney.count, 4)
+        XCTAssertEqual(MPJourney.control(30), 3); XCTAssertEqual(MPJourney.control(32), 0); XCTAssertEqual(MPJourney.control(MPJourney.count * 3 + 32), 3)
+        XCTAssertEqual(MPPlay(step: 0).controls[0], 4); XCTAssertEqual(MPPlay(step: MPJourney.count + 1).controls[0], 1)
+    }
+    /// EdgeDailyReviewTest.missedPracticeNeverLocksBehindRetry.
+    func testMissedPracticeNeverLocksBehindRetry() throws {
+        let g = MPPlay(step: 0); g.start()
+        for n in 0..<5 {
+            for _ in 0..<400 where !g.waitingServe { g.advance(1.0 / 120) }
+            XCTAssertTrue(g.waitingServe); g.tap(.init(0.08, 0.42))
+            for _ in 0..<800 where g.mistakes == n { g.advance(1.0 / 120) }
+            XCTAssertEqual(g.mistakes, n + 1); XCTAssertFalse(g.ended)
+        }
+        XCTAssertEqual(try json(g.save()), try json(try MPPlay.restore(g.save()).save()))
+    }
     func testOldSavedStepsMigrateOnRestore() throws {
         let e = MPPlay(step: 31); var w = e.save(); w["step"] = 31; w["catalogSize"] = nil
         XCTAssertEqual(try MPPlay.restore(w).step, 35)
@@ -245,7 +267,8 @@ final class ModernPongTeamsTests: XCTestCase {
         XCTAssertEqual(once, p.coverage(0)); p.paint(.init(0.5, 0.25), 1); XCTAssertEqual(p.coverage(0), 0)
     }
     func testIdleCannotWinAndPausedInputDoesNothing() throws {
-        let e = MPPlay(step: 1); e.start(); ticks(e, 120 * 35); XCTAssertTrue(e.ended); XCTAssertFalse(e.won); XCTAssertEqual(e.successes, 0)
+        // Android c9f5fa6: practice continues after misses (no three-miss retry).
+        let e = MPPlay(step: 1); e.start(); ticks(e, 120 * 35); XCTAssertFalse(e.ended); XCTAssertFalse(e.won); XCTAssertEqual(e.successes, 0)
         let p = MPPlay(step: 0); p.start(); p.paused = true; let before = try json(p.save())
         p.tap(.init(0.5, 0.25)); p.move(.init(0.9, 0.9)); p.advance(1); XCTAssertEqual(before, try json(p.save()))
     }
@@ -527,7 +550,8 @@ final class ModernPongTeamsTests: XCTestCase {
         }
     }
     /// Android: every stage driven by the Android test's player (`PongJourneyTest.drive`, the paint battles'
-    /// deliberate player), roster miniko/minik/mia/june, seed 5. Outcome per stage, from the compiled Android classes.
+    /// deliberate player), roster miniko/minik/mia/june, seed 5. Outcome per stage, from the compiled Android classes
+    /// (6c8c757: the first cycle plays with Beginner controls, and only the paint rally changes).
     func testEveryJourneyStageMatchesAndroid() {
         let expected: [(won: Bool, successes: Int, mistakes: Int, attempts: Int, clock: Double, contacts: Int, cov0: Double, cov1: Double)] = [
             (true, 8, 0, 8, 22.708333333332686, 8, 0.0, 0.0),
@@ -537,7 +561,7 @@ final class ModernPongTeamsTests: XCTestCase {
             (true, 8, 0, 8, 36.541666666665236, 8, 0.0, 0.0),
             (true, 8, 0, 8, 22.708333333332686, 8, 0.0, 0.0),
             (true, 6, 0, 6, 29.608333333332293, 6, 0.0, 0.0),
-            (true, 0, 0, 7, 90.00000000001769, 24, 0.80078125, 0.447265625),
+            (true, 0, 0, 5, 90.00000000001769, 25, 0.798828125, 0.4453125),
             (true, 6, 0, 6, 28.54999999999902, 6, 0.0, 0.0),
             (true, 6, 0, 6, 27.449999999999083, 6, 0.0, 0.0),
             (true, 10, 0, 10, 37.29166666666519, 10, 0.0, 0.0),
@@ -595,7 +619,8 @@ final class ModernPongTeamsTests: XCTestCase {
             XCTAssertEqual(g.actors[i].contacts, actor.2, label)
         }
     }
-    /// Android 29f5dc7: house-player-only doubles (miniko and Minik against Flare and Kyra) from the start.
+    /// Android 29f5dc7 (6c8c757 from the eighth second: hand-skill serve edges): house-player-only doubles (miniko and
+    /// Minik against Flare and Kyra) from the start.
     func testHousePlayerDoublesMatchAndroid() {
         let cases: [(MPTeamMode, Int64, [Int: Trace])] = [
             (.alternate, 93, [
@@ -606,9 +631,9 @@ final class ModernPongTeamsTests: XCTestCase {
                 5: Trace(clock: 5.000000000000038, points: [0, 0], rally: 3, hitter: 2, attempts: 0, flight: (0.6200001666889519, 0.6971446004862003, 0.08737803569431377), actors: [(0.5960640637730953, 0.9290609028136078, 1), (0.78, 1.04, 1), (0.22, -0.04000000000000001, 1), (0.78, -0.04000000000000001, 1)], next: [0, 3]),
                 6: Trace(clock: 6.000000000000088, points: [0, 0], rally: 4, hitter: 0, attempts: 0, flight: (0.495607583720848, 0.22891748500445167, 0.5553474241379113), actors: [(0.34835864539852646, 1.0018247591715006, 2), (0.78, 1.04, 1), (0.22, -0.04000000000000001, 1), (0.5588915853457078, 0.12, 1)], next: [1, 3]),
                 7: Trace(clock: 7.000000000000138, points: [0, 1], rally: 4, hitter: 0, attempts: 1, flight: nil, actors: [(0.22, 0.88, 2), (0.78, 0.88, 1), (0.22, 0.12, 1), (0.7578457198880766, 0.12, 1)], next: [1, 3]),
-                8: Trace(clock: 8.000000000000187, points: [0, 1], rally: 0, hitter: 1, attempts: 1, flight: (0.78, 0.954846098783106, 0.23742623478883318), actors: [(0.22, 0.88, 2), (0.78, 0.9071885714285718, 2), (0.22, 0.12, 1), (0.7624682726902632, 0.08661555037611529, 1)], next: [0, 2]),
-                9: Trace(clock: 9.00000000000013, points: [0, 1], rally: 0, hitter: 1, attempts: 1, flight: (0.4283353267641373, 0.36226517968394206, 0.17728877870910628), actors: [(0.22, 0.88, 2), (0.78, 1.04, 2), (0.22, 0.12, 1), (0.78, -0.04000000000000001, 1)], next: [0, 2]),
-                10: Trace(clock: 10.000000000000073, points: [0, 1], rally: 1, hitter: 2, attempts: 1, flight: (0.22305961161254217, 0.69762485846679, 0.06768813205043675), actors: [(0.22, 0.88, 2), (0.78, 1.04, 2), (0.22, -0.04000000000000001, 2), (0.78, -0.04000000000000001, 1)], next: [0, 3])
+                8: Trace(clock: 8.000000000000187, points: [0, 1], rally: 4, hitter: 0, attempts: 1, flight: nil, actors: [(0.22, 0.88, 2), (0.78, 0.88, 1), (0.22, 0.12, 1), (0.7578457198880766, 0.12, 1)], next: [1, 3]),
+                9: Trace(clock: 9.00000000000013, points: [0, 1], rally: 0, hitter: 1, attempts: 1, flight: (0.4941952733709317, 0.47046366339510454, 0.2829527088247114), actors: [(0.22, 0.88, 2), (0.78, 1.04, 2), (0.22, 0.12, 1), (0.78, -0.04000000000000001, 1)], next: [0, 2]),
+                10: Trace(clock: 10.000000000000073, points: [0, 1], rally: 1, hitter: 2, attempts: 1, flight: (0.22476980613058928, 0.5509681629298268, 0.21379496220904512), actors: [(0.22, 0.88, 2), (0.78, 1.04, 2), (0.22, -0.028720000000000113, 2), (0.78, -0.04000000000000001, 1)], next: [0, 3])
             ]),
             (.free, 11, [
                 1: Trace(clock: 0.9999999999999989, points: [0, 0], rally: 0, hitter: 0, attempts: 0, flight: nil, actors: [(0.3, 0.88, 0), (0.86, 0.88, 0), (0.3, 0.12, 0), (0.86, 0.12, 0)], next: [0, 2]),
@@ -628,14 +653,14 @@ final class ModernPongTeamsTests: XCTestCase {
             for second in 1...10 { ticks(g, 120); if let t = traces[second] { check(g, t, "\(mode) \(seed) t=\(second)") } }
         }
     }
-    /// Android 29f5dc7: Standard/Starter swipes (strokes 0 and 1), Pro strokes (3) and Beginner assisted returns (4) in
+    /// Android 6c8c757: Standard/Starter swipes (strokes 0 and 1), Pro strokes (3) and Beginner assisted returns (4) in
     /// a team match against house players, seed 21.
     func testTeamControlLevelsMatchAndroid() {
         let traces: [Int: (Trace, strokes: Int, standard: Bool)] = [
-            0: (Trace(clock: 19.999999999999506, points: [1, 2], rally: 4, hitter: 2, attempts: 3, flight: (0.6275659454043361, 0.2806076011067359, 0.37915071567121345), actors: [(0.4590087993833243, 0.88, 3), (0.7800249705066936, 0.9924200009039652, 3), (0.4509415357425079, 0.06456292364597357, 4), (0.78, -0.04000000000000001, 3)], next: [1, 3]), strokes: 116, standard: true),
-            1: (Trace(clock: 19.999999999999506, points: [1, 2], rally: 4, hitter: 2, attempts: 3, flight: (0.6275659454043361, 0.2806076011067359, 0.37915071567121345), actors: [(0.4590087993833243, 0.88, 3), (0.7800249705066936, 0.9924200009039652, 3), (0.4509415357425079, 0.06456292364597357, 4), (0.78, -0.04000000000000001, 3)], next: [1, 3]), strokes: 116, standard: true),
-            3: (Trace(clock: 19.999999999999506, points: [1, 1], rally: 2, hitter: 3, attempts: 2, flight: (0.4222755679842781, 0.7283363390069122, 0.03387153376861979), actors: [(0.42648384744360945, 0.88, 4), (0.78, 1.04, 4), (0.22, -0.04000000000000001, 4), (0.78, -0.04000000000000001, 4)], next: [0, 2]), strokes: 72, standard: false),
-            4: (Trace(clock: 19.999999999999506, points: [1, 1], rally: 2, hitter: 3, attempts: 2, flight: (0.5780092417670695, 0.4270373972494058, 0.321528951244235), actors: [(0.5822169517724939, 0.88, 4), (0.78, 1.04, 4), (0.22, -0.04000000000000001, 4), (0.78, -0.013714285714285636, 4)], next: [0, 2]), strokes: 0, standard: false)
+            0: (Trace(clock: 19.999999999999506, points: [1, 3], rally: 2, hitter: 3, attempts: 4, flight: nil, actors: [(0.3745680994516361, 0.88, 2), (0.78, 0.9742942857142849, 3), (0.2910463114187586, 0.032353717637785585, 3), (0.78, 0.0407857142857143, 3)], next: [0, 2]), strokes: 198, standard: false),
+            1: (Trace(clock: 19.999999999999506, points: [1, 3], rally: 2, hitter: 3, attempts: 4, flight: nil, actors: [(0.30645284431309905, 0.88, 2), (0.78, 0.9878885714285708, 3), (0.2763470745734982, 0.017383982954105807, 3), (0.78, 0.02407142857142858, 3)], next: [0, 2]), strokes: 210, standard: false),
+            3: (Trace(clock: 19.999999999999506, points: [1, 1], rally: 2, hitter: 3, attempts: 2, flight: (0.6916054533814834, 0.2071461715922675, 0.3154803143817743), actors: [(0.45131120810778486, 0.88, 4), (0.78, 1.04, 4), (0.22, -0.04000000000000001, 4), (0.78, 0.0615000000000001, 4)], next: [0, 2]), strokes: 72, standard: false),
+            4: (Trace(clock: 19.999999999999506, points: [1, 1], rally: 1, hitter: 1, attempts: 2, flight: (0.7807141170426217, 0.1736286845363584, 0.08159754462010747), actors: [(0.30264305831018273, 0.88, 4), (0.78, 1.04, 4), (0.22, -0.04000000000000001, 4), (0.78, 0.12, 3)], next: [0, 3]), strokes: 0, standard: false)
         ]
         for control in [0, 1, 3, 4] {
             let g = MPPlay(roster: ["miniko", "minik", "flare", "kyra"], humanSeats: [0], seed: 21, control: control); g.start()
@@ -663,8 +688,9 @@ final class ModernPongTeamsTests: XCTestCase {
         XCTAssertEqual(try json(g.save()), try json(try MPPlay.restore(try MPJSON.decode(try XCTUnwrap(MPJSON.encode(g.save())))).save()))
         g.start()
         ticks(g, 60); check(g, Trace(clock: 3.416666666666657, points: [0, 0], rally: 0, hitter: 0, attempts: 0, flight: (0.5081802389753337, 0.19682844666034907, 0.30973802033812775), actors: [(0.3, 0.88, 1), (0.7, 0.88, 0), (0.3, 0.12, 0), (0.78, -0.04000000000000001, 0)], next: [1, 2]), "android 739f2f8 60")
-        ticks(g, 60); check(g, Trace(clock: 3.9166666666666554, points: [1, 0], rally: 0, hitter: 0, attempts: 1, flight: nil, actors: [(0.3, 0.88, 1), (0.7, 0.88, 0), (0.3, 0.12, 0), (0.78, -0.04000000000000001, 0)], next: [1, 2]), "android 739f2f8 120")
-        ticks(g, 60); check(g, Trace(clock: 4.416666666666676, points: [1, 0], rally: 0, hitter: 0, attempts: 1, flight: nil, actors: [(0.3, 0.88, 1), (0.78, 0.88, 0), (0.3, 0.12, 0), (0.6493984127406474, 0.11220829372115591, 0)], next: [1, 2]), "android 739f2f8 180")
+        // Android 6c8c757: the far serve is no longer called out in the air beyond the end line; it falls to the plane.
+        ticks(g, 60); check(g, Trace(clock: 3.9166666666666554, points: [0, 0], rally: 0, hitter: 0, attempts: 0, flight: (0.5385916758261194, -8.458928697744469E-4, 0.8901985367536637), actors: [(0.3, 0.88, 1), (0.7, 0.88, 0), (0.3, 0.12, 0), (0.78, -0.04000000000000001, 0)], next: [1, 2]), "android 739f2f8 120")
+        ticks(g, 60); check(g, Trace(clock: 4.416666666666676, points: [0, 0], rally: 0, hitter: 0, attempts: 0, flight: (0.5690031126769052, -0.19852023239989797, 0.5706590531692002), actors: [(0.3, 0.88, 1), (0.7, 0.88, 0), (0.3, 0.12, 0), (0.78, -0.04000000000000001, 0)], next: [1, 2]), "android 739f2f8 180")
     }
     /// Android 29f5dc7: a current Android host's snapshot body (serve read, plans, strokes, controls, arena) restores
     /// on iOS, round-trips, and continues identically.

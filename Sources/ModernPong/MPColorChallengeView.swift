@@ -13,6 +13,16 @@ struct MPColorChallengeView: View {
         MPHudText(value, color: color, font: .system(size: size, weight: .bold), outline: color == 0xffffffff ? 0 : 1.4, adaptive: true, alignment: .leading)
             .frame(maxWidth: .infinity, alignment: .leading).fixedSize(horizontal: false, vertical: true).padding(.vertical, 7)
     }
+    /// Android c9f5fa6 `rankText`: only the colour's name is drawn in that colour; the sentence stays white.
+    private func rankLine(_ sentence: String, word: String, color: UInt32, size: CGFloat, outline: CGFloat = 0) -> some View {
+        var segments = [MPHudText.Segment(text: sentence, color: 0xffffffff)]
+        if let range = sentence.range(of: word) {
+            segments = [MPHudText.Segment(text: String(sentence[..<range.lowerBound]), color: 0xffffffff), MPHudText.Segment(text: word, color: color),
+                        MPHudText.Segment(text: String(sentence[range.upperBound...]), color: 0xffffffff)]
+        }
+        return MPHudText(segments, font: .system(size: size, weight: .bold), outline: outline, adaptive: true, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .leading).fixedSize(horizontal: false, vertical: true).padding(.vertical, 7)
+    }
     var body: some View {
         let _ = model.rankRevision
         ScrollView {
@@ -28,10 +38,11 @@ struct MPColorChallengeView: View {
     }
     @ViewBuilder private var content: some View {
         let ranking = model.ranking, state = ranking.state, current = ranking.rank
-        line(t("Current color: \(current.name(he: false)) · \(state.points) points", "הצבע שלכם: \(current.name(he: true)) · \(state.points) נקודות"), size: 21, color: current.color)
+        let currentName = current.name(he: hebrew)
+        rankLine(t("Current color: \(currentName) · \(state.points) points", "הצבע שלכם: \(currentName) · \(state.points) נקודות"), word: currentName, color: current.color, size: 21, outline: 1)
         if let next = state.next {
             let target = MPRanks.all[next], name = target.name(he: hebrew)
-            line(t("Next color: \(name)", "הצבע הבא: \(name)"), size: 23, color: target.color)
+            rankLine(t("Next color: \(name)", "הצבע הבא: \(name)"), word: name, color: target.color, size: 23)
             if !state.eligible {
                 line(t("Earn \(target.threshold - state.points) more points to open this challenge.", "עוד \(target.threshold - state.points) נקודות לפתיחת האתגר."))
             } else {
@@ -56,9 +67,13 @@ struct MPColorChallengeView: View {
     @ViewBuilder private func challenge(_ next: Int, target: MPRank, name: String, state: MPRankProgress) -> some View {
         let requirement = state.requirement, rivals = MPRankPromotion.bots(next)
         let rivalNames = rivals.map { $0.name(hebrew: hebrew) }.joined(separator: ", ")
-        line(requirement.streak
-             ? t("To earn \(name), win \(requirement.bots) games in a row against \(rivals[0].name(hebrew: false)). Each game is played to 11 points.", "כדי לזכות בצבע \(name), נצחו \(requirement.bots) משחקים ברצף מול \(rivals[0].name(hebrew: true)). בכל משחק מנצחים כשמגיעים ל־11 נקודות.")
-             : t("To earn \(name), win \(requirement.bots) games against any of the three strongest players: \(rivalNames). Each game is played to 11 points.", "כדי לזכות בצבע \(name), נצחו \(requirement.bots) משחקים מול אחד משלושת השחקנים החזקים ביותר: \(rivalNames). בכל משחק מנצחים כשמגיעים ל־11 נקודות."))
+        // Android c9f5fa6: once the house-player part is complete, its rules and opponents are no longer shown.
+        let botsDone = (requirement.streak ? state.streak : state.botWins) >= requirement.bots
+        if !botsDone {
+            line(requirement.streak
+                 ? t("To earn \(name), win \(requirement.bots) games in a row against \(rivals[0].name(hebrew: false)). Each game is played to 11 points.", "כדי לזכות בצבע \(name), נצחו \(requirement.bots) משחקים ברצף מול \(rivals[0].name(hebrew: true)). בכל משחק מנצחים כשמגיעים ל־11 נקודות.")
+                 : t("To earn \(name), win \(requirement.bots) games against any of the three strongest players: \(rivalNames). Each game is played to 11 points.", "כדי לזכות בצבע \(name), נצחו \(requirement.bots) משחקים מול אחד משלושת השחקנים החזקים ביותר: \(rivalNames). בכל משחק מנצחים כשמגיעים ל־11 נקודות."))
+        }
         let choices = [1, 0, 3].filter { MPRankPromotion.allowedControl(next, $0) }
         line(t("Qualification controls", "רמת השליטה באתגר"))
         MPChoiceBar(title: t("Qualification controls", "רמת השליטה באתגר"),
@@ -66,26 +81,35 @@ struct MPColorChallengeView: View {
                     selection: Binding(get: { choices.contains(model.challengeControl) ? model.challengeControl : choices[0] }, set: { model.challengeControl = $0 }))
         line(requirement.streak ? t("Best-player streak: \(state.streak)/\(requirement.bots)", "רצף מול השחקן החזק ביותר: \(state.streak)/\(requirement.bots)")
              : t("House-player wins: \(state.botWins)/\(requirement.bots)", "ניצחונות מול שחקני הבית: \(state.botWins)/\(requirement.bots)"), size: 20)
-        line(requirement.streak ? t("Rules: A loss resets an unfinished streak. Once the full streak is complete, it stays saved—even during Champion matches.", "הכללים: הפסד מאפס רצף שטרם הושלם. לאחר השלמת הרצף כולו הוא נשמר, גם במשחקים מול אלוף הצבע.")
-             : t("Rules: Choose any listed player each time. You can repeat the same opponent. Wins stay saved after a loss.", "הכללים: בכל פעם אפשר לבחור כל שחקן מהרשימה, גם את אותו היריב שוב. הניצחונות נשמרים גם אחרי הפסד."), size: 16)
-        if requirement.champions > 0 {
-            line(t("\(name) Champion wins: \(state.championWins)/\(requirement.champions)", "ניצחונות מול אלוף הצבע \(name): \(state.championWins)/\(requirement.champions)"), size: 20)
-            line(t("Rules: Also beat the \(name) Champion \(requirement.champions) times. These wins stay saved after a loss. Each match is played to 11 points.", "הכללים: צריך גם לנצח את אלוף הצבע \(name) \(requirement.champions) פעמים. הניצחונות האלה נשמרים גם אחרי הפסד. כל משחק הוא עד 11 נקודות."), size: 16)
+        if !botsDone {
+            line(requirement.streak ? t("Rules: A loss resets an unfinished streak. Once the full streak is complete, it stays saved—even during Champion matches.", "הכללים: הפסד מאפס רצף שטרם הושלם. לאחר השלמת הרצף כולו הוא נשמר, גם במשחקים מול אלוף הצבע.")
+                 : t("Rules: Choose any listed player each time. You can repeat the same opponent. Wins stay saved after a loss.", "הכללים: בכל פעם אפשר לבחור כל שחקן מהרשימה, גם את אותו היריב שוב. הניצחונות נשמרים גם אחרי הפסד."), size: 16)
         }
-        line(t("Choose your opponent below", "בחרו יריב בהמשך"), size: 20)
-        ForEach(rivals) { opponent($0.profile, next: next, target: target, name: name, champion: false) }
-        if requirement.champions > 0 { opponent(MPRankPromotion.championProfile(next), next: next, target: target, name: name, champion: true) }
+        if requirement.champions > 0 {
+            let left = requirement.champions - state.championWins
+            line(t("\(name) Champion wins: \(state.championWins)/\(requirement.champions)", "ניצחונות מול אלוף הצבע \(name): \(state.championWins)/\(requirement.champions)"), size: 20)
+            line(left == 1 ? t("Win once more against the \(name) Champion. First to 11 points wins. These wins stay saved after a loss.", "עוד ניצחון אחד מול אלוף הצבע \(name). הראשון שמגיע ל־11 נקודות מנצח. הניצחונות נשמרים גם אחרי הפסד.")
+                 : t("Win \(left) more against the \(name) Champion. First to 11 points wins. These wins stay saved after a loss.", "עוד \(left) ניצחונות מול אלוף הצבע \(name). הראשון שמגיע ל־11 נקודות מנצח. הניצחונות נשמרים גם אחרי הפסד."), size: 16)
+        }
+        if !botsDone {
+            line(t("Choose your opponent below: \(rivalNames)", "בחרו יריב בהמשך: \(rivalNames)"), size: 20)
+            ForEach(rivals) { opponent($0.profile, next: next, target: target, name: name, champion: false) }
+        }
+        if state.championWins < requirement.champions { opponent(MPRankPromotion.championProfile(next), next: next, target: target, name: name, champion: true) }
     }
     private func opponent(_ bot: MPBot, next: Int, target: MPRank, name: String, champion: Bool) -> some View {
         let c = MPRoster.find(bot.characterId) ?? MPRoster.all[0]
         return HStack(spacing: 12) {
-            MPAvatar(character: c.id, icon: 0).frame(width: 84, height: 110)
+            // Android c9f5fa6: the Champion wears the colour it defends (ChampionKit).
+            MPAvatar(character: c.id, icon: 0, championRank: champion ? next : -1).frame(width: 84, height: 110)
             VStack(spacing: 12) {
                 Text(champion ? t("\(name) Champion · \(c.name(hebrew: false))", "אלוף הצבע \(name) · \(c.name(hebrew: true))") : c.name(hebrew: hebrew))
                     .font(.system(size: 20, weight: .bold)).foregroundStyle(MPColor.color(target.ink)).multilineTextAlignment(.center)
+                // Android c9f5fa6: the Champion's Play button is on the colour's own surface.
                 Button { model.startChallenge(bot: bot, target: next, champion: champion) } label: {
-                    Text(t("Play", "למשחק")).font(.system(size: 18, weight: .bold)).foregroundStyle(MPColor.color(0xff123348))
-                        .frame(maxWidth: .infinity, minHeight: 54).background(MPFaceBackground(face: MPCourtStyle.startFace, radius: 16))
+                    Text(t("Play", "למשחק")).font(.system(size: 18, weight: .bold)).foregroundStyle(MPColor.color(champion ? target.ink : 0xff123348))
+                        .frame(maxWidth: .infinity, minHeight: 54)
+                        .background { if champion { MPRankPresentation.background(target, radius: 16) } else { MPFaceBackground(face: MPCourtStyle.startFace, radius: 16) } }
                 }.buttonStyle(.plain).disabled(model.busy)
             }.frame(maxWidth: .infinity)
         }

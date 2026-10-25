@@ -253,8 +253,119 @@ final class ModernPongFoundationTests: XCTestCase {
         var f = MPFlight(position: .init(1.005, 0.30), height: 0.002, velocity: .init(-0.05, -0.2), lift: -0.2, striker: .child)
         let e = f.advance(1.0 / 60, starter)
         XCTAssertNil(e?.resolution); XCTAssertEqual(e?.bounced, true); XCTAssertEqual(e?.point?.x, 1.0)
+        // Android 496a709: an airborne ball outside the table is judged when it reaches the table plane, not at once.
         var out = MPFlight(position: .init(1.02, 0.30), height: 0.3, velocity: .init(0.05, -0.2), lift: 0, striker: .child)
-        XCTAssertEqual(out.advance(1.0 / 60, starter)?.resolution, MPResolution(winner: .minik, fault: .leftTable))
+        XCTAssertNil(out.advance(1.0 / 60, starter)?.resolution)
+        var landed: MPResolution?
+        for _ in 0..<240 where landed == nil { landed = out.advance(1.0 / 120, starter)?.resolution }
+        XCTAssertEqual(landed, MPResolution(winner: .minik, fault: .leftTable))
+        XCTAssertNil(out.advance(1.0 / 30, starter))
+    }
+
+    // MARK: Android c9f5fa6 / 496a709 edge rallies (EdgeDailyReviewTest, EdgeRallyFollowupTest, ModernEngineTest)
+
+    /// EdgeDailyReviewTest.sharpEdgeEndpointsAndChampionStrength.
+    func testSharpEdgeEndpointsAndChampionStrength() {
+        let p = MPChance(0.98, 0.92)
+        near(MPServeDifficulty.adjust(p, landing: .init(0.02, 0.44), receivingTeam: 1, handSkill: 2).answer, 0.45, 1e-12)
+        near(MPServeDifficulty.adjust(p, landing: .init(0.98, 0.44), receivingTeam: 1, handSkill: 10).answer, 0.70, 1e-12)
+        let central = MPServeDifficulty.adjust(p, landing: .init(0.5, 0.3), receivingTeam: 1, handSkill: 2)
+        XCTAssertEqual(central.answer, p.answer); XCTAssertEqual(central.good, p.good)
+        let ordinary = MPRoster.find("kyra")!.profile, champion = MPRankPromotion.championProfile(10)
+        XCTAssertGreaterThanOrEqual(champion.forehandSkill, ordinary.forehandSkill); XCTAssertGreaterThanOrEqual(champion.backhandSkill, ordinary.backhandSkill)
+        XCTAssertEqual(MPServeDifficulty.handSkill(ordinary, .forehand), 10); XCTAssertEqual(MPServeDifficulty.handSkill(nil, .middle), 6)
+    }
+    /// EdgeDailyReviewTest.extremeLegalBounceRemainsPlayableOutsideSideline.
+    func testExtremeLegalBounceRemainsPlayableOutsideSideline() {
+        let t = MPTuning.values(.medium)
+        var f = MPFlight(position: .init(0.98, 0.2), height: 0.08, velocity: .init(0.3, -0.25), lift: 0.2, striker: .child); f.receiver = true
+        for _ in 0..<12 { _ = f.advance(1.0 / 120, t) }
+        XCTAssertGreaterThan(f.position.x, 1); XCTAssertFalse(f.resolved, "A legal ball can be returned beside the table")
+    }
+    /// EdgeDailyReviewTest.visibleEdgeLandingCountsBeforeTheBallLeavesInTheSameFrame.
+    func testVisibleEdgeLandingCountsBeforeTheBallLeavesInTheSameFrame() {
+        let t = MPTuning.values(.medium)
+        for dt in [1.0 / 30, 1.0 / 60, 1.0 / 120] { for x in [0.0, 0.99, 1.007] {
+            var f = MPFlight(position: .init(x, 0.008), height: 0.002, velocity: .init(0, -1.1), lift: -0.8, striker: .child)
+            var bounce = false, result: MPResolution?
+            for _ in 0..<300 where result == nil { let e = f.advance(dt, t); bounce = bounce || e?.recipient == .minik; result = e?.resolution }
+            XCTAssertTrue(bounce, "The top edge was actually touched, x=\(x) dt=\(dt)")
+            XCTAssertEqual(result, MPResolution(winner: .child, fault: .unreturned))
+        } }
+    }
+    /// EdgeDailyReviewTest.aerialExitContinuesDownToFloorWithoutFakeTableBounce.
+    func testAerialExitContinuesDownToFloorWithoutFakeTableBounce() {
+        let t = MPTuning.values(.medium)
+        var f = MPFlight(position: .init(0.5, 0.005), height: 0.25, velocity: .init(0, -1.1), lift: -0.3, striker: .child)
+        var result: MPResolution?
+        for _ in 0..<20 { XCTAssertNil(f.advance(1.0 / 120, t)?.resolution) }
+        for _ in 0..<200 where result == nil { result = f.advance(1.0 / 120, t)?.resolution }
+        XCTAssertEqual(result, MPResolution(winner: .minik, fault: .leftTable))
+        let loose = MPLooseBall(position: f.position, height: f.height, velocity: f.velocity, lift: f.lift)
+        for _ in 0..<200 { loose.advance(1.0 / 120, t, bodies: []) }
+        XCTAssertEqual(loose.tableBounces, 0)
+    }
+    /// EdgeRallyFollowupTest.returnFromOutsideSidelineIsJudgedAtLanding.
+    func testReturnFromOutsideSidelineIsJudgedAtLanding() {
+        let t = MPTuning.values(.medium)
+        for startX in [-0.10, 1.10] { for dt in [1.0 / 30, 1.0 / 60, 1.0 / 120] {
+            let start = MPPoint(startX, 0.90), end = MPPoint((1 - startX).mpClamp(0.15, 0.85), 0.18), time = 1.1, h = 0.13
+            var f = MPFlight(position: start, height: h, velocity: .init((end.x - start.x) / time, (end.y - start.y) / time), lift: (0.5 * t.gravity * time * time - h) / time, striker: .child)
+            var bounced = false, result: MPResolution?
+            for _ in 0..<500 where result == nil { let e = f.advance(dt, t); bounced = bounced || e?.recipient == .minik; result = e?.resolution }
+            XCTAssertTrue(bounced, "An airborne sideline return was called out before its legal landing: \(startX)/\(dt)/\(String(describing: result))")
+            XCTAssertEqual(result?.winner, .child)
+        } }
+    }
+    /// EdgeRallyFollowupTest.lowPaddleContactDoesNotTeleportBallUpward (Android 496a709: contact keeps its height).
+    func testLowPaddleContactDoesNotTeleportBallUpward() {
+        let t = MPTuning.values(.medium)
+        var f = MPFlight(position: .init(0.04, 0.46), height: 0.006, velocity: .init(-0.2, -0.2), lift: 0.7, striker: .child)
+        let p = f.position, h = f.height
+        f.hit(.init(point: p, timing: 1, spatial: 1, velocity: .init(0, 0.6), direction: 0), side: .minik, tuning: t, rally: 0)
+        XCTAssertEqual(f.position, p); near(f.height, h, 1e-10)
+    }
+    /// EdgeRallyFollowupTest.sideToSideRouteNeverCrossesTableFootprint and TeamColorRecoveryTest's speed bound.
+    func testHouseFootworkGoesAroundTheTableWithinItsSpeed() {
+        let left = MPPoint(MPProjection.left - 100, 550), right = MPPoint(MPProjection.left + MPProjection.tableWidth + 100, 550)
+        func inside(_ b: MPPoint) -> Bool { b.y > MPProjection.top + 1e-8 && b.x > MPProjection.left - 65 && b.x < MPProjection.left + MPProjection.tableWidth + 65 }
+        var motion = MPMotion()
+        motion.approach(left, seconds: 0.8, left: true); for _ in 0..<100 { motion.advance(0.01) }
+        XCTAssertEqual(motion.body, left)
+        motion.approach(right, seconds: 1.4, left: false)
+        for _ in 0..<150 { motion.advance(0.01); XCTAssertFalse(inside(motion.body), "Bot walks through table: \(motion.body)") }
+        var m = MPMotion(); let speed = 700.0, dt = 1.0 / 120
+        for target in [left, right, MPMotion.home] {
+            m.approach(target, seconds: 0.08, left: true, maxSpeed: speed)
+            for _ in 0..<600 {
+                let previous = m.body; m.advance(dt)
+                XCTAssertLessThanOrEqual(previous.distance(m.body), speed * dt + 1e-7, "Speed must be capped even for a late retarget")
+                XCTAssertFalse(inside(m.body), "Feet must remain outside the table")
+            }
+            near(target.distance(m.body), 0, 1e-7)
+        }
+        XCTAssertTrue(MPProjection.besideTable(left)); XCTAssertFalse(MPProjection.besideTable(MPMotion.home)); XCTAssertEqual(MPProjection.clampBody(left), left)
+        XCTAssertEqual(MPProjection.clampBody(.init(470, 400)), MPPoint(470, MPProjection.top))
+    }
+    /// TeamColorRecoveryTest: the earned colour stays the player's; opponents and same-rank guests stay distinct.
+    func testEarnedTeamColorsMatchAndroid() {
+        func delta(_ a: UInt32, _ b: UInt32) -> Int { [0, 8, 16].reduce(0) { $0 + abs(Int((a >> UInt32($1)) & 255) - Int((b >> UInt32($1)) & 255)) } }
+        for rank in MPRanks.all {
+            let rivals = Set((0...80).map { seed -> UInt32 in
+                let p = MPTeamColors.local(rank.color, seed: Int64(seed)); XCTAssertEqual(p.first, rank.color); XCTAssertNotEqual(p.second, rank.color); return p.second
+            })
+            XCTAssertGreaterThanOrEqual(rivals.count, 2, "Opponent colors must vary for \(rank.en)")
+            for host in 0...1 {
+                let p = MPTeamColors.online(host: rank.color, guest: rank.color, hostTeam: host, seed: 77)
+                XCTAssertEqual(p.fill(host), rank.color); XCTAssertNotEqual(p.fill(1 - host), rank.color)
+                XCTAssertGreaterThanOrEqual(delta(p.first, p.second), 120, "Same-rank shade must be clearly distinct")
+                XCTAssertEqual(p, MPTeamColors.online(host: rank.color, guest: rank.color, hostTeam: host, seed: 77))
+            }
+        }
+        let a = MPRanks.all[5].color, b = MPRanks.all[9].color
+        XCTAssertEqual(MPTeamColors.online(host: a, guest: b, hostTeam: 0), .init(first: a, second: b))
+        XCTAssertEqual(MPTeamColors.online(host: a, guest: b, hostTeam: 1), .init(first: b, second: a))
+        XCTAssertEqual(MPTeamColors.ink(0xff173e56), 0xffffffff); XCTAssertEqual(MPTeamColors.ink(0xffffdf75), 0xff173e56)
     }
 
     // MARK: Loose ball, projections, placement
@@ -336,8 +447,9 @@ final class ModernPongFoundationTests: XCTestCase {
             near(MPReturnPlacement.multiplier(startX: 0.5, contactX: 0.5 + d), factor, 1e-12)
             let c = MPReturnPlacement.adjust(MPChance(0.8, 0.6), startX: 0.5, contactX: 0.5 + d); near(c.answer, answer, 1e-12); near(c.good, good, 1e-12)
         }
-        let serves: [(MPPoint, Int, Double, Double, MPZone)] = [(.init(0.9, 0.3), 1, 0.7481828571428571, 0.63358, .backhand), (.init(0.1, 0.9), 0, 0.7815085714285714, 0.64816, .backhand),
-            (.init(0.5, 0.2), 1, 0.9, 0.7, .middle), (.init(0.8, 0.6), 0, 0.82512, 0.6672399999999999, .forehand)]
+        // Android c9f5fa6: one 45–70 % sharp-edge roll by receiving-hand skill (here derived from the authored chance).
+        let serves: [(MPPoint, Int, Double, Double, MPZone)] = [(.init(0.9, 0.3), 1, 0.7065711462450593, 0.5495553359683795, .backhand), (.init(0.1, 0.9), 0, 0.7304512516469038, 0.5681287512809251, .backhand),
+            (.init(0.5, 0.2), 1, 0.9, 0.7, .middle), (.init(0.8, 0.6), 0, 0.7973155467720685, 0.6201343141560532, .forehand)]
         for (landing, team, answer, good, zone) in serves {
             let c = MPServeDifficulty.adjust(MPChance(0.9, 0.7), landing: landing, receivingTeam: team); near(c.answer, answer, 1e-12); near(c.good, good, 1e-12)
             XCTAssertEqual(MPServeDifficulty.zone(ballX: landing.x, playerX: 0.5, team: team), zone)
@@ -387,25 +499,30 @@ final class ModernPongFoundationTests: XCTestCase {
             XCTAssertEqual(MPRankPromotion.bots(target).map(\.id), bots); XCTAssertEqual([0, 1, 3, 4].map { MPRankPromotion.allowedControl(target, $0) }, allowed)
         }
         XCTAssertEqual(MPRankPromotion.requirement(2).bots, 3); XCTAssertEqual(MPRankPromotion.requirement(10).bots, 5); XCTAssertEqual(MPRankPromotion.requirement(1).bots, 0)
-        let champions: [(Int, Int, String)] = [(4, 7, "gaya"), (5, 7, "gaya"), (6, 7, "flare"), (7, 8, "kyra"), (8, 8, "gaya"), (9, 9, "flare"), (10, 9, "kyra"), (11, 10, "gaya"), (12, 10, "flare")]
+        // Android c9f5fa6: a champion is never weaker than the character's own house-player profile.
+        let champions: [(Int, Int, String)] = [(4, 8, "gaya"), (5, 8, "gaya"), (6, 9, "flare"), (7, 10, "kyra"), (8, 8, "gaya"), (9, 9, "flare"), (10, 10, "kyra"), (11, 10, "gaya"), (12, 10, "flare")]
         for (target, skill, character) in champions {
             XCTAssertEqual(MPRankPromotion.championProfile(target), MPBot(speed: skill, reaction: skill, accuracy: skill, power: skill, agility: skill, characterId: character, forehandSkill: skill, backhandSkill: skill, serveSkill: skill))
         }
     }
 
     func testChampionTuningMatchesAndroid() {
-        for target in [-1, 4, 5, 12] {
+        for target in [-1, 4, 12] {
             let t = MPRankPromotion.championTuning(starter, target)
             XCTAssertEqual(t.minikReactionInterval, starter.minikReactionInterval); XCTAssertEqual(t.profile.maxSpeed, starter.profile.maxSpeed)
         }
+        // Android c9f5fa6: strength 0.25 + 0.75 × (target − 5) / 6, so even the first champion (5) is strengthened.
+        let five = MPRankPromotion.championTuning(starter, 5)
+        near(five.minikReactionInterval, 0.40109999999999996, 1e-12); near(five.minikAimError, 0.222, 1e-12)
+        near(five.profile.serveReceive[0].answer, 0.870625, 1e-12); near(five.profile.forehandSame.answer, 0.9137500000000001, 1e-12)
         let eight = MPRankPromotion.championTuning(starter, 8), p = eight.profile
-        near(eight.minikReactionInterval, 0.3822, 1e-12); near(eight.minikAimError, 0.204, 1e-12)
-        let receive: [(Double, Double)] = [(0.89125, 0.8400000000000001), (0.9275, 0.88), (0.96375, 0.92)]
+        near(eight.minikReactionInterval, 0.37274999999999997, 1e-12); near(eight.minikAimError, 0.195, 1e-12)
+        let receive: [(Double, Double)] = [(0.9015625, 0.8500000000000001), (0.934375, 0.8875), (0.9671875, 0.925)]
         XCTAssertEqual(p.serveReceive.count, 3)
         for i in receive.indices { near(p.serveReceive[i].answer, receive[i].0, 1e-12); near(p.serveReceive[i].good, receive[i].1, 1e-12) }
-        near(p.forehandSame.answer, 0.9275, 1e-12); near(p.forehandSame.good, 0.88, 1e-12); near(p.forehandCross.answer, 0.855, 1e-12); near(p.forehandCross.good, 0.76, 1e-12)
-        near(p.backhandSame.answer, 0.855, 1e-12); near(p.backhandSame.good, 0.8, 1e-12); near(p.backhandCross.answer, 0.7825, 1e-12); near(p.backhandCross.good, 0.6, 1e-12)
-        near(p.firstForehandSpeed, 1.0918, 1e-12); near(p.firstBackhandSpeed, 1.0388, 1e-12); near(p.maxSpeed, 1.2932000000000001, 1e-12)
+        near(p.forehandSame.answer, 0.934375, 1e-12); near(p.forehandSame.good, 0.8875, 1e-12); near(p.forehandCross.answer, 0.86875, 1e-12); near(p.forehandCross.good, 0.7749999999999999, 1e-12)
+        near(p.backhandSame.answer, 0.86875, 1e-12); near(p.backhandSame.good, 0.8125, 1e-12); near(p.backhandCross.answer, 0.803125, 1e-12); near(p.backhandCross.good, 0.625, 1e-12)
+        near(p.firstForehandSpeed, 1.10725, 1e-12); near(p.firstBackhandSpeed, 1.0534999999999999, 1e-12); near(p.maxSpeed, 1.3114999999999999, 1e-12)
         let eleven = MPRankPromotion.championTuning(starter, 11)
         near(eleven.minikReactionInterval, 0.34440000000000004, 1e-12); near(eleven.minikAimError, 0.16799999999999998, 1e-12)
         near(eleven.profile.backhandCross.answer, 0.865, 1e-12); near(eleven.profile.maxSpeed, 1.3664, 1e-12)

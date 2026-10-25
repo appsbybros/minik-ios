@@ -120,6 +120,28 @@ final class MPPoseAtlas {
         return Geometry(bounds: CGRect(x: min(l, r), y: y(f.visible.minY), width: abs(r - l), height: f.visible.height * scale),
                         racket: CGPoint(x: x(f.paddle.x), y: y(f.paddle.y)), radius: f.radius * scale, frame: index)
     }
+    private var soles: [String: [CGPoint]] = [:]
+    /// Android 496a709 `floorSupports`: the ground support of both shoes (the lowest opaque pixel of the first and
+    /// last column within the bottom 16 % of the body), not just the single registration anchor; in view points.
+    func floorSupports(_ id: String, _ facing: Facing, mirror: Bool = false, foot: CGPoint, height: CGFloat, phase: Int) -> [CGPoint] {
+        guard let (sheet, f, index) = parts(id, facing, phase) else { return [foot] }
+        let key = id + "/" + String(index)
+        let pixels: [CGPoint]
+        if let cached = soles[key] { pixels = cached }
+        else {
+            var columns: [CGPoint] = []
+            if let cell = sheet.image.cropping(to: f.source), let alpha = Alpha(cell) {
+                let top = Int(f.visible.maxY - f.visible.height * 0.16), bottom = Int(f.visible.maxY) - 1
+                for x in Int(f.visible.minX)..<max(Int(f.visible.minX), Int(f.visible.maxX)) where bottom >= top {
+                    for y in stride(from: bottom, through: top, by: -1) where alpha.at(x, y) >= 160 { columns.append(CGPoint(x: x, y: y)); break }
+                }
+            }
+            pixels = columns.isEmpty ? [f.foot] : [columns[0], columns[columns.count - 1]]
+            soles[key] = pixels
+        }
+        let scale = height / max(sheet.heights[facing.rawValue], 1)
+        return pixels.map { CGPoint(x: foot.x + ($0.x - f.foot.x) * scale * (mirror ? -1 : 1), y: foot.y + ($0.y - f.foot.y) * scale) }
+    }
     @discardableResult func draw(_ id: String, _ facing: Facing, mirror: Bool = false, foot: CGPoint, height: CGFloat, phase: Int) -> Geometry? {
         guard let (sheet, f, index) = parts(id, facing, phase) else { return nil }
         let key = id + "/" + String(index)
@@ -138,17 +160,94 @@ final class MPPoseAtlas {
         return geometry(id, facing, mirror: mirror, foot: foot, height: height, phase: phase)
     }
     /// Android `BotPortrait`: the first front pose cropped to its visible body, kept as a small image so the large
-    /// atlas is not held in memory for a menu.
-    static func portrait(_ id: String) -> UIImage? {
-        if let cached = portraits[id] { return cached }
-        guard let frames = frames(id), let atlas = MPArtFiles.image("pong-poses/" + id + ".png")?.cgImage else { return nil }
+    /// atlas is not held in memory for a menu. `championRank` (Android c9f5fa6) dresses a Champion in its colour.
+    static func portrait(_ id: String, championRank: Int = -1) -> UIImage? {
+        let key = championRank >= 0 ? id + "/champion" + String(championRank) : id
+        if let cached = portraits[key] { return cached }
+        guard let frames = frames(id), var atlas = MPArtFiles.image("pong-poses/" + id + ".png")?.cgImage else { return nil }
+        if championRank >= 0, let dressed = MPChampionKit.apply(atlas, id: id, rank: championRank, frames: frames.map { ($0.source, $0.visible) }) { atlas = dressed }
         let f = frames[0]
         let rect = CGRect(x: f.source.minX + f.visible.minX, y: f.source.minY + f.visible.minY, width: f.visible.width, height: f.visible.height)
         guard let cropped = atlas.cropping(to: rect) else { return nil }
         let scale = min(1, 320 / max(rect.height, 1)), size = CGSize(width: rect.width * scale, height: rect.height * scale)
         let format = UIGraphicsImageRendererFormat(); format.scale = 1
         let small = UIGraphicsImageRenderer(size: size, format: format).image { _ in UIImage(cgImage: cropped).draw(in: CGRect(origin: .zero, size: size)) }
-        portraits[id] = small; return small
+        portraits[key] = small; return small
+    }
+    /// The whole atlas dressed by `MPChampionKit` (the in-match Champion), or nil when nothing changes.
+    static func championAtlas(_ id: String, rank: Int) -> UIImage? {
+        let base = id.hasSuffix("-walk") ? String(id.dropLast(5)) : id
+        guard MPChampionKit.dresses(base, rank: rank), let frames = frames(id), let atlas = MPArtFiles.image("pong-poses/" + id + ".png")?.cgImage,
+              let dressed = MPChampionKit.apply(atlas, id: base, rank: rank, frames: frames.map { ($0.source, $0.visible) }) else { return nil }
+        return UIImage(cgImage: dressed)
+    }
+}
+
+/// Android `ChampionKit` (c9f5fa6): a runtime fabric palette. Original poses, skin, hair and paddles remain authored
+/// pixels; the rank colour is applied to the clothing material of Kyra, Gaya and Flare, never to the whole actor.
+enum MPChampionKit {
+    static func dresses(_ id: String, rank: Int) -> Bool { MPRanks.all.indices.contains(rank) && ["kyra", "gaya", "flare"].contains(id) }
+    /// Android `Color.colorToHSV`: hue 0..<360, saturation and value 0...1.
+    static func hsv(_ r: Float, _ g: Float, _ b: Float) -> (Float, Float, Float) {
+        let maxC = max(r, g, b), minC = min(r, g, b), d = maxC - minC
+        var h: Float = 0
+        if d > 0 {
+            if maxC == r { h = (g - b) / d } else if maxC == g { h = 2 + (b - r) / d } else { h = 4 + (r - g) / d }
+            h *= 60; if h < 0 { h += 360 }
+        }
+        return (h, maxC == 0 ? 0 : d / maxC, maxC)
+    }
+    /// Android `Color.HSVToColor`, channels 0...1.
+    static func rgb(_ h: Float, _ s: Float, _ v: Float) -> (Float, Float, Float) {
+        let hh = (h.truncatingRemainder(dividingBy: 360)) / 60, i = Int(hh), f = hh - Float(i)
+        let p = v * (1 - s), q = v * (1 - s * f), t = v * (1 - s * (1 - f))
+        switch i { case 0: return (v, t, p); case 1: return (q, v, p); case 2: return (p, v, t); case 3: return (p, q, v); case 4: return (t, p, v); default: return (v, p, q) }
+    }
+    /// Recolours the garment region of every frame (`source` cell, `visible` body inside it, in atlas pixels).
+    static func apply(_ source: CGImage, id: String, rank: Int, frames: [(source: CGRect, visible: CGRect)]) -> CGImage? {
+        guard dresses(id, rank: rank) else { return nil }
+        let color = MPRanks.all[rank].color
+        let palette = hsv(Float((color >> 16) & 255) / 255, Float((color >> 8) & 255) / 255, Float(color & 255) / 255)
+        let w = source.width, h = source.height
+        guard w > 0, h > 0 else { return nil }
+        var rgba = [UInt8](repeating: 0, count: w * h * 4)
+        let space = CGColorSpaceCreateDeviceRGB(), info = CGImageAlphaInfo.premultipliedLast.rawValue
+        let image: CGImage? = rgba.withUnsafeMutableBytes { buffer in
+            guard let context = CGContext(data: buffer.baseAddress, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4, space: space, bitmapInfo: info) else { return nil }
+            context.draw(source, in: CGRect(x: 0, y: 0, width: w, height: h))
+            let px = buffer.bindMemory(to: UInt8.self)
+            for (i, f) in frames.enumerated() {
+                let ox = Int(f.source.minX), oy = Int(f.source.minY)
+                let l = Int(f.visible.minX), top = Int(f.visible.minY), fw = Int(f.visible.width), fh = Int(f.visible.height)
+                guard fw > 0, fh > 0 else { continue }
+                for y in top..<(top + fh) {
+                    let v = Float(y - top) / Float(fh)
+                    for x in l..<(l + fw) {
+                        let u = Float(x - l) / Float(fw)
+                        // Separate torso, shorts/trousers and shoes. Long hair is outside the torso mask on rear poses.
+                        let garment = id == "flare" ? (v >= 0.24 && v <= 0.98)
+                            : (v >= 0.50 && v <= 0.65 && u >= 0.23 && u <= 0.77) || v > 0.84 || (i < 8 && v >= 0.31 && v <= 0.46 && u >= 0.40 && u <= 0.68)
+                        guard garment else { continue }
+                        let ax = ox + x, ay = oy + y
+                        guard ax >= 0, ay >= 0, ax < w, ay < h else { continue }
+                        let index = (ay * w + ax) * 4, a = px[index + 3]
+                        if a < 24 { continue }
+                        let alpha = Float(a) / 255
+                        let (hue, sat, value) = hsv(Float(px[index]) / 255 / alpha, Float(px[index + 1]) / 255 / alpha, Float(px[index + 2]) / 255 / alpha)
+                        // Fabric is blue/purple/black. Warm skin, red paddles and the bright stars/seams keep their colour.
+                        guard (hue >= 195 && hue <= 295 || sat < 0.32) && value < 0.72 else { continue }
+                        let shade = min(max(0.34 + value * 0.80, 0.34), 0.95)
+                        let tone = palette.2 > 0.65 ? shade : shade * palette.2 * 1.45
+                        let c = rgb(palette.0, palette.1 * 0.88, min(max(tone, 0), 1))
+                        px[index] = UInt8(min(max(c.0 * alpha * 255, 0), 255).rounded())
+                        px[index + 1] = UInt8(min(max(c.1 * alpha * 255, 0), 255).rounded())
+                        px[index + 2] = UInt8(min(max(c.2 * alpha * 255, 0), 255).rounded())
+                    }
+                }
+            }
+            return context.makeImage()
+        }
+        return image
     }
 }
 
