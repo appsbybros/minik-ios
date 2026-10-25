@@ -104,6 +104,8 @@ struct MemoryView: View {
             await performLanguageTransition()
         }
         .onAppear(perform: speakLanguageIntroductionIfNeeded)
+        // App Store screenshot staging: a board in play rather than a fresh one.
+        .task { await stageStoreScreenshotBoard() }
         // Android MatchScreen reads the memory instruction when a Math board opens.
         .mathReadAloud(
             instruction: mathActivityFamily == nil
@@ -786,6 +788,22 @@ struct MemoryView: View {
         }
         rewardedLanguagePresentationID = presentationID
         onLanguageGameCompleted(presentationID)
+    }
+
+    /// The "language.memory" screenshot (see StoreScreenshotScene) shows one pair
+    /// matched and one more card face up, without recording attempts or speaking.
+    @MainActor
+    private func stageStoreScreenshotBoard() async {
+        guard StoreScreenshotScene.name == "language.memory" else { return }
+        try? await Task.sleep(nanoseconds: 800_000_000)
+        guard !Task.isCancelled,
+              session.equivalenceSets.count >= 2,
+              session.matchedGroupIndices.isEmpty,
+              session.firstSelectedCardID == nil else { return }
+        session.selectCard(MemoryCardID(groupIndex: 0, representationIndex: 0))
+        session.selectCard(MemoryCardID(groupIndex: 0, representationIndex: 1))
+        session.continueAfterAttempt()
+        session.selectCard(MemoryCardID(groupIndex: 1, representationIndex: 0))
     }
 
     private func selectCard(_ cardID: MemoryCardID) {

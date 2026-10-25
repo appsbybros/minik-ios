@@ -130,6 +130,8 @@ struct BuildView: View {
             } catch { }
         }
         .task(id: session.currentChallenge.id) { speakCurrentPrompt() }
+        // App Store screenshot staging: the word half built.
+        .task { await stageStoreScreenshotWord() }
         .mathReadAloud(
             instruction: mathInstruction,
             exercise: isMath ? MathReadAloud.exercise(session.currentChallenge.prompt.representations) : nil,
@@ -687,6 +689,22 @@ struct BuildView: View {
     private func replayLanguagePrompt() {
         guard session.answerResult != .correct else { return }
         speakCurrentPrompt()
+    }
+
+    /// The "language.wordBuild" screenshot (see StoreScreenshotScene) shows the first
+    /// half of the word's letters placed, short of finishing it, with no feedback.
+    @MainActor
+    private func stageStoreScreenshotWord() async {
+        guard StoreScreenshotScene.name == "language.wordBuild", isLanguageBuild else { return }
+        try? await Task.sleep(nanoseconds: 800_000_000)
+        let expected = session.currentChallenge.expectedTokenSequence
+        guard !Task.isCancelled,
+              session.currentChallenge.validationMode == .immediatePrefix,
+              session.selectedTokenIDs.isEmpty,
+              expected.count > 1 else { return }
+        for tokenID in expected.prefix(min(max(2, expected.count / 2), expected.count - 1)) {
+            session.selectToken(tokenID)
+        }
     }
 
     private func selectToken(_ token: BuildToken) {

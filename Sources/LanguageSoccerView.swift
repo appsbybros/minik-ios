@@ -1745,7 +1745,8 @@ struct LanguageSoccerView: View {
             return
         }
         didEvaluateIntroduction = true
-        if introductionRepository.registerPresentationIfNeeded() {
+        // App Store screenshots show the match itself, not its introduction.
+        if StoreScreenshotScene.name == nil, introductionRepository.registerPresentationIfNeeded() {
             showsIntroduction = true
             interfaceSpeechPlayer.speak(soccerIntroductionText, interfaceLocale: interfaceLocaleID)
             startIntroductionCountdown()

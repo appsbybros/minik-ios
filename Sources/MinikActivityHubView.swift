@@ -112,6 +112,7 @@ struct MinikActivityHubView: View {
         self.learnedLanguageRepository = learnedLanguageRepository
         self.languageLevelRepository = languageLevelRepository
         self.languageAutoRepository = languageAutoRepository
+        StoreScreenshotSampleData.seedIfNeeded(product: configuration.variant)
         // Before anything per child is loaded: an exchange of children that a
         // stopped app left half done is completed first.
         let activeLearner = ChildProfileStore.activeLearnerAfterRecovery(for: configuration.variant)

@@ -55,7 +55,13 @@
         {"id": "05-soccer", "scene": "language.soccer", "wait": 8,
          "caption": {"en": ["PRACTICE THAT FEELS LIKE PLAY", "Score with every right answer", "Soccer, towers and more word games."],
                      "he": ["תרגול שמרגיש כמו משחק", "כל תשובה נכונה היא גול", "כדורגל, מגדלים ועוד משחקי מילים."]}},
-        {"id": "06-progress", "scene": "progress", "wait": 6,
+        {"id": "06-tower", "scene": "language.tower", "wait": 8,
+         "caption": {"en": ["STACK THE LETTERS", "Build a word tower", "Drag letters into place, block by block."],
+                     "he": ["מסדרים את האותיות", "בונים מגדל של מילה", "גוררים אותיות למקום, קובייה אחרי קובייה."]}},
+        {"id": "07-picture", "scene": "language.imageToWord", "wait": 7,
+         "caption": {"en": ["LOOK, THINK, CHOOSE", "Find the word for the picture", "Reading practice that feels like a game."],
+                     "he": ["מסתכלים, חושבים, בוחרים", "מוצאים את המילה לתמונה", "תרגול קריאה שמרגיש כמו משחק."]}},
+        {"id": "08-progress", "scene": "progress", "wait": 6,
          "caption": {"en": ["WATCH YOUR PROGRESS", "Every word counts", "Levels grow as you learn."],
                      "he": ["רואים את ההתקדמות", "כל מילה נחשבת", "הרמה עולה ככל שלומדים."]}}
       ]

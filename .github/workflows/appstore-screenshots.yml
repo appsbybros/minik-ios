@@ -176,6 +176,15 @@ jobs:
             sleep "$WAIT"
             limit 60 xcrun simctl io "$UDID" screenshot "$OUT" < /dev/null > /dev/null 2>&1 && [ -s "$OUT" ]
             local captured=$?
+            # A screen that has not drawn yet is a plain white launch screen (about 90 KB;
+            # Build and Soccer on the iPhone, 2026-10-25): wait and take it again.
+            local retake=0
+            while [ $captured -eq 0 ] && [ "$(stat -f %z "$OUT")" -lt 250000 ] && [ $retake -lt 3 ]; do
+              retake=$((retake + 1))
+              sleep 6
+              limit 60 xcrun simctl io "$UDID" screenshot "$OUT" < /dev/null > /dev/null 2>&1 && [ -s "$OUT" ]
+              captured=$?
+            done
             # A game left running keeps the Simulator busy until the next launch.
             limit 60 xcrun simctl terminate "$UDID" "$BUNDLE" < /dev/null > /dev/null 2>&1
             return $captured
