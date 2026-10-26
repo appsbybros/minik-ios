@@ -44,8 +44,9 @@ enum MathProductionActivityID: String, CaseIterable, Hashable, Identifiable, Sen
         case .answerToRepresentation: return String(localized: "Answer → Representation")
         case .buildMath: return String(localized: "Build Math")
         case .mathMixed: return String(localized: "Math Mixed")
-        // Learn Math teaches one fact per screen; this one is the whole table.
-        case .mathCards: return String(localized: "Facts Table")
+        // Learn Math teaches one fact per screen; Math Cards gives sixteen useful rules with
+        // examples (Android Math Plus ab3e427), so it takes Android's name again.
+        case .mathCards: return String(localized: "Math Cards")
         case .mathSoccer: return String(localized: "Math Soccer")
         case .mathTower: return String(localized: "Math Tower")
         case .mathMemory: return String(localized: "Math Memory")
@@ -63,7 +64,7 @@ enum MathProductionActivityID: String, CaseIterable, Hashable, Identifiable, Sen
         case .answerToRepresentation: return String(localized: "Choose an equivalent representation")
         case .buildMath: return String(localized: "Build an answer or expression in order")
         case .mathMixed: return String(localized: "Practice approved modes for this level")
-        case .mathCards: return String(localized: "All of this level's facts in one table, to review")
+        case .mathCards: return String(localized: "Discover useful rules with examples")
         case .mathSoccer: return String(localized: "Kick the correct math answer")
         case .mathTower: return String(localized: "Build the target value")
         case .mathMemory: return String(localized: "Find equivalent math pairs")
@@ -153,7 +154,7 @@ enum MathProductionActivityID: String, CaseIterable, Hashable, Identifiable, Sen
         ActivitySection(
             id: "math-learn",
             title: String(localized: "Learn and review"),
-            subtitle: String(localized: "Learn this level's facts step by step, then review them in a table."),
+            subtitle: String(localized: "Learn this level's facts step by step, then discover useful rules."),
             activities: [.learnMath, .mathCards]
         ),
         ActivitySection(

@@ -184,9 +184,10 @@ final class MPPoseAtlas {
 }
 
 /// Android `ChampionKit` (c9f5fa6): a runtime fabric palette. Original poses, skin, hair and paddles remain authored
-/// pixels; the rank colour is applied to the clothing material of Kyra, Gaya and Flare, never to the whole actor.
+/// pixels; the rank colour is applied to the champions' clothing material (Android 84592d0 adds Comet, June and Mia),
+/// never to the whole actor.
 enum MPChampionKit {
-    static func dresses(_ id: String, rank: Int) -> Bool { MPRanks.all.indices.contains(rank) && ["kyra", "gaya", "flare"].contains(id) }
+    static func dresses(_ id: String, rank: Int) -> Bool { MPRanks.all.indices.contains(rank) && ["kyra", "gaya", "flare", "comet", "june", "mia"].contains(id) }
     /// Android `Color.colorToHSV`: hue 0..<360, saturation and value 0...1.
     static func hsv(_ r: Float, _ g: Float, _ b: Float) -> (Float, Float, Float) {
         let maxC = max(r, g, b), minC = min(r, g, b), d = maxC - minC
@@ -225,8 +226,13 @@ enum MPChampionKit {
                     for x in l..<(l + fw) {
                         let u = Float(x - l) / Float(fw)
                         // Separate torso, shorts/trousers and shoes. Long hair is outside the torso mask on rear poses.
-                        let garment = id == "flare" ? (v >= 0.24 && v <= 0.98)
-                            : (v >= 0.50 && v <= 0.65 && u >= 0.23 && u <= 0.77) || v > 0.84 || (i < 8 && v >= 0.31 && v <= 0.46 && u >= 0.40 && u <= 0.68)
+                        let garment: Bool
+                        switch id {
+                        case "flare", "comet": garment = v >= 0.24 && v <= 0.98
+                        case "june": garment = v > 0.52 || (i < 8 && v >= 0.30 && v <= 0.48 && u >= 0.30 && u <= 0.77)
+                        case "mia": garment = (v >= 0.48 && v <= 0.68) || v > 0.84 || (i < 8 && v >= 0.25 && v <= 0.48 && u >= 0.22 && u <= 0.80)
+                        default: garment = (v >= 0.50 && v <= 0.65 && u >= 0.23 && u <= 0.77) || v > 0.84 || (i < 8 && v >= 0.31 && v <= 0.46 && u >= 0.40 && u <= 0.68)
+                        }
                         guard garment else { continue }
                         let ax = ox + x, ay = oy + y
                         guard ax >= 0, ay >= 0, ax < w, ay < h else { continue }
@@ -235,8 +241,12 @@ enum MPChampionKit {
                         let alpha = Float(a) / 255
                         let (hue, sat, value) = hsv(Float(px[index]) / 255 / alpha, Float(px[index + 1]) / 255 / alpha, Float(px[index + 2]) / 255 / alpha)
                         // Fabric is blue/purple/black. Warm skin, red paddles and the bright stars/seams keep their colour.
-                        guard (hue >= 195 && hue <= 295 || sat < 0.32) && value < 0.72 else { continue }
-                        let shade = min(max(0.34 + value * 0.80, 0.34), 0.95)
+                        // Mia's white vest and blue shorts are brighter than the other kits; her torso mask still
+                        // excludes the rear hair and warm skin.
+                        let cloth = id == "mia" ? (hue >= 180 && hue <= 255 || sat < 0.16) && value > 0.35
+                            : (hue >= 195 && hue <= 295 || sat < 0.32) && value < 0.72
+                        guard cloth else { continue }
+                        let shade = id == "mia" ? 0.22 + value * 0.75 : min(max(0.34 + value * 0.80, 0.34), 0.95)
                         let tone = palette.2 > 0.65 ? shade : shade * palette.2 * 1.45
                         let c = rgb(palette.0, palette.1 * 0.88, min(max(tone, 0), 1))
                         px[index] = UInt8(min(max(c.0 * alpha * 255, 0), 255).rounded())

@@ -373,6 +373,12 @@ final class MPScene: SKScene {
         let a = screenPoint(at), b = screenPoint(engine.ball, engine.renderedHeight)
         let focus = CGPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2)
         receptionCamera.update(dt, assist: engine.reception, local: 0, focus: focus, size: size, holding: activeTouch != nil, reduceMotion: UIAccessibility.isReduceMotionEnabled)
+        // Android 579de33 `constrainReceptionCamera`: both players stay whole while zoomed. Android lets the far player
+        // draw up under its transparent HUD; this court view cannot draw beyond its own edges, so they bound the frame.
+        if activeTouch == nil, proPath.isEmpty, let rival = usesLargeTable ? large?.farGeometry?.bounds : compactRival?.geometry?.bounds,
+           let local = localPlayerGeometry?.bounds {
+            receptionCamera.keepPlayersVisible(top: rival.minY, bottom: local.maxY, visibleTop: 6, visibleBottom: size.height - 6)
+        }
         placeCamera()
     }
     /// The view centre in the court's top-left coordinates, converted to the scene's y-up coordinates.

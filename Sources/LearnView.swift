@@ -104,8 +104,8 @@ struct LearnView: View {
         }
     }
 
-    /// Learn Math teaches one fact at a time with its picture; the Facts Table
-    /// (MathCardsView) shows them all at once. The header says which this is.
+    /// Learn Math teaches one fact at a time with its picture; Math Cards (MathCardsView)
+    /// gives useful rules with examples. The header says which this is.
     private func stepByStepHeader(compact: Bool) -> some View {
         VStack(spacing: 6) {
             Text(String(localized: "Learn step by step"))

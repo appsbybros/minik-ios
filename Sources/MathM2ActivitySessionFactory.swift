@@ -35,6 +35,7 @@ struct MathM2MixedSession: Sendable {
 struct MathM2ActivitySessionFactory: Sendable {
     private static let challengeCount = 6
     private let provider: MathM2ContentProvider
+    private let fitGate: MathContentFitGate
 
     init(
         configuration: ProductConfiguration,
@@ -42,6 +43,7 @@ struct MathM2ActivitySessionFactory: Sendable {
     ) {
         precondition(configuration.variant == .minikMath)
         provider = MathM2ContentProvider(fitGate: fitGate)
+        self.fitGate = fitGate
     }
 
     func makeSession(for activity: MathProductionActivityID) -> MathM2ActivitySession? {
@@ -56,7 +58,8 @@ struct MathM2ActivitySessionFactory: Sendable {
         case .buildQuantity:
             return countSession().map(MathM2ActivitySession.buildQuantity)
         case .visualToAnswer:
-            return choiceSession(direction: .operationToAnswer)
+            // Android Math Plus ab3e427: Visual → Answer counts a picture at every level.
+            return MathPictureQuestions.session(for: .m2, fitGate: fitGate)
                 .map(MathM2ActivitySession.visualToAnswer)
         case .answerToRepresentation:
             return choiceSession(direction: .answerToOperation)

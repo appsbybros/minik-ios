@@ -170,7 +170,8 @@ struct MathM1ContentProvider: Sendable {
                 .nearby(offsets: [-2, 2, -3, 3, -4, 4, -5, 5, -6, 6, -7, 7, -8, 8, -9, 9, -10, 10])
             ]
         ) else { return nil }
-        var generator = SeededMathRandomNumberGenerator(seed: UInt64(target + 1))
+        // A fixed seed put the right answer in the same place every time a count came back.
+        var generator = SystemRandomNumberGenerator()
         switch MathDistractorEngine().generate(for: request, using: &generator) {
         case .success(let values):
             return values.compactMap {

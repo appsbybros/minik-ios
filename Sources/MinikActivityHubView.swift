@@ -13,6 +13,8 @@ struct MinikActivityHubView: View {
         case recordsLeaderboard([RemoteRecordPlacement])
         /// Android Minik Math Plus MathDailyScreen: the daily math journey's page.
         case mathDaily
+        /// Android Minik Math Plus LearningProgressScreen (dc12a5c), from the Parent Area.
+        case mathLearningProgress
     }
 
     let configuration: ProductConfiguration
@@ -58,6 +60,12 @@ struct MinikActivityHubView: View {
     @State private var mathDailyJourney = MathDailyJourneyRepository().load()
     @State private var mathDailyIsPlaying = false
     @State private var mathDailyFinished = false
+    /// Android Math Plus AppState's practice records (dc12a5c): the launch whose round was
+    /// already counted, and the level of the launch's latest answer.
+    @State private var mathPracticeRoundLaunchID: UUID?
+    @State private var mathPracticeAnswerLevel: (launchID: UUID, levelID: MathCurriculumLevelID)?
+    /// Android AppState.finishDemo (dc12a5c): examples finished or skipped while the app runs.
+    @State private var finishedMathDemos: Set<MathProductionActivityID> = []
     /// Where the Math hub's board and rows are while it scrolls, for its "More below" cue.
     @State private var hubScrollTracker = MinikHubScrollTracker()
     @State private var mathHubContinuesBelow = false
@@ -369,6 +377,9 @@ struct MinikActivityHubView: View {
             onSelectMathLevel: selectManualMathLevel,
             onShowProgress: { route = .progress },
             onShowRecords: { route = .records(returnToParentArea: true) },
+            onShowLearningProgress: configuration.contentDomain == .math
+                ? { route = .mathLearningProgress }
+                : nil,
             onExit: { route = nil }
         )
     }
@@ -421,6 +432,13 @@ struct MinikActivityHubView: View {
                 model: progressReadModel,
                 onBack: { route = .parentArea }
             )
+        case .mathLearningProgress:
+            MathLearningProgressView(
+                records: MathPracticeHistoryRepository().load(),
+                levelID: selectedMathLevelID,
+                onPractice: startMathPractice,
+                onBack: { route = .parentArea }
+            )
         case .records(let returnToParentArea):
             RecordsStreaksView(
                 model: recordsReadModel,
@@ -440,7 +458,8 @@ struct MinikActivityHubView: View {
         guard scenePhase == .active else { return false }
         switch route {
         case .language, .math, .ticTacToe, .pingPong: return true
-        case .parentArea, .progress, .records, .recordsLeaderboard, .mathDaily, .none: return false
+        case .parentArea, .progress, .records, .recordsLeaderboard, .mathDaily, .mathLearningProgress, .none:
+            return false
         }
     }
 
@@ -1385,7 +1404,15 @@ struct MinikActivityHubView: View {
         for activity: MathProductionActivityID,
         levelID: MathCurriculumLevelID
     ) -> some View {
-        if activity.launchRoute(for: levelID) == .pingPong {
+        if !finishedMathDemos.contains(activity),
+           MathActivityDemoRepository().needsDemo(activity) {
+            // Android ActivityScreen (dc12a5c): the first opening starts with the example.
+            MathActivityDemoView(
+                activity: activity,
+                onFinish: { finishMathDemo(activity) },
+                onExit: returnToHub
+            )
+        } else if activity.launchRoute(for: levelID) == .pingPong {
             MathPingPongChooser(
                 commerce: commerceController,
                 onCompletedMatch: { recordLanguageAdOpportunity(.mathRound) },
@@ -1740,6 +1767,7 @@ struct MinikActivityHubView: View {
 
     /// Like Android Math, a finished Math round is an ad opportunity.
     private func completeMathRound() {
+        recordMathPracticeRound()
         recordLanguageAdOpportunity(.mathRound)
         returnToHub()
     }
@@ -1819,7 +1847,48 @@ struct MinikActivityHubView: View {
         }
         mathLevelController.record(attempt)
         LocalMathLevelRepository().save(mathLevelController.state)
+        recordMathPracticeAnswer(attempt, activity: activity)
         recordMathDailyAnswer(attempt, activity: activity)
+    }
+
+    // MARK: - Practice records (Android Minik Math Plus PracticeHistory, dc12a5c)
+
+    /// Android AppState.recordAnswer: the answer joins its activity's record at the level it
+    /// was asked at. Points, rewards and the automatic level are handled as before.
+    private func recordMathPracticeAnswer(_ attempt: ActivityAttemptData, activity: MathProductionActivityID) {
+        let levelID = attempt.mathLevelID ?? selectedMathLevelID
+        if case .math(_, _, let launchID) = route {
+            mathPracticeAnswerLevel = (launchID: launchID, levelID: levelID)
+        }
+        guard MathPracticeHistory.counts(attempt) else { return }
+        MathPracticeHistoryRepository().recordAnswer(
+            attempt.result == .correct,
+            activity: activity,
+            levelID: levelID
+        )
+    }
+
+    /// Android completePracticeRound: a finished round or a completed daily stage counts once
+    /// for the activity that was opened, at the level of its latest answer.
+    private func recordMathPracticeRound() {
+        guard case .math(let activity, let levelID, let launchID) = route,
+              mathPracticeRoundLaunchID != launchID else { return }
+        mathPracticeRoundLaunchID = launchID
+        let answeredLevel = mathPracticeAnswerLevel.flatMap { $0.launchID == launchID ? $0.levelID : nil }
+        MathPracticeHistoryRepository().recordRound(activity: activity, levelID: answeredLevel ?? levelID)
+    }
+
+    /// Android LearningProgressScreen's "Practice this activity": the activity at the current
+    /// level, as from the hub, so closing it returns to the hub.
+    private func startMathPractice(_ activity: MathProductionActivityID) {
+        mathDailyIsPlaying = false
+        route = .math(activity, selectedMathLevelID, UUID())
+        mathActivitySessionID = ActivitySessionID()
+    }
+
+    private func finishMathDemo(_ activity: MathProductionActivityID) {
+        MathActivityDemoRepository().finishDemo(activity)
+        finishedMathDemos.insert(activity)
     }
 
     // MARK: - Daily math journey (Android Minik Math Plus MathDailyScreen)
@@ -1857,6 +1926,7 @@ struct MinikActivityHubView: View {
         mathDailyJourney = journey
         MathDailyJourneyRepository().save(journey)
         guard completed else { return }
+        recordMathPracticeRound()
         mathDailyIsPlaying = false
         mathDailyFinished = true
         route = .mathDaily

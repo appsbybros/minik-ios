@@ -1,6 +1,15 @@
-# Modern Ping Pong iOS implementation — 2026-09-28, updated 2026-10-25
+# Modern Ping Pong iOS implementation — 2026-09-28, updated 2026-10-26
 
 **Implemented in source only. Nothing in this document has been compiled, run in a Simulator or on a device, or played between iOS and Android. The Windows source audit and the local-emulator Firebase rules tests pass. An Apple build and native runtime verification are still required. No IPA was produced.**
+
+## 2026-10-26 sync: Android commit `24cd461`
+
+iOS now matches Android MinikPingPong `24cd461` (4 commits after `6c8c757`). Ported:
+- **Zoom keeps both players whole** (`MPReception.swift` `keepPlayersVisible`, `MPScene.swift`; 579de33): while the optional reception zoom is on and nothing is touched, the zoom is limited and the frame shifted so the far player's head and the near player's feet stay on screen. Difference: Android also stopped clipping at the court's top so the far player may draw under its transparent score/HUD; the iOS court is its own SpriteKit view and cannot draw beyond its edges, so the court's own top and bottom (6 pt margin) bound the frame instead. The zoom is therefore a little smaller than Android's when the HUD is above the court.
+- **Comet, June and Mia champions** (`MPRanking.swift`, `MPPracticeTable.swift` `MPChampionKit`; 84592d0): Orange, Green and Blue are defended by Comet, June and Mia with the established difficulty; their clothes take the rank colour (Mia has her own brighter fabric test). A champion trial saved before the update (Gaya/Flare/Kyra, legacy or boosted) still counts.
+- **Rank wording and menu** (`MPRankViews.swift` `MPRankHero` / `MPRankSheet`, `ModernPongView.swift`; 95ba112): "Points" and "Current ranking" in white beside the mascot (not tappable), an ordinary "Color ranking" button, the sheet titled "Color ranking", White/Yellow explained in one line, and the champion named beside its coloured portrait.
+
+Not ported: the version bump to 1.0.9 (iOS uses the shared `MINIK_MARKETING_VERSION`), store images, emulator device tests and QA evidence. `Scripts/audit-modern-pong.py` now reads Android at `24cd461` (268 checks, PASS). `ModernPongFoundationTests` expects the new champions and adds `testEarlierChampionTrialsStillPromote`; type-checked, not run.
 
 ## 2026-10-25 sync: Android commit `6c8c757`
 

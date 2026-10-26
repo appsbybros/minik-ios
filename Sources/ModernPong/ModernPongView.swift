@@ -40,6 +40,7 @@ import StoreKit
     @State private var showRank = false
     /// Android landscape match layout (PongCourtStyle.landscape): the screen is wider than tall.
     @State private var wide = false
+    @State private var screenHeight: CGFloat = 0
     /// Android `PongHelpTips.next` on the guide's first lesson card ("Did you know?"), counted once per showing.
     @State private var guideTip = ""
     /// Android PongOrientationHint toast.
@@ -80,7 +81,7 @@ import StoreKit
                 }
             }
         }
-        .background { GeometryReader { proxy in Color.clear.onAppear { wide = proxy.size.width > proxy.size.height }.onChange(of: proxy.size) { _, size in wide = size.width > size.height } }.ignoresSafeArea() }
+        .background { GeometryReader { proxy in Color.clear.onAppear { wide = proxy.size.width > proxy.size.height; screenHeight = proxy.size.height }.onChange(of: proxy.size) { _, size in wide = size.width > size.height; screenHeight = size.height } }.ignoresSafeArea() }
         .overlay {
             // Android VictoryConfetti: brief and noninteractive; a new celebration restarts it.
             if let celebration = model.celebration { MPVictoryConfetti().id(celebration) }
@@ -175,14 +176,19 @@ import StoreKit
     private var menu: some View {
         ScrollView {
             VStack(spacing: gap) {
-                Image("mp_app_icon").resizable().scaledToFit().frame(maxWidth: 220, maxHeight: 220).accessibilityHidden(true).padding(.bottom, 16)
+                if model.experience.profiles {
+                    // Android 95ba112: points and the current colour beside the mascot (27 % of the screen, 168...216).
+                    let _ = model.rankRevision
+                    MPRankHero(ranking: model.ranking, hebrew: he, height: min(max(screenHeight * 0.27, 168), 216))
+                } else {
+                    Image("mp_app_icon").resizable().scaledToFit().frame(maxWidth: 220, maxHeight: 220).accessibilityHidden(true).padding(.bottom, 16)
+                }
                 if model.experience.profiles {
                     // Android PlayActivity.home (2026-10): four sections; the first two start open and each section
                     // remembers its choice.
                     MPMenuSection(id: "learn", title: t("Start & learn", "מתחילים ולומדים"), openByDefault: true) {
-                        // Android PlayActivity.home (6feaac5): the colour-rank summary opens the colour explanation.
-                        let _ = model.rankRevision
-                        MPRankSummary(ranking: model.ranking, hebrew: he) { showRank = true }
+                        // Android 95ba112: an ordinary button opens the colour explanation.
+                        sectionButton(t("Color ranking", "דירוג צבעים"), MPStyle.blue) { showRank = true }
                         sectionButton(t("Learn how to play with Mega Minik", "לומדים לשחק עם מגה מיניק"), MPStyle.blue) { model.guide() }
                         sectionButton(t("Daily skill journey", "אתגר יומי"), MPStyle.blue) { model.openJourney(.brief) }
                         // Shown once the points for the next colour are earned, in that colour.

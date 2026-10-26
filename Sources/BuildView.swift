@@ -18,6 +18,7 @@ struct BuildView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
     private let onComplete: () -> Void
     private let onAdvance: () -> Void
     private let onExit: () -> Void
@@ -71,6 +72,11 @@ struct BuildView: View {
     }
     private struct FeedbackTaskKey: Hashable {
         let id: UUID?
+        let active: Bool
+    }
+    private struct RetryTaskKey: Hashable {
+        let challenge: ChallengeID?
+        let attempt: Int
         let active: Bool
     }
     @State private var languageFeedback: BuildAnswerResult?
@@ -127,6 +133,23 @@ struct BuildView: View {
                 try await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
                 guard !Task.isCancelled, languageFeedbackID == id else { return }
                 languageFeedback = nil
+            } catch { }
+        }
+        // Android Math Plus BuildMathScreen (ab3e427): a wrong Math answer clears itself after a
+        // moment for another try. With VoiceOver the Try again button stays the way to do it.
+        .task(id: RetryTaskKey(
+            challenge: automaticRetryChallengeID,
+            attempt: attemptIndex,
+            active: scenePhase == .active
+        )) {
+            guard scenePhase == .active, let challengeID = automaticRetryChallengeID else { return }
+            do {
+                try await Task.sleep(nanoseconds: 800_000_000)
+                guard !Task.isCancelled,
+                      session.currentChallenge.id == challengeID,
+                      session.answerResult == .incorrect else { return }
+                session.retryCurrentChallenge()
+                challengeStartedAt = Date()
             } catch { }
         }
         .task(id: session.currentChallenge.id) { speakCurrentPrompt() }
@@ -186,6 +209,16 @@ struct BuildView: View {
 
     private var canSubmit: Bool {
         session.selectedTokenIDs.count == session.currentChallenge.expectedTokenSequence.count
+    }
+
+    private var automaticRetryChallengeID: ChallengeID? {
+        guard isMath,
+              !voiceOverEnabled,
+              session.currentChallenge.validationMode == .submitSequence,
+              session.answerResult == .incorrect else {
+            return nil
+        }
+        return session.currentChallenge.id
     }
 
     private var automaticAdvanceChallengeID: ChallengeID? {

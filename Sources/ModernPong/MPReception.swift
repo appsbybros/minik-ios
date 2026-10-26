@@ -151,9 +151,11 @@ enum MPReceptionSettings {
 struct MPReceptionCamera {
     private(set) var amount = 0.0
     private(set) var x: CGFloat = 0, y: CGFloat = 0, tx: CGFloat = 0, ty: CGFloat = 0
-    var zoom: CGFloat { CGFloat(1 + 0.42 * amount) }
+    private var framingLimit = CGFloat.infinity
+    var zoom: CGFloat { min(CGFloat(1 + 0.42 * amount), framingLimit) }
     mutating func update(_ dt: Double, assist: MPReceptionAssist, local: Int, focus: CGPoint, size: CGSize, holding: Bool, reduceMotion: Bool) {
         if holding { return }
+        framingLimit = .infinity
         let own = assist.receiver == local
         let allowed = MPReceptionSettings.value(own ? "zoom" : "follow") && assist.receiver >= 0 && !reduceMotion
         let target = allowed ? assist.strength : 0
@@ -163,6 +165,14 @@ struct MPReceptionCamera {
         else { x += (focus.x - x) * CGFloat(k); y += (focus.y - y) * CGFloat(k) }
         x = min(size.width * 0.88, max(size.width * 0.12, x)); y = min(size.height * 0.88, max(size.height * 0.12, y))
         tx = (size.width * 0.5 - x) * CGFloat(amount); ty = (size.height * 0.62 - y) * CGFloat(amount)
+    }
+    /// Android 579de33 `keepPlayersVisible`: zoom the singles scene without losing either player's head or feet
+    /// beyond `visibleTop...visibleBottom` (court points, y down).
+    mutating func keepPlayersVisible(top: CGFloat, bottom: CGFloat, visibleTop: CGFloat, visibleBottom: CGFloat) {
+        guard amount > 0.0001, bottom > top, visibleBottom > visibleTop else { return }
+        framingLimit = max((visibleBottom - visibleTop) / (bottom - top), 1)
+        let lower = visibleTop - (y + (top - y) * zoom), upper = visibleBottom - (y + (bottom - y) * zoom)
+        if lower <= upper { ty = min(max(ty, lower), upper) }
     }
     /// Android `begin`: translate, then scale about the focus.
     func apply(_ context: CGContext) {

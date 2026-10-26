@@ -60,7 +60,8 @@ enum MathHowToTopic: String, CaseIterable, Sendable {
         case .learnMath:
             return "Each card teaches one math fact with a picture. Look at it, listen, and say it out loud. Then tap Next to see the next card."
         case .mathCards:
-            return "Here are all the facts of this level in one table. Tap a fact to hear it. Read the table again and again to remember the facts."
+            // Android Math Plus ab3e427: sixteen rules with examples instead of the facts table.
+            return "Tap a fact to hear the rule and its example. More facts shows another set of useful ideas."
         case .mathPairs:
             return "Every card has a partner that is worth the same. Tap a card on one side, then tap its partner on the other side. Tap a card again to unselect it."
         case .buildNumber:
@@ -74,7 +75,8 @@ enum MathHowToTopic: String, CaseIterable, Sendable {
         case .buildQuantityNumberLine:
             return "Move the red dot along the number line with the arrow buttons until it stands on the number at the top. Then press the green ✓ button."
         case .visualToAnswer:
-            return "Look at the picture or the exercise at the top. Count or solve, then tap the card with the right answer."
+            // Android Math Plus ab3e427: a picture to count at every level.
+            return "Count all the objects in the picture, then tap the matching number."
         case .answerToRepresentation:
             return "Look at the number at the top. Then tap the picture or the exercise that is worth exactly the same."
         case .buildCount:
@@ -82,7 +84,8 @@ enum MathHowToTopic: String, CaseIterable, Sendable {
         case .buildMath:
             return "Build the whole exercise from the pieces: tap them in the right order. One piece is extra. Tap a piece in your answer to take it back. Then tap Check answer."
         case .mathSoccer:
-            return "Count or solve what is at the top. Then tap the ball with the right answer to kick it at the goal."
+            // Android Math Plus ab3e427: a tap chooses the ball, a swipe kicks it.
+            return "Solve the question, then swipe the ball with the right answer toward the goal. The swipe aims the kick; a quicker swipe kicks faster. A tap only selects the ball. Wrong answers can be saved by Minik, and a kick aimed outside the goal misses."
         case .mathTowerCount:
             return "Build a tower with exactly as many blocks as the number at the top, or as the answer to the exercise at the top. Tap a block to add it, and tap a block in your tower to take it off. Then press the green ✓ button."
         case .mathTowerBlocks:

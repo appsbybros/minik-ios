@@ -114,13 +114,21 @@ enum MPRankPromotion {
             let validBot = bot.map { p in bots(target).contains { $0.id == p.characterId && p.strength >= $0.profile.strength - 0.001 } } ?? false
             if trial == target && !champion && validBot { n.botWins = min(n.botWins + 1, 5); n.streak = min(n.streak + 1, 5) }
             // A champion match started before Android c9f5fa6 still counts with the earlier (legacy) champion.
-            if trial == target && champion && (bot == championProfile(target) || bot == legacyChampionProfile(target)) { n.championWins = min(n.championWins + 1, 5) }
+            // Android 84592d0: one saved before the new champion identities also still counts.
+            if trial == target && champion && (bot == championProfile(target) || bot == previousChampionProfile(target) || bot == legacyChampionProfile(target)) { n.championWins = min(n.championWins + 1, 5) }
         }
         return advance(n)
     }
-    /// Android c9f5fa6 `championProfile`: the legacy champion, but never weaker in any skill than that character's own
-    /// house-player profile.
+    /// Android 84592d0 `championProfile`: Comet, June and Mia defend Orange, Green and Blue with the established
+    /// colour difficulty; other colours keep their champion.
     static func championProfile(_ target: Int) -> MPBot {
+        var p = previousChampionProfile(target)
+        switch target { case 5: p.characterId = "comet"; case 6: p.characterId = "june"; case 7: p.characterId = "mia"; default: break }
+        return p
+    }
+    /// Android c9f5fa6: the legacy champion, but never weaker in any skill than that character's own house-player
+    /// profile.
+    private static func previousChampionProfile(_ target: Int) -> MPBot {
         var p = legacyChampionProfile(target)
         guard let base = MPRoster.find(p.characterId)?.profile else { return p }
         p.speed = max(p.speed, base.speed); p.reaction = max(p.reaction, base.reaction); p.accuracy = max(p.accuracy, base.accuracy)
@@ -276,7 +284,4 @@ enum MPRankPresentation {
     }
     /// The 1-point outline of a rank surface (White gets a blue-grey edge).
     static func stroke(_ rank: MPRank) -> UInt32 { rank == MPRanks.all[0] ? 0xff7993ab : MPColor.mix(rank.color, 0xff000000, 0.2) }
-    /// Android `summary` text colour and divider.
-    static let summaryText: UInt32 = 0xff173e56
-    static let summaryDivider: UInt32 = 0x66718da8
 }

@@ -62,30 +62,33 @@ extension MPRankPresentation {
     }
 }
 
-/// Android `PongRankPresentation.summary`: "Total points: N" over "Color: <name>" on the menu face; it opens the
-/// colour explanation.
-struct MPRankSummary: View {
+/// Android 95ba112 `PongRankPresentation.hero`: the mascot with non-interactive points and current rank beside it;
+/// the ordinary "Color ranking" menu button opens the ranks. Separate columns keep long RTL text off the art.
+struct MPRankHero: View {
     let ranking: MPRanking
     let hebrew: Bool
-    let open: () -> Void
+    let height: CGFloat
     var body: some View {
         let rank = ranking.rank, name = rank.name(he: hebrew)
         let number = NumberFormatter.localizedString(from: NSNumber(value: ranking.points), number: .decimal)
-        let first = hebrew ? "סך הנקודות: \(number)" : "Total points: \(number)"
-        let prefix = hebrew ? "צבע: " : "Color: "
-        Button(action: open) {
-            VStack(spacing: 0) {
-                Text(first).font(.system(size: 18, weight: .bold)).foregroundStyle(MPColor.color(MPRankPresentation.summaryText))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                Rectangle().fill(MPColor.color(MPRankPresentation.summaryDivider)).frame(height: 1).padding(.horizontal, 8)
-                MPHudText([.init(text: prefix, color: MPRankPresentation.summaryText), .init(text: name, color: rank.color)], outline: 1.4, adaptive: true)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+        let first = hebrew ? "ניקוד מצטבר: \(number)" : "Points: \(number)"
+        let prefix = hebrew ? "דירוג נוכחי: " : "Current ranking: "
+        GeometryReader { proxy in
+            let art = min(height, (proxy.size.width - 12) / 2)
+            ZStack {
+                Image("mp_app_icon").resizable().scaledToFit().frame(width: art, height: height)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 5) {
+                    MPHudText(first, color: 0xffffffff, font: .system(size: 17, weight: .bold), outline: 1.4, alignment: .leading)
+                    MPHudText([.init(text: prefix, color: 0xffffffff), .init(text: name, color: rank.color)], font: .system(size: 17, weight: .bold), outline: 1.4, adaptive: true, alignment: .leading)
+                }
+                .padding(.horizontal, 4).padding(.top, 6).padding(.bottom, 4)
+                .frame(width: max(min(240, proxy.size.width - art - 12), 0), alignment: .leading)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                .accessibilityElement(children: .ignore).accessibilityLabel(first + ". " + prefix + name)
             }
-            .padding(.horizontal, 14).padding(.top, 8).padding(.bottom, 12).frame(height: 98)
-            .background(MPFaceBackground(face: MPCourtStyle.menuFace, radius: 18))
         }
-        .buttonStyle(.plain).padding(.top, 6).padding(.bottom, 8)
-        .accessibilityElement(children: .ignore).accessibilityLabel(first + ". " + prefix + name)
+        .frame(height: height).padding(.bottom, 18)
     }
 }
 
@@ -104,7 +107,7 @@ struct MPRankSheet: View {
         let he = hebrew
         VStack(spacing: 0) {
             ZStack {
-                Text(detail.map { MPRanks.all[$0].name(he: he) } ?? (he ? "הצבע שלכם · \(ranking.points) נקודות" : "Your color · \(ranking.points) points"))
+                Text(detail.map { MPRanks.all[$0].name(he: he) } ?? (he ? "דירוג צבעים" : "Color ranking"))
                     .font(.system(size: 22, weight: .bold)).foregroundStyle(ink).multilineTextAlignment(.center).padding(.horizontal, 58).padding(.vertical, 8)
                 HStack {
                     Button { if detail != nil { detail = nil } else { close() } } label: {
@@ -144,19 +147,31 @@ struct MPRankSheet: View {
     }
     @ViewBuilder private func details(_ target: Int) -> some View {
         let he = hebrew, rank = MPRanks.all[target], r = MPRankPromotion.requirement(target)
-        paragraph(he ? "\(rank.threshold) נקודות בסך הכול, ולאחר השלמת כל הצבעים הקודמים." : "\(rank.threshold) total points, after completing all earlier colors.")
-        if target < 2 { paragraph(he ? "אין משחקי העפלה נוספים לצבע הזה." : "No qualification matches for this color.") }
+        // Android 95ba112: White and Yellow say only what they need; the champion is named beside its portrait.
+        if target == 0 { paragraph(he ? "לבן הוא דירוג הצבע ההתחלתי שלכם." : "White is your starting color rank.") }
+        else if target == 1 { paragraph(he ? "על מנת לקבל את דירוג הצבע הצהוב צריך להשיג 200 נקודות." : "To earn the Yellow color rank, you need 200 points.") }
         else {
+            paragraph(he ? "ניקוד מצטבר של \(rank.threshold) נקודות, לאחר השלמת דירוגי הצבע הקודמים." : "Reach \(rank.threshold) points and complete the earlier color ranks.")
             let names = MPRankPromotion.bots(target).map { $0.name(hebrew: he) }.joined(separator: ", ")
             paragraph(he ? "\(r.bots) ניצחונות\(r.streak ? " ברצף" : "") במשחקי אתגר הצבע מול \(names). \(r.streak ? "הפסד מאפס רצף שטרם הושלם." : "אפשר לבחור שוב באותו יריב.")"
                       : "\(r.bots) Color Challenge wins\(r.streak ? " in a row" : "") against \(names). \(r.streak ? "A loss resets an unfinished streak." : "You may repeat an opponent.")")
-            if r.champions > 0 {
-                paragraph(he ? "וגם \(r.champions == 1 ? "ניצחון אחד" : "\(r.champions) ניצחונות") מול אלוף הצבע הזה. האלוף הוא בוט, כך שאין צורך למצוא חבר ברשת. ניצחונות אלה ורצף שכבר הושלם נשמרים."
-                          : "Also beat this color’s Champion \(r.champions) times. The Champion is a bot, so you do not need an online friend. These wins and a completed streak stay saved.")
-            }
             let minimum = MPControlChoice.title(MPRankPromotion.minimumControl(target), hebrew: he)
-            paragraph(he ? "משחקי ההעפלה הם עד 11 נקודות, ברמת השליטה ״\(minimum)״ לפחות. מתחילים אותם דרך אתגר הצבע לאחר השגת הנקודות. אפשר לצאת ולחזור בין משחקים."
-                      : "Qualification matches are first to 11, with \(minimum) controls or higher. Start them in Color Challenge after reaching the points threshold. Progress survives closing the app between matches.")
+            paragraph(he ? "משחקי ההעפלה הם עד 11 נקודות. רמת השליטה המינימלית: ״\(minimum)״. מתחילים דרך אתגר הצבע לאחר צבירת הנקודות."
+                      : "Qualification matches are first to 11. Minimum control level: \(minimum). Start in Color Challenge once you have enough points.")
+            if r.champions > 0 {
+                let id = MPRankPromotion.championProfile(target).characterId
+                let character = MPRoster.find(id) ?? MPRoster.all[0]
+                let champion = he ? "\(["june", "mia", "gaya", "kyra"].contains(character.id) ? "אלופת" : "אלוף") הצבע \(rank.he) (\(character.name(hebrew: true)))"
+                    : "\(rank.en) Champion, \(character.name(hebrew: false))"
+                let count = r.champions == 1 ? "" : he ? " \(r.champions) פעמים" : " \(r.champions) times"
+                HStack(spacing: 12) {
+                    MPAvatar(character: character.id, icon: 0, championRank: target).frame(width: 64, height: 84)
+                    Text(he ? "עבור שלב זה צריך גם לנצח את \(champion)\(count)." : "To complete this stage, also beat the \(champion)\(count).")
+                        .font(.system(size: 17)).foregroundStyle(ink).multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading).fixedSize(horizontal: false, vertical: true)
+                }.padding(.horizontal, 6).padding(.top, 12).padding(.bottom, 8)
+                .accessibilityElement(children: .combine)
+            }
         }
     }
 }

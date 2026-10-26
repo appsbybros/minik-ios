@@ -79,6 +79,15 @@ struct SoccerView: View {
     @State private var languageAttemptTracker = LanguageOrderedTokenAttemptTracker()
     @State private var didEvaluateIntroduction = false
     @State private var showsIntroduction = false
+    /// Android MathSoccerScreen (ab3e427): in Math a tap only chooses a ball and an upward
+    /// swipe kicks it. The chosen ball, the ball under the finger and how far it moved, and the
+    /// kick's direction and speed.
+    @State private var aimedBallID: SoccerBallID?
+    @State private var draggedBallID: SoccerBallID?
+    @State private var dragTranslation: CGSize = .zero
+    @State private var dragStartedAt: Date?
+    @State private var mathShot: MathSoccerShot?
+    @State private var sceneSize: CGSize = .zero
     @StateObject private var speechPlayer: LearningSpeechPlayer
     @StateObject private var interfaceSpeechPlayer: InterfaceSpeechPlayer
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -91,11 +100,15 @@ struct SoccerView: View {
     private let mathLevelID: MathCurriculumLevelID
     private let onAttempt: (ActivityAttemptData) -> Void
     private let introductionRepository: SoccerIntroductionRepository?
+    /// Android MathSoccerScreen(demo = true) (dc12a5c): the hands-on example. Nothing is
+    /// recorded, so it earns no points and never moves the level; only a goal ends it.
+    private let isDemo: Bool
 
     init(
         session: SoccerSession,
         mathActivityFamily: ActivityFamily? = nil,
         mathLevelID: MathCurriculumLevelID = .m1,
+        isDemo: Bool = false,
         onAttempt: @escaping (ActivityAttemptData) -> Void = { _ in },
         onComplete: @escaping () -> Void = {},
         onExit: @escaping () -> Void = {}
@@ -105,6 +118,7 @@ struct SoccerView: View {
         _interfaceSpeechPlayer = StateObject(wrappedValue: InterfaceSpeechPlayer())
         self.mathActivityFamily = mathActivityFamily
         self.mathLevelID = mathLevelID
+        self.isDemo = isDemo
         self.onAttempt = onAttempt
         self.onComplete = onComplete
         self.onExit = onExit
@@ -126,6 +140,7 @@ struct SoccerView: View {
         self.onComplete = {}
         self.onExit = onExit
         self.introductionRepository = introductionRepository
+        self.isDemo = false
     }
 
     private var session: SoccerSession {
@@ -134,7 +149,7 @@ struct SoccerView: View {
 
     var body: some View {
         MinikPracticeScreen(
-            progressLabel: "\(session.progressCount) / \(session.targetCount)",
+            progressLabel: isDemo ? "1 / 1" : "\(session.progressCount) / \(session.targetCount)",
             onExit: exitActivity
         ) { metrics in
             let compact = metrics.compact
@@ -145,7 +160,10 @@ struct SoccerView: View {
 
             MinikPracticeSurface(compact: compact) {
                 VStack(spacing: board.spacing) {
-                    scoreboardSection(compact: compact, showsTitle: board.showsTitle)
+                    // Android shows the example's instruction in the scoreboard's place.
+                    if !isDemo {
+                        scoreboardSection(compact: compact, showsTitle: board.showsTitle)
+                    }
 
                     if board.sideBySide {
                         HStack(alignment: .center, spacing: board.spacing) {
@@ -176,7 +194,9 @@ struct SoccerView: View {
         // Android MathSoccerScreen: the instruction before the first kick, then each exercise.
         .mathReadAloud(
             instruction: mathActivityFamily != nil && session.currentTargetIndex == 0
-                ? String(localized: "Kick the right answer")
+                ? (isDemo
+                    ? String(localized: "Swipe the ball marked 2 up toward the goal. Follow the moving dot!")
+                    : String(localized: "Swipe a ball toward the goal to kick it. Aim as you swipe!"))
                 : nil,
             exercise: mathActivityFamily == nil
                 ? nil
@@ -279,13 +299,15 @@ struct SoccerView: View {
                     }
                 }
 
-                // In Math the tap on a ball is the kick (report 1 #4).
-                Text(session.orderedTokenContent == nil
-                    ? String(localized: "Kick the right answer")
-                    : String(localized: "Kick the next letter"))
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.94))
-                    .multilineTextAlignment(.center)
+                // Android MathSoccerScreen (ab3e427): in Math a tap chooses the ball and a
+                // swipe kicks it; the example shows its own instruction instead.
+                if !isDemo {
+                    Text(fieldInstruction)
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.94))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
 
                 ForEach(
                     Array(session.promptRepresentations.enumerated()),
@@ -343,7 +365,14 @@ struct SoccerView: View {
 
                 keeperView(scale: scale)
                     .offset(y: -size.height * 0.1)
-                    .offset(x: session.gameOutcome == .saved ? size.width * 0.14 : 0)
+                    .offset(x: keeperOffset(in: size))
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.42), value: session.gameOutcome)
+
+                if isDemo && session.selectedBallID == nil {
+                    MathSoccerDemoGuide(reduceMotion: reduceMotion)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
 
                 if let selectedBall = selectedBall {
                     soccerBallFace(
@@ -356,11 +385,15 @@ struct SoccerView: View {
                         x: session.gameOutcome == nil ? 0 : targetOffset.width,
                         y: session.gameOutcome == nil ? restingY : targetOffset.height
                     )
-                    .animation(reduceMotion ? nil : .spring(response: 0.55, dampingFraction: 0.78), value: session.gameOutcome)
+                    .animation(shotAnimation, value: session.gameOutcome)
                     .accessibilityHidden(true)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // The swipe is measured on the screen, left to right, in Hebrew and Arabic too.
+            .environment(\.layoutDirection, .leftToRight)
+            .onAppear { sceneSize = size }
+            .onChange(of: size) { _, newSize in sceneSize = newSize }
         }
         .frame(
             minHeight: board.sceneMinHeight,
@@ -452,7 +485,16 @@ struct SoccerView: View {
         }
     }
 
+    @ViewBuilder
     private func answerBallButton(_ ball: SoccerAnswerBall, board: SoccerBoardLayout) -> some View {
+        if session.orderedTokenContent == nil {
+            mathAnswerBall(ball, board: board)
+        } else {
+            letterBallButton(ball, board: board)
+        }
+    }
+
+    private func letterBallButton(_ ball: SoccerAnswerBall, board: SoccerBoardLayout) -> some View {
         let selected = session.selectedBallID == ball.id
 
         return Button {
@@ -476,6 +518,141 @@ struct SoccerView: View {
         .disabled(session.selectedBallID != nil || session.gameOutcome != nil)
         .accessibilityLabel(ballAccessibilityLabel(for: ball))
         .accessibilityHint(answerBallHint(for: ball))
+    }
+
+    /// Android MathSoccerScreen (ab3e427): a Math ball is chosen by a tap and kicked by a swipe
+    /// up toward the goal. It follows the finger while it is dragged. VoiceOver's activation,
+    /// and its "Kick toward the middle of the goal" action, kick straight at the goal.
+    private func mathAnswerBall(_ ball: SoccerAnswerBall, board: SoccerBoardLayout) -> some View {
+        let aimed = aimedBallID == ball.id
+        let dragged = draggedBallID == ball.id
+        return answerChoiceFace(
+            for: ball,
+            diameter: board.ballFaceDiameter,
+            selected: aimed
+        )
+        .frame(width: board.ballFaceDiameter, height: board.ballFaceDiameter)
+        .overlay {
+            if aimed {
+                Circle()
+                    .strokeBorder(Color(red: 1.0, green: 0.76, blue: 0.17), lineWidth: 4)
+            }
+        }
+        .frame(width: board.ballDiameter, height: board.ballDiameter)
+        .contentShape(Circle())
+        .offset(dragged ? dragTranslation : .zero)
+        .environment(\.layoutDirection, .leftToRight)
+        .zIndex(dragged ? 1 : 0)
+        .highPriorityGesture(kickGesture(for: ball.id))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(ballAccessibilityLabel(for: ball))
+        .accessibilityHint(answerBallHint(for: ball))
+        .accessibilityAddTraits(aimed ? [.isButton, .isSelected] : [.isButton])
+        .accessibilityAction {
+            kickMathBall(ball.id, shot: .straight)
+        }
+        .accessibilityAction(named: Text(String(localized: "Kick toward the middle of the goal"))) {
+            kickMathBall(ball.id, shot: .straight)
+        }
+    }
+
+    /// One gesture for the tap and the swipe: a touch that hardly moves chooses the ball; a
+    /// swipe up kicks it, aimed by its direction (as fractions of the field) and as fast as
+    /// the finger moved. A swipe that does not go up only chooses the ball.
+    private func kickGesture(for ballID: SoccerBallID) -> some Gesture {
+        DragGesture(minimumDistance: 0, coordinateSpace: .global)
+            .onChanged { value in
+                guard mathBallsAreReady else { return }
+                if draggedBallID != ballID {
+                    draggedBallID = ballID
+                    dragStartedAt = Date()
+                }
+                dragTranslation = value.translation
+            }
+            .onEnded { value in
+                let startedAt = dragStartedAt ?? Date()
+                let wasDragged = draggedBallID == ballID
+                draggedBallID = nil
+                dragTranslation = .zero
+                dragStartedAt = nil
+                guard mathBallsAreReady, wasDragged else { return }
+                let distance = (value.translation.width * value.translation.width
+                    + value.translation.height * value.translation.height).squareRoot()
+                let field = sceneSize.width > 0 && sceneSize.height > 0
+                    ? sceneSize
+                    : CGSize(width: 320, height: 260)
+                guard distance >= 12,
+                      let shot = MathSoccerShot.make(
+                          startX: 0.5,
+                          startY: 0.9,
+                          dx: Double(value.translation.width / field.width),
+                          dy: Double(value.translation.height / field.height),
+                          elapsedMilliseconds: Date().timeIntervalSince(startedAt) * 1000
+                      ) else {
+                    aimedBallID = ballID
+                    return
+                }
+                kickMathBall(ballID, shot: shot)
+            }
+    }
+
+    private var mathBallsAreReady: Bool {
+        session.orderedTokenContent == nil
+            && session.selectedBallID == nil
+            && session.gameOutcome == nil
+            && !session.isComplete
+    }
+
+    private var fieldInstruction: String {
+        if session.orderedTokenContent != nil {
+            return String(localized: "Kick the next letter")
+        }
+        return aimedBallID == nil
+            ? String(localized: "Swipe a ball toward the goal to kick it. Aim as you swipe!")
+            : String(localized: "Now swipe this ball toward the goal.")
+    }
+
+    private func kickMathBall(_ ballID: SoccerBallID, shot: MathSoccerShot) {
+        guard mathBallsAreReady else { return }
+        aimedBallID = nil
+        draggedBallID = nil
+        dragTranslation = .zero
+        mathShot = shot
+        selectOrKick(ballID)
+    }
+
+    /// Android: a goal needs the right answer and a kick inside the goal. Minik saves a wrong
+    /// answer kicked inside the goal, and a kick aimed outside it misses.
+    private func mathOutcome() -> GameOutcome {
+        let shot = mathShot ?? .straight
+        guard shot.isInsideGoal else { return .miss }
+        return session.educationalIsCorrect == true ? .goal : .saved
+    }
+
+    /// The Math ball flies as long as the swipe asked for; the letter game keeps its spring.
+    private var shotAnimation: Animation? {
+        if reduceMotion { return nil }
+        if session.orderedTokenContent == nil, let mathShot {
+            return .easeOut(duration: Double(mathShot.durationMilliseconds) / 1000)
+        }
+        return .spring(response: 0.55, dampingFraction: 0.78)
+    }
+
+    /// The keeper dives toward a Math ball it saves and away from one that scores.
+    private func keeperOffset(in size: CGSize) -> CGFloat {
+        guard let outcome = session.gameOutcome else { return 0 }
+        guard session.orderedTokenContent == nil, let mathShot else {
+            return outcome == .saved ? size.width * 0.14 : 0
+        }
+        let aim = CGFloat(mathShot.endX - 0.5)
+        switch outcome {
+        case .saved:
+            return min(0.35, max(-0.35, aim)) * size.width
+        case .goal:
+            return (aim > 0 ? -0.14 : 0.14) * size.width
+        case .miss:
+            return min(0.2, max(-0.2, aim)) * size.width
+        }
     }
 
     /// Math's result in the balls' place: the feedback, and for VoiceOver a Continue
@@ -813,6 +990,12 @@ struct SoccerView: View {
             return CGSize(width: 0, height: size.height * 0.28)
         }
 
+        // Android ab3e427: the Math ball flies where the swipe aimed it.
+        if session.orderedTokenContent == nil, let mathShot {
+            let x = CGFloat(mathShot.endX - 0.5) * size.width
+            return CGSize(width: x, height: -size.height * (gameOutcome == .saved ? 0.14 : 0.22))
+        }
+
         switch gameOutcome {
         case .goal:
             return CGSize(width: 0, height: -size.height * 0.22)
@@ -859,7 +1042,10 @@ struct SoccerView: View {
         case .goal:
             String(localized: "Goal")
         case .miss:
-            String(localized: "Miss")
+            // Android ab3e427 shot_wide: a Math kick misses only when it is aimed outside.
+            session.orderedTokenContent == nil
+                ? String(localized: "Outside the goal!")
+                : String(localized: "Miss")
         case .saved:
             String(localized: "Saved")
         }
@@ -892,7 +1078,20 @@ struct SoccerView: View {
         // The next challenge starts in silence (Math Soccer itself does not speak).
         speechPlayer.stop()
         interfaceSpeechPlayer.stop()
+        if isDemo {
+            // Android's example ends with its first goal; any other kick tries 1 + 1 again.
+            let scored = session.gameOutcome == .goal
+            mathShot = nil
+            if scored {
+                onComplete()
+            } else {
+                activityState = .singleRound(SoccerSession(round: session.round))
+                targetStartedAt = Date()
+            }
+            return
+        }
         activityState.nextAnswerChoiceTarget()
+        mathShot = nil
         targetStartedAt = Date()
 
         if !wasComplete && session.isComplete {
@@ -918,7 +1117,8 @@ struct SoccerView: View {
         let languageTokenIndex = session.progressCount
         let responseDurationSeconds = Date().timeIntervalSince(targetStartedAt)
         activityState.selectBall(ballID)
-        if let target,
+        if !isDemo,
+           let target,
            let correct = session.educationalIsCorrect,
            let family = mathActivityFamily,
            let attempt = ActivityAttemptData(
@@ -997,7 +1197,7 @@ struct SoccerView: View {
     /// result then takes the balls' place. Without VoiceOver the next challenge
     /// follows by itself, as in Android Minik Math Plus.
     private func kickAnswerBall(_ ballID: SoccerBallID) {
-        let outcome = simulatedOutcome()
+        let outcome = mathOutcome()
         let continuesAutomatically = !voiceOverEnabled
         shotTask?.cancel()
         shotTask = Task { @MainActor in
@@ -1039,7 +1239,7 @@ struct SoccerView: View {
             return
         }
         if session.gameOutcome == nil {
-            activityState.resolveShot(outcome: simulatedOutcome())
+            activityState.resolveShot(outcome: mathOutcome())
         }
         guard !voiceOverEnabled else {
             return
@@ -1129,6 +1329,39 @@ struct SoccerView: View {
 
     private func localizedFormat(_ key: String.LocalizationValue, _ arguments: CVarArg...) -> String {
         String(format: String(localized: key), arguments: arguments)
+    }
+}
+
+/// Android MathSoccerScreen's example (dc12a5c): an arrow up the middle of the field to the
+/// goal, with a dot moving along it to show the swipe. It stands still with Reduce Motion.
+private struct MathSoccerDemoGuide: View {
+    let reduceMotion: Bool
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: reduceMotion)) { context in
+            Canvas { canvas, size in
+                let start = CGPoint(x: size.width / 2, y: size.height * 0.92)
+                let end = CGPoint(x: size.width / 2, y: size.height * 0.32)
+                var arrow = Path()
+                arrow.move(to: start)
+                arrow.addLine(to: end)
+                arrow.move(to: CGPoint(x: end.x - 12, y: end.y + 16))
+                arrow.addLine(to: end)
+                arrow.addLine(to: CGPoint(x: end.x + 12, y: end.y + 16))
+                canvas.stroke(
+                    arrow,
+                    with: .color(Color(red: 1.0, green: 0.85, blue: 0.35)),
+                    style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round)
+                )
+                let seconds = context.date.timeIntervalSinceReferenceDate
+                let phase = reduceMotion ? 0.5 : seconds.truncatingRemainder(dividingBy: 1.6) / 1.6
+                let dot = CGPoint(x: start.x, y: start.y + (end.y - start.y) * CGFloat(phase))
+                canvas.fill(
+                    Path(ellipseIn: CGRect(x: dot.x - 7, y: dot.y - 7, width: 14, height: 14)),
+                    with: .color(.white)
+                )
+            }
+        }
     }
 }
 

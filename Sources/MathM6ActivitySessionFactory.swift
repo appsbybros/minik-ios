@@ -41,6 +41,7 @@ struct MathM6MixedSession: Sendable {
 struct MathM6ActivitySessionFactory: Sendable {
     private static let challengeCount = 6
     private let provider: MathM6ContentProvider
+    private let fitGate: MathContentFitGate
     private let towerModeSelector: @Sendable () -> MathTowerConstructionMode
     private let buildQuantityModeSelector: @Sendable () -> MathM6BuildQuantityMode
 
@@ -56,6 +57,7 @@ struct MathM6ActivitySessionFactory: Sendable {
     ) {
         precondition(configuration.variant == .minikMath)
         provider = MathM6ContentProvider(fitGate: fitGate)
+        self.fitGate = fitGate
         self.towerModeSelector = towerModeSelector
         self.buildQuantityModeSelector = buildQuantityModeSelector
     }
@@ -74,7 +76,9 @@ struct MathM6ActivitySessionFactory: Sendable {
             case .fractionBar: return fractionSession().map(MathM6BuildQuantitySession.fractionBar).map(MathM6ActivitySession.buildQuantity)
             }
         case .visualToAnswer:
-            return choiceSession(.promptToAnswer).map(MathM6ActivitySession.visualToAnswer)
+            // Android Math Plus ab3e427: Visual → Answer counts a picture at every level.
+            return MathPictureQuestions.session(for: .m6, fitGate: fitGate)
+                .map(MathM6ActivitySession.visualToAnswer)
         case .answerToRepresentation:
             return choiceSession(.answerToRepresentation).map(MathM6ActivitySession.answerToRepresentation)
         case .buildMath:

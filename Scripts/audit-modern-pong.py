@@ -14,7 +14,7 @@ def check(condition,message):
 # Android commit this port matches. Android sources and rules are read from that commit itself (git show, read-only),
 # so uncommitted work in the Android checkout never changes what the port is compared with; the working copies that
 # differ are only listed in the report. Binary assets are still compared with the checkout's files.
-ANDROID_COMMIT='6c8c757'
+ANDROID_COMMIT='24cd461'
 android_reads=set()
 import subprocess
 def android_blob(p):
@@ -257,6 +257,22 @@ if args.android.exists():
         for fragment in re.split(r'\$\{[^}]*\}|\$[A-Za-z_]\w*',text):
             if len(fragment.strip())>1 and fragment not in ios_all: missing.append(fragment)
     check(not missing,'Every Android Color Challenge Hebrew text is in the iOS port'+('' if not missing else ': '+'; '.join(missing)))
+    # Android 6c8c757..24cd461 (2026-10-25): zoom keeps both players whole, Comet/June/Mia champions, rank wording and
+    # the menu's points beside the mascot.
+    camera=code(read(src/'ReceptionCamera.kt'));ios_camera=code(read(modern/'MPReception.swift'))
+    check('fun keepPlayersVisible' in camera and 'coerceAtLeast(1f)' in camera and 'func keepPlayersVisible' in ios_camera and 'min(CGFloat(1 + 0.42 * amount), framingLimit)' in ios_camera
+          and 'keepPlayersVisible(top: rival.minY, bottom: local.maxY' in ios['MPScene.swift'],'Reception zoom keeps both players visible (Android 579de33)')
+    both('ChampionKit.kt',['"comet","june","mia"','hsv[1]<.16f','.22f+hsv[2]*.75f','"june"->v>.52f'],'MPPracticeTable.swift',['"comet", "june", "mia"','sat < 0.16','0.22 + value * 0.75','case "june": garment = v > 0.52'],'Comet, June and Mia wear their champion colour (Android 84592d0)')
+    both('RankPromotion.kt',['5->"comet";6->"june";7->"mia"','bot==previousChampionProfile(target)'],'MPRanking.swift',['case 5: p.characterId = "comet"; case 6: p.characterId = "june"; case 7: p.characterId = "mia"','bot == previousChampionProfile(target)'],'Orange, Green and Blue champions; earlier champion wins still count (Android 84592d0)')
+    rank_missing=[]
+    for name in ['PongRankDialog.kt','PongRankPresentation.kt']:
+        for text in hebrew_literals(read(src/name)):
+            for fragment in re.split(r'\$\{[^}]*\}|\$[A-Za-z_]\w*',text):
+                # Nested Kotlin quotes leave template braces at a fragment's edge; a half template is skipped.
+                fragment=fragment.strip('{}')
+                if '$' not in fragment and len(fragment.strip())>1 and fragment not in ios_all: rank_missing.append(fragment)
+    check(not rank_missing,'Every Android colour-rank Hebrew text is in the iOS port (Android 95ba112)'+('' if not rank_missing else ': '+'; '.join(rank_missing)))
+    check('tr("Color ranking","דירוג צבעים")' in read(src/'multiplayer/PlayActivity.kt') and 't("Color ranking", "דירוג צבעים")' in read(modern/'ModernPongView.swift') and 'MPRankHero(' in read(modern/'ModernPongView.swift'),'Menu: points beside the mascot and a Color ranking button (Android 95ba112)')
 uncommitted=[]
 if args.android.exists():
     for f in sorted(android_reads):

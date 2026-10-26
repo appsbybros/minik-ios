@@ -97,7 +97,7 @@ struct ParentalGateView: View {
             .navigationTitle("Grown-ups only")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", action: onCancel)
+                    Button("Cancel", action: cancel)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Continue", action: validate)
@@ -118,6 +118,14 @@ struct ParentalGateView: View {
             answerFocused = true
             return
         }
+        // Android Math Plus ParentGateScreen (dc12a5c): the keyboard goes away before the
+        // next screen opens.
+        answerFocused = false
         onUnlock()
+    }
+
+    private func cancel() {
+        answerFocused = false
+        onCancel()
     }
 }

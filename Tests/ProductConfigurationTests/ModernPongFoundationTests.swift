@@ -499,10 +499,28 @@ final class ModernPongFoundationTests: XCTestCase {
             XCTAssertEqual(MPRankPromotion.bots(target).map(\.id), bots); XCTAssertEqual([0, 1, 3, 4].map { MPRankPromotion.allowedControl(target, $0) }, allowed)
         }
         XCTAssertEqual(MPRankPromotion.requirement(2).bots, 3); XCTAssertEqual(MPRankPromotion.requirement(10).bots, 5); XCTAssertEqual(MPRankPromotion.requirement(1).bots, 0)
-        // Android c9f5fa6: a champion is never weaker than the character's own house-player profile.
-        let champions: [(Int, Int, String)] = [(4, 8, "gaya"), (5, 8, "gaya"), (6, 9, "flare"), (7, 10, "kyra"), (8, 8, "gaya"), (9, 9, "flare"), (10, 10, "kyra"), (11, 10, "gaya"), (12, 10, "flare")]
+        // Android c9f5fa6: a champion is never weaker than the character's own house-player profile. Android 84592d0:
+        // Comet, June and Mia defend Orange, Green and Blue with the same difficulty.
+        let champions: [(Int, Int, String)] = [(4, 8, "gaya"), (5, 8, "comet"), (6, 9, "june"), (7, 10, "mia"), (8, 8, "gaya"), (9, 9, "flare"), (10, 10, "kyra"), (11, 10, "gaya"), (12, 10, "flare")]
         for (target, skill, character) in champions {
             XCTAssertEqual(MPRankPromotion.championProfile(target), MPBot(speed: skill, reaction: skill, accuracy: skill, power: skill, agility: skill, characterId: character, forehandSkill: skill, backhandSkill: skill, serveSkill: skill))
+        }
+    }
+
+    /// Android 84592d0 `ChampionRosterTest.unfinishedOldTrialsStillEarnTheSamePromotion`: a champion trial started
+    /// before the new identities (Gaya, Flare or Kyra, boosted or legacy) still completes the colour.
+    func testEarlierChampionTrialsStillPromote() {
+        for target in 5...11 {
+            let skill = min(max(7 + (target - 5) * 3 / 6, 7), 10), id = ["gaya", "flare", "kyra"][(target - 5) % 3]
+            let boosted = max(skill, MPRoster.find(id)!.profile.speed)
+            let r = MPRankPromotion.requirement(target)
+            var s = MPRankProgress(); s.points = MPRanks.all[target].threshold; s.level = target - 1
+            s.botWins = r.bots; s.streak = r.bots; s.championWins = r.champions - 1
+            for value in [skill, boosted] {
+                let old = MPBot(speed: value, reaction: value, accuracy: value, power: value, agility: value, characterId: id, forehandSkill: value, backhandSkill: value, serveSkill: value)
+                XCTAssertEqual(MPRankPromotion.result(s, points: 0, won: true, trial: target, bot: old, champion: true).level, target)
+            }
+            XCTAssertEqual(MPRankPromotion.result(s, points: 0, won: true, trial: target, bot: MPRankPromotion.championProfile(target), champion: true).level, target)
         }
     }
 

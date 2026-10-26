@@ -140,7 +140,11 @@ struct MathQuantityLayout: Hashable, Sendable {
         groupIndex: Int?,
         startIndex: Int
     ) -> MathQuantityLayoutResult? {
+        // Android Minik Math Plus countingGrid (ab3e427): every object stays inside its card.
+        // A card too small for the preferred minimum still shows all of them, smaller, rather
+        // than none at all.
         var best: (columns: Int, rows: Int, diameter: Double)?
+        var smallerBest: (columns: Int, rows: Int, diameter: Double)?
         for columns in 1...count {
             let rows = Int(ceil(Double(count) / Double(columns)))
             let horizontal = (width - Double(columns - 1) * itemSpacing) / Double(columns)
@@ -149,8 +153,11 @@ struct MathQuantityLayout: Hashable, Sendable {
             if diameter >= minimumItemDiameter, diameter > (best?.diameter ?? 0) {
                 best = (columns, rows, diameter)
             }
+            if diameter > 0, diameter > (smallerBest?.diameter ?? 0) {
+                smallerBest = (columns, rows, diameter)
+            }
         }
-        guard let best else { return nil }
+        guard let best = best ?? smallerBest else { return nil }
 
         let occupiedWidth = Double(best.columns) * best.diameter + Double(best.columns - 1) * itemSpacing
         let occupiedHeight = Double(best.rows) * best.diameter + Double(best.rows - 1) * itemSpacing

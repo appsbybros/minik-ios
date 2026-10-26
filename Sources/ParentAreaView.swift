@@ -16,6 +16,8 @@ struct ParentAreaView: View {
     let onSelectMathLevel: (MathCurriculumLevelID) -> Void
     let onShowProgress: () -> Void
     let onShowRecords: () -> Void
+    /// Android Minik Math Plus ParentAreaScreen (dc12a5c): "Learning progress", Math only.
+    let onShowLearningProgress: (() -> Void)?
     let onExit: () -> Void
 
     @Environment(\.openURL) private var openURL
@@ -61,6 +63,7 @@ struct ParentAreaView: View {
         onSelectMathLevel: @escaping (MathCurriculumLevelID) -> Void,
         onShowProgress: @escaping () -> Void,
         onShowRecords: @escaping () -> Void,
+        onShowLearningProgress: (() -> Void)? = nil,
         onExit: @escaping () -> Void
     ) {
         self.configuration = configuration
@@ -79,6 +82,7 @@ struct ParentAreaView: View {
         self.onSelectMathLevel = onSelectMathLevel
         self.onShowProgress = onShowProgress
         self.onShowRecords = onShowRecords
+        self.onShowLearningProgress = onShowLearningProgress
         self.onExit = onExit
         _encouragementEnabled = State(initialValue: encouragementRepository.load(for: configuration.variant))
     }
@@ -819,6 +823,16 @@ struct ParentAreaView: View {
                 MinikHomeSectionCard(compact: metrics.compact) {
                     VStack(alignment: .leading, spacing: metrics.compact ? 14 : 18) {
                         header(compact: metrics.compact)
+
+                        // Android Math Plus ParentAreaScreen (dc12a5c): Learning progress first.
+                        if configuration.contentDomain == .math, let onShowLearningProgress {
+                            Button(action: onShowLearningProgress) {
+                                Text(String(localized: "Learning progress"))
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(ParentAreaActionButtonStyle())
+                            .accessibilityHint(String(localized: "See recent practice and choose what to explore next."))
+                        }
 
                         if configuration.contentDomain == .math, let mathLevelState {
                             mathLevelSection(state: mathLevelState, compact: metrics.compact)
