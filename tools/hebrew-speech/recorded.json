@@ -1,0 +1,4290 @@
+{
+ "he-0079b1baac37.mp3": {
+  "text": "מנגולד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-00d1eab43f81.mp3": {
+  "text": "לעזור",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-013f3a03ad35.mp3": {
+  "text": "המבורגר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-01ad7bb1f341.mp3": {
+  "text": "שבוע",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0276a0a47f80.mp3": {
+  "text": "מזרח",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0299e6c2b0b4.mp3": {
+  "text": "ספינה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-029b819ac9bd.mp3": {
+  "text": "אחד עשר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-029d078460ca.mp3": {
+  "text": "יען",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-034ed2a792ed.mp3": {
+  "text": "סירה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-03aa9410f2ce.mp3": {
+  "text": "חרב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-03fdffb57de5.mp3": {
+  "text": "לשתות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-04250240f5eb.mp3": {
+  "text": "זהב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-042937b70661.mp3": {
+  "text": "לילה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-045d53e58777.mp3": {
+  "text": "לכתוב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-04772f396f6c.mp3": {
+  "text": "וילון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-04ccbfb47943.mp3": {
+  "text": "ארבע",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-04d865c2f755.mp3": {
+  "text": "מקביל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-051191a20eb4.mp3": {
+  "text": "לשמוע",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-05241b728209.mp3": {
+  "text": "תוצאת ניסוי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-052dbce00704.mp3": {
+  "text": "פלאפל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-05330ce38e7f.mp3": {
+  "text": "ארטישוק ירושלמי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-05e665fe11ef.mp3": {
+  "text": "מונית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0679b95a1de6.mp3": {
+  "text": "פטרוזיליה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-068140a96851.mp3": {
+  "text": "ארוחה מאוזנת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-068ec38d21cd.mp3": {
+  "text": "שבעים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-069e65cb229a.mp3": {
+  "text": "צעצוע",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-069ebe662dd9.mp3": {
+  "text": "גלידה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-06bc99c37200.mp3": {
+  "text": "מקרוני עם גבינה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-06c05f057e5e.mp3": {
+  "text": "מאונך",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-06e04bdac893.mp3": {
+  "text": "לחשוב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-06e7f46f0488.mp3": {
+  "text": "לאכול",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-071e81c8bd59.mp3": {
+  "text": "לקחת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0746d98fb087.mp3": {
+  "text": "אופניים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-07759229e410.mp3": {
+  "text": "תשעים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-07813c93a536.mp3": {
+  "text": "שמיר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-07c9dd4d2571.mp3": {
+  "text": "ספרנית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0828e0c2ca8f.mp3": {
+  "text": "איקס או עיגול, בשביל הכיף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-083792c4f32e.mp3": {
+  "text": "חֵית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-084d2b835c30.mp3": {
+  "text": "יום ראשון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-086797bc3ae3.mp3": {
+  "text": "טלסקופ",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-089f6e83c2f8.mp3": {
+  "text": "גביע",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-08d4f99e4112.mp3": {
+  "text": "ירוק",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-08fe1fb87116.mp3": {
+  "text": "תרגום",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-091c71db7bd3.mp3": {
+  "text": "ספה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-099da0b1c850.mp3": {
+  "text": "כרישה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-09b6bcca85d6.mp3": {
+  "text": "מחק",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-09e1d5e5c4b1.mp3": {
+  "text": "לילך",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-09f29ca6cdcd.mp3": {
+  "text": "29 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0a19ccf13d28.mp3": {
+  "text": "חוקר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0a60c4d45bf7.mp3": {
+  "text": "שבע",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0aca74456d05.mp3": {
+  "text": "מחשב נייד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0b490b5e6e4a.mp3": {
+  "text": "סיסמה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0b4aca01e25e.mp3": {
+  "text": "ליכטנשטיין",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0b6c5418ed8c.mp3": {
+  "text": "קטפולטה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0b701701b7ef.mp3": {
+  "text": "מגבת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0c484ca5a521.mp3": {
+  "text": "מנדרינה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0c58da9d57a0.mp3": {
+  "text": "קיווי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0cc33a3d8264.mp3": {
+  "text": "לבן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0ccb7ca32b27.mp3": {
+  "text": "חיבור לאינטרנט",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0cd9a48c5558.mp3": {
+  "text": "אורח",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0ce056c30af3.mp3": {
+  "text": "תנין",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0ce2434f40ee.mp3": {
+  "text": "ברזיל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0cef6494df53.mp3": {
+  "text": "דרכון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0d1cf3d37489.mp3": {
+  "text": "אוכל לקחת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0d3255b35d41.mp3": {
+  "text": "קצב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0d43f66b67c2.mp3": {
+  "text": "שמש",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0d78ccc5ac12.mp3": {
+  "text": "רשימת מרכיבים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0d8f36688f0e.mp3": {
+  "text": "קיווי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0e06816e6e47.mp3": {
+  "text": "בחרו תרגול כדי להתחיל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0e53064ea607.mp3": {
+  "text": "רופא שיניים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0e823845c377.mp3": {
+  "text": "ארבע מאות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0ea213d55c29.mp3": {
+  "text": "פסטה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0ee6fab8d346.mp3": {
+  "text": "הסוואה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0f5d3d241877.mp3": {
+  "text": "39 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0f68681afc2a.mp3": {
+  "text": "שטיח",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0f6ecb6371a8.mp3": {
+  "text": "מדף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-0f8b43be14ae.mp3": {
+  "text": "אלפיים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1096cec3625e.mp3": {
+  "text": "לחכות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-10a60cd82a97.mp3": {
+  "text": "ספרדית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-10df4a306a24.mp3": {
+  "text": "אקלים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-115135a9e691.mp3": {
+  "text": "גזר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-118b45867cd7.mp3": {
+  "text": "הסבר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-118cd8a719b5.mp3": {
+  "text": "להתחיל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-11a2941765fe.mp3": {
+  "text": "טבע",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-11fd3f531027.mp3": {
+  "text": "32 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-12c8a66e7cdf.mp3": {
+  "text": "שישה עשר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-13567a9b4827.mp3": {
+  "text": "צָדִי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1387d4cb31f2.mp3": {
+  "text": "מגן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-13b4b3343b91.mp3": {
+  "text": "צנון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-13b8f3bf5958.mp3": {
+  "text": "פלפל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-140fcd3b307d.mp3": {
+  "text": "4 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1433068b1557.mp3": {
+  "text": "שרפת יער",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-14696c819640.mp3": {
+  "text": "שחקן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-14bd30b4406f.mp3": {
+  "text": "יפנית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1515d54a9135.mp3": {
+  "text": "33 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-155ad36da112.mp3": {
+  "text": "להקשיב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-159724261e79.mp3": {
+  "text": "במעלה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-15aaa0c91d1a.mp3": {
+  "text": "שיחת וידאו",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-15b7372ae6e7.mp3": {
+  "text": "לתפוס",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-15ca5bed9f44.mp3": {
+  "text": "תשע",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-16e6e02cf980.mp3": {
+  "text": "מצגת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1774bb5f6e70.mp3": {
+  "text": "דצמבר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-17b878f4e124.mp3": {
+  "text": "מתומן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-17cba4ec0ff5.mp3": {
+  "text": "מייבש כביסה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1838a2f08ff8.mp3": {
+  "text": "מקבילית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1853b069d525.mp3": {
+  "text": "אמא",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-18673fb76c8d.mp3": {
+  "text": "מצטער",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-187383b3957f.mp3": {
+  "text": "נוּן סוֹפִית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-188c0a5bb5bc.mp3": {
+  "text": "להחליט",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1916466515c3.mp3": {
+  "text": "לעצור",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-193ffa00cde5.mp3": {
+  "text": "בינה מלאכותית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-198582c7ece0.mp3": {
+  "text": "נאגטס עוף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-19ec8d1b8533.mp3": {
+  "text": "מכסה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-19fbd5075b99.mp3": {
+  "text": "כסף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1a5f30405a3a.mp3": {
+  "text": "סברס",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1a6f61907252.mp3": {
+  "text": "גררו את האותיות לפי הסדר הנכון כדי להרכיב את המילה שמופיעה.\nנסו להבקיע גול נגד מיניק עם כל אות.\nאות נכונה + גול = נקודה אחת לכם!\nאות לא נכונה + בלי גול = נקודה אחת למיניק!\nלחצו על להתחיל על מנת להתחיל את המשחק. בהצלחה!",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1a75494cb7bf.mp3": {
+  "text": "מיץ",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1aa082ae7579.mp3": {
+  "text": "49 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1aabdee4499c.mp3": {
+  "text": "צהוב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1b1a3e72179f.mp3": {
+  "text": "מחומש",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1b236ff7d5f6.mp3": {
+  "text": "קולרבי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1b237fb3240f.mp3": {
+  "text": "הופעה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1b5ed7b60b89.mp3": {
+  "text": "כוננית ספרים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1bb60018b830.mp3": {
+  "text": "קדימה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1be3d1282aea.mp3": {
+  "text": "מיליארד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1bfcfa4da925.mp3": {
+  "text": "26 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1c2a1787e867.mp3": {
+  "text": "אקורדיון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1c96b9bd9d3e.mp3": {
+  "text": "שיחה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1cb2bffb036c.mp3": {
+  "text": "מנעול",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1cce5f98e0ac.mp3": {
+  "text": "חמוצית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1cfee7281a29.mp3": {
+  "text": "גדול",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1d0ceaa41cdf.mp3": {
+  "text": "אינטרנט",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1d722f955fe9.mp3": {
+  "text": "אריה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1d9db152ddb3.mp3": {
+  "text": "36 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1db01e3d7986.mp3": {
+  "text": "טחינה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1dc3aaf1c3d3.mp3": {
+  "text": "דפוס",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1de68d7453fd.mp3": {
+  "text": "מרכך שיער",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1e982179993c.mp3": {
+  "text": "איזון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1ec70fbff7a1.mp3": {
+  "text": "לגלות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1ecb4a8f945d.mp3": {
+  "text": "עין",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1efd846a06b7.mp3": {
+  "text": "פריסקופ",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1f246e686f61.mp3": {
+  "text": "פודקאסט",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1f703ea74cf5.mp3": {
+  "text": "מסלול הקפה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1f7cd6724058.mp3": {
+  "text": "לא מקוון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1fa55d3aee8d.mp3": {
+  "text": "פיה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1fcfbd9147ad.mp3": {
+  "text": "הולנדית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-1fd191ac5ff0.mp3": {
+  "text": "19 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-2007cadad383.mp3": {
+  "text": "זמרת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-207d9f17b0f9.mp3": {
+  "text": "לב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-20c87c43ed87.mp3": {
+  "text": "כריך",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-20cbe60112fe.mp3": {
+  "text": "משולש",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-2135027201c7.mp3": {
+  "text": "ריבוע",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-216c91777e8e.mp3": {
+  "text": "ספרד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-216fd72c1c31.mp3": {
+  "text": "ריבה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-217b32625ba0.mp3": {
+  "text": "קופאי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-219d3ee09b7e.mp3": {
+  "text": "לוח שנה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-21a203de2a30.mp3": {
+  "text": "תווית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-21a2d9d60e13.mp3": {
+  "text": "לא",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-221855bc8b56.mp3": {
+  "text": "צומת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-2222adb9a7f1.mp3": {
+  "text": "9 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-22788f892d9e.mp3": {
+  "text": "אפליקציית מפות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-22a6e3142e35.mp3": {
+  "text": "להבין",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-22c88b0382b5.mp3": {
+  "text": "לשבת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-235f1632f745.mp3": {
+  "text": "גליל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-23c1e0bab8a1.mp3": {
+  "text": "בֵּית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-23e255b354ea.mp3": {
+  "text": "אוטובוס",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-23fe354a83e2.mp3": {
+  "text": "אסטרטגיה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-240f90eefece.mp3": {
+  "text": "חקלאי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-243141d7ed3e.mp3": {
+  "text": "כיסא",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-24dd7488fe6c.mp3": {
+  "text": "מחשבון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-252974a70cac.mp3": {
+  "text": "אדום",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-254e350648b2.mp3": {
+  "text": "סיבה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-255ed8e89159.mp3": {
+  "text": "חאקי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-25668d87be98.mp3": {
+  "text": "משמרת התנדבות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-25c8450b9c93.mp3": {
+  "text": "לחוץ",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-25fd43cdc67c.mp3": {
+  "text": "טיוטה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-26221c027bca.mp3": {
+  "text": "בטטה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-263a5cdc9f59.mp3": {
+  "text": "בורדו",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-265e2a76c429.mp3": {
+  "text": "אנדיב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-26814fff7c68.mp3": {
+  "text": "כוס",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-26fbb23f206e.mp3": {
+  "text": "טֵית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-275f0882cdf4.mp3": {
+  "text": "מרכז קהילתי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-27a37361d749.mp3": {
+  "text": "לשים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-27bb0ee86f63.mp3": {
+  "text": "קומקוואט (תפוז סיני)",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-27ffec8165fa.mp3": {
+  "text": "כלל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-280245d33ff4.mp3": {
+  "text": "שומר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-29053d742cca.mp3": {
+  "text": "עַיִן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-2907d5a60f8a.mp3": {
+  "text": "אתם לומדים מהר!",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-290aaa920835.mp3": {
+  "text": "נורווגיה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-2a064daea9ee.mp3": {
+  "text": "טייס",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-2a5f868fd5a9.mp3": {
+  "text": "שמונה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-2a7794190355.mp3": {
+  "text": "מרק עוף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-2c21cb6b07c0.mp3": {
+  "text": "מוזיקאי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-2c369620bb06.mp3": {
+  "text": "מונקו",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-2c4929204e65.mp3": {
+  "text": "נחש",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-2c81e8d1ab13.mp3": {
+  "text": "רוסית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-2c9eb24c8eee.mp3": {
+  "text": "מקוון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-2cba17dcd702.mp3": {
+  "text": "זר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-2db5b45de1a4.mp3": {
+  "text": "ציאן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-2ddc2588f790.mp3": {
+  "text": "זיהום",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-2e12de063a85.mp3": {
+  "text": "לבחור",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-2e257602b091.mp3": {
+  "text": "פאנל סולארי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-2e7d2af5953c.mp3": {
+  "text": "משוב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-2e80e6401197.mp3": {
+  "text": "ארוסה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-2ee604852614.mp3": {
+  "text": "31 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-2f509ffd731f.mp3": {
+  "text": "קשר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-300ea5305e29.mp3": {
+  "text": "צהריים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3149c4efc408.mp3": {
+  "text": "פורטוגל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3175b9c012fd.mp3": {
+  "text": "להתראות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3192f46302e3.mp3": {
+  "text": "עשרים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-31bca30cc90c.mp3": {
+  "text": "סהר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-326c8cab2207.mp3": {
+  "text": "שעה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-32f313830a19.mp3": {
+  "text": "שש",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-335895b24910.mp3": {
+  "text": "6 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-336037cc9f7d.mp3": {
+  "text": "הזמנה לאירוע",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-33be9694a4f5.mp3": {
+  "text": "צָדִי סוֹפִית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-33c5e69b2dab.mp3": {
+  "text": "ערב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-33d05a9027d0.mp3": {
+  "text": "שואב אבק",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-33db4a363d5e.mp3": {
+  "text": "בלגיה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-33e8cde518fe.mp3": {
+  "text": "מדריך במוזיאון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3403222c2ad7.mp3": {
+  "text": "ארמון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-343bc3befddf.mp3": {
+  "text": "פיתה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-34b77168ea0a.mp3": {
+  "text": "מעוין",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-34bf8c1079a3.mp3": {
+  "text": "תינוק",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-34c9c9852163.mp3": {
+  "text": "מאחורי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-34ca313aa4e9.mp3": {
+  "text": "שלושה עשר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-34e01c8472dd.mp3": {
+  "text": "5 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-34f807c95f5b.mp3": {
+  "text": "חורף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3551b598f33d.mp3": {
+  "text": "אוגוסט",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-35909953fa73.mp3": {
+  "text": "איטליה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-359c2aa86813.mp3": {
+  "text": "אמן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-35e21f4c96cd.mp3": {
+  "text": "לוח",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3640a6f4549d.mp3": {
+  "text": "קרוב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3711b2fc8ed1.mp3": {
+  "text": "סוף שבוע",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-374271a91c38.mp3": {
+  "text": "חייט",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-37585851ebbe.mp3": {
+  "text": "בז׳",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-37adf077158c.mp3": {
+  "text": "ארבעה עשר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-37c1892d35d7.mp3": {
+  "text": "לאורך",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-37f35204638f.mp3": {
+  "text": "10 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-38a4f63046ce.mp3": {
+  "text": "כריש",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3916f2b8bc1b.mp3": {
+  "text": "צ'כיה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3935f37c8723.mp3": {
+  "text": "אורוגוואי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3942fd83a7fb.mp3": {
+  "text": "קפריסין",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-397a10dc5700.mp3": {
+  "text": "המגדל הושלם!",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3991d89d10b3.mp3": {
+  "text": "18 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-39e499b3d79e.mp3": {
+  "text": "בתוך",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3a45fb123780.mp3": {
+  "text": "ברוקוליני",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3a4829b9e6f3.mp3": {
+  "text": "רֵישׁ",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3ac311b533c0.mp3": {
+  "text": "אתם על הגל!",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3b83a3743788.mp3": {
+  "text": "ברווז",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3bb32ddd8e24.mp3": {
+  "text": "תקציב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3c25db819a84.mp3": {
+  "text": "חמש מאות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3c37c3606ba6.mp3": {
+  "text": "טאבלט",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3cbd9a420511.mp3": {
+  "text": "אוצר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3d35beccc74f.mp3": {
+  "text": "קליידוסקופ",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3d3a325ade2c.mp3": {
+  "text": "מערב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3d6242cc223c.mp3": {
+  "text": "אהבה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3d6d271c5f44.mp3": {
+  "text": "העלאה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3daa8e12f247.mp3": {
+  "text": "ימינה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3de91e2e8134.mp3": {
+  "text": "שלוש מאות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3e6d02623e8f.mp3": {
+  "text": "ארטישוק",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3e6ec33cba0d.mp3": {
+  "text": "בקבוק",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3f0c97a1d57d.mp3": {
+  "text": "מדען",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3f1bdb5ca498.mp3": {
+  "text": "בן חורג",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3f33921a1ae1.mp3": {
+  "text": "עצוב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3f5c30ed4cef.mp3": {
+  "text": "תוף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-3f6aa4f1c524.mp3": {
+  "text": "מחקר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-403b7286896e.mp3": {
+  "text": "אוסטרליה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-407d77fb48d3.mp3": {
+  "text": "אופנוע",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-409634c7aa28.mp3": {
+  "text": "מנהל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-409fc7353c7a.mp3": {
+  "text": "תזכורת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-40d378defab4.mp3": {
+  "text": "גורם",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-4124bd4ecf46.mp3": {
+  "text": "פירמידה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-4139a63538be.mp3": {
+  "text": "טיפול",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-4175f994b606.mp3": {
+  "text": "כן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-41910945ec3f.mp3": {
+  "text": "סבתא",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-4203bd7ef615.mp3": {
+  "text": "שבת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-423b7e1db575.mp3": {
+  "text": "רומניה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-42514baaa0f5.mp3": {
+  "text": "מבוסס ראיות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-4269aa772db1.mp3": {
+  "text": "קרם הגנה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-42859a112376.mp3": {
+  "text": "כתר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-42b60a4a95d7.mp3": {
+  "text": "42 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-430647b02b55.mp3": {
+  "text": "כדור כדורגל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-43419073247c.mp3": {
+  "text": "אליפסה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-43438df1b122.mp3": {
+  "text": "מבוך",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-4350e4689662.mp3": {
+  "text": "כבאית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-43b686ba9001.mp3": {
+  "text": "יער",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-44577adffac7.mp3": {
+  "text": "ארצות הברית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-44719c0a4021.mp3": {
+  "text": "טוש",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-44af198c5acc.mp3": {
+  "text": "לקרוא",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-459ead470392.mp3": {
+  "text": "יום",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-45bd94e2ebd7.mp3": {
+  "text": "תוצאה שווה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-45ded9982af5.mp3": {
+  "text": "אוקטובר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-45f5fe31d344.mp3": {
+  "text": "כלב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-4614232bfd37.mp3": {
+  "text": "אמון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-465822094afa.mp3": {
+  "text": "מקרן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-46586011c24c.mp3": {
+  "text": "ביולוג",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-468759521f2e.mp3": {
+  "text": "יוון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-46d05cc08662.mp3": {
+  "text": "לעמוד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-46f376e346f6.mp3": {
+  "text": "ארגמן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-473bb6a51562.mp3": {
+  "text": "משאית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-4744b914971e.mp3": {
+  "text": "23 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-474ee166cb5f.mp3": {
+  "text": "מיניק ניצח!",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-4760d44ca06e.mp3": {
+  "text": "כרובית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-47b5958273c5.mp3": {
+  "text": "כבל מאריך",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-47baa267f128.mp3": {
+  "text": "לשחק",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-47bd7618dee1.mp3": {
+  "text": "מתנדב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-47cfdefbcee1.mp3": {
+  "text": "הגדרות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-47e46d896d88.mp3": {
+  "text": "הצלחה!",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-48a30d0b9bdd.mp3": {
+  "text": "קו",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-48e449c2ec87.mp3": {
+  "text": "אחיין",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-490004c5a054.mp3": {
+  "text": "בעל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-49ddd4448b3b.mp3": {
+  "text": "מרק",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-4a5318ba850e.mp3": {
+  "text": "חץ",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-4a670f8b988a.mp3": {
+  "text": "מאה שנה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-4b51f0acef0f.mp3": {
+  "text": "במורד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-4bb3f1a9b006.mp3": {
+  "text": "רגש",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-4c0a7f0d11f6.mp3": {
+  "text": "אחים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-4c6f65a6d606.mp3": {
+  "text": "לסגור",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-4c75109d2430.mp3": {
+  "text": "שניים עשר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-4c92dc2957dc.mp3": {
+  "text": "כפתור",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-4c963ff745b5.mp3": {
+  "text": "שתייה מספקת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-4d2d36a16f7a.mp3": {
+  "text": "בן דוד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-4d5270acdf84.mp3": {
+  "text": "עגבנייה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-4d592dff100b.mp3": {
+  "text": "נסיך",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-4e01da333567.mp3": {
+  "text": "צלם",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-4ef45074d5f5.mp3": {
+  "text": "תור",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-4f1bcc4f0cc2.mp3": {
+  "text": "דלעת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-4f25f9fe7d71.mp3": {
+  "text": "כוכב לכת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-4f28d108147e.mp3": {
+  "text": "אחריות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-4fed52396bad.mp3": {
+  "text": "כחול כהה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-502d200e2fa4.mp3": {
+  "text": "שלט רחוק",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5087f47927dc.mp3": {
+  "text": "כינור",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-50c230555c7c.mp3": {
+  "text": "רשימת בדיקה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-513fca188caf.mp3": {
+  "text": "יוּד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5156cb6b26be.mp3": {
+  "text": "חציל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-517ddcc75f8b.mp3": {
+  "text": "תאנה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5192d415d896.mp3": {
+  "text": "למעלה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-51e54650d2d6.mp3": {
+  "text": "מכס",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-51eb6a3adaa4.mp3": {
+  "text": "יהלום",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-51faaa1fafc2.mp3": {
+  "text": "תוצאה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-522003b3a9e9.mp3": {
+  "text": "כחול",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5233475c87b3.mp3": {
+  "text": "פסולת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-52b0a52d2336.mp3": {
+  "text": "אורז",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-536610218ee3.mp3": {
+  "text": "אוזן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-53b4e5eab088.mp3": {
+  "text": "שקע חשמל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-54143ebc42ec.mp3": {
+  "text": "גלובוס",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5468ab0bd7eb.mp3": {
+  "text": "חברים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-54d18e8765b6.mp3": {
+  "text": "כבוד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-54de76e31cbc.mp3": {
+  "text": "אופה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-55112e86f63a.mp3": {
+  "text": "כרוב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-558842c78485.mp3": {
+  "text": "ירוק כהה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-562b7d18ec1b.mp3": {
+  "text": "סוכרייה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5641b7aa527b.mp3": {
+  "text": "שיחה מעמיקה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-569e7c0b8566.mp3": {
+  "text": "זמן מסך",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-56a3903b2395.mp3": {
+  "text": "ברומטר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-571dd4173f10.mp3": {
+  "text": "רשות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-572c44919ce6.mp3": {
+  "text": "טבח",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5753f8a062ad.mp3": {
+  "text": "גלגל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-576df8ed76a4.mp3": {
+  "text": "סושי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5783917743a1.mp3": {
+  "text": "מצרים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-57a5489c14f7.mp3": {
+  "text": "צאצא",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-584d707b58e0.mp3": {
+  "text": "קהילה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5895c82ddf4b.mp3": {
+  "text": "נהג",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-589d616f0e3f.mp3": {
+  "text": "איזה יופי!",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-58a084b8e1fc.mp3": {
+  "text": "הוראה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-58dbe657aba5.mp3": {
+  "text": "בית גידול",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-59396e3729be.mp3": {
+  "text": "בפנים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-59c1d0bafb69.mp3": {
+  "text": "לבשל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-59ce46fb9a09.mp3": {
+  "text": "מפוחית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-59e942b6db8d.mp3": {
+  "text": "שתיים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-59edc369a151.mp3": {
+  "text": "38 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5a0e67198078.mp3": {
+  "text": "עיתונאית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5a15099cb651.mp3": {
+  "text": "פרויקט",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5a569168c3b5.mp3": {
+  "text": "עשר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5abe395b56ea.mp3": {
+  "text": "כבידה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5b6145bdd08e.mp3": {
+  "text": "מורה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5b681dee8b28.mp3": {
+  "text": "חמישים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5bb29cea0ee6.mp3": {
+  "text": "35 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5bb96e4d44cd.mp3": {
+  "text": "טיעון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5bc2d1630093.mp3": {
+  "text": "כדורגל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5bc9e8211cb1.mp3": {
+  "text": "שלושים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5c3baa1af805.mp3": {
+  "text": "אזהרה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5cd902b712e1.mp3": {
+  "text": "עכבר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5d2afc3d499a.mp3": {
+  "text": "יפה מאוד!",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5d5da4782131.mp3": {
+  "text": "אביר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5ddfdcc3e8ad.mp3": {
+  "text": "בצורת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5e718e2ce52d.mp3": {
+  "text": "מספריים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5e9430b99e04.mp3": {
+  "text": "כדור כדורסל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5e9ae20c9a46.mp3": {
+  "text": "על",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5edd9780f639.mp3": {
+  "text": "רוקח",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5f041acc01a8.mp3": {
+  "text": "צ'ילה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5f1197653c66.mp3": {
+  "text": "מבחנה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5f21b41be50d.mp3": {
+  "text": "7 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5f349f904c35.mp3": {
+  "text": "כל הכבוד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5f34f6ffba05.mp3": {
+  "text": "מאתיים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5f621764bfc5.mp3": {
+  "text": "נגר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5f9fada0bcaa.mp3": {
+  "text": "שאלוט",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5fb5dddca30b.mp3": {
+  "text": "צלחת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-5fc6432283c4.mp3": {
+  "text": "ספר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-60b2a158340e.mp3": {
+  "text": "אננס",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-60d73bf9b12f.mp3": {
+  "text": "לא מסכים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-6161cd7a4559.mp3": {
+  "text": "בחוץ",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-6179185b49ca.mp3": {
+  "text": "למטה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-61ba2d8e7b91.mp3": {
+  "text": "נכון!",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-62266b824a9b.mp3": {
+  "text": "ענבר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-62b73a6002f0.mp3": {
+  "text": "כָּף סוֹפִית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-6334440d7b78.mp3": {
+  "text": "רובוט",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-63384d436155.mp3": {
+  "text": "פרפר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-645609fdad4c.mp3": {
+  "text": "לתאר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-64723db47f3f.mp3": {
+  "text": "דרום-מערב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-6514713b25e5.mp3": {
+  "text": "וטרינר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-65af2ed4dce2.mp3": {
+  "text": "לרקוד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-66b2fa1a9c76.mp3": {
+  "text": "חמישה עשר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-66cac1484991.mp3": {
+  "text": "זַיִן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-66cc16d484dd.mp3": {
+  "text": "אפרסק",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-6727cbf02219.mp3": {
+  "text": "עדיפות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-6744d4e4ef4c.mp3": {
+  "text": "רגל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-677d85a9f701.mp3": {
+  "text": "אפור",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-679f9446c797.mp3": {
+  "text": "קוּף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-67ba0e7e49b0.mp3": {
+  "text": "קישוא",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-67f631edaa83.mp3": {
+  "text": "פיזיקאי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-67feb75fab00.mp3": {
+  "text": "מגניב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-6804b70e7079.mp3": {
+  "text": "נסיכה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-68129f8afcbc.mp3": {
+  "text": "מזלג כוונון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-682411f5eac9.mp3": {
+  "text": "47 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-685bd0409a4c.mp3": {
+  "text": "מדריך טיולים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-68a038fca8e1.mp3": {
+  "text": "עץ",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-68bc1c61c8ea.mp3": {
+  "text": "עולם",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-692158c4a855.mp3": {
+  "text": "מד זווית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-69545954ff35.mp3": {
+  "text": "תיקו!",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-69a0409ef4f8.mp3": {
+  "text": "מעבדה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-69ee72164b20.mp3": {
+  "text": "21 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-6a0c93f2d4f7.mp3": {
+  "text": "מלפפון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-6aaa1fdcb1f8.mp3": {
+  "text": "חרדל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-6b8228a7c6cf.mp3": {
+  "text": "לסיים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-6baa7c31263a.mp3": {
+  "text": "אפרסמון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-6bde0b9c2f6a.mp3": {
+  "text": "מושלם",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-6c179872e3d6.mp3": {
+  "text": "ליים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-6c30729d1348.mp3": {
+  "text": "יופי!",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-6c58386ee3af.mp3": {
+  "text": "קסם",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-6c9e59140456.mp3": {
+  "text": "שוויון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-6cabd979898a.mp3": {
+  "text": "מנה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-6d6d796498ea.mp3": {
+  "text": "חיפוש",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-6e1533041517.mp3": {
+  "text": "מחברת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-6e254acf6408.mp3": {
+  "text": "עברית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-6e34ff7b8195.mp3": {
+  "text": "גרמנית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-6e4323d1ffac.mp3": {
+  "text": "למצוא",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-6ee1e2316489.mp3": {
+  "text": "לשכוח",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-6f5d6230153b.mp3": {
+  "text": "מלבן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-712a2e4fd506.mp3": {
+  "text": "נובמבר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7133a9219974.mp3": {
+  "text": "שועל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-71cf8357b181.mp3": {
+  "text": "שמונה עשר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-71dfa7541bb0.mp3": {
+  "text": "אתמול בבוקר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7221012477d2.mp3": {
+  "text": "רוסיה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7257d7d47471.mp3": {
+  "text": "44 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-72d4e846e6dd.mp3": {
+  "text": "זאב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-72f822d3321b.mp3": {
+  "text": "45 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7358fe3506b2.mp3": {
+  "text": "שריון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-737232c2e29d.mp3": {
+  "text": "טלפון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-742ddd746a63.mp3": {
+  "text": "עיגול",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7455210fb494.mp3": {
+  "text": "פנס",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-74706b6c3841.mp3": {
+  "text": "אב חורג",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-749e9a1ad3bc.mp3": {
+  "text": "למדוד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-74a5b23cae65.mp3": {
+  "text": "25 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-74b2f5f6c081.mp3": {
+  "text": "תכלת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-752bcf37d624.mp3": {
+  "text": "ראיון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7570aebd6fa5.mp3": {
+  "text": "יום שישי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-75b496cdbcef.mp3": {
+  "text": "אזור תגובות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-75cb971e8a7b.mp3": {
+  "text": "אוזניות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-75fa1f017f0c.mp3": {
+  "text": "פורטוגזית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-76838dada656.mp3": {
+  "text": "אחר הצהריים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-769eda65c7fd.mp3": {
+  "text": "חבר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-76bd367a7071.mp3": {
+  "text": "מנגו",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-77098eb277fe.mp3": {
+  "text": "לוח זמנים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7767264b50e2.mp3": {
+  "text": "אבא",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-77741c97e710.mp3": {
+  "text": "צָדִי סוֹפִית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-77847935e92d.mp3": {
+  "text": "קוסם",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-779f0e4fd2e3.mp3": {
+  "text": "מדפסת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-77a739513983.mp3": {
+  "text": "חמש",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-77bc24a64050.mp3": {
+  "text": "כדור",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7810f5bcd243.mp3": {
+  "text": "ישראל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-782fddcd03a2.mp3": {
+  "text": "אדריכל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-785316f4647a.mp3": {
+  "text": "46 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-787bdcc7f603.mp3": {
+  "text": "אבקת כביסה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-78bbe1343bb8.mp3": {
+  "text": "תכנות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-78e7e183f8b9.mp3": {
+  "text": "שעת השינה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-78f0050d6149.mp3": {
+  "text": "אודם",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-793fa7343a25.mp3": {
+  "text": "אף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7941cc7f8a3b.mp3": {
+  "text": "התנצלות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-79d2b96f3081.mp3": {
+  "text": "פיצה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-79da3d6e65c2.mp3": {
+  "text": "טלוויזיה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7a0eb412cde3.mp3": {
+  "text": "בצל ירוק",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7a166912044b.mp3": {
+  "text": "מחשב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7a2c77bb1b56.mp3": {
+  "text": "לרוץ",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7aeb4ce30877.mp3": {
+  "text": "דוח",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7b017e0aac64.mp3": {
+  "text": "אם חורגת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7b3e13f6488f.mp3": {
+  "text": "לדמיין",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7b914775d23b.mp3": {
+  "text": "בת חורגת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7be72c5a4e7d.mp3": {
+  "text": "הודעה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7c68cc9c47cd.mp3": {
+  "text": "תיקייה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7c7456626642.mp3": {
+  "text": "מחר בלילה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7c83184b4776.mp3": {
+  "text": "קוריאנית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7c83a14d7887.mp3": {
+  "text": "להציג",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7ced8180517d.mp3": {
+  "text": "סל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7d0d591e3c6c.mp3": {
+  "text": "מולקולה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7d77f7cad593.mp3": {
+  "text": "מסלול טיול",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7e250b50be23.mp3": {
+  "text": "עדכון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7e55eb05dc00.mp3": {
+  "text": "סנדק",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7ee45fa3eca4.mp3": {
+  "text": "פקק שעם",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7efe3b156ed4.mp3": {
+  "text": "משקפת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7f05812b31a4.mp3": {
+  "text": "גיסה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7f5016c7752f.mp3": {
+  "text": "כרטיס ספרייה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7fa2edab8db7.mp3": {
+  "text": "אחורה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-7fbeb5b8369c.mp3": {
+  "text": "באלכסון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8002b12a6156.mp3": {
+  "text": "כוס מדידה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-80293f4c56eb.mp3": {
+  "text": "סיכום",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-804ab2f235cb.mp3": {
+  "text": "מסקנה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8077c6ab45c8.mp3": {
+  "text": "סגול בהיר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-80ec52ec0e88.mp3": {
+  "text": "לדבר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-812b4ecb417c.mp3": {
+  "text": "פולין",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-813f46abfc6c.mp3": {
+  "text": "רימון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8146638c2b56.mp3": {
+  "text": "יד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8154cc0e71ca.mp3": {
+  "text": "נכד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8179af661e38.mp3": {
+  "text": "חג",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-81e024662b8c.mp3": {
+  "text": "שופט",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-82040fe6cb7c.mp3": {
+  "text": "פינלנד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-823304e10935.mp3": {
+  "text": "לענות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-824f2100be60.mp3": {
+  "text": "אבטיח",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-825802371452.mp3": {
+  "text": "דיון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-82b7b2a31427.mp3": {
+  "text": "43 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-82fe9e10435e.mp3": {
+  "text": "בייגלה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-82feabd2d9de.mp3": {
+  "text": "שום",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-830daccc9756.mp3": {
+  "text": "חכם",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-83d0460f6713.mp3": {
+  "text": "עט",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-83e63ed827fb.mp3": {
+  "text": "50 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-840835ac6ea3.mp3": {
+  "text": "מחר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-847d9416f07b.mp3": {
+  "text": "השערה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-84a478d16ceb.mp3": {
+  "text": "צפון-מזרח",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-857fac13916f.mp3": {
+  "text": "מחדד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-859391684c29.mp3": {
+  "text": "קוף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-85ac2a145018.mp3": {
+  "text": "ילד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-85c40b563fce.mp3": {
+  "text": "ללכת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-86425fcfb4f2.mp3": {
+  "text": "מרפסת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-86f83d66aba0.mp3": {
+  "text": "טירה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8722c62a73be.mp3": {
+  "text": "3 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-877520420ce4.mp3": {
+  "text": "גביש",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-879c8e13bc99.mp3": {
+  "text": "לוח לבן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-885180bed004.mp3": {
+  "text": "מיקרוגל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-88683e0a457c.mp3": {
+  "text": "מרכיב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-88c5fe035b5f.mp3": {
+  "text": "תפוז",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-88e1815b40ac.mp3": {
+  "text": "13 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-89242fc5dd95.mp3": {
+  "text": "אנגלית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8997ca5f64a8.mp3": {
+  "text": "בקבוק רב פעמי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-89bd55de5aa0.mp3": {
+  "text": "ורוד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-89d6e05065ca.mp3": {
+  "text": "ינואר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8a460626299e.mp3": {
+  "text": "יוגורט",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8a6fc6e7f733.mp3": {
+  "text": "חזיר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8a77fe541dfe.mp3": {
+  "text": "גואנבנה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8aa21a4ceef3.mp3": {
+  "text": "מטרה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8adb9e63f5c9.mp3": {
+  "text": "כדור כדורעף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8ae4d7d23a37.mp3": {
+  "text": "ארטיק",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8aea2ff5d4ec.mp3": {
+  "text": "דָּלֶת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8af058d401c1.mp3": {
+  "text": "11 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8b13e12a46a8.mp3": {
+  "text": "לקפוץ",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8b2b158ec845.mp3": {
+  "text": "לצפות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8b2d4c09278f.mp3": {
+  "text": "שרברב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8b3b1b8bf922.mp3": {
+  "text": "שמח",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8bcb9732c8c7.mp3": {
+  "text": "טרפז",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8c1ccf318648.mp3": {
+  "text": "לבנות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8c3f7a4689fd.mp3": {
+  "text": "אסטרונומית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8c83dd06a072.mp3": {
+  "text": "לוקסמבורג",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8c93819a464e.mp3": {
+  "text": "מתרגם",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8ccf3c9fb630.mp3": {
+  "text": "וָו",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8cf2ac9597de.mp3": {
+  "text": "גרפיקה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8d4aff368f2c.mp3": {
+  "text": "תסמינים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8d570585fae1.mp3": {
+  "text": "צפון-מערב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8d679f5b77b0.mp3": {
+  "text": "ארבעים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8d7e2b73efc9.mp3": {
+  "text": "נקניקייה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8dadf45b1758.mp3": {
+  "text": "השפעה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8ddc4c00517c.mp3": {
+  "text": "פעילות גופנית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8e415705e16f.mp3": {
+  "text": "תוכנית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8edb2d99921b.mp3": {
+  "text": "משחק מהנה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8ee1e2af6336.mp3": {
+  "text": "בית חכם",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8f8c197be335.mp3": {
+  "text": "20 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8fcb07c4cdb3.mp3": {
+  "text": "חיוך",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-8fe6a5461ebb.mp3": {
+  "text": "עבר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-902123c96466.mp3": {
+  "text": "לישון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9045c88f21be.mp3": {
+  "text": "ערבית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-905350aa3145.mp3": {
+  "text": "קומפוסט",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-907a78dd7146.mp3": {
+  "text": "לשיר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9095eeb3f1bc.mp3": {
+  "text": "48 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-909dcbdc0df1.mp3": {
+  "text": "חרוב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-90c2e2abcf84.mp3": {
+  "text": "ארנב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9159cbbc60e3.mp3": {
+  "text": "מכונאי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-916fd460610c.mp3": {
+  "text": "מסעדה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9172731b71ff.mp3": {
+  "text": "מיקרוסקופ",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-91b7a7033ff0.mp3": {
+  "text": "קונסולת משחקים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-91e6af680d7e.mp3": {
+  "text": "תמרהינדי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-922b64c0070d.mp3": {
+  "text": "ענבים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-926c043fcfdc.mp3": {
+  "text": "משפחה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-926d8abed807.mp3": {
+  "text": "כָּף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-92bd962624aa.mp3": {
+  "text": "תזמורת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-92d479b8c2a1.mp3": {
+  "text": "צרפתית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9331e809cf1e.mp3": {
+  "text": "ניצחתם",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9340af77ce32.mp3": {
+  "text": "רקדנית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-93cc75cdcce5.mp3": {
+  "text": "מזוודות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9400d10bfdd0.mp3": {
+  "text": "דקה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-94908a427a7b.mp3": {
+  "text": "חבוש",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-94c9ad22806e.mp3": {
+  "text": "חביתה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-950eca92907c.mp3": {
+  "text": "כוס קפה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-956b3bbd0b2d.mp3": {
+  "text": "מגן דוד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-95d86d7f5f6b.mp3": {
+  "text": "היום",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-95e0126bc3f2.mp3": {
+  "text": "תירס",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-95e3035cbe61.mp3": {
+  "text": "דלת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9627d8e8328b.mp3": {
+  "text": "מזרן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9637c43726f0.mp3": {
+  "text": "מפתח",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-967b9727d7cb.mp3": {
+  "text": "גרמניה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-969d9028a9ae.mp3": {
+  "text": "קליבר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-96af46b89597.mp3": {
+  "text": "מטוס",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-96c8f7b6fa57.mp3": {
+  "text": "אב קדמון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-96efd4b62c53.mp3": {
+  "text": "איטלקית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9787b562bcbd.mp3": {
+  "text": "שישים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-97b6278407c5.mp3": {
+  "text": "מים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-97dafdc1b28a.mp3": {
+  "text": "דונאט",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-98288d119563.mp3": {
+  "text": "ארוגולה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-98a4e621e52f.mp3": {
+  "text": "שעועית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-98dc69306770.mp3": {
+  "text": "שחור",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9a215501516a.mp3": {
+  "text": "חומר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9a2ecaa8f27d.mp3": {
+  "text": "פֵּא סוֹפִית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9a420b3a892c.mp3": {
+  "text": "במעלה הזרם",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9a6d63ce5364.mp3": {
+  "text": "דפדפן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9abb31a10f53.mp3": {
+  "text": "סינית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9abda08bf9c9.mp3": {
+  "text": "יעד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9af67ee66670.mp3": {
+  "text": "הולנד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9af8ca587ad7.mp3": {
+  "text": "שמונים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9b7cefce4a86.mp3": {
+  "text": "אנרגיה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9b8dd8587a5f.mp3": {
+  "text": "הודעה רשמית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9bd8d9fc0792.mp3": {
+  "text": "רכבת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9c0728f7c68e.mp3": {
+  "text": "מזגן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9c3757e07f3d.mp3": {
+  "text": "שעון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9c973eb004f8.mp3": {
+  "text": "אבוקדו",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9cbf3a8896d6.mp3": {
+  "text": "40 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9cd6321e34d0.mp3": {
+  "text": "מקלחת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9d67b22feb53.mp3": {
+  "text": "חמאת בוטנים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9e4a90a09b7b.mp3": {
+  "text": "שלום",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9e6ec4119594.mp3": {
+  "text": "בית מלון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9e757ef8c72c.mp3": {
+  "text": "לימון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9e93cd75c30e.mp3": {
+  "text": "דוד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9ed6efefb5aa.mp3": {
+  "text": "מלח",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9ef3e5f25320.mp3": {
+  "text": "מסך",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9f0bcc991e96.mp3": {
+  "text": "מנורה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9f46e35ef0b2.mp3": {
+  "text": "טבלת אחריות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9f66e761b939.mp3": {
+  "text": "ביחד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9f813887c4ed.mp3": {
+  "text": "רמזור",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9fd9a323fb9a.mp3": {
+  "text": "דחליל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9fde07bde0e0.mp3": {
+  "text": "שוויץ",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9fe10427cc51.mp3": {
+  "text": "עם כיוון השעון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9fe2c55b33ce.mp3": {
+  "text": "יום רביעי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-9ffc15455b4c.mp3": {
+  "text": "תוצאת חיפוש",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a050653d0cb9.mp3": {
+  "text": "משאב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a09c1f5321dd.mp3": {
+  "text": "כיריים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a0b0f66877b5.mp3": {
+  "text": "שולחן כתיבה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a0d1ea257e64.mp3": {
+  "text": "חצות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a0d9b485049a.mp3": {
+  "text": "כרטיס",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a10476ab3a7c.mp3": {
+  "text": "הפעם הפסדנו. מקווים שהיה כיף!",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a10ebe3f6c8e.mp3": {
+  "text": "8 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a182a01010c8.mp3": {
+  "text": "כועס",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a1ac81bef78a.mp3": {
+  "text": "אפריל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a201b53fdae8.mp3": {
+  "text": "טוסט צרפתי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a21f5710f46a.mp3": {
+  "text": "כותרת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a299f4dfe696.mp3": {
+  "text": "שלט",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a2aee63d4cdc.mp3": {
+  "text": "אתר אינטרנט",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a2e13a2f6936.mp3": {
+  "text": "לפני",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a2e1f888753f.mp3": {
+  "text": "נהדר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a3d5ec189c5b.mp3": {
+  "text": "חרוט",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a3fe6e55229c.mp3": {
+  "text": "מזג אוויר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a4255db5bd3a.mp3": {
+  "text": "רביולי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a442c16c904b.mp3": {
+  "text": "מטען",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a445bb2c3c81.mp3": {
+  "text": "טוסט גבינה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a47884465080.mp3": {
+  "text": "כרטיס עלייה למטוס",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a47bc9dc6967.mp3": {
+  "text": "תיק גב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a48749ae1657.mp3": {
+  "text": "מזנון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a492775bc6fa.mp3": {
+  "text": "חייל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a4c2ff819143.mp3": {
+  "text": "חלב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a5700e6d633d.mp3": {
+  "text": "קוקוס",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a59c7e951b08.mp3": {
+  "text": "עיפרון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a5b3096cf1d2.mp3": {
+  "text": "יופי של משחק!",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a604395c5f86.mp3": {
+  "text": "פֵּא",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a694607df0f4.mp3": {
+  "text": "רציף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a6d788d6ddbf.mp3": {
+  "text": "עיצוב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a70026d0d9f1.mp3": {
+  "text": "גבול אישי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a74daa29c4bb.mp3": {
+  "text": "חוק",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a7610847c016.mp3": {
+  "text": "התראה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a763ecdd9696.mp3": {
+  "text": "לזכור",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a770369dbf84.mp3": {
+  "text": "מיחזור",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a7dc13179cd1.mp3": {
+  "text": "מצלמה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a7ef0996a47e.mp3": {
+  "text": "טוב יותר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a81059e14447.mp3": {
+  "text": "להשוות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a8201aa40a14.mp3": {
+  "text": "נקטרינה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a8e4fa60f6b9.mp3": {
+  "text": "ראוטר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a8fc2ac0f5ce.mp3": {
+  "text": "תיק",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a9670c1aba59.mp3": {
+  "text": "פיל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a98beb901bf7.mp3": {
+  "text": "תשעה עשר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-a9cf6bb80c28.mp3": {
+  "text": "שוטר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-aa2c29141c67.mp3": {
+  "text": "יום שלישי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-aa2d03c71c3b.mp3": {
+  "text": "חד־קרן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-aa81ebbfec11.mp3": {
+  "text": "פח מחזור",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-aa991fbfceb9.mp3": {
+  "text": "גרגר הנחלים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ab2eab6ab394.mp3": {
+  "text": "ג׳קפרוט",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ab3246bf7030.mp3": {
+  "text": "בוריטו",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ab70a61c953e.mp3": {
+  "text": "סתיו",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-abac0aa5943f.mp3": {
+  "text": "הר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-abb1fd40061b.mp3": {
+  "text": "חמישית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ac047c08cf72.mp3": {
+  "text": "מקרר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ac7584752f4d.mp3": {
+  "text": "שימור",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ace7833e784b.mp3": {
+  "text": "שמיכה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ad1938fe9e4c.mp3": {
+  "text": "אפריקה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ad2098dfb122.mp3": {
+  "text": "סן מרינו",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ad97b2b09e02.mp3": {
+  "text": "שיטפון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ada1cf28665b.mp3": {
+  "text": "ורד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-adcceea1156c.mp3": {
+  "text": "ניסוי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ade16f724ae4.mp3": {
+  "text": "צבעי שעווה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-adf1e96bcc71.mp3": {
+  "text": "מלכה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ae00614997f9.mp3": {
+  "text": "עצמאות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ae483d7d4682.mp3": {
+  "text": "קישור",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-aea717c6063d.mp3": {
+  "text": "פארק",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-aeedb419e59b.mp3": {
+  "text": "צפרדע",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-af0e4504e2d9.mp3": {
+  "text": "מטרונום",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-af60b45c3275.mp3": {
+  "text": "שנה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-af74fd59b54c.mp3": {
+  "text": "מצנח",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-afc322d5217e.mp3": {
+  "text": "כבשה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b030575972c7.mp3": {
+  "text": "הפכו שתי משבצות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b0cfefd4f14a.mp3": {
+  "text": "הווה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b13f7b1d696a.mp3": {
+  "text": "מצוין",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b1528be01d58.mp3": {
+  "text": "סוס",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b172f74086ab.mp3": {
+  "text": "וופל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b1a002a85c45.mp3": {
+  "text": "טוב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b1ac9b0ca2ef.mp3": {
+  "text": "דוב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b20132dfde4c.mp3": {
+  "text": "אלף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b209c1beb2ce.mp3": {
+  "text": "עורך דין",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b2136c9095a2.mp3": {
+  "text": "עיר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b291277a0458.mp3": {
+  "text": "סיבוב חדש מתחיל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b295f5d08ae1.mp3": {
+  "text": "ויאטנמית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b2cc01d397d5.mp3": {
+  "text": "גיס",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b359557e717c.mp3": {
+  "text": "27 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b37626735808.mp3": {
+  "text": "סוללה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b402c4c6aa2b.mp3": {
+  "text": "ראש",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b40c7877acc7.mp3": {
+  "text": "לעבר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b4ccef67c135.mp3": {
+  "text": "אי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b4d3f40ff366.mp3": {
+  "text": "דרום-מזרח",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b4ee457f3fcf.mp3": {
+  "text": "מועד אחרון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b51cc73f0477.mp3": {
+  "text": "דולפין",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b52dabdbac31.mp3": {
+  "text": "סליל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b64911469c73.mp3": {
+  "text": "סוכרייה על מקל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b65618040b19.mp3": {
+  "text": "אחת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b6911de56b9c.mp3": {
+  "text": "דגני בוקר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b691468d0da1.mp3": {
+  "text": "מקור",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b7f24995e028.mp3": {
+  "text": "כיור",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b7f47349ba36.mp3": {
+  "text": "שלוש",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b84e36c9134c.mp3": {
+  "text": "אגס",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b860c2feb5ce.mp3": {
+  "text": "נחמד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b91a28509d91.mp3": {
+  "text": "גלאי עשן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b939061e41c3.mp3": {
+  "text": "יציאה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b94569267341.mp3": {
+  "text": "תשובה נכונה!",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b97ab1f1fa25.mp3": {
+  "text": "מירוץ",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b9e997d13a5f.mp3": {
+  "text": "חשבונייה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-b9ee89dfaa2d.mp3": {
+  "text": "עיכוב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ba4444274653.mp3": {
+  "text": "קסדה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ba93529a0fbc.mp3": {
+  "text": "34 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-bac92b8b0887.mp3": {
+  "text": "מוזיאון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-bacc7d6d9661.mp3": {
+  "text": "סרגל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-bb298c00d9c0.mp3": {
+  "text": "נאצ׳וס",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-bb42a2ce6b39.mp3": {
+  "text": "עשירית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-bb463f66fb2a.mp3": {
+  "text": "15 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-bb8c50e0d8a8.mp3": {
+  "text": "אחיות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-bb943996617f.mp3": {
+  "text": "רבע",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-bc8d20d5e191.mp3": {
+  "text": "תפוח אדמה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-bca57c126148.mp3": {
+  "text": "אנרגיה מתחדשת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-bce98879b449.mp3": {
+  "text": "תלמיד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-bd13f9e7ced5.mp3": {
+  "text": "רמקול",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-bd276f505cbf.mp3": {
+  "text": "מרחב ציבורי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-bd2c664a6c64.mp3": {
+  "text": "נפלא!",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-bd2ce3426ffb.mp3": {
+  "text": "תרנגולת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-bd48427feda7.mp3": {
+  "text": "מעולה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-bdc455f84945.mp3": {
+  "text": "צב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-bdf6d8042ac8.mp3": {
+  "text": "דבק",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-be123ad0aae6.mp3": {
+  "text": "חשבון משתמש",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-be285a015b26.mp3": {
+  "text": "אתמול",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-bea83f12a07a.mp3": {
+  "text": "תחפושת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-beb2b15100a6.mp3": {
+  "text": "רשת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-bebc0e4b12d9.mp3": {
+  "text": "שגרה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-bef1c2f7f4e7.mp3": {
+  "text": "הונגריה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-bf17da3e0774.mp3": {
+  "text": "לצייר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-bfce551a7a2d.mp3": {
+  "text": "דנמרק",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c019b30a688c.mp3": {
+  "text": "טבעת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c02e40b3b27b.mp3": {
+  "text": "אחיינית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c038bdbabe96.mp3": {
+  "text": "שוודיה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c0394ea3d914.mp3": {
+  "text": "מרץ",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c05e5e2b8d6f.mp3": {
+  "text": "דרום",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c06f2df4a282.mp3": {
+  "text": "שבלול",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c095f31612de.mp3": {
+  "text": "קיש",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c0b597a9e556.mp3": {
+  "text": "רחוק",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c0e65ab6f137.mp3": {
+  "text": "מלך",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c1042d05a742.mp3": {
+  "text": "אלרגיה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c1583b473b00.mp3": {
+  "text": "מֵם סוֹפִית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c1a204764c97.mp3": {
+  "text": "אלף שנה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c1b04b0c14b7.mp3": {
+  "text": "חלום",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c1b517a468ac.mp3": {
+  "text": "מברשת שיניים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c223f5f2218f.mp3": {
+  "text": "נוּן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c2254306786d.mp3": {
+  "text": "גשר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c227d1350bf1.mp3": {
+  "text": "מעבר חציה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c2326b6d4b87.mp3": {
+  "text": "בננה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c276e294d022.mp3": {
+  "text": "מסביב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c35ac8927485.mp3": {
+  "text": "טווס",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c37b1d461c18.mp3": {
+  "text": "טמפרטורה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c38eb0cb0e42.mp3": {
+  "text": "עוגייה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c3fed172b7d2.mp3": {
+  "text": "צפון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c43b61082d70.mp3": {
+  "text": "יום חמישי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c49878a23965.mp3": {
+  "text": "חצי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c4a23fc64119.mp3": {
+  "text": "שליש",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c4b61bdb3ca9.mp3": {
+  "text": "פפאיה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c4d8152c7b8f.mp3": {
+  "text": "נוּן סוֹפִית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c4ddd044be55.mp3": {
+  "text": "מדיח כלים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c538a12b199a.mp3": {
+  "text": "תנור",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c544d74e49e5.mp3": {
+  "text": "שכונה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c5f1b4c4f451.mp3": {
+  "text": "פטל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c5fe22fc5c10.mp3": {
+  "text": "סלק",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c602adaab556.mp3": {
+  "text": "שבעה עשר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c6c48a2f50a6.mp3": {
+  "text": "טיל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c6f7f4770faa.mp3": {
+  "text": "מקלדת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c779003e5d2d.mp3": {
+  "text": "מכונית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c7dfb2d028f1.mp3": {
+  "text": "אישה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c7fec4cec121.mp3": {
+  "text": "טורקיז",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c87214b89b36.mp3": {
+  "text": "מטלה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c8878d3f178d.mp3": {
+  "text": "להסכים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c8940d12afb0.mp3": {
+  "text": "אוכמנית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c8b4e2e8dbaf.mp3": {
+  "text": "פיקסל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c8f6db6aae9d.mp3": {
+  "text": "תזונה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c93a0343328b.mp3": {
+  "text": "סבון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c9a872526293.mp3": {
+  "text": "איש",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-c9e6dad890e1.mp3": {
+  "text": "מיליון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ca0312ddf443.mp3": {
+  "text": "פודינג",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ca2c15acf1b2.mp3": {
+  "text": "בן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ca435deaca09.mp3": {
+  "text": "מנטה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-cae97da9bb1d.mp3": {
+  "text": "קובייה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-cb59d00e4fba.mp3": {
+  "text": "אביב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-cb7704aa67e1.mp3": {
+  "text": "תינוקת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-cb8d57ac516b.mp3": {
+  "text": "פטרייה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-cba00c806851.mp3": {
+  "text": "סָמֶךְ",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-cbb5b33abbbe.mp3": {
+  "text": "צ׳יפס",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-cc537285ca99.mp3": {
+  "text": "מיקרופון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-cc8a1cf8c971.mp3": {
+  "text": "רדיו",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ccc8b07bd639.mp3": {
+  "text": "חודש",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ccd99f1cf8cf.mp3": {
+  "text": "שעון חכם",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ccfa582c214f.mp3": {
+  "text": "שנהב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ccfb08377a91.mp3": {
+  "text": "כדור טניס",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-cd36f1dd732f.mp3": {
+  "text": "בבקשה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-cdc25fbb1c29.mp3": {
+  "text": "ניגוד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ce1de20ab583.mp3": {
+  "text": "22 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ce1f6e8c8ae8.mp3": {
+  "text": "קייל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ce8139a3a25a.mp3": {
+  "text": "כלכלן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ceaa721ba00f.mp3": {
+  "text": "גאה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-cee076a4ae32.mp3": {
+  "text": "פציעה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-cef3cb23e0f2.mp3": {
+  "text": "שזיף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-cefee5f9012f.mp3": {
+  "text": "לבקש עזרה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-cf3fdd9b7e73.mp3": {
+  "text": "הֵא",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-cf58b8a7d3a0.mp3": {
+  "text": "יולי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-cfe77d88ac99.mp3": {
+  "text": "לחץ חברתי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d0438b1965b8.mp3": {
+  "text": "לפת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d0c3068194d5.mp3": {
+  "text": "לתת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d0ceb2203b8b.mp3": {
+  "text": "לווייתן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d150f74566bb.mp3": {
+  "text": "פרמדיק",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d17af06992b1.mp3": {
+  "text": "לשאול",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d1ad958f9bf6.mp3": {
+  "text": "עז",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d1cca09567d5.mp3": {
+  "text": "נמר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d1f367cfce8c.mp3": {
+  "text": "מקרה חירום",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d1fa7386280f.mp3": {
+  "text": "טבלת מחזור היסודות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d23de81ddf94.mp3": {
+  "text": "14 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d24506cfd9e7.mp3": {
+  "text": "שדכן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d26fd4fa2a02.mp3": {
+  "text": "ליצן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d272a4aa6950.mp3": {
+  "text": "תָּו",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d27dc38cc249.mp3": {
+  "text": "ארגנטינה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d2909c4bb3a5.mp3": {
+  "text": "ציפור",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d3409f46a1c5.mp3": {
+  "text": "הודית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d3b9621abfb0.mp3": {
+  "text": "משחת שיניים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d3d11da3d781.mp3": {
+  "text": "פֵּא סוֹפִית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d4522b6fcc78.mp3": {
+  "text": "פקק",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d460c6168c6b.mp3": {
+  "text": "קטשופ",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d47c3567cd40.mp3": {
+  "text": "מנסרה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d490f35bf417.mp3": {
+  "text": "הורדה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d4b5736ae709.mp3": {
+  "text": "לחצו על משבצת כדי להפוך אותה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d4df7f3c105d.mp3": {
+  "text": "פסיכולוג",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d4ff1f3dd853.mp3": {
+  "text": "דרקון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d50abfafb242.mp3": {
+  "text": "דרך",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d561fef68424.mp3": {
+  "text": "אפונה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d5d5d01d1a81.mp3": {
+  "text": "נגד כיוון השעון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d5f29d99a7cf.mp3": {
+  "text": "אפשרות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d5fb35d5cd7e.mp3": {
+  "text": "תות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d61db5806ee4.mp3": {
+  "text": "אזרחות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d67cdc0f401f.mp3": {
+  "text": "לָמֶד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d6baa040e5ca.mp3": {
+  "text": "פיטאיה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d6fe945f26dd.mp3": {
+  "text": "אפוטרופוס",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d7106337f8bf.mp3": {
+  "text": "ספטמבר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d7142971f65e.mp3": {
+  "text": "לפתור",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d741ca0eb4f8.mp3": {
+  "text": "בוקר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d7d74739f977.mp3": {
+  "text": "קופסת אוכל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d7eb4c52b6e4.mp3": {
+  "text": "לשבור",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d81dc6c451bf.mp3": {
+  "text": "שולחן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d828f2bf135f.mp3": {
+  "text": "לפתוח",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d89491d05b5c.mp3": {
+  "text": "משחק",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d9691db7725f.mp3": {
+  "text": "גג",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d96eaaa036bf.mp3": {
+  "text": "30 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d9913ad5c1d1.mp3": {
+  "text": "תחבושת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-d9f2eec1a574.mp3": {
+  "text": "קטר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-da105347ee30.mp3": {
+  "text": "אטום",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-da783db11d3e.mp3": {
+  "text": "מהנדס",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-daabe1e8d901.mp3": {
+  "text": "שורש פטרוזיליה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-dae2ec3b8cee.mp3": {
+  "text": "פנקייק",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-db22db30a68a.mp3": {
+  "text": "תרמוסטט",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-db270142ec03.mp3": {
+  "text": "שושנת רוחות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-db3d5efabef9.mp3": {
+  "text": "תרופה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-db5c7f38578f.mp3": {
+  "text": "שכן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-dbfda859e2c8.mp3": {
+  "text": "מסגרת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-dc2389e9db8d.mp3": {
+  "text": "לספור",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-dce878356974.mp3": {
+  "text": "פאזל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-dd0c9e37fb77.mp3": {
+  "text": "יפה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-dd751c1e1080.mp3": {
+  "text": "בולגריה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-dd935ba2efbf.mp3": {
+  "text": "מעצב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-dda9882b2517.mp3": {
+  "text": "בית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-de3fdc522f12.mp3": {
+  "text": "אמבטיה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-de50829e6dc6.mp3": {
+  "text": "לוויין",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-de5e0d113f71.mp3": {
+  "text": "41 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ded5ebf0a447.mp3": {
+  "text": "מכר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e02a0e44e503.mp3": {
+  "text": "כדור ים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e0646eaec354.mp3": {
+  "text": "קסדייה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e0a7e65b3637.mp3": {
+  "text": "אשכולית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e0ab756b732d.mp3": {
+  "text": "משפט נושא",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e11acd825ab3.mp3": {
+  "text": "17 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e13ff9255830.mp3": {
+  "text": "לנקות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e15aed9c8d30.mp3": {
+  "text": "לשטוף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e194bcc5df38.mp3": {
+  "text": "אָלֶף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e1d474786d52.mp3": {
+  "text": "בת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e1de11bf9f53.mp3": {
+  "text": "בנאי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e1e9c8cceb31.mp3": {
+  "text": "מדפסת תלת מימד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e1ea28116c0b.mp3": {
+  "text": "פרופיל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e2095c376367.mp3": {
+  "text": "מעבר ל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e222f51b87f9.mp3": {
+  "text": "לזניה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e2583cbba8ba.mp3": {
+  "text": "ראיה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e2725cb009f0.mp3": {
+  "text": "רופא",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e2a5025c597b.mp3": {
+  "text": "תבשיל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e2a50db0808f.mp3": {
+  "text": "החלטה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e2bd9398651d.mp3": {
+  "text": "פרה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e2e6367e1c16.mp3": {
+  "text": "חגורת בטיחות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e2e9a5a1db6a.mp3": {
+  "text": "דג",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e327b8a0aa59.mp3": {
+  "text": "סקר דעות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e34be2596525.mp3": {
+  "text": "רחפן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e3b9a23b045a.mp3": {
+  "text": "כָּף סוֹפִית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e3bbf49b1fc1.mp3": {
+  "text": "גול!!",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e3e07601be7d.mp3": {
+  "text": "תמרים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e42d171abf1a.mp3": {
+  "text": "שירות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e4cc4ab6885c.mp3": {
+  "text": "קסילופון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e4fc1c39f809.mp3": {
+  "text": "קיץ",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e573b7b63967.mp3": {
+  "text": "גיר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e5fa54314293.mp3": {
+  "text": "זמן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e623bd39217f.mp3": {
+  "text": "קנגורו",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e7b43190df95.mp3": {
+  "text": "לזרוק",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e7d51b4018f0.mp3": {
+  "text": "מעדיף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e8058ca125d5.mp3": {
+  "text": "מגירה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e814c1e35624.mp3": {
+  "text": "אינדונזית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e82d1ce13b33.mp3": {
+  "text": "הזמנת מקום",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e89d5099163d.mp3": {
+  "text": "גִּימֶל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e8a89490579e.mp3": {
+  "text": "תחנת מיחזור",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e8e7138d7e88.mp3": {
+  "text": "מֵם סוֹפִית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e8ead92c92cd.mp3": {
+  "text": "כוכב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e8fd373bacb3.mp3": {
+  "text": "זברה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e96a77e07aa3.mp3": {
+  "text": "להתכונן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e974ea8b90e5.mp3": {
+  "text": "פברואר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-e99288f8af99.mp3": {
+  "text": "דומדמניות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ea1cba581504.mp3": {
+  "text": "בייגל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ea541bb2af99.mp3": {
+  "text": "אצבעות דג",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-eaba8106a769.mp3": {
+  "text": "מתחת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-eba92aef6290.mp3": {
+  "text": "קלמנטינה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ebbe9e51ee58.mp3": {
+  "text": "בית עץ",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ec013b34afa3.mp3": {
+  "text": "מכונת כביסה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ec2dbdc9ea9b.mp3": {
+  "text": "חצוצרה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ec5b02c81d2a.mp3": {
+  "text": "אווז",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-eca6312a06b4.mp3": {
+  "text": "ירוק בהיר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ecac8e9b63bb.mp3": {
+  "text": "דגל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ecad046daa2e.mp3": {
+  "text": "אמהרית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ecfa144cc3b8.mp3": {
+  "text": "להסביר שוב",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ed45ddd1b3a2.mp3": {
+  "text": "נתונים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ed971782da28.mp3": {
+  "text": "גבינה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-edb839933ae0.mp3": {
+  "text": "חומוס",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-edb8ca330bc0.mp3": {
+  "text": "פרטיות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-edbec70450ee.mp3": {
+  "text": "עתיד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ee5106acb3e4.mp3": {
+  "text": "דובדבן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ee8cdaaf312f.mp3": {
+  "text": "חופשה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ee9fd0ae9f1b.mp3": {
+  "text": "חלון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-eeca64b9b177.mp3": {
+  "text": "קרוב משפחה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-eed86918d187.mp3": {
+  "text": "סבא",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-eef8c99d95f5.mp3": {
+  "text": "כפר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ef79336ea9ac.mp3": {
+  "text": "חתול",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ef7aa7dd1693.mp3": {
+  "text": "12 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ef9d64b6412c.mp3": {
+  "text": "רואה חשבון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-efbe990449ee.mp3": {
+  "text": "מאה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-efee6a854796.mp3": {
+  "text": "ארוס",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f04307f95d0f.mp3": {
+  "text": "מגנט",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f070dc879f5a.mp3": {
+  "text": "ילדה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f09fda55570f.mp3": {
+  "text": "בריטניה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f0fd8524211d.mp3": {
+  "text": "מדחום",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f0fe2e5298f3.mp3": {
+  "text": "24 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f137ed4e7733.mp3": {
+  "text": "כלה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f1566d941cad.mp3": {
+  "text": "אבחנה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f1e70de88503.mp3": {
+  "text": "28 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f2257083862c.mp3": {
+  "text": "משושה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f236258eb826.mp3": {
+  "text": "זית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f246ad81aef2.mp3": {
+  "text": "גיאולוג",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f2531b464dcd.mp3": {
+  "text": "מצפן",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f29f753fc239.mp3": {
+  "text": "מֵם",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f2a7f9f3915e.mp3": {
+  "text": "מוניטין",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f2f832a32055.mp3": {
+  "text": "פסקה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f45c28cd3214.mp3": {
+  "text": "משמש",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f46200ce42f7.mp3": {
+  "text": "ג'ויסטיק",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f47c46a0fac3.mp3": {
+  "text": "תגובה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f4e9974414d1.mp3": {
+  "text": "סגול",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f51041ab5b66.mp3": {
+  "text": "עוגה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f57477f8ddba.mp3": {
+  "text": "חלופה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f5b68314a399.mp3": {
+  "text": "תאומים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f5c7a474ba7f.mp3": {
+  "text": "שסק",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f5da1f63a455.mp3": {
+  "text": "להבטיח",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f604bef9bd6e.mp3": {
+  "text": "שִׁין",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f6332030c4b4.mp3": {
+  "text": "אוטו גלידה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f641a64a6c79.mp3": {
+  "text": "נורווגית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f6470a6a094e.mp3": {
+  "text": "טביעת רגל פחמנית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f672ba6bf01d.mp3": {
+  "text": "שמאלה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f6d2e2c9579f.mp3": {
+  "text": "מתכנת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f74b358f345e.mp3": {
+  "text": "פיראט",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f7666de8e9ce.mp3": {
+  "text": "דיג",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f792ac301b61.mp3": {
+  "text": "שנייה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f7ed5803dce7.mp3": {
+  "text": "37 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f7ff431055b9.mp3": {
+  "text": "בית ספר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f806b66b12dd.mp3": {
+  "text": "חשמלאי",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f943eb5b7f79.mp3": {
+  "text": "סנדקית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f97aa359b458.mp3": {
+  "text": "בחירות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f98dda1f9d1f.mp3": {
+  "text": "דנית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f994231c5650.mp3": {
+  "text": "16 ת'שובות נכונות ברצף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-f9ac69bb8153.mp3": {
+  "text": "עשרת אלפים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-fad829063637.mp3": {
+  "text": "ירח",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-fb357a08dc2a.mp3": {
+  "text": "בחרו איקס או עיגול או לחצו על משבצת כדי להתחיל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-fb7aa84bd9dc.mp3": {
+  "text": "תפוח",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-fb7c02943ac9.mp3": {
+  "text": "ארון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-fbcd169a2020.mp3": {
+  "text": "הסוף",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-fbdd06cc0cc4.mp3": {
+  "text": "מייבש לחות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-fc0f72c0464e.mp3": {
+  "text": "שוקולד",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-fc8931a65b94.mp3": {
+  "text": "כיתה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-fce87ff6157a.mp3": {
+  "text": "מתכון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-fd6f77fd5909.mp3": {
+  "text": "מיטה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-fdc2786489c5.mp3": {
+  "text": "יום הולדת",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-fe09325da289.mp3": {
+  "text": "במורד הזרם",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-fe0aca07795e.mp3": {
+  "text": "מכשיר אדים",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-fe5e4e54a880.mp3": {
+  "text": "תמשיכו ככה!",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-fe6db3406e48.mp3": {
+  "text": "להסתכל",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-fe70931718fd.mp3": {
+  "text": "לומר",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-fe94453fe817.mp3": {
+  "text": "תצפית",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-fe97d5877934.mp3": {
+  "text": "גביע גלידה",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-fea7a3b4bda5.mp3": {
+  "text": "בלון",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-fef8988c48fa.mp3": {
+  "text": "רגוע",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ff676ba256d1.mp3": {
+  "text": "כוח",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ff75ab52f1fc.mp3": {
+  "text": "קרפ",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-ff89c713d9da.mp3": {
+  "text": "אחות",
+  "voice": "he-IL-HilaNeural"
+ },
+ "he-fffe4d1ec1d5.mp3": {
+  "text": "ציטוט",
+  "voice": "he-IL-HilaNeural"
+ }
+}

@@ -1,0 +1,90 @@
+name: App Store metadata
+# Fills in the App Store page in App Store Connect (texts, build, screenshots). It never submits for review:
+# the owner presses "Add for Review" in App Store Connect. Only started by hand.
+run-name: ${{ format('App Store metadata {0}{1}{2}', inputs.apps, inputs.dry_run && ' (dry run)' || '', inputs.request && format(' ({0})', inputs.request) || '') }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      apps:
+        description: Schemes separated by commas (e.g. MinikPlus,MinikMathPlus), or "all" for every app with texts in appstore/metadata
+        required: true
+        default: MinikPlus,MinikMathPlus
+      dry_run:
+        description: Dry run (only read App Store Connect and print every change it would make)
+        type: boolean
+        default: true
+      attach_build:
+        description: Attach the newest processed build of the version
+        type: boolean
+        default: false
+      screenshots_run_id:
+        description: Run ID of an "App Store screenshots" run whose AppStore-screenshots artifact to upload (empty = no screenshots)
+        required: false
+        default: ""
+      request:
+        description: Optional note shown in the run name; leave empty
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  metadata:
+    # Linux is enough for the App Store Connect API; no macOS minutes are used.
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Download the App Store screenshots
+        if: ${{ inputs.screenshots_run_id != '' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: AppStore-screenshots
+          path: build/AppStore-screenshots
+          run-id: ${{ inputs.screenshots_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Check the store texts
+        shell: bash
+        env:
+          APPS: ${{ inputs.apps }}
+          SCREENSHOTS_RUN_ID: ${{ inputs.screenshots_run_id }}
+        run: |
+          set -euo pipefail
+          args=(--check-only --apps "$APPS")
+          if [ -n "$SCREENSHOTS_RUN_ID" ]; then
+            args+=(--screenshots build/AppStore-screenshots)
+          fi
+          python3 Scripts/appstore-metadata.py "${args[@]}"
+
+      - name: Fill in App Store Connect
+        shell: bash
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+          APPS: ${{ inputs.apps }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          ATTACH_BUILD: ${{ inputs.attach_build }}
+          SCREENSHOTS_RUN_ID: ${{ inputs.screenshots_run_id }}
+        run: |
+          set -euo pipefail
+          export ASC_KEY_ID="$(printf '%s' "$ASC_KEY_ID" | tr -d '[:space:]')"
+          export ASC_ISSUER_ID="$(printf '%s' "$ASC_ISSUER_ID" | tr -d '[:space:]')"
+          python3 -m pip install --quiet "pyjwt[crypto]"
+          args=(--apps "$APPS")
+          if [ "$DRY_RUN" = "true" ]; then
+            args+=(--dry-run)
+          fi
+          if [ "$ATTACH_BUILD" = "true" ]; then
+            args+=(--attach-build)
+          fi
+          if [ -n "$SCREENSHOTS_RUN_ID" ]; then
+            args+=(--screenshots build/AppStore-screenshots)
+          fi
+          python3 Scripts/appstore-metadata.py "${args[@]}"

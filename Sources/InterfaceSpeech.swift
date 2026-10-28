@@ -4,7 +4,7 @@ import Foundation
 
 @MainActor
 final class InterfaceSpeechPlayer: ObservableObject {
-    private let synthesizer = AVSpeechSynthesizer()
+    private let speaker = MinikSpeaker()
 
     func speak(_ text: String, interfaceLocale: InterfaceLocaleID) {
         stop()
@@ -14,11 +14,10 @@ final class InterfaceSpeechPlayer: ObservableObject {
         let languageCode = Locale(identifier: localeIdentifier).language.languageCode?.identifier
         utterance.voice = MinikSpeechVoice.voice(for: localeIdentifier)
             ?? languageCode.flatMap { MinikSpeechVoice.voice(for: $0) }
-        utterance.rate = SpeechVoicePreference.selectedRate(for: localeIdentifier)
-        synthesizer.speak(utterance)
+        speaker.speak(utterance, languageTag: localeIdentifier)
     }
 
     func stop() {
-        synthesizer.stopSpeaking(at: .immediate)
+        speaker.stopSpeaking()
     }
 }

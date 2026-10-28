@@ -38,14 +38,14 @@ enum TicTacToeFeedbackCopy {
 
 @MainActor
 final class TicTacToeFeedbackPlayer: NSObject, ObservableObject {
-    private let synthesizer = AVSpeechSynthesizer()
+    private let speaker = MinikSpeaker()
     private var audioPlayers: [AVAudioPlayer?] = [nil, nil]
     private var remainingUtterances = 0
     private var speechCompletion: (() -> Void)?
 
     override init() {
         super.init()
-        synthesizer.delegate = self
+        speaker.onUtteranceEnd = { [weak self] _ in self?.finishOneUtterance() }
         audioPlayers = [
             makeAudioPlayer(named: "minik_kick"),
             makeAudioPlayer(named: "minik_kick2")
@@ -70,8 +70,7 @@ final class TicTacToeFeedbackPlayer: NSObject, ObservableObject {
         for message in nonemptyMessages {
             let utterance = AVSpeechUtterance(string: message)
             utterance.voice = hostingVoice(for: interfaceLocale)
-            utterance.rate = SpeechVoicePreference.selectedRate(for: interfaceLocale.rawValue)
-            synthesizer.speak(utterance)
+            speaker.speak(utterance, languageTag: interfaceLocale.rawValue)
         }
     }
 
@@ -109,7 +108,7 @@ final class TicTacToeFeedbackPlayer: NSObject, ObservableObject {
     private func stopSpeech() {
         speechCompletion = nil
         remainingUtterances = 0
-        synthesizer.stopSpeaking(at: .immediate)
+        speaker.stopSpeaking()
     }
 
     private func finishOneUtterance() {
@@ -123,25 +122,5 @@ final class TicTacToeFeedbackPlayer: NSObject, ObservableObject {
         let completion = speechCompletion
         speechCompletion = nil
         completion?()
-    }
-}
-
-extension TicTacToeFeedbackPlayer: AVSpeechSynthesizerDelegate {
-    nonisolated func speechSynthesizer(
-        _ synthesizer: AVSpeechSynthesizer,
-        didFinish utterance: AVSpeechUtterance
-    ) {
-        Task { @MainActor [weak self] in
-            self?.finishOneUtterance()
-        }
-    }
-
-    nonisolated func speechSynthesizer(
-        _ synthesizer: AVSpeechSynthesizer,
-        didCancel utterance: AVSpeechUtterance
-    ) {
-        Task { @MainActor [weak self] in
-            self?.finishOneUtterance()
-        }
     }
 }

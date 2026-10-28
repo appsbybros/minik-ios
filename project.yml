@@ -99,6 +99,10 @@ targets:
     sources:
       - path: Resources/GameAudio
         buildPhase: resources
+      # Recorded Hebrew speech (HebrewRecordedSpeech.swift, tools/hebrew-speech).
+      - path: Resources/HebrewSpeech
+        type: folder
+        buildPhase: resources
       - path: Resources/LanguageImages.xcassets
         buildPhase: resources
       - path: Resources/LanguageMedia
@@ -314,6 +318,10 @@ targets:
     # MINIK_MATH condition and the minikMath product variant.
     templates: [MinikApplication]
     sources:
+      # Recorded Hebrew speech (HebrewRecordedSpeech.swift, tools/hebrew-speech --app mathplus).
+      - path: Resources/HebrewSpeechMath/HebrewSpeech
+        type: folder
+        buildPhase: resources
       - path: Resources/RetroPong
         type: folder
         buildPhase: resources

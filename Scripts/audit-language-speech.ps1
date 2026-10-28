@@ -2,8 +2,8 @@ $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $checks = @(
-    @{ File = 'Sources/LearningSpeech.swift'; Pattern = 'synthesizer\.speak\(utterance\)'; Label = 'speech player invokes AVSpeechSynthesizer' },
-    @{ File = 'Sources/LearningSpeech.swift'; Pattern = 'utterance\.voice = MinikSpeechVoice\.voice\(for: LearningSpeechVoiceLocale\.identifier'; Label = 'speech requests learned-language voice (the Parent Area choice or the clearest installed) without silent guard' },
+    @{ File = 'Sources/LearningSpeech.swift'; Pattern = 'speaker\.speak\(utterance'; Label = 'speech player invokes MinikSpeaker (recorded Hebrew, else AVSpeechSynthesizer)' },
+    @{ File = 'Sources/LearningSpeech.swift'; Pattern = 'utterance\.voice = MinikSpeechVoice\.voice\(for: LearningSpeechVoiceLocale\.identifier'; Label = 'speech requests learned-language voice (the clearest installed) without silent guard' },
     @{ File = 'Sources/LearnView.swift'; Pattern = 'speechPlayer\.speak\(speechPlan\)'; Label = 'Learn invokes learned-language speech' },
     @{ File = 'Sources/LearnView.swift'; Pattern = '@Environment\(\\\.scenePhase\)'; Label = 'Learn stops speech on background' },
     @{ File = 'Sources/PairsView.swift'; Pattern = 'speechPlayer\.speak\(utterance\)'; Label = 'Pairs speaks the selected word' },

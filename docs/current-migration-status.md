@@ -1,5 +1,35 @@
 # Current Migration Status
 
+## 2026-10-27 Recorded Hebrew speech in Minik Math Plus
+
+Math Plus says its Hebrew from Hila's recordings too (`Resources/HebrewSpeechMath/HebrewSpeech`, bundled in the
+MinikMathPlus target only). Its exercises are read as sentences ("3 ועוד כמה שווה 7"), so a sentence with no clip
+of its own is now put together from clips of its words, longest runs first (`HebrewRecordedSpeech.clipFiles`); if
+any word has no clip the whole sentence keeps the device voice. `hebrew_speech.py --app mathplus` records every
+Hebrew catalog text (split at its number placeholders) and the numbers 0-1000, as PCM cut close at both ends, so
+the pieces follow each other without pauses. A point or comma inside a number now stays in a clip's key ("2.5").
+
+## 2026-10-26 Recorded Hebrew speech (Minik Plus, iOS only)
+
+Minik Plus says its Hebrew from recorded clips (one Azure neural voice) instead of the device voice:
+`Sources/HebrewRecordedSpeech.swift`. All three speech players (`LearningSpeechPlayer`,
+`InterfaceSpeechPlayer`, `TicTacToeFeedbackPlayer`) now speak through its `MinikSpeaker`, which plays
+a clip when one was recorded for the text and otherwise uses the device voice as before. English and every
+other language are unchanged. The MinikPlus target bundles `Resources/HebrewSpeech` (1072 clips read by
+Hila, 7.2 MB).
+
+On 10-27 the owner asked for no voice or speech setting anywhere in any app ("Users don't know what it
+is"): the Parent Area's "Reading voice" field and both voice tests ("Test words and voices", "Voice &
+speech") are gone, with their views (SpeechVoiceTestView, SpeechVoiceComparisonView and their players
+and settings). Every app now uses the clearest installed device voice at the default speed; a voice or
+speed saved by an earlier build is ignored, and recorded Hebrew is always on where the app has it.
+
+`tools/hebrew-speech/hebrew_speech.py` lists what the app says in Hebrew (`texts.tsv`: 1072 texts, the
+vocabulary, letter names, praise, game instructions, "N correct answers in a row" for 3-50), records it,
+and writes `Resources/HebrewSpeech/manifest.json`; `review` makes a page to listen to every clip. A word
+the voice says wrong goes in `respellings.tsv` (ת'שובות for תשובות), then `record` re-records only the
+changed clips. Not compiled yet (Smart App Control blocks the Windows type check).
+
 ## 2026-10-26 sync (Minik Math Plus)
 
 iOS Minik Math Plus now follows Android Minik Math Plus `7682b75..dc12a5c` (`ab3e427` and `dc12a5c`;

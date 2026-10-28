@@ -27,11 +27,6 @@ struct ParentAreaView: View {
     @ScaledMetric(relativeTo: .body) private var bodyTextScale: CGFloat = 100
     @State private var encouragementEnabled: Bool
     @State private var mathReadAloudEnabled = MathReadAloudPreferenceRepository().load()
-    /// Bumped when a reading voice is chosen, so the menu shows the new choice.
-    @State private var readingVoiceRevision = 0
-    @StateObject private var readingVoiceSamplePlayer = InterfaceSpeechPlayer()
-    @State private var showsVoiceComparison = false
-    @State private var showsVoiceTest = false
     @State private var showsLanguageLevels = false
     @State private var languageExtra: LanguageParentExtra?
     @State private var showsPublicAliasChoices = false
@@ -106,22 +101,6 @@ struct ParentAreaView: View {
         }
         .sheet(item: $shareRequest) { request in
             MinikShareSheet(text: request.text)
-        }
-        .sheet(isPresented: $showsVoiceComparison) {
-            SpeechVoiceComparisonView(languageTags: voiceComparisonLanguageTags) {
-                readingVoiceRevision += 1
-            }
-            .environment(\.interfaceLocaleID, interfaceLocaleController.selectedLocale)
-            .environment(\.locale, interfaceLocaleController.selectedLocale.locale)
-            .environment(\.layoutDirection, interfaceLocaleController.selectedLocale.layoutDirection)
-        }
-        .sheet(isPresented: $showsVoiceTest) {
-            SpeechVoiceTestView(allowedLocales: interfaceLocaleController.allowedLocales) {
-                readingVoiceRevision += 1
-            }
-            .environment(\.interfaceLocaleID, interfaceLocaleController.selectedLocale)
-            .environment(\.locale, interfaceLocaleController.selectedLocale.locale)
-            .environment(\.layoutDirection, interfaceLocaleController.selectedLocale.layoutDirection)
         }
     }
 
@@ -286,26 +265,6 @@ struct ParentAreaView: View {
             }
             .padding(.top, showsLearnedLanguage ? metrics.fieldToCaption : metrics.titleToCaption - 10)
 
-            languageField(
-                caption: interfaceLocaleController.selectedLocale.text("Reading voice"),
-                metrics: metrics
-            ) {
-                readingVoiceMenu {
-                    LanguageParentDropdownLabel(
-                        title: readingVoiceSummary,
-                        fontSize: metrics.spinnerTextSize,
-                        minHeight: metrics.dropdownHeight
-                    )
-                }
-                Text(verbatim: interfaceLocaleController.selectedLocale.text(Self.readingVoiceHintKey))
-                    .font(.system(size: metrics.hintSize))
-                    .foregroundStyle(MinikPretty.softInk)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                voiceTestButtons
-            }
-            .padding(.top, metrics.fieldToCaption)
-
             encouragementSwitch(metrics: metrics)
                 .padding(.top, metrics.fieldToSwitch)
 
@@ -437,7 +396,6 @@ struct ParentAreaView: View {
         .menuOrder(.fixed)
         .accessibilityLabel(Text(verbatim: selected.text("Interface language")))
         .accessibilityValue(Text(verbatim: selected.text(selected.displayNameKey)))
-        .accessibilityHint("Changes app text and interface-language speech")
     }
 
     /// The Android spinner lists interface languages in this order.
@@ -840,7 +798,6 @@ struct ParentAreaView: View {
 
                         if configuration.contentDomain == .math {
                             mathReadAloudSection(compact: metrics.compact)
-                            readingVoiceSection(compact: metrics.compact)
                         }
 
                         if configuration.contentDomain == .language {
@@ -1018,7 +975,6 @@ struct ParentAreaView: View {
                     }
                 }
                 .pickerStyle(.menu)
-                .accessibilityHint("Changes app text and interface-language speech")
             }
         }
     }
@@ -1044,197 +1000,6 @@ struct ParentAreaView: View {
                 }
             }
             .tint(Color(red: 0.98, green: 0.78, blue: 0.05))
-        }
-    }
-
-    // MARK: - Reading voice
-
-    private static let readingVoiceHintKey: String.LocalizationValue =
-        "For a clearer voice, search Settings for “Voices” and download an Enhanced voice."
-
-    /// One language this Parent Area's app speaks, for the "Reading voice" menu.
-    private struct ReadingVoiceLanguage: Identifiable {
-        let tag: String
-        let title: String
-        /// The language of the sample said when a voice is chosen.
-        let sampleLocale: InterfaceLocaleID
-        var code: String { MinikSpeechVoice.languageCode(tag) ?? tag }
-        var id: String { code }
-    }
-
-    /// The app language first (instructions, encouragement), then the learned language;
-    /// Math speaks its app language only.
-    private var readingVoiceLanguages: [ReadingVoiceLanguage] {
-        let textLocale = interfaceLocaleController.selectedLocale
-        var languages: [ReadingVoiceLanguage] = []
-        if configuration.contentDomain == .math {
-            let appLocale = textLocale
-            languages.append(ReadingVoiceLanguage(
-                tag: appLocale.rawValue,
-                title: textLocale.text(appLocale.displayNameKey),
-                sampleLocale: appLocale
-            ))
-        } else {
-            languages.append(ReadingVoiceLanguage(
-                tag: textLocale.rawValue,
-                title: textLocale.text(textLocale.displayNameKey),
-                sampleLocale: textLocale
-            ))
-            languages.append(ReadingVoiceLanguage(
-                tag: LearningSpeechVoiceLocale.identifier(for: selectedLanguage),
-                title: learnedLanguageTitle(selectedLanguage),
-                sampleLocale: InterfaceLocaleID(languageTag: LearningSpeechVoiceLocale.identifier(for: selectedLanguage)) ?? .english
-            ))
-        }
-        // One choice per language: the app and the learned language can be the same.
-        var seen = Set<String>()
-        return languages.filter { seen.insert($0.code).inserted }
-    }
-
-    private var voiceComparisonLanguageTags: [String] {
-        var tags = readingVoiceLanguages.map(\.tag)
-        if configuration.variant != .minikPlusEnglish,
-           !tags.contains(where: { MinikSpeechVoice.languageCode($0) == "he" }) {
-            tags.append("he-IL")
-        }
-        return tags
-    }
-
-    private var voiceComparisonButton: some View {
-        Button {
-            showsVoiceComparison = true
-        } label: {
-            Label(interfaceLocaleController.selectedLocale.text("Test words and voices"), systemImage: "waveform")
-        }
-        .buttonStyle(.bordered)
-        .accessibilityHint(Text(verbatim: interfaceLocaleController.selectedLocale.text("Compare the pronunciation of Hebrew words with and without vowel marks.")))
-    }
-
-    /// The second voice test (any voice and speaking speed, the parent's own text).
-    private var voiceSpeechTestButton: some View {
-        Button {
-            showsVoiceTest = true
-        } label: {
-            Label(interfaceLocaleController.selectedLocale.text("Voice & speech"), systemImage: "slider.horizontal.3")
-        }
-        .buttonStyle(.bordered)
-    }
-
-    /// Both voice tests, side by side when they fit.
-    private var voiceTestButtons: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 10) {
-                voiceComparisonButton
-                voiceSpeechTestButton
-            }
-            VStack(alignment: .leading, spacing: 8) {
-                voiceComparisonButton
-                voiceSpeechTestButton
-            }
-        }
-    }
-
-    /// The voice of each language, as the dropdown shows it.
-    private var readingVoiceSummary: String {
-        let textLocale = interfaceLocaleController.selectedLocale
-        return readingVoiceLanguages.map { language in
-            MinikSpeechVoice.voice(for: language.tag)?.name ?? textLocale.text("No voice on this device")
-        }
-        .joined(separator: " · ")
-    }
-
-    /// Automatic or any of the device's voices, per language spoken here. Choosing one says
-    /// "Great job!" in it, so a grown-up hears the difference at once.
-    private func readingVoiceMenu<MenuLabel: View>(
-        @ViewBuilder label: () -> MenuLabel
-    ) -> some View {
-        let textLocale = interfaceLocaleController.selectedLocale
-        return Menu {
-            ForEach(readingVoiceLanguages) { language in
-                let voices = MinikSpeechVoice.choices(forLanguageCode: language.code)
-                let saved = MinikSpeechVoicePreferences().identifier(forLanguageCode: language.code)
-                let chosen = voices.contains { $0.identifier == saved } ? saved : nil
-                Section(language.title) {
-                    if voices.isEmpty {
-                        Text(verbatim: textLocale.text("No voice on this device"))
-                    } else {
-                        Button {
-                            chooseReadingVoice(nil, for: language)
-                        } label: {
-                            languageMenuItem(automaticVoiceTitle(for: language), isSelected: chosen == nil)
-                        }
-                        ForEach(voices, id: \.identifier) { voice in
-                            Button {
-                                chooseReadingVoice(voice.identifier, for: language)
-                            } label: {
-                                languageMenuItem(
-                                    readingVoiceTitle(voice, among: voices),
-                                    isSelected: chosen == voice.identifier
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        } label: {
-            label()
-        }
-        .menuOrder(.fixed)
-        .id(readingVoiceRevision)
-        .accessibilityLabel(Text(verbatim: textLocale.text("Reading voice")))
-        .accessibilityValue(Text(verbatim: readingVoiceSummary))
-    }
-
-    private func automaticVoiceTitle(for language: ReadingVoiceLanguage) -> String {
-        let textLocale = interfaceLocaleController.selectedLocale
-        guard let voice = MinikSpeechVoice.automaticVoice(for: language.tag) else {
-            return textLocale.text("Automatic")
-        }
-        return String(format: textLocale.text("Automatic (%@)"), readingVoiceTitle(voice, among: [voice]))
-    }
-
-    /// "Carmit (Enhanced)"; the accent is added when the language has voices for several.
-    private func readingVoiceTitle(_ voice: AVSpeechSynthesisVoice, among voices: [AVSpeechSynthesisVoice]) -> String {
-        let textLocale = interfaceLocaleController.selectedLocale
-        var name = voice.name
-        if Set(voices.map(\.language)).count > 1,
-           let region = Locale(identifier: voice.language).region?.identifier,
-           let regionName = textLocale.locale.localizedString(forRegionCode: region) {
-            name += " – " + regionName
-        }
-        switch voice.quality {
-        case .premium:
-            return String(format: textLocale.text("%@ (Premium)"), name)
-        case .enhanced:
-            return String(format: textLocale.text("%@ (Enhanced)"), name)
-        default:
-            return name
-        }
-    }
-
-    private func chooseReadingVoice(_ identifier: String?, for language: ReadingVoiceLanguage) {
-        MinikSpeechVoicePreferences().save(identifier, forLanguageCode: language.code)
-        readingVoiceRevision += 1
-        readingVoiceSamplePlayer.speak(
-            language.sampleLocale.text("Great job!"),
-            interfaceLocale: language.sampleLocale
-        )
-    }
-
-    /// Math Plus: the same choice as a card under Read aloud.
-    private func readingVoiceSection(compact: Bool) -> some View {
-        settingsCard(compact: compact) {
-            VStack(alignment: .leading, spacing: 10) {
-                settingsHeading("Reading voice")
-                readingVoiceMenu {
-                    LanguageParentDropdownLabel(title: readingVoiceSummary, fontSize: 17, minHeight: 46)
-                }
-                Text(verbatim: interfaceLocaleController.selectedLocale.text(Self.readingVoiceHintKey))
-                    .font(.subheadline)
-                    .foregroundStyle(MinikPretty.softInk)
-                    .fixedSize(horizontal: false, vertical: true)
-                voiceTestButtons
-            }
         }
     }
 

@@ -79,14 +79,14 @@ enum LearningSpeechLetterName {
 }
 
 @MainActor
-final class LearningSpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
-    private let synthesizer = AVSpeechSynthesizer()
+final class LearningSpeechPlayer: NSObject, ObservableObject {
+    private let speaker = MinikSpeaker()
     private var queue = LearningSpeechQueueState()
     private var completionWaiters: [CheckedContinuation<Void, Never>] = []
 
     override init() {
         super.init()
-        synthesizer.delegate = self
+        speaker.onUtteranceEnd = { [weak self] id in self?.finished(id) }
     }
 
     func speak(_ plan: LearningSpeechPlan) { speak(plan.utterances) }
@@ -99,8 +99,7 @@ final class LearningSpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesize
         for item in utterances where !item.text.isEmpty {
             let utterance = AVSpeechUtterance(string: LearningSpeechLetterName.spokenText(item.text))
             utterance.voice = MinikSpeechVoice.voice(for: LearningSpeechVoiceLocale.identifier(for: item.language))
-            utterance.rate = SpeechVoicePreference.selectedRate(for: LearningSpeechVoiceLocale.identifier(for: item.language))
-            enqueue(utterance)
+            enqueue(utterance, languageTag: LearningSpeechVoiceLocale.identifier(for: item.language))
         }
     }
 
@@ -113,8 +112,7 @@ final class LearningSpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesize
         ))
         utterance.voice = MinikSpeechVoice.voice(for: interfaceLocale.rawValue)
             ?? interfaceLocale.locale.language.languageCode.flatMap { MinikSpeechVoice.voice(for: $0.identifier) }
-        utterance.rate = SpeechVoicePreference.selectedRate(for: interfaceLocale.rawValue)
-        enqueue(utterance)
+        enqueue(utterance, languageTag: interfaceLocale.rawValue)
     }
 
     func enqueuePracticeEncouragement(cleanRun: Int, interfaceLocale: InterfaceLocaleID) {
@@ -140,13 +138,13 @@ final class LearningSpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesize
         // Clear identities before stop: delayed cancellation callbacks for the
         // previous queue must never finish a newer queue or its waiting task.
         queue.cancelAll()
-        synthesizer.stopSpeaking(at: .immediate)
+        speaker.stopSpeaking()
         resumeCompletionWaiters()
     }
 
-    private func enqueue(_ utterance: AVSpeechUtterance) {
+    private func enqueue(_ utterance: AVSpeechUtterance, languageTag: String) {
         queue.enqueue(ObjectIdentifier(utterance))
-        synthesizer.speak(utterance)
+        speaker.speak(utterance, languageTag: languageTag)
     }
 
     private func finished(_ id: ObjectIdentifier) {
@@ -158,15 +156,5 @@ final class LearningSpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesize
         let pending = completionWaiters
         completionWaiters.removeAll()
         for continuation in pending { continuation.resume() }
-    }
-
-    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        let id = ObjectIdentifier(utterance)
-        Task { @MainActor [weak self] in self?.finished(id) }
-    }
-
-    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
-        let id = ObjectIdentifier(utterance)
-        Task { @MainActor [weak self] in self?.finished(id) }
     }
 }

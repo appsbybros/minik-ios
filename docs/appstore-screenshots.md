@@ -86,4 +86,8 @@ App Store Connect → the app → the version page → **Previews and Screenshot
 drag the `iphone-6.9` images into the 6.9" slot and the `ipad-13` images into the 13" slot. Up to 10 per slot; the
 first three show in search results.
 
+Or let the **App Store metadata** workflow upload them with the store texts in `appstore/metadata`: give it this
+run's ID as `screenshots_run_id` (it replaces each language's screenshots per slot, in file-name order, and never
+submits for review). Start it with `dry_run` on first; see `Scripts/appstore-metadata.py`.
+
 The Heebo font (`appstore/fonts`) is under the SIL Open Font License (`OFL-Heebo.txt`).
