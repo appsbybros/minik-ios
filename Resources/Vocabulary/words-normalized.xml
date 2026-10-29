@@ -1163,7 +1163,6 @@
     </string-array>
     <string-array name="languages_c">
         <word key="languages_italian" ar="الإيطالية" de="Italienisch" en="Italian" es="italiano" fr="Italien" he="איטלקית" nl="Italiaans" pt_BR="Italiano" pt_PT="Italiano" ru="Итальянский" />
-        <word key="languages_korean" ar="الكورية" de="Koreanisch" en="Korean" es="coreano" fr="Coréen" he="קוריאנית" nl="Koreaans" pt_BR="Coreano" pt_PT="Coreano" ru="Корейский" />
         <word key="languages_hindi" ar="الهندية" de="Hindi" en="Hindi" es="hindi" fr="Hindi" he="הודית" nl="Hindi" pt_BR="Hindi" pt_PT="Hindi" ru="Хинди" />
         <word key="languages_arabic" ar="العربية" de="Arabisch" en="Arabic" es="árabe" fr="Arabe" he="ערבית" nl="Arabisch" pt_BR="Árabe" pt_PT="Árabe" ru="Арабский" />
         <word key="languages_danish" ar="الدنماركية" de="Dänisch" en="Danish" es="danés" fr="Danois" he="דנית" nl="Deens" pt_BR="Dinamarquês" pt_PT="Dinamarquês" ru="Датский" />

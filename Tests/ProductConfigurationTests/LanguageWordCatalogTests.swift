@@ -13,12 +13,12 @@ final class LanguageWordCatalogTests: XCTestCase {
         ])
     }
 
-    func testApprovedXMLContains1270UniqueNonEmptyStableKeys() {
+    func testApprovedXMLContains1269UniqueNonEmptyStableKeys() {
         let stableKeys = LanguageWordCatalog.allItems.map(\.stableKey)
 
-        XCTAssertEqual(LanguageWordCatalog.allItems.count, 1270)
-        XCTAssertEqual(stableKeys.count, 1270)
-        XCTAssertEqual(Set(stableKeys).count, 1270)
+        XCTAssertEqual(LanguageWordCatalog.allItems.count, 1269)
+        XCTAssertEqual(stableKeys.count, 1269)
+        XCTAssertEqual(Set(stableKeys).count, 1269)
         XCTAssertTrue(stableKeys.allSatisfy { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty })
     }
 
@@ -31,7 +31,7 @@ final class LanguageWordCatalogTests: XCTestCase {
     func testExactLexicalCountsMatchApprovedNormalizedVocabulary() {
         XCTAssertEqual(lexicalCount(for: .a), 181)
         XCTAssertEqual(lexicalCount(for: .b), 192)
-        XCTAssertEqual(lexicalCount(for: .c), 241)
+        XCTAssertEqual(lexicalCount(for: .c), 240)
         XCTAssertEqual(lexicalCount(for: .d), 162)
         XCTAssertEqual(lexicalCount(for: .e), 179)
     }
@@ -432,7 +432,7 @@ final class LanguageWordCatalogTests: XCTestCase {
             availableAssetReferences: knownReadyAssets
         )
 
-        XCTAssertEqual(catalog.allItems.count, 1270)
+        XCTAssertEqual(catalog.allItems.count, 1269)
         XCTAssertEqual(catalog.imageManifestEntries.count, 543)
     }
 

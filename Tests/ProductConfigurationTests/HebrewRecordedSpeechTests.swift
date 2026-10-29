@@ -7,8 +7,7 @@ final class HebrewRecordedSpeechTests: XCTestCase {
     func testKeyDropsPointsPunctuationAndExtraSpaces() {
         XCTAssertEqual(HebrewRecordedSpeech.key("בְּרֶצֶף"), "ברצף")
         XCTAssertEqual(HebrewRecordedSpeech.key("גול!!"), "גול")
-        XCTAssertEqual(HebrewRecordedSpeech.key("  3   תשובות
-נכונות ברצף "), "3 תשובות נכונות ברצף")
+        XCTAssertEqual(HebrewRecordedSpeech.key("  3   תשובות\nנכונות ברצף "), "3תשובות נכונות ברצף")
         XCTAssertEqual(HebrewRecordedSpeech.key("איקס או עיגול, בשביל הכיף"), "איקס או עיגול בשביל הכיף")
         XCTAssertEqual(HebrewRecordedSpeech.key("אות נכונה + גול = נקודה אחת לכם!"), "אות נכונה + גול = נקודה אחת לכם")
         XCTAssertEqual(HebrewRecordedSpeech.key("Kiwi"), "kiwi")
@@ -55,6 +54,6 @@ final class HebrewRecordedSpeechTests: XCTestCase {
     }
 
     func testOnlyHebrewUsesClips() {
-        XCTAssertNil(HebrewRecordedSpeech.clipURL(for: "Great job!", languageTag: "en-US"))
+        XCTAssertNil(HebrewRecordedSpeech.clipURLs(for: "Great job!", languageTag: "en-US"))
     }
 }

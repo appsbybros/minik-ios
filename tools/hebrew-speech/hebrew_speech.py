@@ -112,16 +112,18 @@ FIXED_HEBREW = {
     'memory': 'לחצו על משבצת כדי להפוך אותה',            # MemoryView.speakLanguageIntroductionIfNeeded
     'menu': 'בחרו תרגול כדי להתחיל',                     # LanguageMenuAndroidText.selectScreenVoice
 }
+FIXED_ENGLISH = {'memory': 'Tap a tile to turn it over', 'menu': 'Choose a practice to start'}
 
 # LearningSpeechPlayer.enqueuePracticeEncouragement: "<run> correct answers in a row" from 3 on.
 STREAK_RUNS = range(3, 51)
 
-# A lone letter is said by name. Pointed, so the voice cannot guess (אלף is also "thousand").
+# A lone letter is said by name. Pointed, so the voice cannot guess (אלף is also "thousand");
+# בית, גימל, טית, למד and תו as the owner chose them by ear (2026-10-28).
 LETTER_NAMES = {
-    'א': 'אָלֶף', 'ב': 'בֵּית', 'ג': 'גִּימֶל', 'ד': 'דָּלֶת', 'ה': 'הֵא', 'ו': 'וָו', 'ז': 'זַיִן',
-    'ח': 'חֵית', 'ט': 'טֵית', 'י': 'יוּד', 'כ': 'כָּף', 'ל': 'לָמֶד', 'מ': 'מֵם', 'נ': 'נוּן',
+    'א': 'אָלֶף', 'ב': 'בֵּת', 'ג': 'גימל', 'ד': 'דָּלֶת', 'ה': 'הֵא', 'ו': 'וָו', 'ז': 'זַיִן',
+    'ח': 'חֵית', 'ט': 'טֵת', 'י': 'יוּד', 'כ': 'כָּף', 'ל': '{ˈlamed|לָמֵד}', 'מ': 'מֵם', 'נ': 'נוּן',
     'ס': 'סָמֶךְ', 'ע': 'עַיִן', 'פ': 'פֵּא', 'צ': 'צָדִי', 'ק': 'קוּף', 'ר': 'רֵישׁ', 'ש': 'שִׁין',
-    'ת': 'תָּו',
+    'ת': '{tav|תָּיו}',
 }
 FINAL_LETTERS = {'ך': 'כ', 'ם': 'מ', 'ן': 'נ', 'ף': 'פ', 'ץ': 'צ'}
 
@@ -142,13 +144,13 @@ def catalog_hebrew():
 
 
 def read_table(name):
-    """Two tab-separated columns; # starts a comment."""
+    """Two tab-separated columns; # starts a comment; \\n is a line break."""
     rows = {}
     path = HERE / name
     if path.exists():
         for line in path.read_text(encoding='utf-8').splitlines():
             if line.strip() and not line.lstrip().startswith('#'):
-                written, spoken = line.split('\t')
+                written, spoken = line.replace('\\n', '\n').split('\t')
                 rows[written.strip()] = spoken.strip()
     return rows
 
@@ -161,28 +163,31 @@ def respell(text, respellings):
 
 
 def collect():
-    """key -> {'text': what the app says, 'record': what is recorded, 'sources': [...]}."""
+    """key -> {'text': what the app says, 'record': what is recorded, 'sources': [...],
+    'english': [what it means, for the review page]}."""
     hebrew = catalog_hebrew()
     respellings, overrides = read_table('respellings.tsv'), read_table('overrides.tsv')
     texts = {}
 
-    def add(text, source, record=None):
+    def add(text, source, record=None, english=None):
         k = key(text)
         if not k:
             return
-        entry = texts.setdefault(k, {'text': text, 'record': None, 'sources': []})
+        entry = texts.setdefault(k, {'text': text, 'record': None, 'sources': [], 'english': []})
         if record and not entry['record']:
             entry['record'] = record
         if source not in entry['sources']:
             entry['sources'].append(source)
+        if english and english not in entry['english']:
+            entry['english'].append(english)
 
     for element in ET.parse(VOCABULARY).getroot().iter('word'):
         word = element.get('he')
         if word:
-            add(word, 'word')
+            add(word, 'word', english=element.get('en'))
         legacy = LEGACY_SPEECH.get(element.get('key'))
         if legacy:
-            add(legacy, 'word', record=word)
+            add(legacy, 'word', record=word, english=element.get('en'))
 
     alphabet = ALPHABET.read_text(encoding='utf-8')
     hebrew_alphabet = alphabet[alphabet.index('static let hebrewAlphabet'):]
@@ -191,22 +196,24 @@ def collect():
         letter, word = re.search(r'letter: "([^"]+)", word: "([^"]+)"', line).groups()
         spoken = re.search(r'spokenLetter: "([^"]+)"', line)
         spoken = spoken and spoken.group(1)
-        add(word, 'alphabet word')
+        letter_key = re.search(r'key: "([^"]+)"', line).group(1)
+        add(word, 'alphabet word', english=f'the picture word for {letter_key}')
         if letter in FINAL_LETTERS:
             name = LETTER_NAMES[FINAL_LETTERS[letter]] + ' סוֹפִית'
-            add(spoken or letter, 'letter', record=name)
-            add(letter, 'letter', record=name)
+            add(spoken or letter, 'letter', record=name, english=f'the letter {letter_key}')
+            add(letter, 'letter', record=name, english=f'the letter {letter_key}')
         else:
-            add(letter, 'letter', record=LETTER_NAMES[letter])
+            add(letter, 'letter', record=LETTER_NAMES[letter], english=f'the letter {letter_key}')
 
     for source, keys in PHRASE_KEYS.items():
         for catalog_key in keys:
-            add(hebrew(catalog_key), source)
-    add('\n'.join(hebrew(k) for k in SOCCER_INTRODUCTION), 'soccer introduction')
+            add(hebrew(catalog_key), source, english=catalog_key)
+    add('\n'.join(hebrew(k) for k in SOCCER_INTRODUCTION), 'soccer introduction',
+        english=' '.join(SOCCER_INTRODUCTION))
     for source, text in FIXED_HEBREW.items():
-        add(text, source)
+        add(text, source, english=FIXED_ENGLISH[source])
     for run in STREAK_RUNS:
-        add(f'{run} {hebrew("correct answers in a row")}', 'streak')
+        add(f'{run} {hebrew("correct answers in a row")}', 'streak', english=f'{run} correct answers in a row')
 
     for entry in texts.values():
         record = entry['record'] or entry['text']
@@ -234,12 +241,14 @@ def collect_mathplus():
     respellings, overrides = read_table('respellings.tsv'), read_table('overrides.tsv')
     texts = {}
 
-    def add(text, source):
+    def add(text, source, english=None):
         k = key(text)
         if any(ch.isalnum() for ch in k):  # not a lone symbol left between placeholders
-            entry = texts.setdefault(k, {'text': text.strip(), 'record': None, 'sources': []})
+            entry = texts.setdefault(k, {'text': text.strip(), 'record': None, 'sources': [], 'english': []})
             if source not in entry['sources']:
                 entry['sources'].append(source)
+            if english and english not in entry['english']:
+                entry['english'].append(english)
 
     def units(localization):
         if 'stringUnit' in localization:
@@ -251,10 +260,10 @@ def collect_mathplus():
     for catalog_key, entry in strings.items():
         for value in units(entry.get('localizations', {}).get('he', {})):
             for piece in PLACEHOLDER.split(value):
-                add(piece, 'catalog')
+                add(piece, 'catalog', english=catalog_key if piece.strip() == value.strip() else f'part of: {catalog_key}')
     for number in MATH_NUMBERS:
-        add(str(number), 'number')
-        add(f'{number:,}', 'number')  # 1,000 as the Hebrew locale writes it
+        add(str(number), 'number', english=str(number))
+        add(f'{number:,}', 'number', english=str(number))  # 1,000 as the Hebrew locale writes it
     for entry in texts.values():
         entry['record'] = overrides.get(entry['text'], respell(entry['text'], respellings))
     return texts
@@ -262,9 +271,14 @@ def collect_mathplus():
 
 # ---- Recording ----------------------------------------------------------------------------------------------------------
 
+# "{kaˈtsav|קצב}" in a recorded text is said exactly as the IPA before the bar (Hila follows
+# it, stress included), for words that vowel marks don't fix.
+PHONEME = re.compile(r'\{([^{}|]+)\|([^{}]+)\}')
+
+
 def synthesize(text, voice, region, secret, output_format='audio-24khz-48kbitrate-mono-mp3'):
     lines = [html.escape(line.strip()) for line in text.split('\n') if line.strip()]
-    body = '<break time="500ms"/>'.join(lines)
+    body = PHONEME.sub(r"<phoneme alphabet='ipa' ph='\1'>\2</phoneme>", '<break time="500ms"/>'.join(lines))
     ssml = (f"<speak version='1.0' xml:lang='he-IL'><voice name='{voice}'>{body}</voice></speak>").encode('utf-8')
     request = urllib.request.Request(
         f'https://{region}.tts.speech.microsoft.com/cognitiveservices/v1', data=ssml, method='POST',
@@ -332,7 +346,6 @@ def synthesize_close(text, voice, region, secret):
     import array
     import io
     import wave
-    import lameenc
     with wave.open(io.BytesIO(synthesize(text, voice, region, secret, 'riff-24khz-16bit-mono-pcm'))) as audio:
         rate = audio.getframerate()
         samples = array.array('h', audio.readframes(audio.getnframes()))
@@ -340,12 +353,58 @@ def synthesize_close(text, voice, region, secret):
     if loud:
         start = max(0, loud[0] - int(LEAD_SECONDS * rate))
         samples = samples[start:loud[-1] + int(CLOSE_TAIL_SECONDS * rate)]
+    return encode(samples, rate)
+
+
+def encode(samples, rate):
+    import lameenc
     encoder = lameenc.Encoder()
     encoder.set_bit_rate(48)
     encoder.set_in_sample_rate(rate)
     encoder.set_channels(1)
     encoder.set_quality(2)
     return bytes(encoder.encode(samples.tobytes()) + encoder.flush())
+
+
+# "מִיס⁀חַק": the parts recorded apart and put end to end in one clip, for a word Hila
+# otherwise says with a vowel between them. "⁀150⁀" cuts 150 ms off the end of the part
+# before (Hila draws out a word's last sound), "⁀150,40⁀" also 40 ms off the start of the
+# part after (its soft beginning); a part that starts with "70%" is played that loud (so the
+# stress falls on the next part).
+JOIN = re.compile(r'⁀(?:(\d+)(?:,(\d+))?⁀)?')
+GAIN = re.compile(r'^(\d+)%')
+
+
+def synthesize_joined(text, voice, region, secret, pause=0.0):
+    import array
+    import io
+    import wave
+    pieces = JOIN.split(text)
+    parts = pieces[0::3]
+    cuts, starts = [int(ms or 0) for ms in pieces[1::3]], [int(ms or 0) for ms in pieces[2::3]]
+    out, rate = array.array('h'), 24000
+    for index, part in enumerate(parts):
+        gain = GAIN.match(part)
+        part, gain = (part[gain.end():], int(gain.group(1)) / 100) if gain else (part, 1.0)
+        with wave.open(io.BytesIO(synthesize(part, voice, region, secret, 'riff-24khz-16bit-mono-pcm'))) as audio:
+            rate = audio.getframerate()
+            samples = array.array('h', audio.readframes(audio.getnframes()))
+        if index < len(parts) - 1:
+            time.sleep(pause)
+        loud = [i for i, sample in enumerate(samples) if abs(sample) > 500]
+        lead = LEAD_SECONDS if index == 0 else 0.005
+        tail = (CLOSE_TAIL_SECONDS if APP['close'] else TAIL_SECONDS) if index == len(parts) - 1 else 0.01
+        piece = [int(sample * gain) for sample in samples[max(0, loud[0] - int(lead * rate)):loud[-1] + int(tail * rate)]]
+        if index:
+            del out[max(0, len(out) - int(cuts[index - 1] * rate / 1000)):]
+            del piece[:int(starts[index - 1] * rate / 1000)]
+        overlap = min(int(0.01 * rate), len(out), len(piece)) if index else 0
+        for i in range(overlap):  # the end of one part fades into the start of the next
+            weight = i / overlap
+            at = len(out) - overlap + i
+            out[at] = int(out[at] * (1 - weight) + piece[i] * weight)
+        out.extend(piece[overlap:])
+    return encode(out, rate)
 
 
 def record(texts, voice, per_minute):
@@ -362,7 +421,9 @@ def record(texts, voice, per_minute):
     pause = 60.0 / per_minute
     for index, (name, entry) in enumerate(todo, 1):
         started = time.monotonic()
-        if APP['close']:
+        if JOIN.search(entry['record']):
+            clip = synthesize_joined(entry['record'], voice, region, secret, pause)
+        elif APP['close']:
             clip = synthesize_close(entry['record'], voice, region, secret)
         else:
             clip = trim(synthesize(entry['record'], voice, region, secret))
@@ -403,12 +464,13 @@ def review(texts):
             audio = '<i>not recorded</i>'
         said = html.escape(entry['text']).replace('\n', '<br>')
         recorded = '' if key(entry['record']) == k else f'<div class="rec">recorded as: {html.escape(entry["record"])}</div>'
-        rows.append(f'<tr><td>{html.escape(", ".join(entry["sources"]))}</td>'
+        english = html.escape(' / '.join(entry.get('english', [])))
+        rows.append(f'<tr><td>{html.escape(", ".join(entry["sources"]))}</td><td class="en">{english}</td>'
                     f'<td dir="rtl">{said}{recorded}</td><td>{audio}</td></tr>')
     page = f"""<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width">
 <title>Minik Hebrew clips</title>
 <style>body{{font:16px system-ui;margin:16px}}td{{padding:4px 8px;border-bottom:1px solid #ccc;vertical-align:middle}}
-.rec{{color:#a40;font-size:13px}}input{{font-size:16px;padding:4px;width:240px}}</style>
+.rec{{color:#a40;font-size:13px}}.en{{max-width:320px}}input{{font-size:16px;padding:4px;width:240px}}</style>
 <h1>Minik Hebrew clips ({len(texts)})</h1>
 <p><input id="q" placeholder="Search" oninput="for(const r of document.querySelectorAll('tbody tr'))r.hidden=!r.textContent.includes(this.value)"></p>
 <table><tbody>{''.join(rows)}</tbody></table>"""
