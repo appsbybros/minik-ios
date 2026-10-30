@@ -272,7 +272,7 @@
   "voice": "he-IL-HilaNeural"
  },
  "he-0e06816e6e47.mp3": {
-  "text": "בחרו תרגול כדי להתחיל",
+  "text": "{biχ.ˈʁu|בחרו} תרגול כדי להתחיל",
   "voice": "he-IL-HilaNeural"
  },
  "he-0e53064ea607.mp3": {
@@ -460,7 +460,7 @@
   "voice": "he-IL-HilaNeural"
  },
  "he-1a6f61907252.mp3": {
-  "text": "{gʁe.ˈʁu|גררו} את האותיות לפי הסדר הנכון כדי להרכיב את המילה שמופיעה.\n{na.ˈsu|נסו} להבקיע גול נגד {ˈmi.nɪk|מיניק} עם {kol|כל} {ʔot|אות}.\nאות נכונה וגם גול תעניק נקודה אחת לכם!\nאות לא נכונה, וללא גול, תעניק נקודה אחת למיניק!\n{liχ.ˈtsu|לחצו} על הכפתור להתחיל על מנת להתחיל את המשחק. בהצלחה!",
+  "text": "{gʁe.ˈʁu|גררו} את האותיות לפי הסדר הנכון כדי להרכיב את המילה שמופיעה.\n{na.ˈsu|נסו} להבקיע גול {ne.ˈged ˈmi.nɪk|נגד מיניק} עם {kol|כל} {ʔot|אות}.\nאות נכונה וגם גול תעניק נקודה אחת לכם!\nאות לא נכונה, וללא גול, תעניק נקודה אחת {le.ˈmi.nɪk|למיניק}!\n{liχ.ˈtsu|לחצו} על הכפתור להתחיל על מנת להתחיל את המשחק. בהצלחה!",
   "voice": "he-IL-HilaNeural"
  },
  "he-1a75494cb7bf.mp3": {
@@ -940,7 +940,7 @@
   "voice": "he-IL-HilaNeural"
  },
  "he-37585851ebbe.mp3": {
-  "text": "בֶּז'",
+  "text": "בז'",
   "voice": "he-IL-HilaNeural"
  },
  "he-37adf077158c.mp3": {
@@ -2624,7 +2624,7 @@
   "voice": "he-IL-HilaNeural"
  },
  "he-9fe10427cc51.mp3": {
-  "text": "עם כיוון השעון",
+  "text": "עם {ki.ˈvun|כיוון} השעון",
   "voice": "he-IL-HilaNeural"
  },
  "he-9fe2c55b33ce.mp3": {
@@ -3052,7 +3052,7 @@
   "voice": "he-IL-HilaNeural"
  },
  "he-b94569267341.mp3": {
-  "text": "{tʃuˈva|תשובה} נְכוֹנָה!",
+  "text": "{tʃu.ˈvaː|תשובה} נְכוֹנָה!",
   "voice": "he-IL-HilaNeural"
  },
  "he-b97ab1f1fa25.mp3": {
@@ -3128,7 +3128,7 @@
   "voice": "he-IL-HilaNeural"
  },
  "he-bd2ce3426ffb.mp3": {
-  "text": "{taʁneˈgolet|תרנגולת}",
+  "text": "{taʁ.ne.ˈgoː.let|תרנגולת}",
   "voice": "he-IL-HilaNeural"
  },
  "he-bd48427feda7.mp3": {
@@ -3580,7 +3580,7 @@
   "voice": "he-IL-HilaNeural"
  },
  "he-d5d5d01d1a81.mp3": {
-  "text": "נגד כיוון השעון",
+  "text": "נגד {ki.ˈvun|כיוון} השעון",
   "voice": "he-IL-HilaNeural"
  },
  "he-d5f29d99a7cf.mp3": {
@@ -3636,7 +3636,7 @@
   "voice": "he-IL-HilaNeural"
  },
  "he-d89491d05b5c.mp3": {
-  "text": "מִיס⁀120⁀חַק",
+  "text": "✂478-905✂{biχ.ˈʁu|בחרו} משחק {ve.tej.he.ˈnu|ותיהנו}.",
   "voice": "he-IL-HilaNeural"
  },
  "he-d9691db7725f.mp3": {
@@ -4192,7 +4192,7 @@
   "voice": "he-IL-HilaNeural"
  },
  "he-fb357a08dc2a.mp3": {
-  "text": "בחרו איקס או עיגול או {liχ.ˈtsu|לחצו} על משבצת כדי להתחיל",
+  "text": "{biχ.ˈʁu|בחרו} איקס או עיגול או {liχ.ˈtsu|לחצו} על משבצת כדי להתחיל",
   "voice": "he-IL-HilaNeural"
  },
  "he-fb7aa84bd9dc.mp3": {

@@ -121,18 +121,12 @@ targets:
         buildPhase: resources
       - path: Resources/Privacy/Language/PrivacyInfo.xcprivacy
         buildPhase: resources
-      - path: Family/FamilyArt.xcassets
-        buildPhase: resources
-      - path: Family/minik-family-catalog.json
-        buildPhase: resources
       # Fredoka Bold for the rainbow-sky design (MinikPrettyDesign.swift).
       - path: Resources/Fonts
         buildPhase: resources
     info:
       properties:
         CFBundleDisplayName: Minik
-        # This app's family catalogue key: the "More Minik apps & games" card never promotes the app itself.
-        MinikFamilyCatalogKey: minik
         UIAppFonts: [fredoka_medium.ttf, fredoka_bold.ttf]
         CFBundleLocalizations: [en, am, ar, de, es, fr, he, nl, pt-BR, pt-PT, ru]
         # Portrait only, as on Android (sensorPortrait); iPad allows that only as a
@@ -227,18 +221,12 @@ targets:
         buildPhase: resources
       - path: Resources/Privacy/Language/PrivacyInfo.xcprivacy
         buildPhase: resources
-      - path: Family/FamilyArt.xcassets
-        buildPhase: resources
-      - path: Family/minik-family-catalog.json
-        buildPhase: resources
       # Fredoka Bold for the rainbow-sky design (MinikPrettyDesign.swift).
       - path: Resources/Fonts
         buildPhase: resources
     info:
       properties:
         CFBundleDisplayName: Minik
-        # This app's family catalogue key: the "More Minik apps & games" card never promotes the app itself.
-        MinikFamilyCatalogKey: minik
         UIAppFonts: [fredoka_medium.ttf, fredoka_bold.ttf]
         CFBundleLocalizations: [en, am, ar, de, es, fr, nl, pt-BR, pt-PT, ru]
         # Portrait only, as on Android (sensorPortrait); iPad allows that only as a

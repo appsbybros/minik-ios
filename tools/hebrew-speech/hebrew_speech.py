@@ -156,9 +156,14 @@ def read_table(name):
 
 
 def respell(text, respellings):
-    """Whole-word replacements, as HebrewSpeechPronunciation does in the app."""
-    for written, spoken in respellings.items():
-        text = re.sub(r'(?<![\w֐-׿])' + re.escape(written) + r'(?![\w֐-׿])', spoken, text)
+    """Whole-word replacements, longest first; a word already replaced by "{ipa|word}" is left alone.
+    Quote marks around a button name (״הוספה״) are dropped: Hila read them as part of the word."""
+    text = re.sub(r'״(?=[֐-׿])|(?<=[֐-׿])״(?![֐-׿])', '', text)
+    for written in sorted(respellings, key=len, reverse=True):
+        pieces = re.split(r'(\{[^{}]*\})', text)
+        text = ''.join(piece if piece.startswith('{') else
+                       re.sub(r'(?<![\w֐-׿])' + re.escape(written) + r'(?![\w֐-׿])', respellings[written], piece)
+                       for piece in pieces)
     return text
 
 
@@ -356,6 +361,82 @@ def synthesize_close(text, voice, region, secret):
     return encode(samples, rate)
 
 
+# "✂468-905✂{biχ.ˈʁu|בחרו} משחק …": the text is recorded whole and only 468 ms to 905 ms of it is
+# kept, for a word Hila says right only inside a sentence (Azure records a text the same way
+# every time, so the times stay right).
+CUT = re.compile(r'^✂(\d+)-(\d+)✂')
+
+
+def synthesize_cut(text, voice, region, secret):
+    import array
+    import io
+    import wave
+    cut = CUT.match(text)
+    with wave.open(io.BytesIO(synthesize(text[cut.end():], voice, region, secret, 'riff-24khz-16bit-mono-pcm'))) as audio:
+        rate = audio.getframerate()
+        samples = array.array('h', audio.readframes(audio.getnframes()))
+    piece = samples[int(cut.group(1)) * rate // 1000:int(cut.group(2)) * rate // 1000]
+    fade = min(int(0.005 * rate), len(piece) // 2)
+    for i in range(fade):
+        piece[i] = int(piece[i] * i / fade)
+        piece[-1 - i] = int(piece[-1 - i] * i / fade)
+    quiet = array.array('h', [0])
+    return encode(quiet * int(LEAD_SECONDS * rate) + piece + quiet * int(CLOSE_TAIL_SECONDS * rate), rate)
+
+
+# "…בסוף ‖{ha.ki.ˈʃu|הקישו} על בדיקת התשובה.": the text is recorded whole, and from the mark on it is
+# replaced by the rest recorded as a sentence of its own, where Hila stresses a word the way she
+# does at the start of a sentence. The two meet at the quietest moment near the mark (best a
+# voiceless sound, such as the ף before the ה).
+SPLIT = '‖'
+
+
+def synthesize_split(text, voice, region, secret, pause=0.0):
+    import array
+    import io
+    import wave
+
+    def pcm(said):
+        with wave.open(io.BytesIO(synthesize(said, voice, region, secret, 'riff-24khz-16bit-mono-pcm'))) as audio:
+            return audio.getframerate(), array.array('h', audio.readframes(audio.getnframes()))
+
+    rate, whole = pcm(text.replace(SPLIT, ''))
+    time.sleep(pause)
+    _, rest = pcm(text.split(SPLIT, 1)[1])
+    loud = [i for i, sample in enumerate(rest) if abs(sample) > 500]
+    rest = rest[max(0, loud[0] - int(0.04 * rate)):loud[-1] + int(CLOSE_TAIL_SECONDS * rate)]
+    loud_whole = [i for i, sample in enumerate(whole) if abs(sample) > 500]
+    # Where the rest starts inside the whole: the place where the loudness (every 10 ms) of the
+    # rest's first 0.6 s best matches the whole's.
+    step = rate // 100
+
+    def loudness(samples):
+        return [sum(abs(sample) for sample in samples[i:i + step]) / step for i in range(0, len(samples) - step, step)]
+
+    whole_env, rest_env = loudness(whole), loudness(rest)[:60]
+
+    def match(at):
+        part = whole_env[at:at + len(rest_env)]
+        if len(part) < len(rest_env):
+            return -1
+        mean_a, mean_b = sum(part) / len(part), sum(rest_env) / len(rest_env)
+        a, b = [x - mean_a for x in part], [x - mean_b for x in rest_env]
+        return sum(x * y for x, y in zip(a, b)) / ((sum(x * x for x in a) * sum(y * y for y in b)) ** 0.5 or 1)
+
+    end = loud_whole[-1] // step
+    start = max(range(max(0, end - len(loudness(rest)) - 60), max(1, end - len(loudness(rest)) + 60)), key=match)
+    guess, window = (start + 4) * step, int(0.03 * rate)  # the rest has 40 ms before its first loud sound
+    quietest = min(range(max(0, guess - int(0.04 * rate)), guess + int(0.01 * rate), int(0.005 * rate)),
+                   key=lambda at: sum(abs(sample) for sample in whole[at:at + window]))
+    out = whole[max(0, loud_whole[0] - int(LEAD_SECONDS * rate)):quietest + window // 2]
+    overlap = int(0.01 * rate)
+    for i in range(overlap):  # the end of the whole text fades into the rest
+        weight = i / overlap
+        out[len(out) - overlap + i] = int(out[len(out) - overlap + i] * (1 - weight) + rest[i] * weight)
+    out.extend(rest[overlap:])
+    return encode(out, rate)
+
+
 def encode(samples, rate):
     import lameenc
     encoder = lameenc.Encoder()
@@ -421,7 +502,11 @@ def record(texts, voice, per_minute):
     pause = 60.0 / per_minute
     for index, (name, entry) in enumerate(todo, 1):
         started = time.monotonic()
-        if JOIN.search(entry['record']):
+        if CUT.match(entry['record']):
+            clip = synthesize_cut(entry['record'], voice, region, secret)
+        elif SPLIT in entry['record']:
+            clip = synthesize_split(entry['record'], voice, region, secret, pause)
+        elif JOIN.search(entry['record']):
             clip = synthesize_joined(entry['record'], voice, region, secret, pause)
         elif APP['close']:
             clip = synthesize_close(entry['record'], voice, region, secret)

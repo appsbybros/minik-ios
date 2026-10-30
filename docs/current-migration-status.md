@@ -94,6 +94,17 @@ Deliberate differences:
   48-point close targets, VoiceOver labels on the controls. Android-only and not ported: system-bar insets,
   Compose `fontScale` tweaks, `testTag`s and the "0" label on an empty picture.
 
+## 2026-10-29: Minik Plus daily learning and family messages removed
+
+Android Minik `59f6dd6` (2026-10-28) removed what `a4ea9be` added, which the owner had not asked
+for: the daily learning page and its Parent Area button, the five little wins and their toast, and
+every family message (the "More Minik apps & games" link and the card at an ad break). iOS Minik
+Plus and Minik Plus English match it; `ProductVariant.showsFamilyMessages` keeps them from loading
+the family catalogue, and their targets no longer bundle its art. Minik Math Plus keeps its daily
+math journey, "Keep in touch" and family link (Android Math Plus still has them); the other apps
+keep their family messages. Android `5226cf8` (button lettering, the access-code dialog) has no
+iOS counterpart.
+
 ## 2026-10-13 sync (Minik Plus, Minik Plus English, Minik Math Plus)
 
 iOS now matches Android Minik `a4ea9be` and Android Minik Math Plus `7682b75` for what a child or

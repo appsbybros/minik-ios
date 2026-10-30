@@ -268,21 +268,8 @@ struct ParentAreaView: View {
             encouragementSwitch(metrics: metrics)
                 .padding(.top, metrics.fieldToSwitch)
 
-            // Android LanguagesAndLevelsDialogFragment (a4ea9be): "Daily learning & feedback"
-            // is the last row of languagesContainer, under the switch and above the two pills;
-            // it opens the daily page (DailyLearningActivity).
-            dailyLearningButton(metrics: metrics)
-                .padding(.top, 14)
-
             languageActionButtons(metrics: metrics)
                 .padding(.top, metrics.switchToButtons)
-
-            // The family card (Android Minik opens it from the Parent Area), as a quiet link.
-            FamilyMenuLink(title: FamilyMessages.text("More Minik apps & games", "עוד אפליקציות ומשחקי מיניק",
-                                                      language: interfaceLocaleController.selectedLocale.rawValue)) {
-                FamilyMessages.shared.showMoreApps(gate: nil)
-            }
-            .padding(.top, 14)
 
             // Accessibility text sizes keep the footer links in the scrolling card.
             if metrics.usesAccessibilityLayout {
@@ -489,95 +476,6 @@ struct ParentAreaView: View {
         .accessibilityHint("Opens locally stored educational progress")
     }
 
-    /// Android adds a full-width bg_pretty_button_blue button with white text, at least
-    /// 52 dp tall, at the end of the languages container, above the two pills.
-    private func dailyLearningButton(metrics: LanguageParentDialogMetrics) -> some View {
-        Button {
-            keepInTouchProblem = nil
-            languageExtra = .dailyLearning
-        } label: {
-            Text(verbatim: interfaceLocaleController.selectedLocale.text("Daily learning & feedback"))
-                .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(LanguageParentActionButtonStyle(
-            fontSize: metrics.buttonTextSize,
-            minHeight: 52,
-            look: MinikPretty.PillLook.blue
-        ))
-    }
-
-    /// Android DailyLearningActivity: today's little wins for the playing child in the
-    /// learned language, Back to learning, the family link, and rate, share and feedback.
-    /// Those three leave the app, so they open behind the grown-up check, as the Parent
-    /// Area's other outside links do.
-    private func dailyLearningContent(metrics: LanguageParentDialogMetrics) -> some View {
-        let locale = interfaceLocaleController.selectedLocale
-        let wins = MinikDailyLearningRepository(product: configuration.variant).count(language: selectedLanguage)
-        let reachedGoal = wins >= MinikDailyLearningPolicy.dailyGoal
-        return VStack(spacing: 12) {
-            Text(verbatim: String(format: locale.text("Today: %lld of 5 little wins"), Int64(wins)))
-                .font(MinikPretty.titleFont(metrics.captionSize))
-                .foregroundStyle(MinikPretty.navy)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity)
-
-            Text(verbatim: reachedGoal
-                ? locale.text("Five little wins today. Well done!")
-                : locale.text("Choose any learning game. Each play that earns points adds one little win. Progress is saved for this child and learning language. No rush, and no penalty for a day off."))
-                .font(MinikPretty.bodyFont(metrics.spinnerTextSize))
-                .foregroundStyle(MinikPretty.navy)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity)
-
-            dailyLearningAction(locale.text("Back to learning"), metrics: metrics) {
-                languageExtra = nil
-            }
-
-            FamilyMenuLink(title: FamilyMessages.text("More Minik apps & games", "עוד אפליקציות ומשחקי מיניק",
-                                                      language: locale.rawValue)) {
-                FamilyMessages.shared.showMoreApps(gate: nil)
-            }
-
-            dailyLearningAction(locale.text("Rate this app"), metrics: metrics) {
-                requestKeepInTouch(.rate)
-            }
-            dailyLearningAction(locale.text("Share this app"), metrics: metrics) {
-                requestKeepInTouch(.share)
-            }
-            dailyLearningAction(locale.text("Send feedback"), metrics: metrics) {
-                requestKeepInTouch(.feedback)
-            }
-
-            if let keepInTouchProblem {
-                Text(verbatim: keepInTouchProblem)
-                    .font(.system(size: metrics.hintSize, weight: .semibold))
-                    .foregroundStyle(MinikPretty.color(0xC2416E))
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity)
-            }
-        }
-    }
-
-    /// The daily page's buttons: bg_pretty_button_blue with white text, at least 56 dp tall.
-    private func dailyLearningAction(
-        _ title: String,
-        metrics: LanguageParentDialogMetrics,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            Text(verbatim: title)
-                .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(LanguageParentActionButtonStyle(
-            fontSize: metrics.buttonTextSize,
-            minHeight: 56,
-            look: MinikPretty.PillLook.blue
-        ))
-    }
-
     /// Android's label is two lines in every language ("מעקב\nהתקדמות",
     /// "Progreso de\naprendizaje"); the catalog keeps the same words with a space
     /// for the line break, so the last space becomes the break again.
@@ -699,7 +597,6 @@ struct ParentAreaView: View {
         case .purchases: return interfaceLocale.text("Purchases")
         case .leaderboard: return interfaceLocale.text("Online leaderboard")
         case .privacy: return interfaceLocale.text("Privacy, support & legal")
-        case .dailyLearning: return interfaceLocale.text("Daily learning & feedback")
         }
     }
 
@@ -710,7 +607,6 @@ struct ParentAreaView: View {
         case .purchases: return "Purchases"
         case .leaderboard: return "Online leaderboard"
         case .privacy: return "Privacy, support & legal"
-        case .dailyLearning: return "Daily learning & feedback"
         }
     }
 
@@ -718,7 +614,7 @@ struct ParentAreaView: View {
         switch extra {
         case .records:
             onShowRecords()
-        case .reminders, .purchases, .leaderboard, .privacy, .dailyLearning:
+        case .reminders, .purchases, .leaderboard, .privacy:
             languageExtra = extra
         }
     }
@@ -766,8 +662,6 @@ struct ParentAreaView: View {
             leaderboardSection(compact: true, inDialog: true)
         case .privacy:
             releaseInformationSection(compact: true, inDialog: true)
-        case .dailyLearning:
-            dailyLearningContent(metrics: metrics)
         }
     }
 
@@ -1353,7 +1247,7 @@ struct ParentAreaView: View {
         }
     }
 
-    // MARK: - Rate, share and feedback (Android DailyLearningActivity, Math Plus "Keep in touch")
+    // MARK: - Rate, share and feedback (Math Plus "Keep in touch")
 
     /// Android Math Plus ParentScreens: the "Keep in touch" heading with Rate this app,
     /// Share this app and Send feedback.
@@ -1532,15 +1426,13 @@ private enum GatedParentAction: Identifiable {
 }
 
 /// iOS-only Language Parent Area pages, reached from the footer under the
-/// Android dialog, and Android's daily learning page (DailyLearningActivity), reached
-/// from its button in the dialog.
+/// Android dialog.
 private enum LanguageParentExtra: String, CaseIterable, Hashable, Identifiable {
     case records
     case reminders
     case purchases
     case leaderboard
     case privacy
-    case dailyLearning
 
     var id: String { rawValue }
 

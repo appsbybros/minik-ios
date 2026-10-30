@@ -21,6 +21,15 @@ enum ProductVariant: String, Codable, Hashable, Sendable {
     case minikPingPong
 }
 
+extension ProductVariant {
+    /// The shared family messages (Family/, Android MinikFamilyServices): the "More Minik apps &
+    /// games" card, its ad-break promotion and reminder. Android Minik dropped them (59f6dd6), so
+    /// Minik Plus and Minik Plus English show none and never load the family catalogue.
+    var showsFamilyMessages: Bool {
+        self != .minikPlus && self != .minikPlusEnglish
+    }
+}
+
 enum ContentDomain: Equatable, Sendable {
     case language
     case math

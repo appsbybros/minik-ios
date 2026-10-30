@@ -292,31 +292,14 @@ enum MinikAdOpportunityResult: Equatable, Sendable {
     case presentation(MinikInterstitialPresentationResult)
 }
 
-/// Android Minik InterstitialHelper's family messages at an ad break (Minik Plus and Minik Plus
-/// English): no ad while a family message is up, and at one eligible break in 30 (at most once a
-/// day) the family card for another Minik app instead of the ad.
+/// The family messages at an ad break (Android Bounce's, as Minik's InterstitialHelper had them
+/// until 59f6dd6): no ad while a family message is up, and at one eligible break in 30 (at most
+/// once a day) the family card for another Minik app instead of the ad.
 struct MinikFamilyAdBreak: Sendable {
     /// Android `family.isShowing`.
     let isShowing: @MainActor @Sendable () -> Bool
     /// Android `FamilyMessages.replaceAd`: true when the card was shown instead of the ad.
     let replaceAd: @MainActor @Sendable (_ ownershipResolved: Bool) -> Bool
-
-    /// The family messages of Minik Plus and Minik Plus English; the other apps have none here.
-    static func forProduct(_ product: ProductVariant) -> MinikFamilyAdBreak? {
-        guard product == .minikPlus || product == .minikPlusEnglish else { return nil }
-        return MinikFamilyAdBreak(
-            isShowing: { FamilyMessages.shared.isShowing },
-            replaceAd: { ownershipResolved in
-                FamilyMessages.shared.replaceAd(
-                    UUID().uuidString.lowercased(),
-                    ownershipResolved: ownershipResolved,
-                    adFree: { MinikCommerceEntitlementRepository().isRemoveAdsActive(for: product) },
-                    gate: nil,
-                    finished: {}
-                )
-            }
-        )
-    }
 }
 
 actor MinikAdCoordinator {
@@ -419,8 +402,7 @@ enum MinikAdsComposition {
     ) -> MinikAdCoordinator {
         MinikAdCoordinator(
             configuration: MinikAdsConfiguration.load(product: product, bundle: bundle),
-            service: service ?? ProductionMinikInterstitialAdServiceFactory.make(),
-            family: MinikFamilyAdBreak.forProduct(product)
+            service: service ?? ProductionMinikInterstitialAdServiceFactory.make()
         )
     }
 }

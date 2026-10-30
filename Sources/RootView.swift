@@ -47,10 +47,12 @@ struct RootView: View {
             commerceController: resolvedCommerceController
         )
         // Set before the first screen is drawn: menu labels such as "More Minik apps & games" read it.
-        FamilyMessages.shared.languageOverride = RootView.familyLanguage(
-            configuration,
-            interfaceLocale: interfaceLocaleRepository.load(for: configuration.variant)
-        )
+        if configuration.variant.showsFamilyMessages {
+            FamilyMessages.shared.languageOverride = RootView.familyLanguage(
+                configuration,
+                interfaceLocale: interfaceLocaleRepository.load(for: configuration.variant)
+            )
+        }
     }
 
     @ViewBuilder
@@ -119,8 +121,8 @@ struct RootView: View {
             )
         }
         // Android MinikFamilyServices: the "More Minik apps & games" card, its grown-up gate and
-        // the family remove-ads reminder, above every Minik app.
-        .overlay { FamilyOverlay() }
+        // the family remove-ads reminder, above every Minik app that shows them.
+        .overlay { if configuration.variant.showsFamilyMessages { FamilyOverlay() } }
     }
 
     /// Like Android Modern Ping Pong, the standalone Ping Pong app is Hebrew on a
@@ -142,6 +144,7 @@ struct RootView: View {
 
     @MainActor
     private func applyFamilyLanguage() {
+        guard configuration.variant.showsFamilyMessages else { return }
         FamilyMessages.shared.languageOverride = RootView.familyLanguage(configuration, interfaceLocale: interfaceLocaleController.selectedLocale)
     }
 

@@ -52,8 +52,6 @@ struct MinikActivityHubView: View {
     @State private var publicLeaderboardController: PublicLeaderboardController
     /// The children on this device and whose progress is in place (Android IntroScreen).
     @StateObject private var childProfiles: ChildProfileStore
-    /// Android DailyLearning's toast when today's fifth little win is earned.
-    @State private var dailyLearningToast: String?
     /// The daily math journey (Android Math Plus AppState's daily route): the saved journey,
     /// whether its activity is being played now, and whether a stage was just completed
     /// (Android dailyActive and dailyFinished, kept while the app runs).
@@ -275,17 +273,11 @@ struct MinikActivityHubView: View {
                 pendingPublicationNotice
             }
         }
-        .overlay(alignment: .bottom) {
-            if let dailyLearningToast {
-                dailyLearningToastView(dailyLearningToast)
-                    .transition(.opacity)
-            }
-        }
         .sheet(isPresented: parentAreaPresented) {
             parentAreaContent
                 // The family card opened from the Parent Area is drawn here, above the sheet (only
                 // the FamilyOverlay that appeared last draws it).
-                .overlay { FamilyOverlay() }
+                .overlay { if configuration.variant.showsFamilyMessages { FamilyOverlay() } }
                 .presentationDetents([.fraction(0.82), .large])
                 .presentationDragIndicator(.visible)
                 .presentationBackground(.clear)
@@ -1960,62 +1952,13 @@ struct MinikActivityHubView: View {
         .accessibilityAddTraits(.updatesFrequently)
     }
 
-    // MARK: - Daily learning (Android Minik DailyLearning)
-
-    /// Android AppSharedPreferencesCache.savePoints and DailyLearning.record: a play that
-    /// raised the playing child's points is one of today's little wins in the learned
-    /// language, and the fifth shows Android's toast. Choosing another child changes the
-    /// points shown without play, so learnerDidChange refreshes them without this.
+    /// The playing child's points after a play (Android AppSharedPreferencesCache.savePoints).
+    /// Choosing another child changes the points shown without play, so learnerDidChange
+    /// refreshes them without this.
     private func refreshLanguageRewardsAfterPlay() {
-        let previousPoints = languageRewards.points
-        let updated = ((try? rewardRepository.loadLedger()) ?? RewardLedger()).state(
+        languageRewards = ((try? rewardRepository.loadLedger()) ?? RewardLedger()).state(
             for: RewardScope(ownerID: .localDefault, product: configuration.variant)
         )
-        languageRewards = updated
-        guard configuration.contentDomain == .language else { return }
-        let completed = MinikDailyLearningRepository(product: configuration.variant).record(
-            language: selectedLanguage,
-            previousPoints: previousPoints,
-            nextPoints: updated.points
-        )
-        if completed {
-            showDailyLearningToast()
-        }
-    }
-
-    /// Android Toast.LENGTH_LONG: three and a half seconds, then it fades.
-    private func showDailyLearningToast() {
-        let message = interfaceLocaleID.text("Five little wins today. Well done!")
-        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
-            dailyLearningToast = message
-        }
-        UIAccessibility.post(notification: .announcement, argument: message)
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 3_500_000_000)
-            guard dailyLearningToast == message else { return }
-            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.3)) {
-                dailyLearningToast = nil
-            }
-        }
-    }
-
-    private func dailyLearningToastView(_ message: String) -> some View {
-        Text(verbatim: message)
-            .font(MinikPretty.titleFont(17))
-            .foregroundStyle(Color.white)
-            .multilineTextAlignment(.center)
-            .fixedSize(horizontal: false, vertical: true)
-            .padding(.horizontal, 20)
-            .padding(.vertical, 12)
-            .background {
-                Capsule(style: .continuous)
-                    .fill(MinikPretty.navy.opacity(0.92))
-            }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 32)
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
-            .environment(\.layoutDirection, interfaceLocaleID.layoutDirection)
     }
 
     private func recordLanguageAttempt(
