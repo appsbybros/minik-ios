@@ -791,10 +791,13 @@ struct MemoryView: View {
     }
 
     /// The "language.memory" screenshot (see StoreScreenshotScene) shows one pair
-    /// matched and one more card face up, without recording attempts or speaking.
+    /// matched and one more card face up, without recording attempts or speaking;
+    /// so does "math.mathMemory".
     @MainActor
     private func stageStoreScreenshotBoard() async {
-        guard StoreScreenshotScene.name == "language.memory" else { return }
+        let scene = StoreScreenshotScene.name
+        guard (scene == "language.memory" && mathActivityFamily == nil)
+                || (scene == "math.mathMemory" && mathActivityFamily != nil) else { return }
         try? await Task.sleep(nanoseconds: 800_000_000)
         guard !Task.isCancelled,
               session.equivalenceSets.count >= 2,

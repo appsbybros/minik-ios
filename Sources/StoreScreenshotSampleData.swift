@@ -4,11 +4,20 @@ import Foundation
 /// a child with points and a few days of practice. It runs only when the app is
 /// launched with `-MinikScreenshotScene` (see StoreScreenshotScene), before the
 /// hub loads anything, and seeds once per install.
+/// Minik Math Plus instead opens at Level 2 (sums with pictures, 1 + 2 = 3 first),
+/// not Level 1, whose first Learn card is an empty tray for 0.
 @MainActor
 enum StoreScreenshotSampleData {
     static func seedIfNeeded(product: ProductVariant) {
-        guard StoreScreenshotScene.name != nil,
-              product == .minikPlus || product == .minikPlusEnglish else { return }
+        guard StoreScreenshotScene.name != nil else { return }
+        if product == .minikMath {
+            var levels = MathLevelController(state: LocalMathLevelRepository().load())
+            guard levels.state.activeLevelID != .m2 || levels.state.mode != .manual else { return }
+            levels.setManualLevel(.m2)
+            LocalMathLevelRepository().save(levels.state)
+            return
+        }
+        guard product == .minikPlus || product == .minikPlusEnglish else { return }
         let hebrew = Locale.preferredLanguages.first?.hasPrefix("he") == true
         let name = hebrew ? "נועה" : "Noa"
         let store = ChildProfileStore(product: product)

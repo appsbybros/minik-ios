@@ -726,13 +726,17 @@ struct BuildView: View {
 
     /// The "language.wordBuild" screenshot (see StoreScreenshotScene) shows the first
     /// half of the word's letters placed, short of finishing it, with no feedback.
+    /// "math.buildMath" does the same with the sum's first pieces ("1 +" of 1 + 2 = 3).
     @MainActor
     private func stageStoreScreenshotWord() async {
-        guard StoreScreenshotScene.name == "language.wordBuild", isLanguageBuild else { return }
+        let scene = StoreScreenshotScene.name
+        guard (scene == "language.wordBuild" && isLanguageBuild)
+                || (scene == "math.buildMath" && isMath) else { return }
         try? await Task.sleep(nanoseconds: 800_000_000)
         let expected = session.currentChallenge.expectedTokenSequence
+        let mode: BuildValidationMode = isMath ? .submitSequence : .immediatePrefix
         guard !Task.isCancelled,
-              session.currentChallenge.validationMode == .immediatePrefix,
+              session.currentChallenge.validationMode == mode,
               session.selectedTokenIDs.isEmpty,
               expected.count > 1 else { return }
         for tokenID in expected.prefix(min(max(2, expected.count / 2), expected.count - 1)) {

@@ -202,6 +202,7 @@ class SubmitGuard(unittest.TestCase):
             ("GET", "/apps?filter%5BbundleId%5D=com.appsbybros.minik.plus", None),
             ("POST", "/appStoreVersions", {"data": {"attributes": {"platform": "IOS", "versionString": "1.7.9"}}}),
             ("PATCH", "/appStoreVersions/1", {"data": {"attributes": {"versionString": "1.7.9"}}}),
+            ("PATCH", "/appStoreVersions/1", {"data": {"attributes": {"copyright": "2026 Apps by Bros"}}}),
             ("PATCH", "/appStoreVersions/1/relationships/build", {"data": {"type": "builds", "id": "2"}}),
             ("POST", "/appStoreVersionLocalizations", {"data": {"attributes": {"locale": "he", "keywords": "a"}}}),
             ("PATCH", "/appStoreVersionLocalizations/1", {"data": {"attributes": {"description": "submit it"}}}),
@@ -319,6 +320,24 @@ class Filling(unittest.TestCase):
             self.assertNotRegex(path, "(?i)submi")
             if body:
                 self.assertNotIn("whatsNew", str(body))
+
+    def test_copyright(self):
+        connect = FakeConnect()
+        filler = m.AppFiller(m.Asc(False, transport=connect), "MinikPlus", "com.appsbybros.minik.plus", "1.7.9",
+                             self.METADATA, None, False, copyright="2026 Apps by Bros")
+        report = filler.run()
+        self.assertEqual(report.errors, [])
+        bodies = [body["data"]["attributes"] for method, path, body in connect.calls
+                  if method == "PATCH" and path == "/appStoreVersions/v1"]
+        self.assertIn({"copyright": "2026 Apps by Bros"}, bodies)
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            self.assertEqual(m.read_copyright(root, "MinikPlus"), (None, []))
+            (root / "copyright.txt").write_bytes(b"2026 Apps by Bros\r\n")
+            self.assertEqual(m.read_copyright(root, "MinikPlus"), ("2026 Apps by Bros", []))
+            (root / "MinikPlus").mkdir()
+            (root / "MinikPlus" / "copyright.txt").write_text("a\nb", encoding="utf-8")
+            self.assertTrue(m.read_copyright(root, "MinikPlus")[1])
 
     def test_whats_new_retry_after_refusal(self):
         connect, report = self.fill(dry_run=False, released=True, attach=False)

@@ -12,6 +12,7 @@ For each app (Xcode scheme) it
   created. A version that is in review, approved or live is left alone;
 - sets the version texts per language (description, keywords, promotional text, what's new, support and
   marketing URLs) and the app information (name, subtitle, privacy policy URL), adding a language that is missing;
+- sets the version's copyright line (appstore/metadata/copyright.txt for every app, or <Scheme>/copyright.txt);
 - with --attach-build, picks the newest processed (VALID) build of that version;
 - with --screenshots <folder>, replaces each language's screenshots per device slot, in file-name order. The folder
   is the "AppStore-screenshots" artifact of the "App Store screenshots" workflow:
@@ -125,6 +126,17 @@ def read_metadata(app_dir):
         if values:
             locales[locale] = values
     return locales, problems, notes
+
+
+def read_copyright(metadata_root, scheme):
+    """(text or None, problems): <Scheme>/copyright.txt, else copyright.txt for every app. One line."""
+    for path in (Path(metadata_root) / scheme / "copyright.txt", Path(metadata_root) / "copyright.txt"):
+        if path.is_file():
+            text = read_text(path)
+            if "\n" in text:
+                return None, [f"{path.name}: must be one line"]
+            return (text or None), []
+    return None, []
 
 
 # ---- Apps and versions --------------------------------------------------------------------------------------------
@@ -339,7 +351,7 @@ FORBIDDEN_PATH = re.compile(r"submi|releaseRequest|phasedRelease|reviewDetail|cu
 # The only writes this script makes: (method, path, attributes the body may set; None = no attributes).
 ALLOWED_WRITES = [
     ("POST", r"/appStoreVersions", {"platform", "versionString"}),
-    ("PATCH", r"/appStoreVersions/[\w-]+", {"versionString"}),
+    ("PATCH", r"/appStoreVersions/[\w-]+", {"versionString", "copyright"}),
     ("PATCH", r"/appStoreVersions/[\w-]+/relationships/build", None),
     ("POST", r"/appStoreVersionLocalizations", {"locale", "description", "keywords", "promotionalText",
                                                 "whatsNew", "supportUrl", "marketingUrl"}),
@@ -534,9 +546,11 @@ def describe(attributes):
 
 
 class AppFiller:
-    def __init__(self, asc, scheme, bundle_id, version, metadata, screenshots, attach_build, ipad=True):
+    def __init__(self, asc, scheme, bundle_id, version, metadata, screenshots, attach_build, ipad=True,
+                 copyright=None):
         self.asc, self.scheme, self.bundle_id, self.version = asc, scheme, bundle_id, version
         self.metadata, self.screenshots, self.attach_build, self.ipad = metadata, screenshots, attach_build, ipad
+        self.copyright = copyright
         self.report = Report(scheme)
 
     def run(self):
@@ -563,6 +577,7 @@ class AppFiller:
         version_id, released = self._version(app_id)
         if version_id is None:
             return
+        self._copyright(version_id)
         self._app_info(app_id)
         localizations = self._version_texts(version_id, released)
         if self.attach_build:
@@ -648,6 +663,25 @@ class AppFiller:
             self.asc.write(report, f"{locale}: {describe(changes)}", "PATCH",
                            f"/appInfoLocalizations/{current['id']}", {"data": {
                                "type": "appInfoLocalizations", "id": current["id"], "attributes": changes}})
+
+    # The copyright line (one per version, not per language)
+
+    def _copyright(self, version_id):
+        if not self.copyright:
+            return
+        what = f"copyright = {self.copyright}"
+        if version_id != NEW:
+            status, payload = self.asc.get(f"/appStoreVersions/{version_id}?fields%5BappStoreVersions%5D=copyright")
+            data = payload.get("data") if status == 200 and isinstance(payload, dict) else None
+            current = (data.get("attributes") or {}).get("copyright") if isinstance(data, dict) else None
+            if (current or "").strip() == self.copyright:
+                self.report.skipped.append("copyright already up to date")
+                return
+        else:
+            self.report.done.append("would set " + what)
+            return
+        self.asc.write(self.report, "set " + what, "PATCH", f"/appStoreVersions/{version_id}", {"data": {
+            "type": "appStoreVersions", "id": version_id, "attributes": {"copyright": self.copyright}}})
 
     # Description, keywords, promotional text, what's new and URLs (the version's languages)
 
@@ -930,6 +964,8 @@ def main(argv=None):
     reports = []
     for scheme in apps:
         metadata, problems, notes = read_metadata(metadata_root / scheme)
+        copyright, copyright_problems = read_copyright(metadata_root, scheme)
+        problems += copyright_problems
         screenshots, screenshot_notes = (collect_screenshots(args.screenshots, scheme) if args.screenshots
                                          else (None, []))
         report = Report(scheme)
@@ -943,6 +979,8 @@ def main(argv=None):
             report.errors.append("no marketing version found in project.yml")
         elif args.check_only:
             report.done.append(f"version {version} ({bundles[scheme]})")
+            if copyright:
+                report.done.append(f"copyright: {copyright}")
             report.done += [f"{locale}: {', '.join(sorted(values))}" for locale, values in metadata.items()]
             if screenshots is not None:
                 for locale in sorted(set(screenshots) | set(metadata)):
@@ -950,7 +988,8 @@ def main(argv=None):
                     report.done += [f"{locale} {kind}: {len(files)} screenshots" for kind, files in slots.items()]
                     report.missing += [f"{locale}: {label}" for label in missing_slots(slots)]
         else:
-            filler = AppFiller(asc, scheme, bundles[scheme], version, metadata, screenshots, args.attach_build)
+            filler = AppFiller(asc, scheme, bundles[scheme], version, metadata, screenshots, args.attach_build,
+                               copyright=copyright)
             result = filler.run()
             result.skipped = report.skipped + result.skipped
             result.errors = report.errors + result.errors
