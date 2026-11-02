@@ -7,7 +7,7 @@ artwork is used.
 | iOS set | Android source contract |
 | --- | --- |
 | `MinikPlusAppIcon` | see "Minik Plus rainbow icon" below |
-| `MinikPlusEnglishAppIcon` | the former Minik Plus icon, which English Only keeps: `app/src/plus-english-only/res/mipmap-anydpi-v26/ic_launcher.xml`, `minik_plus_logo_small.png` over `bg_colorful_back_for_logo.xml` (`#DAE2E1`) |
+| `MinikPlusEnglishAppIcon` | a byte copy of `MinikPlusAppIcon` (the rainbow icon) since 2 November 2026; see "Minik Plus English icon" below |
 
 `Scripts/migrate-android-app-icons.ps1` performs the 1024-by-1024 opaque raster
 composition used by the checked-in Xcode asset sets. Apple applies the final
@@ -32,6 +32,14 @@ branding", 9 October); the `plus-english-only` flavour kept the former icon. `Mi
 `98da8992cc8fc03d`), the full-square art behind Android's `launcher_rainbow_foreground` over
 `#2EC8F2`, scaled to 1024 x 1024, RGB. `MinikPlusEnglishAppIcon` now holds the former
 `MinikPlusAppIcon` image, and the `MinikPlusEnglish` target uses it.
+
+## Minik Plus English icon (2 November 2026)
+
+The owner asked for Minik Plus English to have the same icon as Minik Plus in the App Store, so
+`MinikPlusEnglishAppIcon-1024.png` is now a byte copy of `MinikPlusAppIcon-1024.png` (SHA-256 begins
+`b8460e0939133efd`). `Scripts/audit-release-configuration.ps1` fails if the two differ. This is iOS only:
+Android `plus-english-only` still shows the former launcher. Before this, the set held the former Minik
+Plus icon (described in the section above).
 
 ## Triple Shot (17 October 2026)
 

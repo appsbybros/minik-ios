@@ -242,8 +242,8 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
     settings:
       base:
-        # Android plus-english-only keeps the former launcher (minik_plus_logo_small over
-        # bg_colorful_back_for_logo); only the plus flavour moved to the rainbow icon (8b1b1d6).
+        # The same rainbow icon as Minik Plus (owner, 2 November 2026); the set holds a byte copy of
+        # MinikPlusAppIcon. Android plus-english-only still has the former launcher.
         MINIK_APP_ICON_NAME: MinikPlusEnglishAppIcon
         MINIK_PLUS_ENGLISH_BUNDLE_IDENTIFIER: com.appsbybros.minik.plus.english
         PRODUCT_BUNDLE_IDENTIFIER: $(MINIK_PLUS_ENGLISH_BUNDLE_IDENTIFIER)

@@ -33,3 +33,21 @@ loose film instead of a geometric helix.
 three-dimensional coil making repeated turns around an invisible axis. It must
 not depict film, a flat spiral, a DNA double helix, or a spring attached to
 another object.
+
+## Grown-up check before the Parent Area (iOS only)
+
+**Android reference behavior:** In Minik Plus, Minik Plus English and Minik Math Plus,
+the Parent Area button opens the Parent Area directly. Android asks the grown-up
+question only before purchases and links.
+
+**Correct intended behavior (owner, 2 November 2026):**
+
+- On iOS the Parent Area button first shows the grown-up check (`ParentalGateView`,
+  presented by `MinikActivityHubView`); the Parent Area opens only after it is solved.
+- This is why the App Store age rating answers **Parental Controls: Yes** for these
+  apps. Removing the gate would make that answer untrue.
+- Android is deliberately left unchanged. When porting Android changes to iOS, do not
+  remove this gate to "match Android".
+- The other apps already gate their parents pages on both platforms (Minik Math,
+  Ping Pong, Retro Ping Pong, Splash, Spud/Volley/Squash, Maze). Multi Ping Pong
+  and Triple Shot have no Parent Area.

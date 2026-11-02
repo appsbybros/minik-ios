@@ -101,7 +101,13 @@ foreach ($forbiddenIdentifier in @(
 }
 Require-Pattern $project 'ASSETCATALOG_COMPILER_APPICON_NAME: \$\(MINIK_APP_ICON_NAME\)' 'App icon build-setting hook is missing.'
 Require-Pattern $project 'MINIK_APP_ICON_NAME: MinikPlusAppIcon' 'MinikPlus Android-derived app icon is not selected.'
-Require-Pattern $project 'MinikPlusEnglish:[\s\S]*?MINIK_APP_ICON_NAME: MinikPlusEnglishAppIcon' 'MinikPlusEnglish must keep its own launcher icon: Android plus-english-only kept the former one when Plus moved to the rainbow icon.'
+Require-Pattern $project 'MinikPlusEnglish:[\s\S]*?MINIK_APP_ICON_NAME: MinikPlusEnglishAppIcon' 'MinikPlusEnglish must use MinikPlusEnglishAppIcon (a copy of the Minik Plus rainbow icon).'
+$plusIconPath = Join-Path $RepositoryRoot 'Resources\MinikVisuals.xcassets\MinikPlusAppIcon.appiconset\MinikPlusAppIcon-1024.png'
+$plusEnglishIconPath = Join-Path $RepositoryRoot 'Resources\MinikVisuals.xcassets\MinikPlusEnglishAppIcon.appiconset\MinikPlusEnglishAppIcon-1024.png'
+if ((Test-Path -LiteralPath $plusIconPath) -and (Test-Path -LiteralPath $plusEnglishIconPath) -and
+    (Get-FileHash -LiteralPath $plusIconPath).Hash -ne (Get-FileHash -LiteralPath $plusEnglishIconPath).Hash) {
+    $errors.Add('MinikPlusEnglishAppIcon must be byte-identical to MinikPlusAppIcon: the owner wants Minik Plus English to have the same icon as Minik Plus (2 November 2026).')
+}
 Require-Pattern $project '(?m)^  MinikMath:[\s\S]*?MINIK_APP_ICON_NAME: MinikMathAppIcon' 'MinikMath must use the MINIK Math icon (Android Minik Math app_icon.png).'
 Require-Pattern $project '(?m)^  MinikMathPlus:[\s\S]*?MINIK_APP_ICON_NAME: MinikMathPlusAppIcon' 'MinikMathPlus must use the Android Minik Math Plus store icon.'
 $firebaseConfigurations = @(

@@ -34,6 +34,9 @@ struct MinikActivityHubView: View {
     @State private var languageActivitySessionID = ActivitySessionID()
     @State private var mathActivitySessionID = ActivitySessionID()
     @State private var route: Route?
+    /// The grown-up check before the Parent Area, and whether it was passed.
+    @State private var parentAreaGateIsPresented = false
+    @State private var parentAreaGatePassed = false
     @State private var languageMenuIsPresented = false
     @State private var hasShownLanguageOpening = false
     /// The Top 20 opened by itself over the intro (RecordsAutoShowPolicy).
@@ -273,6 +276,25 @@ struct MinikActivityHubView: View {
                 pendingPublicationNotice
             }
         }
+        // iOS only (owner, 2 November 2026): the Parent Area opens after the grown-up check,
+        // so its settings are parental controls (App Store age rating: Parental Controls = Yes).
+        // Android's Parent Area opens without one; keep this gate when porting from Android.
+        // The Parent Area opens once the check's sheet has gone, as one sheet cannot open
+        // while another is closing.
+        .sheet(isPresented: $parentAreaGateIsPresented, onDismiss: {
+            if parentAreaGatePassed {
+                parentAreaGatePassed = false
+                route = .parentArea
+            }
+        }) {
+            ParentalGateView(
+                onCancel: { parentAreaGateIsPresented = false },
+                onUnlock: {
+                    parentAreaGatePassed = true
+                    parentAreaGateIsPresented = false
+                }
+            )
+        }
         .sheet(isPresented: parentAreaPresented) {
             parentAreaContent
                 // The family card opened from the Parent Area is drawn here, above the sheet (only
@@ -488,7 +510,7 @@ struct MinikActivityHubView: View {
                 commerceController: commerceController,
                 onLearnerChanged: learnerDidChange,
                 onPractice: { languageMenuIsPresented = true },
-                onParentArea: { route = .parentArea }
+                onParentArea: { parentAreaGateIsPresented = true }
             )
         }
     }
@@ -645,7 +667,7 @@ struct MinikActivityHubView: View {
             }
 
             Button {
-                route = .parentArea
+                parentAreaGateIsPresented = true
             } label: {
                 Text(interfaceLocaleID.text("Parent Area"))
                     .padding(.horizontal, 4)
