@@ -35,9 +35,12 @@ enum MPTutorialStep: Int, CaseIterable {
         let heb = ["הגשה: נסו נגיעה", "הגישו לשמאל", "הגישו לימין", "מזיזים והמחבט חובט", "החזירו בנגיעה", "כוונו מהאמצע לצד", "החזירו מהצד לאמצע", "החזירו לאותו הצד", "החזירו לצד הנגדי", "סדנת סיבוב למקצוענים", "סדנת סיבוב למקצוענים"]
         return (he ? heb : en)[rawValue]
     }
-    /// Android `guide_spin_hint` for the spin lessons' try; nil for the others.
+    /// Android `guide_spin_hint` for the spin lessons' try, `guide_swipe_action_hint` (05d4aa0: a direct swipe along the
+    /// arrow, no tap first) for the aimed returns; nil for the others.
     func hint(_ he: Bool) -> String? {
-        spin ? (he ? "קשת לסיבוב קדמי, שינוי כיוון לסיבוב צדדי. שחררו כדי לחבוט." : "Swipe an arc for topspin, or change direction for sidespin. Release to hit.") : nil
+        if spin { return he ? "קשת לסיבוב קדמי, שינוי כיוון לסיבוב צדדי. שחררו כדי לחבוט." : "Swipe an arc for topspin, or change direction for sidespin. Release to hit." }
+        if swipeDirection != nil { return he ? "כשהכדור מגיע למחבט, החליקו בכיוון החץ." : "Swipe along the arrow as the ball reaches your paddle." }
+        return nil
     }
     /// The lesson texts. The aimed returns and spin lessons follow Android 2026-10 (`guide_middle_right` …
     /// `guide_sidespin`): move to the ball, then swipe as it arrives; no tap first. The house player is Mega Minik.

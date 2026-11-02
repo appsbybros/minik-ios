@@ -2,6 +2,17 @@
 
 **Implemented in source only. Nothing in this document has been compiled, run in a Simulator or on a device, or played between iOS and Android. The Windows source audit and the local-emulator Firebase rules tests pass. An Apple build and native runtime verification are still required. No IPA was produced.**
 
+## 2026-11-02 sync: Android commit `f27a94e`
+
+iOS now matches Android MinikPingPong `f27a94e` (Android 1.0.10 and 1.0.11; the app-code commits are `05d4aa0`, `f85e5a3` and `490de67`). Type-checked on Windows (Minik Ping Pong, Retro, Multi and the test module: 0 errors, no new warnings); **no XCTest, Simulator or device run**. Ported:
+- **House player's resting paddle** (`MPGroundedRival.swift` `readyFoot`; f85e5a3): the ready stance steps back just enough that the paddle is not hidden by the table; feet stay on the floor, contact poses keep their reach and timing.
+- **Large-table headroom** (`MPPoseAtlas.restingHeadroom`, `MPLargeMatch.swift`; f85e5a3): only the table's far edge moves down by the missing headroom, so every opponent's head stays on screen.
+- **Practice** (`MPScene.swift` `renderCoach`, `MPController.swift`, `MPTutorial.swift`, `ModernPongView.swift`; 05d4aa0, f85e5a3): the aimed lessons show a navy/yellow arrow with a white dot in front of the player the whole time (Android's `swipeDirection`, which does not reverse with the language); the other returns ring the ball as Android does. The try hint for aimed lessons is Android's "Swipe along the arrow as the ball reaches your paddle."; the counter reads "Lesson 7 of 11" / "שלב 7 מתוך 11".
+- **Tournament names** (`MPRoomsViews.swift` standings, `ModernPongView.swift` waiting roster; 05d4aa0): 8 points from the portrait, at the interface's start edge, also for a Latin name in Hebrew.
+- **Landscape notice** (`MPLandscapeTipSession`; 490de67): "You can also play in landscape." / "אפשר לשחק גם במצב אופקי.", once per run and at most three times in all (UserDefaults `pong_orientation_tip.shows`, shared by every match screen; skipped notices do not count). Two XCTests mirror Android's.
+
+Not ported: the Hebrew-only 1.5 dp lowering of "Copy code" (an Android font-centering correction; the iOS buttons centre their text with SwiftUI and have no such offset), the practice-only landscape gutter and the "Practice: title" HUD line (the iOS guide shows the lesson in its own card, which already has the title), the shortened net-retry text (iOS has no such message), the version bump, store images and device tests. `Scripts/audit-modern-pong.py` reads Android at `f27a94e` (278 checks, PASS).
+
 ## 2026-10-26 sync: Android commit `24cd461`
 
 iOS now matches Android MinikPingPong `24cd461` (4 commits after `6c8c757`). Ported:

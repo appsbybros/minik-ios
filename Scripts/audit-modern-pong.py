@@ -14,7 +14,7 @@ def check(condition,message):
 # Android commit this port matches. Android sources and rules are read from that commit itself (git show, read-only),
 # so uncommitted work in the Android checkout never changes what the port is compared with; the working copies that
 # differ are only listed in the report. Binary assets are still compared with the checkout's files.
-ANDROID_COMMIT='24cd461'
+ANDROID_COMMIT='f27a94e'
 android_reads=set()
 import subprocess
 def android_blob(p):
@@ -240,7 +240,7 @@ if args.android.exists():
     both('ModernEngine.kt',['x in -.24..1.24 && y in .72..1.22','crossingX in -.025..1.025','position.x in -.30..1.30 && position.y in -.24..1.24','max(height,.001)'],'MPPhysics.swift',['(-0.24...1.24).contains(x) && (0.72...1.22).contains(y)','(-0.025...1.025).contains(crossingX)','(-0.30...1.30).contains(position.x) && (-0.24...1.24).contains(position.y)','max(height, 0.001)'],'Flight: sideline returns judged at landing, net posts, low contacts (Android c9f5fa6/496a709)')
     both('ModernGame.kt',['850*(botProfile?.movementMultiplier?:1.0)','1100*(bot?.movementMultiplier?:1.0)','PongServeDifficulty.zone(x,receivingStartX,1)'],'MPEngine.swift',['850 * (bot?.movement ?? 1)','1100 * (bot?.movement ?? 1)','MPServeDifficulty.zone(ballX: x, playerX: receivingStartX, team: 1)'],'House recovery and interception speeds; served hand from the receiver (Android f0ea4aa)')
     both('MinikMotion.kt',['*1.5/maxSpeed','if(ActorPresentation.besideTable(plan.body))return plan'],'MPEngine.swift',['* 1.5 / maxSpeed','if MPProjection.besideTable(plan.body) { return plan }'],'Bounded, cornered house footwork and sideline interception (Android MinikMotion)')
-    both('GroundedRival.kt',['1.6*(engine.botProfile?.movementMultiplier?:1.0)','height*.025f','gap/height*.12+(if(phase==2)0.0 else .015)','Vec(.5,-.10),.7,recovering=true'],'MPGroundedRival.swift',['1.6 * (engine.bot?.movement ?? 1)','height * 0.025','gap / Double(height) * 0.12 + (phase == 2 ? 0 : 0.015)','MPPoint(0.5, -0.10), 0.7, recovering: true'],'Grounded house player (Android GroundedRival)')
+    both('GroundedRival.kt',['1.6*(engine.botProfile?.movementMultiplier?:1.0)','height*.025f','gap/height*.12+(if(phase==2)0.0 else .015)','moveTo(readyFoot(),.7,recovering=true)'],'MPGroundedRival.swift',['1.6 * (engine.bot?.movement ?? 1)','height * 0.025','gap / Double(height) * 0.12 + (phase == 2 ? 0 : 0.015)','moveTo(readyFoot(), 0.7, recovering: true)'],'Grounded house player (Android GroundedRival)')
     both('PongJourney.kt',['listOf(4,1,0,3)[(step/count).coerceIn(0,3)]'],'MPPlay.swift',['[4, 1, 0, 3][min(max(step / count, 0), 3)]','practiceInput'],'Daily journey cycles Beginner, Starter, Standard and Pro (Android c9f5fa6)')
     check('if(mistakes>=3' not in k['PongPlay.kt'] and 'mistakes >= 3' not in ios['MPPlay.swift'],'Practice never ends after three misses (Android c9f5fa6)')
     both('PongTeamColors.kt',['0xff80d7ff.toInt(),0xffffafcf.toInt(),0xffffb46a.toInt(),0xffffdf75.toInt()','distance(color,it)>100','(channel*.52)','(255-channel)*.62','<145'],'MPArena.swift',['[0xff80d7ff, 0xffffafcf, 0xffffb46a, 0xffffdf75]','distance(color, $0) > 100','channel * 0.52','(255 - channel) * 0.62','< 145'],'Earned team colours (Android PongTeamColors.local/online/ink)')
@@ -273,6 +273,23 @@ if args.android.exists():
                 if '$' not in fragment and len(fragment.strip())>1 and fragment not in ios_all: rank_missing.append(fragment)
     check(not rank_missing,'Every Android colour-rank Hebrew text is in the iOS port (Android 95ba112)'+('' if not rank_missing else ': '+'; '.join(rank_missing)))
     check('tr("Color ranking","דירוג צבעים")' in read(src/'multiplayer/PlayActivity.kt') and 't("Color ranking", "דירוג צבעים")' in read(modern/'ModernPongView.swift') and 'MPRankHero(' in read(modern/'ModernPongView.swift'),'Menu: points beside the mascot and a Color ranking button (Android 95ba112)')
+    # Android 24cd461..f27a94e (2026-11-02, 1.0.10 and 1.0.11): tournament names, the resting paddle and headroom, the
+    # practice arrow and lesson number, and the landscape notice at most three times.
+    k.update({n:code(read(src/n)) for n in ['PongPlayerAtlas.kt','LargeMatchRenderer.kt']})
+    ios.update({n:code(read(modern/n)) for n in ['MPLargeMatch.swift','MPRoomsViews.swift','ModernPongView.swift','MPTutorial.swift']})
+    both('GroundedRival.kt',['private fun readyFoot()','ready.radius*1.05f+height*.012f','if(!positioned){foot=readyFoot()'],'MPGroundedRival.swift',['private func readyFoot()','ready.radius * 1.05 + height * 0.012','if !positioned { floorFoot = readyFoot()'],'House player rests with its paddle clear of the table (Android f85e5a3)')
+    both('PongPlayerAtlas.kt',['fun restingHeadroom','radius")*1.05-b.getDouble(1))*scale+height*.012'],'MPPracticeTable.swift',['static func restingHeadroom','(paddle[1] + radius * 1.05 - b[1]) * scale + height * 0.012'],'Resting headroom from the pose anchors (Android f85e5a3)')
+    both('LargeMatchRenderer.kt',['top=fit.top+extra,depth=fit.depth-extra'],'MPLargeMatch.swift',['layout.top = fit.top + extra; layout.depth = fit.depth - extra'],'Large table keeps every opponent head on screen (Android f85e5a3)')
+    both('ModernCourt.kt',['Vec(.5+(guide.lesson.incomingDirection?:0.0)*.20,.80)','0xff10243b','0xffffd54f','min(table.width()*.34f,table.height()*.20f)'],'MPScene.swift',['0xff10243b','0xffffd54f','min(tableRect.width * 0.34, tableRect.height * 0.20)'],'Aimed lessons: persistent navy/yellow arrow (Android f85e5a3)')
+    check('MPPoint(0.5 + (tutorialStep.incoming ?? 0) * 0.20, 0.80)' in ios['MPController.swift'],'Aimed lessons keep the arrow in front of the player (Android f85e5a3)')
+    strings=read(args.android/'app/src/main/res/values/strings.xml')+read(args.android/'app/src/main/res/values-iw/strings.xml')
+    for x in ['Swipe along the arrow as the ball reaches your paddle.','כשהכדור מגיע למחבט, החליקו בכיוון החץ.']:
+        check(x in strings and x in read(modern/'MPTutorial.swift'),'Aimed-lesson hint matches Android guide_swipe_action_hint: '+x)
+    check('Lesson %1$d of %2$d' in strings and 'שלב %1$d מתוך %2$d' in strings and r'"Lesson \(' in ios['ModernPongView.swift'] and r'"שלב \(' in ios['ModernPongView.swift'],'Lesson number "Lesson 7 of 11" (Android 05d4aa0)')
+    hint=read(src/'PongOrientationHint.kt')
+    check('totalShows>=3' in hint and 'You can also play in landscape.' in hint and 'אפשר לשחק גם במצב אופקי.' in hint and 'static let lifetimeLimit = 3' in ios['MPRoomsViews.swift']
+          and 'You can also play in landscape.' in ios['MPRoomsViews.swift'] and 'אפשר לשחק גם במצב אופקי.' in ios['MPRoomsViews.swift'] and 'For a wider view' not in ios_all,'Landscape notice: new wording, at most three times in all (Android 490de67)')
+    check('marginEnd=dp(8)' in read(src/'multiplayer/PlayActivity.kt') and 'HStack(spacing: 8)' in ios['MPRoomsViews.swift'] and 'HStack(spacing: 8)' in ios['ModernPongView.swift'],'Tournament names 8 points from the portrait, at the start edge (Android 05d4aa0)')
 uncommitted=[]
 if args.android.exists():
     for f in sorted(android_reads):

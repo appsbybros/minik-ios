@@ -33,10 +33,11 @@ struct MPRoomsStandings: View {
                             let games = s.matches.values.filter { $0.contains(p.id) }
                             let values = [r.points, r.wins, r.losses, games.filter { $0.phase == .playing }.count, r.played, games.filter { !$0.terminal }.count, r.pointsFor, r.pointsAgainst, r.pointsFor - r.pointsAgainst]
                             HStack(spacing: 0) {
-                                HStack(spacing: 4) {
+                                // Android 05d4aa0 `tournamentName`: 8 points from the portrait, at the interface's start edge.
+                                HStack(spacing: 8) {
                                     MPAvatar(character: p.bot?.characterId ?? p.identity.characterId, icon: p.identity.avatar).frame(width: 48, height: 60)
                                     Text(p.name(hebrew: hebrew) + (s.departed[p.id] == true ? t(" · Left", " · עזב/ה") : "")).font(.system(size: 15, weight: .bold)).foregroundStyle(MPStyle.ink)
-                                        .lineLimit(2).minimumScaleFactor(0.7).frame(maxWidth: .infinity, alignment: .leading)
+                                        .lineLimit(2).minimumScaleFactor(0.7).multilineTextAlignment(.leading).frame(maxWidth: .infinity, alignment: .leading).padding(.trailing, 6)
                                 }.frame(width: 156)
                                 ForEach(values.indices, id: \.self) { index in cell(String(values[index]), index >= 5 ? 104 : 76) }
                             }
@@ -78,15 +79,26 @@ struct MPRoomsPodium: View {
     }
 }
 
-/// Android `LandscapeTipSession` / `PongOrientationHint` (0e65e52): "For a wider view, play in landscape." is offered at
-/// most once per app run, 0.9 s into an active match in portrait, and never after the player has used landscape.
+/// Android `LandscapeTipSession` / `PongOrientationHint` (0e65e52, 490de67): "You can also play in landscape." is offered
+/// at most once per app run, 0.9 s into an active match in portrait, never after the player has used landscape, and at
+/// most three times in all (a count kept across restarts and shared by every match screen).
 struct MPLandscapeTipSession {
+    static let lifetimeLimit = 3
     private(set) var playedLandscape = false
     private(set) var shown = false
     mutating func observe(_ landscape: Bool) { if landscape { playedLandscape = true } }
-    mutating func claim(_ active: Bool) -> Bool {
-        if !active || playedLandscape || shown { return false }
+    mutating func claim(_ active: Bool, totalShows: Int = 0) -> Bool {
+        if !active || playedLandscape || shown || totalShows >= Self.lifetimeLimit { return false }
         shown = true; return true
     }
     @MainActor static var shared = MPLandscapeTipSession()
+    /// Android `PongOrientationHint.claim(context, active)`: the run's claim against the saved lifetime count; a shown
+    /// notice adds one. Skipped notices do not count.
+    @MainActor static func claimCounted(_ active: Bool, defaults: UserDefaults = .standard) -> Bool {
+        let key = "pong_orientation_tip.shows", count = max(defaults.integer(forKey: key), 0)
+        guard shared.claim(active, totalShows: count) else { return false }
+        defaults.set(count + 1, forKey: key); return true
+    }
+    /// Android `PongOrientationHint.message` (490de67).
+    static func message(_ hebrew: Bool) -> String { hebrew ? "אפשר לשחק גם במצב אופקי." : "You can also play in landscape." }
 }

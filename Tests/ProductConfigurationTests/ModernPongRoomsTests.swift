@@ -187,6 +187,25 @@ final class ModernPongRoomsTests: XCTestCase {
         var s = MPLandscapeTipSession(); s.observe(true); s.observe(false); XCTAssertFalse(s.claim(true))
         var p = MPLandscapeTipSession(); XCTAssertFalse(p.claim(false)); XCTAssertTrue(p.claim(true)); XCTAssertFalse(p.claim(true))
     }
+    /// Android PlacementAndHintTest.landscapeTipStopsAfterThreeDisplaysAcrossRuns (490de67).
+    func testLandscapeTipStopsAfterThreeDisplaysAcrossRuns() {
+        var total = 0
+        for _ in 0..<3 {
+            var run = MPLandscapeTipSession()
+            XCTAssertFalse(run.claim(false, totalShows: total))
+            XCTAssertTrue(run.claim(true, totalShows: total)); total += 1
+            XCTAssertFalse(run.claim(true, totalShows: total))
+        }
+        var fourth = MPLandscapeTipSession(); XCTAssertFalse(fourth.claim(true, totalShows: total))
+        var many = MPLandscapeTipSession(); XCTAssertFalse(many.claim(true, totalShows: 99))
+    }
+    /// Android PlacementAndHintTest.landscapeTipSkipsDoNotConsumeTheLifetimeBudget (490de67).
+    func testLandscapeTipSkipsDoNotConsumeTheLifetimeBudget() {
+        var wide = MPLandscapeTipSession(); wide.observe(true); wide.observe(false)
+        XCTAssertFalse(wide.claim(true, totalShows: 2))
+        var portrait = MPLandscapeTipSession()
+        XCTAssertFalse(portrait.claim(false, totalShows: 2)); XCTAssertTrue(portrait.claim(true, totalShows: 2))
+    }
     func testArenaPreferencesDefaultPerKind() throws {
         let preferences = MPPreferences(try defaults())
         XCTAssertEqual(preferences.arena(.friendly), .beach); XCTAssertEqual(preferences.arena(.tournament), .park)

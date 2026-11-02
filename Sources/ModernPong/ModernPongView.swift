@@ -604,10 +604,13 @@ import StoreKit
         let p = row.participant
         let values: [Int]? = p.bot.map { [$0.speed, $0.reaction, $0.accuracy, $0.power, $0.agility, $0.forehandSkill, $0.backhandSkill, $0.serveSkill] }
         return HStack(spacing: 0) {
-            HStack(spacing: 4) {
+            // Android 05d4aa0 `tournamentName`: the name starts at the interface's start edge, 8 points from the portrait,
+            // also for a Latin name in Hebrew.
+            HStack(spacing: 8) {
                 MPAvatar(character: p.bot?.characterId ?? p.identity.characterId, icon: p.identity.avatar).frame(width: 48, height: 70)
-                Text(p.name(hebrew: he)).font(.system(size: 15, weight: .bold)).lineLimit(3).minimumScaleFactor(0.7).frame(maxWidth: .infinity)
-            }.frame(width: 140)
+                Text(p.name(hebrew: he)).font(.system(size: 15, weight: .bold)).lineLimit(3).minimumScaleFactor(0.7).multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading).padding(.trailing, 6)
+            }.frame(width: 140).environment(\.layoutDirection, he ? .rightToLeft : .leftToRight)
             if host {
                 Group {
                     if p.bot != nil {
@@ -699,20 +702,20 @@ import StoreKit
         }
         .overlay(alignment: .bottom) {
             if landscapeTip {
-                Text(t("For a wider view, play in landscape.", "לתצוגה רחבה יותר, שחקו במצב אופקי.")).font(.callout.bold()).foregroundStyle(.white).multilineTextAlignment(.center)
+                Text(MPLandscapeTipSession.message(he)).font(.callout.bold()).foregroundStyle(.white).multilineTextAlignment(.center)
                     .padding(.horizontal, 16).padding(.vertical, 12).background(Color.black.opacity(0.75), in: Capsule())
                     .padding(.horizontal, 24).padding(.bottom, 28).allowsHitTesting(false).transition(.opacity)
             }
         }
         .onChange(of: wide) { _, value in MPLandscapeTipSession.shared.observe(value); if value { landscapeTip = false } }
         .task(id: model.scene.map { ObjectIdentifier($0) }) {
-            // Android PongOrientationHint.show: 0.9 s after the court appears, once per run, only in portrait.
+            // Android PongOrientationHint.show: 0.9 s after the court appears, once per run (three times in all), only in portrait.
             MPLandscapeTipSession.shared.observe(wide)
             try? await Task.sleep(nanoseconds: 900_000_000)
             guard !Task.isCancelled else { return }
             MPLandscapeTipSession.shared.observe(wide)
             let active = model.route == .game && model.scene?.engine.score.winner == nil
-            guard !wide, MPLandscapeTipSession.shared.claim(active) else { return }
+            guard !wide, MPLandscapeTipSession.claimCounted(active) else { return }
             withAnimation { landscapeTip = true }
             try? await Task.sleep(nanoseconds: 3_500_000_000)
             withAnimation { landscapeTip = false }
@@ -859,7 +862,8 @@ import StoreKit
     }
     private var guideContent: some View {
         VStack(spacing: 12) {
-            Text("\(model.tutorialStep.rawValue + 1) / \(MPTutorialStep.allCases.count)").font(.caption.bold())
+            // Android 05d4aa0 guide_lesson_number: "Lesson 7 of 11" replaces the ambiguous "7 / 11".
+            Text(t("Lesson \(model.tutorialStep.rawValue + 1) of \(MPTutorialStep.allCases.count)", "שלב \(model.tutorialStep.rawValue + 1) מתוך \(MPTutorialStep.allCases.count)")).font(.caption.bold())
             Text(model.tutorialStep.title(he)).font(.title3.bold()).multilineTextAlignment(.center)
             Text(model.tutorialStep.instruction(he) + guideTip).font(.callout).multilineTextAlignment(.leading).frame(maxWidth: .infinity, alignment: .leading).fixedSize(horizontal: false, vertical: true)
             if model.tutorialPhase == .demonstration || model.tutorialPhase == .attempt {

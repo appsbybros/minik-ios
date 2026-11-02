@@ -48,6 +48,24 @@ final class MPPoseAtlas {
         return out
     }
     static var available: Bool { manifest() != nil }
+    /// Android `PongPlayerAtlas.restingHeadroom` (f85e5a3): headroom for every complete resting pose, including the
+    /// paddle-aware back step. Reads anchors only, so sizing the court does not decode any opponent image.
+    static func restingHeadroom(height: CGFloat, depth: CGFloat, floorDrop: CGFloat, ballRadius: CGFloat) -> CGFloat {
+        guard let all = manifest() else { return 0 }
+        func numbers(_ value: Any?) -> [CGFloat] { ((value as? [Any]) ?? []).compactMap { ($0 as? NSNumber).map { CGFloat($0.doubleValue) } } }
+        var best: CGFloat = 0
+        for (id, value) in all where !id.hasSuffix("-walk") {
+            guard let f = ((value as? [String: Any])?["frames"] as? [[String: Any]])?.first else { continue }
+            let b = numbers(f["bounds"]), foot = numbers(f["foot"]), paddle = numbers(f["paddle"])
+            guard b.count == 4, foot.count == 2, paddle.count == 2, b[3] > b[1] else { continue }
+            let radius = CGFloat((f["radius"] as? NSNumber)?.doubleValue ?? 20)
+            let scale = height / (b[3] - b[1])
+            let ordinary = depth * 0.10 - floorDrop + (foot[1] - b[1]) * scale
+            let backedUp = ballRadius + (paddle[1] + radius * 1.05 - b[1]) * scale + height * 0.012
+            best = max(best, ordinary, backedUp)
+        }
+        return best
+    }
     /// The atlas' alpha channel, top row first (Android `Bitmap.getPixel` alpha).
     private struct Alpha {
         let width: Int, height: Int, values: [UInt8]

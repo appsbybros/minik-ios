@@ -694,11 +694,16 @@ enum MPRoute { case menu, lobby, game, guide, result, journey, createTournament,
         // Android ModernTutorial.newEngine: the spin lessons expect their spin (`expectedSpin`); the court knows the lesson.
         install(MPEngine(level: tutorialStep.level, target: 7, houseControls: false, exercise: tutorialStep.exercise, seed: 42, expectedSpin: tutorialStep.expectedSpin))
         scene?.tutorialStep = tutorialStep
-        scene?.guidePoint = tutorialStep.serve ? tutorialStep.servePoint : nil; scene?.guideDirection = tutorialStep.serve || tutorialStep.spin ? nil : tutorialStep.aim
+        scene?.guidePoint = tutorialStep.serve ? tutorialStep.servePoint : nil; scene?.guideDirection = tutorialStep.serve || tutorialStep.spin ? nil : tutorialStep.swipeDirection
     }
     private func tutorialFrame() {
         guard let engine = scene?.engine else { return }
-        if !tutorialStep.serve && !tutorialStep.spin { scene?.guidePoint = engine.flight?.receiver == true ? engine.ball : nil }
+        if !tutorialStep.serve && !tutorialStep.spin {
+            // Android f85e5a3: an aimed lesson keeps its arrow in front of the player the whole time; the other returns
+            // ring the incoming ball.
+            if tutorialStep.swipeDirection != nil { scene?.guidePoint = MPPoint(0.5 + (tutorialStep.incoming ?? 0) * 0.20, 0.80) }
+            else { scene?.guidePoint = engine.flight?.receiver == true ? engine.ball : nil }
+        }
         if let success = engine.trainingResult {
             // Android ModernTutorial: a demonstration returns to the lesson card; only the child's own try is
             // judged. Owner report 2026-10-14: "Well done!" showed after Minik's demo, before the child had hit.

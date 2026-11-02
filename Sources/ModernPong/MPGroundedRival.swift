@@ -21,6 +21,7 @@ final class MPGroundedRival {
     private var elapsed = 0.0, duration = 0.0
     private var lastPlan: MPIntercept?
     private var returning = false
+    private var positioned = false
     private var serveStroke = -1
     private let gait = MPGait()
     private struct Pose { var foot: MPPoint; var facing: MPPoseAtlas.Facing; var mirror: Bool; var phase: Int }
@@ -42,6 +43,16 @@ final class MPGroundedRival {
     func configure(height: CGFloat, ground: @escaping (MPPoint) -> CGPoint, world: @escaping (CGPoint) -> MPPoint, ballPoint: @escaping (MPPoint, Double) -> CGPoint) {
         self.height = max(height, 1); project = ground; inverse = world; ball = ballPoint
         lastPlan = nil
+        if returning && elapsed >= duration { positioned = false }
+    }
+    /// Android `readyFoot` (f85e5a3): the ready stance fitted to the authored paddle, without lifting the feet or
+    /// revealing a patch of torso over the tabletop. Contact poses and their floor routes keep their reach and timing.
+    private func readyFoot() -> MPPoint {
+        let base = MPPoint(0.5, -0.10), ground = project(base)
+        guard let ready = poses.geometry(id, .front, mirror: false, foot: ground, height: height, phase: 0) else { return base }
+        let overlap = max(ready.racket.y + ready.radius * 1.05 + height * 0.012 - ball(MPPoint(0.5, 0), 0).y, 0)
+        if overlap == 0 { return base }
+        return MPPoint(0.5, min(-0.10, inverse(CGPoint(x: ground.x, y: ground.y - overlap)).y))
     }
     private func legal(_ p: MPPoint) -> Bool { p.y <= -0.004 || p.x <= -0.004 || p.x >= 1.004 }
     private func offFootprint(_ q: MPPoint) -> Bool { q.y <= 0 || q.x <= -0.004 || q.x >= 1.004 }
@@ -96,6 +107,7 @@ final class MPGroundedRival {
     /// Android `update`.
     func update(_ dt: Double, character: String) {
         id = MPRoster.find(character)?.id ?? "minik"
+        if !positioned { floorFoot = readyFoot(); route = [floorFoot]; positioned = true }
         let previous = project(floorFoot), stroke = engine.minikStroke
         if let plan = engine.botIntercept, plan != lastPlan {
             pose = poseFor(plan.point, plan.height)
@@ -107,7 +119,7 @@ final class MPGroundedRival {
         } else if engine.botIntercept == nil && !returning &&
                     (engine.awaitingServe || engine.lastResolution != nil || engine.flight?.striker == .minik && stroke.age >= 0.44) {
             // Recover after the return's follow-through, before the human replies (3010b3e).
-            moveTo(MPPoint(0.5, -0.10), 0.7, recovering: true); returning = true; lastPlan = nil
+            moveTo(readyFoot(), 0.7, recovering: true); returning = true; lastPlan = nil
         }
         if elapsed < duration {
             elapsed = min(elapsed + dt, duration)

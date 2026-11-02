@@ -49,6 +49,8 @@ final class MPScene: SKScene {
     private let frontCrop = SKCropNode(), frontMask = SKShapeNode(), armCrop = SKCropNode(), armMask = SKShapeNode(), armNode = SKSpriteNode()
     private let ballNode = SKShapeNode(circleOfRadius: 1), shadowNode = SKShapeNode(ellipseOf: CGSize(width: 2, height: 1)), spinNode = MPSpinArt.node()
     private let bounceNode = SKShapeNode(), guideNode = SKShapeNode(), iconNode = SKLabelNode()
+    /// Android f85e5a3: the aimed lessons' arrow is navy under yellow, with a white dot running along it.
+    private let guideInner = SKShapeNode(), guideDot = SKShapeNode(circleOfRadius: 4)
     /// Owner report 2026-10: red rings where a short or double bounce landed, and around a ball that hit the
     /// net (Android ModernCourt), so the reason for a point is visible on the table.
     private let faultNode = SKShapeNode(), netNode = SKShapeNode()
@@ -104,6 +106,10 @@ final class MPScene: SKScene {
         shadowNode.fillColor = .black; shadowNode.strokeColor = .clear; shadowNode.alpha = 0.22
         bounceNode.fillColor = .clear; bounceNode.strokeColor = .white; bounceNode.lineWidth = 2
         guideNode.fillColor = .clear; guideNode.strokeColor = .yellow; guideNode.lineWidth = 4
+        guideInner.fillColor = .clear; guideInner.strokeColor = MPColor.ui(0xffffd54f); guideInner.lineWidth = 4
+        guideInner.lineCap = .round; guideInner.lineJoin = .round; guideInner.zPosition = 0.1
+        guideDot.fillColor = .white; guideDot.strokeColor = .clear; guideDot.zPosition = 0.2
+        guideNode.addChild(guideInner); guideNode.addChild(guideDot); guideInner.isHidden = true; guideDot.isHidden = true
         let faultRed = UIColor(red: 1, green: 84 / 255, blue: 84 / 255, alpha: 1)
         faultNode.fillColor = .clear; faultNode.strokeColor = faultRed; faultNode.lineWidth = 4; faultNode.zPosition = 2.5; faultNode.isHidden = true
         netNode.fillColor = .clear; netNode.strokeColor = faultRed; netNode.lineWidth = 3; netNode.zPosition = 5.5; netNode.isHidden = true
@@ -533,16 +539,35 @@ final class MPScene: SKScene {
             let d = sk(dot); path.addEllipse(in: CGRect(x: d.x - 8, y: d.y - 8, width: 16, height: 16))
             guideNode.position = .zero; guideNode.path = path; guideNode.isHidden = false
             guideNode.strokeColor = UIColor(red: 1, green: 238 / 255, blue: 142 / 255, alpha: 160 / 255); guideNode.lineWidth = 3
+            guideNode.lineCap = .butt; guideInner.isHidden = true; guideDot.isHidden = true
             return
         }
-        guideNode.strokeColor = .yellow; guideNode.lineWidth = 4
-        guideNode.isHidden = guidePoint == nil
+        guideNode.strokeColor = .yellow; guideNode.lineWidth = 4; guideNode.lineCap = .butt
+        guideInner.isHidden = true; guideDot.isHidden = true
+        // Android drawCoach: nothing once the lesson's result is known.
+        guideNode.isHidden = guidePoint == nil || (tutorialStep != nil && engine.trainingResult != nil)
         if let point = guidePoint {
-            guideNode.position = sk(screenPoint(point, height))
+            // Android f85e5a3: an aimed lesson's cue stays at a fixed point in front of the player (net height 0.055)
+            // while waiting, during the approach and at contact.
+            let aimed = tutorialStep?.swipeDirection != nil
+            guideNode.position = sk(screenPoint(point, aimed ? 0.055 : height))
             let path = CGMutablePath()
-            if let direction = guideDirection {
-                let dx = 35 * direction; path.move(to: CGPoint(x: -dx / 2, y: -25)); path.addLine(to: CGPoint(x: dx, y: 25))
-                path.addLine(to: CGPoint(x: dx - 12 * direction, y: 20)); path.move(to: CGPoint(x: dx, y: 25)); path.addLine(to: CGPoint(x: dx, y: 10))
+            if aimed, let direction = guideDirection {
+                // Android ModernCourt.drawCoach (f85e5a3), in view offsets (y down) turned to SpriteKit's y-up. The arrow
+                // points the physical swipe direction, which does not reverse with the interface language.
+                let length = min(tableRect.width * 0.34, tableRect.height * 0.20), d = CGFloat(direction)
+                let start = CGPoint(x: -d * length * 0.35, y: length * 0.45), end = CGPoint(x: d * length * 0.45, y: -length * 0.45)
+                let dx = end.x - start.x, dy = end.y - start.y, distance = max(hypot(dx, dy), 0.001)
+                let ux = dx / distance, uy = dy / distance, head = min(16, length * 0.30)
+                func up(_ p: CGPoint) -> CGPoint { CGPoint(x: p.x, y: -p.y) }
+                path.move(to: up(start)); path.addLine(to: up(end))
+                path.move(to: up(CGPoint(x: end.x - ux * head - uy * head * 0.6, y: end.y - uy * head + ux * head * 0.6)))
+                path.addLine(to: up(end))
+                path.addLine(to: up(CGPoint(x: end.x - ux * head + uy * head * 0.6, y: end.y - uy * head - ux * head * 0.6)))
+                guideNode.strokeColor = MPColor.ui(0xff10243b); guideNode.lineWidth = 8; guideNode.lineCap = .round; guideNode.lineJoin = .round
+                guideInner.path = path; guideInner.isHidden = false
+                let pulse = CGFloat((sin(engine.trainingTime * 7) + 1) * 0.5)
+                guideDot.position = up(CGPoint(x: start.x + dx * pulse, y: start.y + dy * pulse)); guideDot.isHidden = false
             } else { path.addEllipse(in: CGRect(x: -22, y: -22, width: 44, height: 44)) }
             guideNode.path = path
         }

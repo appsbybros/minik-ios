@@ -366,8 +366,8 @@ struct MPJourneySelector<Value: Hashable>: View {
     }
 }
 
-/// Android `PongOrientationHint`: once per app run, a portrait court that has never been played in landscape
-/// suggests the wider view (after 0.9 s, shown like a long toast). The once-per-run state is the process-wide
+/// Android `PongOrientationHint`: once per app run (three times in all), a portrait court that has never been played in
+/// landscape suggests landscape (after 0.9 s, shown like a long toast). The once-per-run state is the process-wide
 /// `MPLandscapeTipSession.shared`, which the singles court uses too (Android `PongOrientationHint.session`).
 @MainActor final class MPOrientationHint: ObservableObject {
     static let shared = MPOrientationHint()
@@ -377,13 +377,13 @@ struct MPJourneySelector<Value: Hashable>: View {
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 900_000_000)
             observe(wide: wide())
-            guard !wide(), MPLandscapeTipSession.shared.claim(active()) else { return }
+            guard !wide(), MPLandscapeTipSession.claimCounted(active()) else { return }
             visible = true
             try? await Task.sleep(nanoseconds: 3_500_000_000)
             visible = false
         }
     }
-    func text(_ hebrew: Bool) -> String { hebrew ? "לתצוגה רחבה יותר, שחקו במצב אופקי." : "For a wider view, play in landscape." }
+    func text(_ hebrew: Bool) -> String { MPLandscapeTipSession.message(hebrew) }
 }
 
 /// The toast of `MPOrientationHint`.

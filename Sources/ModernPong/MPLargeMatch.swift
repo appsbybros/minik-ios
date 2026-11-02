@@ -55,7 +55,13 @@ final class MPLargeMatch {
     func resize(_ size: CGSize, scene: (CGPoint) -> CGPoint) {
         self.size = size
         let fit = MPPracticeTableLayout.fit(Double(size.width), Double(size.height))
-        layout = fit; layout.floorDrop = fit.actorHeight * 0.62; positioned = false
+        // Android f85e5a3: full-size characters keep their heads on screen. Only the far edge moves down by the missing
+        // headroom; character sizes, the table width, the near baseline/floor and the input mapping are unchanged.
+        let floor = fit.actorHeight * 0.62
+        let headroom = Double(MPPoseAtlas.restingHeadroom(height: CGFloat(fit.actorHeight * 1.08), depth: CGFloat(fit.depth), floorDrop: CGFloat(floor),
+                                                          ballRadius: max(5, CGFloat(fit.width) * 0.014))) + 4
+        let extra = max(headroom - fit.top, 0)
+        layout = fit; layout.top = fit.top + extra; layout.depth = fit.depth - extra; layout.floorDrop = floor; positioned = false
         let drop = layout.floorDrop
         rival.configure(height: actorHeight(1), ground: { [unowned self] p in var q = self.projected(p); q.y += CGFloat(drop); return q },
                         world: { [unowned self] p in self.layout.ground(x: Double(p.x), y: Double(p.y) - drop) },
