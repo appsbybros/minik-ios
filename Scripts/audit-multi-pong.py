@@ -42,10 +42,12 @@ import unicodedata
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DOC = ROOT / 'docs' / 'multi-pong-ios-handoff.md'
 CATALOG = ROOT / 'MultiPong' / 'MPTextCatalog.swift'
-ANDROID_COMMIT = 'e93f86a1caf770fb1cee51910c6716b24f7ba6e7'
+ANDROID_COMMIT = '8fdf961e55cd180d87677263483c536723501114'
 APP_TEXT = 'app/src/main/java/com/appsbybros/minik/localization/AppText.kt'
 STRINGS = 'app/src/main/res/values{}/strings.xml'
 JOURNEY = 'app/src/main/res/values{}/journey.xml'
+# 7254ab2: the issue-report fixes' resource strings (MPText.issueTexts).
+ISSUE = 'app/src/main/res/values{}/issue_review.xml'
 # Android resource folders of the app languages (Hebrew is values-iw).
 FOLDERS = {'he': '-iw', 'es': '-es', 'ar': '-ar', 'hi': '-hi', 'nl': '-nl'}
 # Android strings that are not catalog rows: the app name, "Minik" and two format-only strings, the same in every language.
@@ -423,11 +425,11 @@ def check_resources(android, table, overrides):
     return compared
 
 
-def journey_texts(text):
-    """MPText.journeyTexts of MPText.swift: {(English text, language): text}."""
-    block = re.search(r'static let journeyTexts: \[String: \[String: String\]\] = \[\n(.*?)\n    \]\n', text, re.S)
+def journey_texts(text, name='journeyTexts'):
+    """MPText.journeyTexts (or MPText.issueTexts) of MPText.swift: {(English text, language): text}."""
+    block = re.search(r'static let ' + name + r': \[String: \[String: String\]\] = \[\n(.*?)\n    \]\n', text, re.S)
     if not block:
-        raise ValueError('MPText.journeyTexts is missing')
+        raise ValueError(f'MPText.{name} is missing')
     texts = {}
     for line in block.group(1).splitlines():
         row = line.strip()
@@ -447,16 +449,17 @@ def journey_texts(text):
     return texts
 
 
-def check_journey(android, texts):
-    """Android values*/journey.xml (getString) against MPText.journeyTexts. Returns the number of strings compared."""
-    english = android_strings((android / JOURNEY.format('')).read_text(encoding='utf-8'))
+def check_journey(android, texts, files=None, name='journeyTexts'):
+    """Android values*/journey.xml (or issue_review.xml) against MPText.journeyTexts (issueTexts). Returns the number compared."""
+    files = files or JOURNEY
+    english = android_strings((android / files.format('')).read_text(encoding='utf-8'))
     compared = 0
-    for name, key in sorted(english.items()):
+    for string, key in sorted(english.items()):
         for lang, folder in FOLDERS.items():
-            local = android_strings((android / JOURNEY.format(folder)).read_text(encoding='utf-8'))
-            check(texts.get((key, lang)) == local.get(name), f'journey.xml {name} ({lang}): Android shows {local.get(name)!r}, MPText {texts.get((key, lang))!r}')
+            local = android_strings((android / files.format(folder)).read_text(encoding='utf-8'))
+            check(texts.get((key, lang)) == local.get(string), f'{files.format(folder)} {string} ({lang}): Android shows {local.get(string)!r}, MPText {texts.get((key, lang))!r}')
             compared += 1
-    check(len(texts) == compared, 'MPText.journeyTexts has a text that no Android journey.xml has')
+    check(len(texts) == compared, f'MPText.{name} has a text that no Android {files} has')
     return compared
 
 
@@ -595,6 +598,13 @@ def main():
             print(f'Android journey.xml texts compared with MPText: {compared}')
         except (OSError, ValueError, IndexError) as error:
             failures.append(f'Android journey.xml could not be compared: {error}')
+        for suffix in [''] + list(FOLDERS.values()):
+            check(ISSUE.format(suffix) in worktree, f'{ISSUE.format(suffix)} is not listed in the working-tree hashes')
+        try:
+            compared = check_journey(android, journey_texts(text_source, 'issueTexts'), ISSUE, 'issueTexts')
+            print(f'Android issue_review.xml texts compared with MPText: {compared}')
+        except (OSError, ValueError, IndexError) as error:
+            failures.append(f'Android issue_review.xml could not be compared: {error}')
         print(f'Android hashes checked: {len(committed)} at {ANDROID_COMMIT[:7]}, {len(worktree)} in the working tree')
 
     if failures:

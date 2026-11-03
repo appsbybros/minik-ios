@@ -25,6 +25,53 @@ enum MPXMenu {
     static let hud = Color(red: 0x19 / 255, green: 0x30 / 255, blue: 0x4a / 255).opacity(0xd0 / 255)
 }
 
+/// Android PongOrientationHint / LandscapeTipSession (MinikCrossPong 7254ab2): "You can also play in landscape." at most once a
+/// run and three times in the app's lifetime, shared by every match screen. It is never shown once a match was played in landscape
+/// this run, nor while the match is not running (paused or finished). Replaces the old wider-view promise.
+@MainActor final class MPXLandscapeTip {
+    static let shared = MPXLandscapeTip()
+    static let lifetimeLimit = 3
+    static let key = "pong_orientation_tip.shows"
+    private(set) var playedLandscape = false
+    private(set) var shown = false
+    func observe(landscape: Bool) { if landscape { playedLandscape = true } }
+    func claim(active: Bool, totalShows: Int = 0) -> Bool {
+        if !active || playedLandscape || shown || totalShows >= MPXLandscapeTip.lifetimeLimit { return false }
+        shown = true
+        return true
+    }
+    /// The lifetime count is kept in `defaults`; a skipped notice does not use up the budget.
+    func claimCounted(active: Bool, defaults: UserDefaults = .standard) -> Bool {
+        let count = max(0, defaults.integer(forKey: MPXLandscapeTip.key))
+        guard claim(active: active, totalShows: count) else { return false }
+        defaults.set(count + 1, forKey: MPXLandscapeTip.key)
+        return true
+    }
+    static var message: String { MPText.issue("You can also play in landscape.") }
+}
+
+/// Watches a live court's shape for `MPXLandscapeTip` and, 0.9 s after the court appears in portrait, asks for the tip.
+struct MPXLandscapeTipProbe: View {
+    let id: ObjectIdentifier
+    let active: () -> Bool
+    let show: (String) -> Void
+    var body: some View {
+        GeometryReader { geo in
+            Color.clear
+                .onAppear { observe(geo.size) }
+                .onChange(of: geo.size) { _, size in observe(size) }
+                .task(id: id) {
+                    try? await Task.sleep(nanoseconds: 900_000_000)
+                    if Task.isCancelled { return }
+                    let size = geo.size
+                    observe(size)
+                    if size.height > size.width, MPXLandscapeTip.shared.claimCounted(active: active()) { show(MPXLandscapeTip.message) }
+                }
+        }
+    }
+    private func observe(_ size: CGSize) { if active() { MPXLandscapeTip.shared.observe(landscape: size.width > size.height) } }
+}
+
 /// Android FamilyMenu.section: a coloured, collapsible menu group whose open state is remembered by its title.
 struct MPXSection<Content: View>: View {
     let title: String
@@ -216,9 +263,11 @@ struct MPXReceptionSettings: View {
     private func tr(_ en: String, _ he: String) -> String { MPText.t(en, he, hebrew) }
     var body: some View {
         VStack(spacing: 8) {
+            // Android 7254ab2: a rounded light-blue +/− expander.
             Button { open.toggle() } label: {
-                Text(tr("Ball assistance ▾", "עזרה בקבלת הכדור ▾")).font(.headline).foregroundStyle(MPXMenu.deepInk).frame(maxWidth: .infinity, minHeight: 52)
-                    .background(Color(white: 0.93), in: RoundedRectangle(cornerRadius: 12))
+                Text((open ? "−  " : "+  ") + tr("Ball assistance", "עזרה בקבלת הכדור")).font(.system(size: 18, weight: .semibold)).foregroundStyle(MPXMenu.deepInk)
+                    .multilineTextAlignment(.center).padding(.horizontal, 12).padding(.vertical, 10).frame(maxWidth: .infinity, minHeight: 56)
+                    .background(Color(red: 0xc4 / 255, green: 0xe5 / 255, blue: 1), in: RoundedRectangle(cornerRadius: 10))
             }.buttonStyle(.plain)
             if open {
                 VStack(alignment: .leading, spacing: 10) {
@@ -241,7 +290,10 @@ struct MPXReceptionSettings: View {
             Text(title).font(.system(size: 17)).foregroundStyle(MPXMenu.deepInk)
         }.frame(minHeight: 56)
     }
-    private func note(_ text: String) -> some View { Text(text).font(.system(size: 14)).foregroundStyle(MPXMenu.deepInk).padding(.bottom, 12) }
+    private func note(_ text: String) -> some View {
+        Text(text).font(.system(size: 14)).foregroundStyle(MPXMenu.deepInk).multilineTextAlignment(.leading)
+            .frame(maxWidth: .infinity, alignment: .leading).padding(.bottom, 12)
+    }
 }
 
 /// Android PongMenuMusic: a quiet looping menu remix, only while the menu is shown, the app is active and music is on.

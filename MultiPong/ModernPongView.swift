@@ -25,6 +25,9 @@ import SpriteKit
     @State var friendlyTeam = false
     /// Android PlayActivity.tournamentOptions: the separate "Create tournament" page.
     @State var creatingTournament = false
+    /// Android 7254ab2 PlayActivity.friendlyOptions: "New friendly game" opens its own setup page too.
+    @State var creatingFriendly = false
+    var creatingSetup: Bool { creatingTournament || creatingFriendly }
     @State var tournamentMode = MPGameMode.winnerTakesAll
     @State var tournamentFormat = MPTournamentFormat.knockout
     @State var capacity = 4
@@ -78,14 +81,14 @@ import SpriteKit
         ZStack {
             if model.experience == .simple { MPIllustratedBackground().ignoresSafeArea() }
             // Android SunsetTerrace: the integrated menu painting on the home, the evening terrace elsewhere.
-            else { MPXSunsetBackground(menu: model.route == .menu && !creatingTournament).ignoresSafeArea() }
+            else { MPXSunsetBackground(menu: model.route == .menu && !creatingSetup).ignoresSafeArea() }
             VStack(spacing: 0) {
                 if !ownBar { header }
                 // Android 1dbfe33: a room match's result card shows over its court, which stays the same view.
                 if model.route == .game || roomResult != nil { game }
                 else {
                     switch model.route {
-                    case .menu: if creatingTournament { tournamentOptions } else { menu }
+                    case .menu: if creatingTournament { tournamentOptions } else if creatingFriendly { friendlyOptions } else { menu }
                     case .lobby: lobby
                     case .guide: guide
                     case .game, .result: result
@@ -146,6 +149,7 @@ import SpriteKit
         case .menu:
             if model.experience == .simple { return "MINIK Ping Pong" }
             // Android R.string.app_name (5c1aa4d: "Multiplayer Ping Pong").
+            if creatingFriendly { return t("New friendly game", "משחק ידידות חדש") }
             return creatingTournament ? t("Create tournament", "יצירת טורניר") : t("Multiplayer Ping Pong", "פינג פונג מרובה משתתפים")
         case .lobby: return model.session?.kind == .tournament ? t("Tournament", "טורניר") : t("Friendly game", "משחק ידידות")
         case .game: return model.session?.kind == .tournament ? t("Tournament match", "משחק בטורניר") : t("Ping Pong", "פינג פונג")
@@ -160,15 +164,15 @@ import SpriteKit
         // Android PlayActivity.page(mainMenu) (18cd99d, a247226): the home title sits on the painted sky, without a bar, on one
         // line above the illustrated players (24 pt, shrinking to 16 pt on narrow screens), with a navy edge so the sunrise
         // cannot wash it out.
-        let home = model.route == .menu && model.experience != .simple && !creatingTournament
+        let home = model.route == .menu && model.experience != .simple && !creatingSetup
         return ZStack {
             Text(caption).font(.system(size: 24, weight: .bold, design: .rounded)).multilineTextAlignment(.center)
                 .lineLimit(home ? 1 : nil).minimumScaleFactor(home ? 16 / 24 : 1)
                 .shadow(color: home ? Color(red: 20 / 255, green: 45 / 255, blue: 92 / 255) : .clear, radius: 2)
                 .padding(.horizontal, 58)
             HStack {
-                if creatingTournament && model.route == .menu {
-                    backButton { creatingTournament = false; section = "tournament" }
+                if creatingSetup && model.route == .menu {
+                    backButton { closeSetup() }
                 } else if model.route != .menu || model.experience == .simple {
                     backButton { model.back() }
                 }
@@ -213,7 +217,8 @@ import SpriteKit
                         MPXSection(title: t("Start & learn", "מתחילים ולומדים"), color: MPXMenu.learn, preferences: model.preferences, defaultOpen: true) {
                             action(t("Learn how to play with Minik", "לומדים לשחק עם מיניק"), color: MPXMenu.learn) { model.openCross(learn: true) }
                             action(t("Daily skill journey", "אתגר יומי"), color: MPXMenu.learn) { model.openJourney(.brief) }
-                            action(t("Nickname & avatar", "כינוי ודמות") + " · " + profileName, color: MPXMenu.learn) {
+                            // Android 7254ab2: the profile editor's header shows + / − like the other expanders.
+                            action((section == "profile" ? "− " : "+ ") + t("Nickname & avatar", "כינוי ודמות") + " · " + profileName, color: MPXMenu.learn) {
                                 if section != "profile" {
                                     avatarIndex = model.identity?.avatar ?? 0; avatarCharacter = model.identity?.characterId ?? "miniko"; profileSaved = false
                                 }
@@ -222,10 +227,9 @@ import SpriteKit
                             if section == "profile" { profileEditor }
                         }
                         MPXSection(title: t("Play", "משחקים"), color: MPXMenu.play, preferences: model.preferences, defaultOpen: true) {
-                            expandHeader(t("New friendly game", "משחק ידידות חדש"), open: section == "friendly", fill: MPXMenu.play) { section = section == "friendly" ? nil : "friendly" }
-                            if section == "friendly" { createForm(.friendly) }
-                            expandHeader(t("New tournament", "טורניר חדש"), open: section == "tournament", fill: MPXMenu.play) { section = section == "tournament" ? nil : "tournament" }
-                            if section == "tournament" { tournamentEntry }
+                            // Android 7254ab2: each opens its own setup page (the open-game limit is checked first).
+                            action(t("New friendly game", "משחק ידידות חדש"), color: MPXMenu.play) { openSetup(.friendly) }
+                            action(t("New tournament", "טורניר חדש"), color: MPXMenu.play) { openSetup(.tournament) }
                         }
                         MPXSection(title: t("Saved games", "משחקים שמורים"), color: MPXMenu.saved, preferences: model.preferences, defaultOpen: false) {
                             roomSection(.friendly)
@@ -265,8 +269,29 @@ import SpriteKit
         friendlyTeam = prefs.defaults.bool(forKey: "modern.pong.v2.friendlyTeamPlay")
         tournamentFormat = prefs.knockoutFormat ? .knockout : .roundRobin
         advance = prefs.advance; knockoutCapacity = prefs.knockoutPlayers
-        // Android PlayActivity: "Points to win" always opens at 7.
+        // Android 7254ab2: "Points to win" opens at the value last chosen for the setup page's kind (7 at first).
         formTarget = 7
+    }
+    /// Android 7254ab2 friendlyOptions / tournamentOptions: the setup page of a new game, its "Points to win" remembered per kind.
+    private func openSetup(_ kind: MPSessionKind) {
+        if model.openLimitReached(kind) { return }
+        section = nil
+        formTarget = savedTarget(kind)
+        if kind == .friendly { creatingFriendly = true; creatingTournament = false } else { creatingTournament = true; creatingFriendly = false }
+    }
+    private func closeSetup() { creatingFriendly = false; creatingTournament = false; section = nil }
+    private func targetKey(_ kind: MPSessionKind) -> String { "modern.pong.v2.target_" + (kind == .tournament ? "TOURNAMENT" : "FRIENDLY") }
+    private func savedTarget(_ kind: MPSessionKind) -> Int {
+        let value = model.preferences.defaults.integer(forKey: targetKey(kind))
+        return [3, 5, 7].contains(value) ? value : 7
+    }
+    private func targetBinding(_ kind: MPSessionKind) -> Binding<Int> {
+        Binding(get: { formTarget }, set: { formTarget = $0; model.preferences.defaults.set($0, forKey: targetKey(kind)) })
+    }
+    /// Android 7254ab2 selector titles: bold, 18 pt, at the start edge (the Simple experience keeps its centred headings).
+    func formTitle(_ value: String) -> some View {
+        Text(value).font(.system(size: 18, weight: .bold)).multilineTextAlignment(.leading)
+            .frame(maxWidth: .infinity, alignment: model.experience == .simple ? .center : .leading)
     }
     /// Android PlayActivity.home: the space the integrated menu painting keeps for its hero (27 % of the height, 168–216 pt).
     private var heroSpace: CGFloat { min(216, max(168, UIScreen.main.bounds.height * 0.27)) }
@@ -284,13 +309,14 @@ import SpriteKit
     }
     var controls: some View {
         VStack(spacing: 14) {
-            Text(t("Control difficulty", "רמת השליטה")).font(.headline)
+            formTitle(t("Control difficulty", "רמת השליטה"))
             Picker(t("Control difficulty", "רמת השליטה"), selection: $model.level) {
                 Text(t("Beginner", "מתחילים")).tag(MPLevel.beginner)
                 Text(t("Standard", "רגילה")).tag(MPLevel.easy)
                 Text(t("Pro", "מקצועני")).tag(MPLevel.superHard)
             }.pickerStyle(.segmented).onChange(of: model.level) { _, _ in model.saveControls() }
-            Text(controlHint).font(.callout).multilineTextAlignment(.center)
+            Text(controlHint).font(.callout).multilineTextAlignment(model.experience == .simple ? .center : .leading)
+                .frame(maxWidth: .infinity, alignment: model.experience == .simple ? .center : .leading)
             if model.experience == .simple {
                 HStack { Text(t("Points to win", "נקודות לניצחון")).font(.headline); Spacer(); Picker(t("Points", "נקודות"), selection: $model.target) { ForEach(model.level.targets, id: \.self) { Text(String($0)).tag($0) } }.pickerStyle(.menu).font(.title3.bold()) }
             }
@@ -302,9 +328,10 @@ import SpriteKit
             if model.level.automaticContact { return t("Beginner: move into place for an automatic hit; a small sideways swipe aims it. Opponent skill comes from your chosen house player.", "מתחילים: מזיזים את המחבט למקום לחבטה אוטומטית; החלקה קטנה הצידה מכוונת אותה. יכולת היריב נקבעת לפי שחקן הבית שתבחרו.") }
             return model.level.pro ? t("Pro: precise timing and power. Opponent skill comes from your chosen house player.", "מקצועני: תזמון ועוצמה מדויקים. יכולת היריב נקבעת לפי שחקן הבית שתבחרו.") : t("Standard: tap or swipe; faster swipes add power. Opponent skill comes from your chosen house player.", "רגילה: מקישים או מחליקים; החלקה מהירה מוסיפה עוצמה. יכולת היריב נקבעת לפי שחקן הבית שתבחרו.")
         }
-        // Android 828c6fc createForm: one description of all three levels.
-        return t("Beginner: move into place for an automatic hit; swipe a little left or right before the ball arrives to choose who gets it (the 🎯 shows who). Standard: tap or swipe; faster swipes add power. Pro: precise timing and power. Opponent skill comes from your chosen house player.",
-                 "מתחילים: מזיזים את המחבט למקום לחבטה אוטומטית; החלקה קטנה שמאלה או ימינה לפני שהכדור מגיע בוחרת למי (ה־🎯 מראה למי). רגילה: מקישים או מחליקים; החלקה מהירה מוסיפה עוצמה. מקצועני: תזמון ועוצמה מדויקים. יכולת היריב נקבעת לפי שחקן הבית שתבחרו.")
+        // Android 7254ab2 createForm: only the selected level is explained (R.string.control_*_only).
+        if model.level.automaticContact { return MPText.issue("Beginner: move your paddle to the ball for an automatic return. Swipe left or right to choose a target.") }
+        return model.level.pro ? MPText.issue("Pro: use a well-timed swipe to control direction and power.")
+            : MPText.issue("Standard: move into position, then tap or swipe to return. Faster swipes add power.")
     }
     /// Classic Simple carousel over every house player.
     var carousel: some View {
@@ -360,14 +387,17 @@ import SpriteKit
         card {
             Text(t("Choose a nickname", "בחרו כינוי")).font(.title3.bold())
             Text(MPNames.candidate(nicknameIndex, hebrew: he, character: avatarCharacter)).font(.title2.bold()).frame(minHeight: 48).multilineTextAlignment(.center)
-            HStack(spacing: 6) {
+            // Android 7254ab2: larger centred arrows in narrower blue controls, 16 pt apart from the edges and each other; the
+            // controls grow with larger text.
+            HStack(spacing: 32) {
                 let count = MPRoster.find(avatarCharacter) == nil ? 100 : 10
-                Button { nicknameIndex = (nicknameIndex + count - 1) % count } label: { Text("‹").font(.system(size: 30, weight: .bold)).frame(maxWidth: .infinity, minHeight: 52) }
-                    .foregroundStyle(MPStyle.pink).background(MPStyle.lilac, in: RoundedRectangle(cornerRadius: 12)).accessibilityLabel(t("Previous nickname", "הכינוי הקודם"))
-                Button { nicknameIndex = (nicknameIndex + 1) % count } label: { Text("›").font(.system(size: 30, weight: .bold)).frame(maxWidth: .infinity, minHeight: 52) }
-                    .foregroundStyle(MPStyle.pink).background(MPStyle.lilac, in: RoundedRectangle(cornerRadius: 12)).accessibilityLabel(t("Next nickname", "הכינוי הבא"))
-            }.environment(\.layoutDirection, .leftToRight)
-            Text(t("Choose a playful name. Character names match your avatar. A number is added only if the name is already taken.", "בחרו כינוי חמוד. שם הדמות הוא חלק מהכינוי. מספר יתווסף רק אם הכינוי כבר תפוס.")).font(.footnote).multilineTextAlignment(.center)
+                Button { nicknameIndex = (nicknameIndex + count - 1) % count } label: { Text("‹").font(.system(size: 38, weight: .bold)).frame(width: 76).frame(minHeight: 56) }
+                    .foregroundStyle(MPStyle.pink).background(MPStyle.blue, in: RoundedRectangle(cornerRadius: 12)).accessibilityLabel(t("Previous nickname", "הכינוי הקודם"))
+                Button { nicknameIndex = (nicknameIndex + 1) % count } label: { Text("›").font(.system(size: 38, weight: .bold)).frame(width: 76).frame(minHeight: 56) }
+                    .foregroundStyle(MPStyle.pink).background(MPStyle.blue, in: RoundedRectangle(cornerRadius: 12)).accessibilityLabel(t("Next nickname", "הכינוי הבא"))
+            }.padding(.vertical, 6).environment(\.layoutDirection, .leftToRight)
+            Text(t("Choose a playful name. Character names match your avatar. A number is added only if the name is already taken.", "בחרו כינוי חמוד. שם הדמות הוא חלק מהכינוי. מספר יתווסף רק אם הכינוי כבר תפוס.")).font(.footnote)
+                .multilineTextAlignment(.leading).frame(maxWidth: .infinity, alignment: .leading)
             Text(t("Choose your avatar", "בחרו את הדמות שלכם")).font(.title3.bold()).id(MPStoreScreenshot.avatarAnchor)
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 12) {
                 ForEach(MPRoster.all) { player in
@@ -386,12 +416,13 @@ import SpriteKit
                     }.buttonStyle(.plain).accessibilityLabel(avatarName(index))
                 }
             }
+            // Android 7254ab2: 24 pt above Save and 16 pt below it.
             action(t("Save nickname & avatar", "שמירת הכינוי והדמות"), color: MPStyle.mint) {
                 Task {
                     await model.profile(index: nicknameIndex, avatar: avatarIndex, character: avatarCharacter)
                     if model.error == nil { profileSaved = true }
                 }
-            }.disabled(!model.connected)
+            }.disabled(!model.connected).padding(.top, 24 - gap).padding(.bottom, 16 - gap)
             if profileSaved { Text(t("Nickname and avatar saved", "הכינוי והדמות נשמרו")).font(.callout.bold()) }
         }
     }
@@ -402,23 +433,30 @@ import SpriteKit
         let i = min(max(index, 0), englishNames.count - 1)
         return he ? hebrewNames[i] : MPText.t(englishNames[i])
     }
-    /// Android 5c1aa4d: a tournament is created on its own page; the home offers "Create room" and joining by code.
-    private var tournamentEntry: some View {
+    /// Android 7254ab2 tournamentOptions: joining a tournament by code, below its settings on the setup page.
+    private var tournamentJoin: some View {
         card {
-            action(t("Create room", "יצירת חדר"), color: MPStyle.blue) { creatingTournament = true }
-            MPXDivider()
-            Text(t("Room code", "קוד חדר")).font(.headline)
+            formTitle(t("Room code", "קוד חדר"))
             TextField(t("6-character code", "קוד בן 6 תווים"), text: joinBinding(.tournament)).textInputAutocapitalization(.characters).autocorrectionDisabled()
                 .font(.title3.bold()).multilineTextAlignment(.center).textFieldStyle(.roundedBorder).environment(\.layoutDirection, .leftToRight)
             action(t("Join room", "הצטרפות לחדר"), color: MPStyle.blue) { Task { await model.join(.tournament, joinCodes[MPSessionKind.tournament.rawValue] ?? "") } }
         }
     }
-    /// Android PlayActivity.tournamentOptions: the tournament settings, "Create room" and Cancel.
+    /// Android 7254ab2 PlayActivity.tournamentOptions: the tournament settings with "Create room", then joining by code. The
+    /// header arrow returns home; the redundant bottom Cancel is gone.
     private var tournamentOptions: some View {
         ScrollView {
             VStack(spacing: gap) {
                 createForm(.tournament, settingsOnly: true)
-                action(t("Cancel", "ביטול"), color: MPStyle.pink) { creatingTournament = false; section = "tournament" }.foregroundStyle(.white)
+                tournamentJoin
+            }.frame(maxWidth: 560).padding(.horizontal, 20).padding(.bottom, 28).frame(maxWidth: .infinity)
+        }.scrollDismissesKeyboard(.interactively)
+    }
+    /// Android 7254ab2 PlayActivity.friendlyOptions: the friendly game's form on its own page.
+    private var friendlyOptions: some View {
+        ScrollView {
+            VStack(spacing: gap) {
+                createForm(.friendly)
             }.frame(maxWidth: 560).padding(.horizontal, 20).padding(.bottom, 28).frame(maxWidth: .infinity)
         }.scrollDismissesKeyboard(.interactively)
     }
@@ -430,8 +468,8 @@ import SpriteKit
         card {
             Text(tournament ? t("Invite friends with the code and add house players to the same tournament.", "הזמינו חברים באמצעות הקוד והוסיפו שחקני בית לאותו טורניר.")
                  : t("Create a game, then share its code with a friend or choose a house player.", "צרו משחק, ואז שתפו את הקוד עם חבר או בחרו שחקן בית."))
-                .multilineTextAlignment(.center)
-            Text(tournament ? t("Players per table", "שחקנים בכל שולחן") : t("Players at the table", "שחקנים סביב השולחן")).font(.headline)
+                .multilineTextAlignment(tournament ? .center : .leading).frame(maxWidth: .infinity, alignment: tournament ? .center : .leading)
+            formTitle(tournament ? t("Players per table", "שחקנים בכל שולחן") : t("Players at the table", "שחקנים סביב השולחן"))
             Picker(tournament ? t("Players per table", "שחקנים בכל שולחן") : t("Players at the table", "שחקנים סביב השולחן"), selection: tableBinding(kind)) {
                 if tournament {
                     Text(t("Pairs (classic table)", "זוגות (שולחן קלאסי)")).tag(2)
@@ -445,7 +483,7 @@ import SpriteKit
             }.pickerStyle(.menu).font(.headline)
             if table > 2 {
                 // Game type: tables of 3 or 4 only (a pair always plays the classic game); a friendly game may also be team play.
-                Text(t("Game type", "סוג המשחק")).font(.headline)
+                formTitle(t("Game type", "סוג המשחק"))
                 if tournament {
                     Picker(t("Game type", "סוג המשחק"), selection: modeBinding(kind)) {
                         ForEach(MPGameMode.allCases, id: \.self) { Text($0.title(he)).tag($0) }
@@ -475,8 +513,8 @@ import SpriteKit
         Group {
             if tournament { tournamentChoices(table) }
             controls
-            Text(t("Points to win", "נקודות לניצחון")).font(.headline)
-            Picker(t("Points to win", "נקודות לניצחון"), selection: $formTarget) { ForEach([3, 5, 7], id: \.self) { Text(String($0)).tag($0) } }.pickerStyle(.segmented)
+            formTitle(t("Points to win", "נקודות לניצחון"))
+            Picker(t("Points to win", "נקודות לניצחון"), selection: targetBinding(kind)) { ForEach([3, 5, 7], id: \.self) { Text(String($0)).tag($0) } }.pickerStyle(.segmented)
             if tournament { Text(t("Choose your house players on the next screen.", "במסך הבא בחרו את שחקני הבית.")).multilineTextAlignment(.center) }
             if !model.online {
                 Text(t("Online rooms are not set up in this version yet, so this game is created on this phone with house players.", "חדרים מקוונים עדיין לא זמינים בגרסה הזו, לכן המשחק נוצר בטלפון הזה עם שחקני בית."))
@@ -487,11 +525,12 @@ import SpriteKit
                      : t("You have three open games. Choose Finish in one of Your games to make room for a new one.", "יש לכם שלושה משחקים פתוחים. בחרו סיום באחד מהמשחקים שלכם כדי לפנות מקום למשחק חדש."))
                     .multilineTextAlignment(.center)
             }
-            action(tournament ? t("Create room", "יצירת חדר") : t("Create game", "יצירת משחק"), color: MPStyle.blue) { createRoom(kind) }
+            // Android 7254ab2: a green Create.
+            action(tournament ? t("Create room", "יצירת חדר") : t("Create game", "יצירת משחק"), color: MPStyle.mint) { createRoom(kind) }
                 .disabled(!model.connected || model.busy)
             if !settingsOnly && !tournament {
                 MPXDivider()
-                Text(t("Or join with a code", "או הצטרפו באמצעות קוד")).font(.headline)
+                formTitle(t("Or join with a code", "או הצטרפו באמצעות קוד"))
                 HStack {
                     TextField(t("6-character code", "קוד בן 6 תווים"), text: joinBinding(kind)).textInputAutocapitalization(.characters).autocorrectionDisabled()
                         .font(.title3.bold()).multilineTextAlignment(.center).textFieldStyle(.roundedBorder).environment(\.layoutDirection, .leftToRight)
@@ -515,7 +554,7 @@ import SpriteKit
         })
     }
     @ViewBuilder private func tournamentChoices(_ table: Int) -> some View {
-        Text(t("Tournament format", "שיטת הטורניר")).font(.headline)
+        formTitle(t("Tournament format", "שיטת הטורניר"))
         Picker(t("Tournament format", "שיטת הטורניר"), selection: Binding(get: { tournamentFormat }, set: { tournamentFormat = $0; model.preferences.knockoutFormat = $0 == .knockout })) {
             ForEach(MPTournamentFormat.allCases, id: \.self) { Text($0.title(he)).tag($0) }
         }.pickerStyle(.segmented)
@@ -528,7 +567,7 @@ import SpriteKit
                  : t("Any number of players: every round is split into tables of 4 and 3 (a table of 2 only when there is no other way, like 5 = 3 + 2). The players going through play the next round, until one champion is left.", "כל מספר של שחקנים: כל סיבוב מתחלק לשולחנות של 4 ושל 3 (שולחן של 2 רק כשאין ברירה, כמו 5 = 3 + 2). מי שעולים משחקים בסיבוב הבא, עד שנשאר אלוף אחד."))
                 .font(.footnote).multilineTextAlignment(.center)
             if table > 2 {
-                Text(t("Going through from each table", "עולים מכל שולחן")).font(.headline)
+                formTitle(t("Going through from each table", "עולים מכל שולחן"))
                 Picker(t("Going through from each table", "עולים מכל שולחן"), selection: Binding(get: { advance }, set: { advance = $0; model.preferences.advance = $0 })) {
                     Text(t("1 · the winner", "1 · המקום הראשון")).tag(1)
                     Text(t("2 · the top two", "2 · שני המקומות הראשונים")).tag(2)
@@ -539,7 +578,7 @@ import SpriteKit
             Stepper(t("Players", "שחקנים") + ": \(capacity)", value: $capacity, in: 2...8).font(.headline)
             Text(t("Tables of 3 or 4: every two players share at least one table and everyone plays about the same number of tables. Places earn points: 1st 3, 2nd 2, 3rd 1, 4th 0.", "שולחנות של 3 או 4: כל שני שחקנים נפגשים לפחות בשולחן אחד וכולם משחקים כמעט אותו מספר שולחנות. נקודות לפי מקום: ראשון 3, שני 2, שלישי 1, רביעי 0."))
                 .font(.footnote).multilineTextAlignment(.center)
-            Text(t("Play the whole schedule", "משחקים את כל התוכנית")).font(.headline)
+            formTitle(t("Play the whole schedule", "משחקים את כל התוכנית"))
             Picker(t("Play the whole schedule", "משחקים את כל התוכנית"), selection: $legs) { Text(t("Once", "פעם אחת")).tag(1); Text(t("Twice", "פעמיים")).tag(2) }.pickerStyle(.segmented)
             Stepper(t("Standings points per win (pairs)", "נקודות בטבלה לכל ניצחון (זוגות)") + ": \(winPoints)", value: $winPoints, in: 1...5).font(.headline)
         }
@@ -578,24 +617,24 @@ import SpriteKit
             let roomWin = kind == .friendly ? 3 : winPoints
             await model.create(kind, capacity: players, legs: roomLegs, winPoints: roomWin, target: target, format: format,
                                tableSize: table, gameMode: mode, advance: advance)
-            if model.error == nil { section = nil; creatingTournament = false }
+            if model.error == nil { section = nil; creatingTournament = false; creatingFriendly = false }
         }
     }
-    /// Android PlayActivity.history (5c1aa4d): "Saved games (n):" / "Saved tournaments (n):", newest first.
+    /// Android PlayActivity.history: "Saved games (n):" / "Saved tournaments (n):", newest first. 7254ab2: both open on the same
+    /// purple, their entries are white, and an empty list cannot be opened (it shows no + / − either).
     private func roomSection(_ kind: MPSessionKind) -> some View {
-        let key = kind.path, open = expanded.contains(key)
+        let key = kind.path
         let entries = model.rooms.filter { $0.kind == kind }.sorted { $0.createdAt > $1.createdAt }
+        let open = expanded.contains(key) && !entries.isEmpty
         let title = (kind == .friendly ? t("Saved games", "משחקים שמורים") : t("Saved tournaments", "טורנירים שמורים")) + " (\(entries.count)):"
-        let kindFill: Color = kind == .friendly ? Color(red: 216 / 255, green: 244 / 255, blue: 252 / 255) : Color(red: 241 / 255, green: 224 / 255, blue: 251 / 255)
-        let fill: Color = open ? kindFill : Color.clear
+        let fill: Color = open ? Color(red: 241 / 255, green: 224 / 255, blue: 251 / 255) : Color.clear
         return VStack(spacing: open ? gap : 0) {
-            expandHeader(title, open: open, fill: MPXMenu.saved) { toggle(key) }
+            expandHeader(title, open: open, blue: entries.isEmpty, fill: MPXMenu.saved) { if !entries.isEmpty { toggle(key) } }
             if open {
-                if entries.isEmpty { Text(t("Nothing here yet. Start one above!", "עוד אין כאן משחקים. אפשר להתחיל למעלה!")).multilineTextAlignment(.center).padding(12) }
                 ForEach(entries) { s in
                     Button { section = nil; model.enter(s) } label: {
                         Text(roomTitle(s)).font(.headline).frame(maxWidth: .infinity, minHeight: 64)
-                    }.buttonStyle(.plain).background(MPStyle.lilac, in: RoundedRectangle(cornerRadius: 15))
+                    }.buttonStyle(.plain).background(Color.white, in: RoundedRectangle(cornerRadius: 15))
                 }
             }
         }

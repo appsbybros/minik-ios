@@ -235,7 +235,8 @@ final class CrossPractice {
         while left > 1e-9 && !ended {
             let n = min(left, CrossEngine.step)
             left -= n; clock += n
-            if stage.skill == .paint && clock >= 90 {
+            // Android 7254ab2: the open (endless) paint playground has no 90-second limit.
+            if !open && stage.skill == .paint && clock >= 90 {
                 won = humanPaints >= 3 && paint.coverage(0) > paint.coverage(1); ended = true; signal(won ? "win" : "retry")
                 break
             }

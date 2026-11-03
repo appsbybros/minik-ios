@@ -3,7 +3,7 @@
 This document covers the iOS app target `MinikMultiPingPong` (bundle `com.appsbybros.minik.crosspong`, display name
 "Multi Ping Pong"). It is a port of the Android app **Multi Ping Pong** (`C:\Projects\MinikCrossPong`, commit
 `828c6fc094f3afb05d86fea0616704a17976dfaf`, brought up to commit `190871983cb5b72715604d1e48b6dd6bb6c8a22f` by the updates at
-the end of this document, and to commit `5c1aa4dd4caea09de5e5a76f47199d21c4ba86eb` by the 2026-10-13 sync below): table tennis for 3 or 4 players on a cross-shaped table. Android forked that app
+the end of this document, to commit `5c1aa4dd4caea09de5e5a76f47199d21c4ba86eb` by the 2026-10-13 sync below, and to commit `8fdf961` (version 8.0, the 22-issue report) by the 2026-11-03 update at the end): table tennis for 3 or 4 players on a cross-shaped table. Android forked that app
 from **Modern Ping Pong** (`C:\Projects\MinikPingPong`, commit `7f5dd0a844ef8986eacd662f4afbbc34c7e92f56`). The iOS starting
 point was `MultiPong/`, a copy of `Sources/ModernPong` that is compiled only into this target. The port keeps the Modern Ping
 Pong type names (`MPController`, `MPEngine`, `ModernPongView` and so on), so the shared `Sources/**` code still compiles
@@ -976,4 +976,110 @@ committed hash above is unchanged at `e93f86a`.
 43f05a3faeb25c11d7d4821eea8464c7eaa527603f468b80fb8012302686eed5  app/src/main/java/com/appsbybros/minik/pingpong/SettingSelector.kt
 df1f8690e1253bd6846f8c76b32e5e82e7501c370b8395f4c6c8c2861f1b9d40  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/ExpandButton.kt
 ce2064514165207079bfe849053e6dd8d5339c4de2441520027c2170824ef916  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/PlayActivity.kt
+```
+
+## Update 2026-11-03: Android 86e5532, 7254ab2, 8da5c90, d1bf493, 6dc75e4, b244f25, 8fdf961 (version 8.0, the 22-issue report)
+
+Source: `C:\Projects\MinikCrossPong` at `8fdf961` ("Document all 22 Multiplayer Pong fixes…"). The app sources are those of
+`d1bf493`; `6dc75e4`, `b244f25` and `8fdf961` change only device tests, QA evidence, store media and documents. The fixes are
+listed in Android's `docs/qa/issues-20261102/REPORT.md`. `ANDROID_COMMIT` is now `8fdf961`, the catalog was regenerated (it gains
+Android's `issueReview2026` rows) and the audit also compares the new `values*/issue_review.xml` with `MPText.issueTexts`.
+Not built on a Mac yet; the Windows type check passes for `MinikMultiPingPong` and `MultiPongTests` (0 errors, the same 2
+warnings as before).
+
+| Issue | Android | iOS |
+| --- | --- | --- |
+| 1. Hebrew "your ball" | `CrossText.kt`: the local player's out / own-side fault reads "הכדור שלכם…" | `CrossText.swift` |
+| 3. Paddle through the table | `CrossCourt.kt`: the paddle head and handle stay in front of the tabletop | `CrossScene.renderPlayer`: the upper-body clip also holds an ellipse around the racket (1.5 r wide, 2.1 r below) |
+| 4. Point feedback | `CrossScoreFeedback.kt`: pink loss / green gain outline for 1.8 s (220 ms on/off), also at zero, not restarted by a repeated snapshot | `CrossScoreFeedback.swift`; `CrossScene` boards (individual and team) |
+| 5. One-on-one avatar | `ModernCourt.kt`, `NearPlayerProjection.kt`, `PongGait.kt`: the classic table shows the player's full avatar from behind, with the near-side perspective, the table legs and the walking gait; touches use the same projection | `MPScene.swift` (`showsLocalAvatar`, `layoutCourt`, `renderCompactFrame`, `updateLocalPlayer`, `renderLocalPlayer`), `MPFullPlayer.swift` (`MPNearPlayerProjection`, `MPGait`); `MPController.install(_:tutorial:character:)`. The guide keeps the paddle-only court. |
+| 6. Transient start screen | `PlayActivity.kt`: a PLAYING snapshot launches the match before the room is painted | No change: `MPController.receive` sets the session and `maybeStart` switches to the match in the same main-actor turn, so SwiftUI never draws that lobby state |
+| 9, 10, 16, 17 Daily brief | `CrossJourneyActivity.kt`: no "Resume team match" (moved to the team page); Start green, Your journey blue, one yellow endless playground for the current stage ("Practice without a limit" outside serving and paint); a 56 dp stars row | `MPXJourney.swift` |
+| 11, 12, 14 Serving practice | "Serve to the marked court"; "Tap the highlighted court to serve" / "Watch where your serve lands"; no scoreboard or name scores | `MPXJourney.stageTitle`, `refresh`; `CrossScene.showsScores` |
+| 13. Name tags | Light seat colours darkened to 60 % | `CrossScene.tagColor` |
+| 15. Challenge result | "Challenge completed!", pink Back to menu, a bounded scrolling card | `MPXJourney.showResult`, `resultCard` |
+| 16. Endless paint | `CrossPractice.kt`: the open paint playground has no 90-second limit | `CrossPractice.advance`; the HUD drops the clock |
+| 18. Paragraph direction | Daily, help and settings paragraphs start at the reading edge | `MPXJourneyView.text(center:)`, `MPXReceptionSettings.note`, the menu forms |
+| Journey map | No bottom Back; the header arrow returns to the Daily brief | `CrossJourneyModel.back`, `MPXJourneyView.list` |
+| Help card | The stage name as title, only its explanation, "Next" | `CrossJourneyModel.showHelp`, the alert |
+| Settings | Rate pink, Share yellow, Feedback orange; "+ / − Ball assistance" | `MPXJourneyView.settings`, `MPXReceptionSettings` |
+| Orientation tip | `PongOrientationHint.kt`: "You can also play in landscape." at most three times per install, once a run, never after landscape play or while paused | `MPXLandscapeTip`, `MPXLandscapeTipProbe` (`MPXUI.swift`) on the journey, team, room and local cross courts; replaces the old "For a wider view…" toast |
+| Home | Profile header "+ / −"; "New friendly game" and "New tournament" open setup pages (open-game limit first); tournament page has join-by-code and no Cancel; Saved games and tournaments both purple, white entries, an empty list cannot open | `ModernPongView` (`openSetup`, `friendlyOptions`, `tournamentOptions`, `tournamentJoin`, `roomSection`), `MPController.openLimitReached` |
+| 20, 22. Nickname editor | 76 × 56 blue arrow buttons with 16 dp margins, start-aligned explanation, 24 dp above Save and 16 dp below | `ModernPongView.profileEditor` |
+| Forms | Selector titles bold 18 at the start edge; only the selected control level is explained; "Points to win" remembered per kind; green Create | `ModernPongView.formTitle`, `controlHint`, `targetBinding` |
+| Tournament Back | Ordinary Back keeps an unfinished tournament without a question | `MPController.back` (`.lobby`) calls `saveForLater()`; the old Save / Don't save dialog is no longer raised |
+
+### Not ported, and why
+
+- **2, 7, 21. Dropdown selection rows and raised-button lettering** (`SettingSelector.kt`, `PongButton.kt`, `PongTextInk.kt`,
+  `PongRaisedLabel.kt`, `FamilyButtonAlignment.useFullRaisedFace`): Android text-measurement fixes for its own views. iOS uses
+  native pickers and SwiftUI buttons, which centre their text already.
+- **8. Parents / Remove ads link**: Multi Ping Pong on iOS sells nothing and has no such link.
+- **19. Back arrow and title contrast** (`ic_back_bold.xml`, `PongHudText.kt`): the iOS headers draw on a dark bar (or, on the
+  home, a navy shadow), not over the bright scene.
+- **BotPicker, GuideDialog, MonetizationActivity, MatchResultDialog, HousePlayerPicker** restyling: Android dialogs with no iOS
+  counterpart (iOS uses sheets and alerts).
+- **Classic match screen layout** (`MatchSceneLayout` with the outlined score in the landscape dock): the iOS classic screen keeps
+  its score row above the court.
+- `faceOffset` of Minik's body in landscape (`ModernCourt.drawMinik`): iOS never applied this registration offset; with the wider
+  landscape table it is a few points. Not added.
+- Device-test and QA harness changes (`IssueReportDeviceTest.kt`, `qaFont`, `qaCapture`), the version bump (8.0, code 8), store
+  media and documents.
+
+### Tests
+
+`Tests/MultiPongTests/IssueReportTests.swift`: Android `IssueReportTest` (zero-score flash, no restart on a repeated outcome,
+gain/loss outlines, the Hebrew possessive, the endless paint playground past 90 s and its save/restore), plus the competitive
+paint limit, the orientation tip budget (three shows; skipped or landscape runs do not use it), the near-player projection's
+inverse, the gait cadence and the new texts' languages.
+
+### SHA-256 of the Android files used at 8fdf961
+
+`git show 8fdf961:<path> | sha256sum`. Every other committed hash above is unchanged at `8fdf961`.
+
+```text
+ce7257bfe5abd1683b4d2d37a97763dcb15c635281cf235140d587f5fd1dccd2  BUILD_STATUS.md
+32bf927967ce31ca1bb01b39688ff0f0c446a4bb6491eb608d33d5a0c28bddaa  app/build.gradle.kts
+2987d96115761bbe02b04e5934f9d9befe2b601cdc37cafba46c0e0d42d09828  app/src/main/AndroidManifest.xml
+840c7815f08e44ebe918580627ade53357f5a1c6480e0db66d94943ab8820d19  app/src/main/java/com/appsbybros/minik/localization/AppText.kt
+2bb1c139efc414807decf1c5ae385a2a64401dd4cf1468b691e4b055ce7faced  app/src/main/java/com/appsbybros/minik/monetization/MonetizationActivity.java
+fe46717c5d22a88c82edeeed5d28d4c0e1d91aafed1401248b2917e4c39d3ec1  app/src/main/java/com/appsbybros/minik/pingpong/BotPicker.kt
+22556e581bcdca91a3644193ea89aa96299ef0e1d951342e8732b599c60b1a40  app/src/main/java/com/appsbybros/minik/pingpong/GuideDialog.kt
+b196fdc7db06e4fb85f2b9ad85e9b26eb85adce416c1b5e8a176a55d8ece9046  app/src/main/java/com/appsbybros/minik/pingpong/HousePlayerPicker.kt
+89d3871cdbfb0afd9fe92465320bdf2ebf11da954401962f675e103ba1d7ea3b  app/src/main/java/com/appsbybros/minik/pingpong/LocalizedActivity.kt
+14c4c832e6edafabb710316c791fc63445c33b8cc5dcd1aa7353acbb3b15036e  app/src/main/java/com/appsbybros/minik/pingpong/MatchResultDialog.kt
+150f3d11d8122612efca1561dda43f01ba6d1c7c3f967673c4b249a8e74ab4c2  app/src/main/java/com/appsbybros/minik/pingpong/MatchSceneLayout.kt
+1a1e97f706882490934002da08d36da9efb659a5b61dde765754837963919db1  app/src/main/java/com/appsbybros/minik/pingpong/ModernActivity.kt
+96ab08aa49719e332088a5ec5ef2aedfe95756b185bc211641c3b80d879e6069  app/src/main/java/com/appsbybros/minik/pingpong/ModernCourt.kt
+5f51c2e307c9bce4c57faadad6eb0fafb1be00b5e0e69c5e680be67cf6f3846b  app/src/main/java/com/appsbybros/minik/pingpong/ReceptionCamera.kt
+9f0549fe0854bff0297663015321ceb5672ecc2b64e26a0919be62dfd39d9e90  app/src/main/java/com/appsbybros/minik/pingpong/SettingSelector.kt
+12c102cc6ec8abd29a5a687c81b0faf0a94eb22c19976c53f228277430b8b358  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossActivity.kt
+753c10b18e2fb7876e696d80221e1142ddfc66c4de1fceff9d36ea502ea6b6b1  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossCourt.kt
+f31e413883783e3fff78012dfbab3475e131e8177aa8ecf7324f08d1d7390c84  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossJourneyActivity.kt
+727129e16fab12f086afc7472aafbe4e713aea7137afe52ed2700cce46cd704c  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossOnlineTeamsActivity.kt
+284192c75b57eb83608acbd916a101773b08641e9b9f4eed8d5043f11d035f2e  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossPractice.kt
+2787738150b396d2ce008d3dfa0e66e4afbf0d8b7f5069c5dc6ce17b4e43a346  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossText.kt
+10eec2827a840362c77616236242950d231ddd1085fab42b61dd72d50af75956  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/ExpandButton.kt
+dfa7057662cb7fb50306ae191ac04117aabb0ac445570cdb34acd779caaef24d  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/PlayActivity.kt
+3b10b283020a182364111a0e0ae77db7f4a4c4080905a425c08b288a7a4dfcbc  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/PrivateMatchActivity.kt
+2a165debca01275772eddcad18929c74eb8b8bc9374095c35cc70768299673c7  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossScoreFeedback.kt
+9273a4f4bf4458fa34253b6105bb4d0c9b3302cfdc0631d391e76831fba10850  app/src/main/java/com/appsbybros/minik/pingpong/NearPlayerProjection.kt
+e4e2f067fc3f585d1240093340762fd92c96ead362bb5b6038a41560d96f6ae7  app/src/main/java/com/appsbybros/minik/pingpong/PongGait.kt
+19dd1dd259ec3b1a1f6e00341fc39ab72ddc1e6abe7a4055c0d560944c102671  app/src/main/java/com/appsbybros/minik/pingpong/PongOrientationHint.kt
+9b1520e2c7abf2c69c45e9cbb6b08e70959b16c8bd5c7916dfa5617eff9e7ebf  app/src/test/java/com/appsbybros/minik/pingpong/cross/IssueReportTest.kt
+```
+
+### SHA-256 of the Android working-tree files used (2026-11-03)
+
+The catalog source and the new `issue_review.xml` files, as they are on disk (`sha256sum <path>`). The `strings.xml` and
+`journey.xml` hashes of 2026-10-13 are unchanged.
+
+```text
+d38018381ffeec76e06c16b5c3a9e4a59bfa386924b9b6366433e14a55721d51  app/src/main/java/com/appsbybros/minik/localization/AppText.kt
+4a638118261bdfd5d8297062aac916125730612a144293f6cc7db99e7ae392e4  app/src/main/res/values/issue_review.xml
+59fa03cf76911ae2a5a5a2cf3136c512e6adbe2c85e7b6acf7034cdaf285b3b6  app/src/main/res/values-iw/issue_review.xml
+30d9ca81ad72caf3cd983cb652f324ea4ed3322d1e30b02d2b2430d49e4809b1  app/src/main/res/values-ar/issue_review.xml
+e3dae11fcba9c940fdf243cd4f00a95b8f8aa70d23a1c8ee9839aa1c088eab44  app/src/main/res/values-es/issue_review.xml
+45dbf4aab25f386a90461000d98b1449b6dde29eb8067bcaedebd9ef688cd760  app/src/main/res/values-hi/issue_review.xml
+79a7d51910a2ab0574291d3515d1b52060ba2c5505832372e4db9503c58d38f0  app/src/main/res/values-nl/issue_review.xml
 ```

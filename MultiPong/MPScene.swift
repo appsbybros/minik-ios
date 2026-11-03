@@ -25,6 +25,23 @@ final class MPScene: SKScene {
     private let ballNode = SKShapeNode(circleOfRadius: 1), shadowNode = SKShapeNode(ellipseOf: CGSize(width: 2, height: 1))
     private let bounceNode = SKShapeNode(), guideNode = SKShapeNode(), iconNode = SKLabelNode()
     private var textures: [String: SKTexture] = [:]
+    /// Android 7254ab2 `localCharacterId`: the player's own avatar, drawn whole from behind in a classic one-on-one match.
+    var localCharacterId = "miniko" { didSet { if localCharacterId != oldValue { playerFoot = nil; render() } } }
+    /// Android `tutorial != null`: the guide keeps the paddle-only court.
+    var tutorial = false { didSet { if tutorial != oldValue { layoutCourt() } } }
+    private let atlas = MPXPoseAtlas.shared
+    private var selectedLocalCharacter: String { MPRoster.find(localCharacterId)?.id ?? "miniko" }
+    /// Android `showsLocalAvatar` (needs the bundled pose art).
+    var showsLocalAvatar: Bool { !tutorial && atlas.has(selectedLocalCharacter) }
+    /// The table's horizontal scale: wider than `worldScale` in landscape, where the projected table grows, not the players.
+    private var horizontalScale = 1.0
+    private var playerHeight = 0.0
+    /// The avatar's foot in view coordinates (y down), eased toward the paddle.
+    private var playerFoot: CGPoint?
+    private var playerMirror = false, playerStrokeId = -1, observedContact = -1, contactAge = 10.0
+    private let gait = MPGait()
+    private let playerNode = SKSpriteNode(), playerShadow = SKShapeNode(), compactFrame = SKSpriteNode()
+    private(set) var localPlayerGeometry: MPXPoseAtlas.Geometry?
     init(engine: MPEngine) {
         self.engine = engine
         super.init(size: CGSize(width: 430, height: 760))
@@ -39,12 +56,15 @@ final class MPScene: SKScene {
         bounceNode.fillColor = .clear; bounceNode.strokeColor = .white; bounceNode.lineWidth = 2
         guideNode.fillColor = .clear; guideNode.strokeColor = .yellow; guideNode.lineWidth = 4
         iconNode.fontSize = 38
+        compactFrame.anchorPoint = CGPoint(x: 0, y: 1); compactFrame.zPosition = 0.5; compactFrame.isHidden = true
+        playerShadow.fillColor = UIColor(red: 7 / 255, green: 28 / 255, blue: 39 / 255, alpha: 85 / 255); playerShadow.strokeColor = .clear
+        playerShadow.zPosition = 3.5; playerShadow.isHidden = true; playerNode.zPosition = 4; playerNode.isHidden = true
         actorCrop.maskNode = actorMask; actorCrop.addChild(recoveryNode); actorCrop.addChild(actorNode); actorCrop.zPosition = 1
         recoveryNode.zPosition = 0.9; recoveryNode.isHidden = true
         bodyCrop.maskNode = bodyMask; bodyCrop.addChild(bodyNode); bodyCrop.zPosition = 0.8
         frontCrop.maskNode = frontMask; frontCrop.addChild(armCrop); armCrop.maskNode = armMask; armCrop.addChild(armNode); frontCrop.zPosition = 1.2
         [actorMask, bodyMask, frontMask, armMask].forEach { $0.fillColor = .white; $0.strokeColor = .clear; $0.lineWidth = 0 }
-        let nodes: [SKNode] = [backdropNode, floorNode, bodyCrop, actorCrop, frontCrop, bounceNode, shadowNode, paddleNode, ballNode, guideNode, iconNode]
+        let nodes: [SKNode] = [backdropNode, floorNode, compactFrame, bodyCrop, actorCrop, frontCrop, bounceNode, shadowNode, playerShadow, playerNode, paddleNode, ballNode, guideNode, iconNode]
         nodes.forEach(addChild)
         // Android ReceptionCamera: a camera that zooms toward the receiving paddle and the ball; touches map back through it.
         addChild(cameraNode); camera = cameraNode
@@ -61,9 +81,23 @@ final class MPScene: SKScene {
         let frozen = (name.hasPrefix("minik_left_") || name.hasPrefix("minik_motion_")) && name != "minik_motion_body"
         let value = SKTexture(imageNamed: (frozen ? "mpx_" : "mp_") + name); value.filteringMode = .linear; textures[name] = value; return value
     }
+    /// Android 7254ab2 `ModernCourt.onSizeChanged`: the ordinary Pong full-avatar framing. Both feet and the table legs get real
+    /// floor space; changing the view never changes match physics. The guide keeps the paddle-only framing.
     private func layoutCourt() {
-        let scale = min((Double(size.width) - 16) / MPProjection.tableWidth, (Double(size.height) - 32) / (340 + 1437))
-        worldScale = max(scale, 0.01)
+        let w = Double(size.width), h = Double(size.height)
+        guard w > 1, h > 1 else { return }
+        let top: Double
+        if showsLocalAvatar {
+            let fitted = min((h - 24) / 2180, (w - 16) / 1120)
+            worldScale = max(0.01, fitted * (w > h ? 1.08 : 1))
+            horizontalScale = w > h ? min(worldScale * 1.85, (w - 32) / 941) : worldScale
+            top = max(254 * worldScale, h - 24 - 1827 * worldScale)
+        } else {
+            worldScale = max(0.01, min((h - 24) / 1793, (w - 16) / MPProjection.tableWidth))
+            horizontalScale = worldScale
+            top = h - 24 - 1437 * worldScale
+        }
+        playerHeight = 550 * worldScale; playerFoot = nil
         // Cover the whole scene, top aligned, keeping the art's proportions (Android SunsetTerrace).
         let landscape = size.width > size.height
         let art = landscape ? (width: 1794.0, height: 877.0) : (width: 941.0, height: 1672.0)
@@ -72,18 +106,99 @@ final class MPScene: SKScene {
         backdropNode.size = CGSize(width: art.width * cover, height: art.height * cover)
         backdropNode.position = CGPoint(x: Double(size.width) / 2, y: Double(size.height) - art.height * cover / 2)
         placeCamera()
-        arenaOrigin = CGPoint(x: (Double(size.width) - 941 * worldScale) / 2, y: 1437 * worldScale + 24)
-        floorNode.position = arenaOrigin; floorNode.size = CGSize(width: 941 * worldScale, height: 1672 * worldScale)
+        arenaOrigin = CGPoint(x: (w - 941 * horizontalScale) / 2, y: h - top)
+        floorNode.position = arenaOrigin; floorNode.size = CGSize(width: 941 * horizontalScale, height: 1672 * worldScale)
+        renderCompactFrame()
         render()
     }
+    /// A table point at a height, in scene coordinates (y up). The full avatar uses the near-side perspective.
     private func screen(_ p: MPPoint, height: Double = 0) -> CGPoint {
-        let image = MPProjection.ball(p, height)
-        return CGPoint(x: arenaOrigin.x + image.x * worldScale, y: arenaOrigin.y - image.y * worldScale)
+        let ground = showsLocalAvatar ? MPNearPlayerProjection.imageY(p.y) : MPProjection.imageY(p.y)
+        let y = ground - max(0, height) * (MPProjection.bottom - MPProjection.top) * 0.075
+        return CGPoint(x: arenaOrigin.x + (MPProjection.left + p.x * MPProjection.tableWidth) * horizontalScale, y: arenaOrigin.y - y * worldScale)
     }
     private func table(_ point: CGPoint) -> MPPoint {
         let h = engine.level.pro ? max(engine.flight?.height ?? 0, 0) : 0
-        return .init((point.x - arenaOrigin.x - MPProjection.left * worldScale) / (MPProjection.tableWidth * worldScale),
-            MPProjection.tableY((arenaOrigin.y - point.y) / worldScale + h * (MPProjection.bottom - MPProjection.top) * 0.075))
+        let image = (arenaOrigin.y - point.y) / worldScale + h * (MPProjection.bottom - MPProjection.top) * 0.075
+        return .init((point.x - arenaOrigin.x - MPProjection.left * horizontalScale) / (MPProjection.tableWidth * horizontalScale),
+                     showsLocalAvatar ? MPNearPlayerProjection.tableY(image) : MPProjection.tableY(image))
+    }
+    /// View coordinates (y down) ↔ scene coordinates (y up).
+    private func flip(_ p: CGPoint) -> CGPoint { CGPoint(x: p.x, y: size.height - p.y) }
+    /// Android `nearFloorY`: the floor 190 source pixels below the near table edge, in view coordinates.
+    private var nearFloorY: CGFloat { flip(screen(MPPoint(0, 1))).y + 190 * worldScale }
+    /// Android `drawCompactFrame`: the legs, the floor shadow and the near rail of the table under the full avatar.
+    private func renderCompactFrame() {
+        guard showsLocalAvatar else { compactFrame.isHidden = true; return }
+        let scale = worldScale, drop = 190 * scale
+        let tableTop = Double(size.height) - Double(arenaOrigin.y) + 186 * scale
+        let table = CGRect(x: Double(arenaOrigin.x) + 93 * horizontalScale, y: tableTop, width: 754 * horizontalScale, height: 1251 * scale)
+        let w = table.width * 0.027
+        let bounds = CGRect(x: table.minX - table.width * 0.05, y: table.maxY - 20 * scale, width: table.width * 1.1, height: 20 * scale + drop * 1.3 + 24 * scale)
+        guard bounds.width > 1, bounds.height > 1 else { compactFrame.isHidden = true; return }
+        func color(_ argb: UInt32) -> CGColor {
+            UIColor(red: CGFloat((argb >> 16) & 0xff) / 255, green: CGFloat((argb >> 8) & 0xff) / 255, blue: CGFloat(argb & 0xff) / 255,
+                    alpha: CGFloat((argb >> 24) & 0xff) / 255).cgColor
+        }
+        let image = UIGraphicsImageRenderer(size: bounds.size).image { context in
+            let c = context.cgContext; c.translateBy(x: -bounds.minX, y: -bounds.minY)
+            c.setFillColor(color(0x35091e28))
+            c.fillEllipse(in: CGRect(x: table.minX - table.width * 0.04, y: table.maxY + drop * 0.55, width: table.width * 1.08, height: drop * 0.73))
+            for x in [table.minX + w * 2, table.maxX - w * 2] {
+                let leg = CGPath(roundedRect: CGRect(x: x - w, y: table.maxY - 20 * scale, width: 2 * w, height: drop + 20 * scale), cornerWidth: w * 0.4, cornerHeight: w * 0.4, transform: nil)
+                c.saveGState(); c.addPath(leg); c.clip()
+                let colors = [color(0xff1c4050), color(0xff8fb7bd), color(0xff20485a)] as CFArray
+                if let g = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: nil) {
+                    c.drawLinearGradient(g, start: CGPoint(x: x - w, y: 0), end: CGPoint(x: x + w, y: 0), options: [])
+                }
+                c.restoreGState()
+                c.setFillColor(color(0xff142e3c))
+                c.fillEllipse(in: CGRect(x: x - w * 1.6, y: table.maxY + drop - w * 0.4, width: w * 3.2, height: w * 0.8))
+            }
+            c.setFillColor(color(0xff193e50))
+            c.addPath(CGPath(roundedRect: CGRect(x: table.minX + w, y: table.maxY - 15 * scale, width: table.width - 2 * w, height: 39 * scale), cornerWidth: 12 * scale, cornerHeight: 12 * scale, transform: nil)); c.fillPath()
+        }
+        compactFrame.isHidden = false; compactFrame.texture = SKTexture(image: image); compactFrame.size = bounds.size; compactFrame.position = flip(bounds.origin)
+    }
+    // ---- the full avatar (Android 7254ab2 ModernCourt.updateLocalPlayer / drawLocalPlayer) -------------------------------------
+    private func targetFoot() -> CGPoint {
+        let s = engine.childStroke
+        let (p, z) = s.active ? (s.point, s.height) : (engine.paddle ?? engine.restingPaddle, engine.restingHeight)
+        let racket = atlas.geometry(selectedLocalCharacter, .rear, mirror: playerMirror, foot: .zero, height: playerHeight, phase: 2)?.racket ?? .zero
+        // Finger/paddle depth is not permission to step through the end of the table: idle movement, empty swings and
+        // contact snaps alike.
+        let at = flip(screen(p, height: z))
+        return CGPoint(x: at.x - racket.x, y: max(nearFloorY, at.y - racket.y))
+    }
+    private func updateLocalPlayer(_ dt: Double) {
+        guard playerHeight > 0 else { return }
+        let stroke = engine.childStroke
+        // Choose a side at the start of a stroke, never alternate poses as the ball crosses the middle.
+        if stroke.id != playerStrokeId { playerStrokeId = stroke.id; playerMirror = stroke.point.x < 0.38 }
+        contactAge += dt
+        if stroke.contacted && observedContact != stroke.id { observedContact = stroke.id; contactAge = 0 }
+        let target = targetFoot()
+        guard let previous = playerFoot else { playerFoot = target; return }
+        let factor = CGFloat(1 - exp(-dt / (stroke.active ? 0.018 : 0.075)))
+        let x = previous.x + (target.x - previous.x) * factor, y = previous.y + (target.y - previous.y) * factor
+        gait.update(dt, travel: Double(hypot(x - previous.x, y - previous.y)) / max(1, playerHeight), stroke: stroke.active)
+        playerFoot = CGPoint(x: x, y: y)
+    }
+    private func renderLocalPlayer() {
+        guard showsLocalAvatar else { playerNode.isHidden = true; playerShadow.isHidden = true; localPlayerGeometry = nil; return }
+        if playerFoot == nil { updateLocalPlayer(0) }
+        guard var foot = playerFoot else { return }
+        let s = engine.childStroke
+        let phase = !s.active ? 0 : !s.contacted ? (selectedLocalCharacter == "minik" ? 0 : 1) : contactAge < 0.085 ? 2 : contactAge < 0.27 ? 3 : 0
+        // At impact the engine's actual contact is authoritative; later frames keep the same floor anchor.
+        if s.active && s.contacted && contactAge < 0.04 { foot = targetFoot(); playerFoot = foot }
+        playerShadow.isHidden = false; playerShadow.position = flip(foot)
+        playerShadow.path = CGPath(ellipseIn: CGRect(x: -playerHeight * 0.24, y: -playerHeight * 0.035, width: playerHeight * 0.48, height: playerHeight * 0.06), transform: nil)
+        let walkingNow = gait.walking && !s.active
+        let walk = selectedLocalCharacter + "-walk"
+        let id = walkingNow && atlas.has(walk) ? walk : selectedLocalCharacter
+        localPlayerGeometry = atlas.place(playerNode, id, .rear, mirror: playerMirror, foot: foot, height: playerHeight,
+                                          phase: walkingNow ? gait.phase : phase, sk: { [unowned self] in self.flip($0) })
     }
     override func update(_ currentTime: TimeInterval) {
         let cameraElapsed = previousTime == 0 ? 0 : min(0.1, max(0, currentTime - previousTime))
@@ -91,6 +206,7 @@ final class MPScene: SKScene {
         if !engine.networked { engine.reception.enabled = true; engine.reception.slow[0] = preferences.receptionSlow }
         accumulator += elapsed
         while accumulator >= 1.0 / 120 { engine.advance(1.0 / 120); accumulator -= 1.0 / 120 }
+        if showsLocalAvatar { updateLocalPlayer(elapsed) }
         // The focus between the receiving paddle and the ball, in view coordinates (y down).
         // Android ModernCourt: the other side's receiver is focused at Minik's serve point (ActorPresentation.servePoint).
         let at = engine.reception.receiver == 1 ? MPPoint(0.5, 0.13) : (engine.paddle ?? engine.restingPaddle)
@@ -112,13 +228,13 @@ final class MPScene: SKScene {
     }
     private func render() {
         let p = engine.renderedBall, height = max(0, engine.flight?.height ?? 0.055)
-        let radius = MPProjection.tableWidth * worldScale * 0.017 * (1 + min(height, 0.4) * 0.55)
+        let radius = MPProjection.tableWidth * horizontalScale * 0.017 * (1 + min(height, 0.4) * 0.55)
         ballNode.position = screen(p, height: height); ballNode.setScale(radius)
         shadowNode.position = screen(p); shadowNode.xScale = radius * (0.85 + min(height / 0.5, 1) * 0.6); shadowNode.yScale = radius * 0.6
         shadowNode.alpha = 0.3 - min(height / 0.5, 1) * 0.18
         if let bounce = engine.bouncePoint, engine.bounceAge < 0.38 {
             bounceNode.isHidden = false; bounceNode.position = screen(bounce)
-            let r = MPProjection.tableWidth * worldScale * (0.035 + engine.bounceAge * 0.10)
+            let r = MPProjection.tableWidth * horizontalScale * (0.035 + engine.bounceAge * 0.10)
             bounceNode.path = CGPath(ellipseIn: CGRect(x: -r, y: -r / 2, width: 2 * r, height: r), transform: nil)
             bounceNode.alpha = 1 - engine.bounceAge / 0.38
         } else { bounceNode.isHidden = true }
@@ -142,7 +258,9 @@ final class MPScene: SKScene {
         paddleNode.size = CGSize(width: imageSize.width * factor, height: imageSize.height * factor)
         paddleNode.anchorPoint = CGPoint(x: levelName == "starter" ? 0.5 : left ? 0.28 : 0.76, y: 0.72)
         paddleNode.position = screen(position, height: atContact ? stroke.height : engine.paddle != nil && engine.level.pro ? height : engine.restingHeight)
-        paddleNode.isHidden = !(position.strikeZone || stroke.active)
+        // Android 7254ab2: the full avatar holds the paddle; the bare paddle is the guide's.
+        paddleNode.isHidden = showsLocalAvatar || !(position.strikeZone || stroke.active)
+        renderLocalPlayer()
         // Aiming a serve does not move the racket to the selected remote target.
         // Android rotates clockwise by (tilt + swing angle) degrees; SpriteKit's zRotation is counter-clockwise.
         paddleNode.zRotation = -(engine.paddleTilt + stroke.angle) * .pi / 180
@@ -180,7 +298,7 @@ final class MPScene: SKScene {
             let face = MPArt.face(character, left: facingLeft)
             let contactPoint = screen(stroke.point, height: stroke.height)
             let contactX = contactPoint.x - face.x * imageWidth, contactY = contactPoint.y + face.y * imageHeight
-            let restX = arenaOrigin.x + motion.body.x * worldScale - imageWidth * 0.5
+            let restX = arenaOrigin.x + motion.body.x * horizontalScale - imageWidth * 0.5
             let restY = min(Double(size.height) - 8, max(screen(.init(0, 0)).y + imageHeight * 0.72, arenaOrigin.y - motion.body.y * worldScale + imageHeight * 0.65))
             let blend = !stroke.active ? 0 : stroke.age <= 0.27 ? (stroke.age / 0.20).mpClamp(0, 1) : ((stroke.total - stroke.age) / (stroke.total - 0.27)).mpClamp(0, 1)
             let lean = blend * blend * (3 - 2 * blend)
@@ -202,7 +320,7 @@ final class MPScene: SKScene {
             }
         } else {
             let names = ["ready", "ready", "windup", "accelerate", "contact", "follow"]
-            let bodyPosition = CGPoint(x: arenaOrigin.x + motion.body.x * worldScale, y: arenaOrigin.y - motion.body.y * worldScale)
+            let bodyPosition = CGPoint(x: arenaOrigin.x + motion.body.x * horizontalScale, y: arenaOrigin.y - motion.body.y * worldScale)
             func pose(_ node: SKSpriteNode, _ index: Int, alpha: Double) {
                 node.texture = texture((facingLeft ? "minik_left_" : "minik_motion_") + names[index])
                 let registration: (Double, Double, Double)

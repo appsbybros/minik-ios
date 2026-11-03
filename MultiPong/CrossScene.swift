@@ -143,13 +143,13 @@ final class CrossScene: SKScene {
     var onFrame: (() -> Void)?
     var tutorialTarget: Int?
     /// The daily practice whose targets, marks and paint are drawn on the table.
-    var practice: CrossPractice?
+    var practice: CrossPractice? { didSet { if (oldValue?.stage.skill == .serve) != (practice?.stage.skill == .serve) { layoutCourt() } } }
     var acceptsInput = true
     var names: [String] = []
     /// Kept for the room screens; remote players without a character are shown by their name tag only (5c1aa4d).
     var avatarIcons: [Int: String] = [:]
     /// The landscape action camera (Android `fullScreen`); portrait always fits the table and every body.
-    var fullScreen = true { didSet { if oldValue != fullScreen { layoutCourt() } } }
+    var fullScreen = true { didSet { if oldValue != fullScreen { scoreFeedback.clear(); layoutCourt() } } }
     /// Reception assistance and sound settings (Android `reception_assistance`, `cross_skill_journey/sound`).
     var preferences = MPPreferences()
     /// Team and practice screens: every engine event plays its cue while the court runs (Android CrossCourt.soundEffects).
@@ -196,7 +196,10 @@ final class CrossScene: SKScene {
     private static let font = "HelveticaNeue-Bold"
     private var width: Double { Double(size.width) }
     private var height: Double { Double(size.height) }
-    private var scoreboardHeight: Double { width > height ? 48 : 66 }
+    /// Android 7254ab2: serving practice shows neither the match scoreboard nor the score beside each name.
+    private var showsScores: Bool { practice?.stage.skill != .serve }
+    private var scoreboardHeight: Double { !showsScores ? 0 : (width > height ? 48 : 66) }
+    private let scoreFeedback = CrossScoreFeedback()
     private var actionView: Bool { fullScreen && width > height }
 
     init(engine: CrossEngine) {
@@ -330,6 +333,7 @@ final class CrossScene: SKScene {
             boards[s] = CrossBoardNodes(parent: hud, font: CrossScene.font)
         }
         notes = [:]; walkDistance = [:]; lastLateral = [:]; lastStep = [:]; walkFrame = [:]; walkFrameAt = [:]
+        scoreFeedback.clear()
         bindSounds(force: false)
         layoutCourt()
     }
@@ -550,7 +554,10 @@ final class CrossScene: SKScene {
         renderBall()
         renderPaddle()
         renderTags()
-        renderScoreboard()
+        if showsScores {
+            if let last = engine.referee.lastOutcome { scoreFeedback.record(last, now: CACurrentMediaTime()) }
+            renderScoreboard()
+        } else { boards.values.forEach { $0.hide() } }
     }
     /// Android drawPractice: paint cells, landed marks, the shape outline and its numbered circles, the golden targets.
     private var practiceSignature = ""
@@ -674,8 +681,13 @@ final class CrossScene: SKScene {
         // At the raised tabletop the intact upper body is in front of the surface; lower body and shoes stay behind it.
         if facing != .rear, let rendered {
             let line = Double(foot.y) - actorHeight * 0.48
-            let above = CGRect(x: Double(rendered.bounds.minX), y: height - line, width: Double(rendered.bounds.width), height: max(0, line - Double(rendered.bounds.minY)))
-            nodes.showUpper(tablePath.intersection(CGPath(rect: above, transform: nil)))
+            let above = CGMutablePath()
+            above.addRect(CGRect(x: Double(rendered.bounds.minX), y: height - line, width: Double(rendered.bounds.width), height: max(0, line - Double(rendered.bounds.minY))))
+            // Android 7254ab2: the paddle is in front of the table even when its authored pose is lower than the torso cutoff.
+            // Its complete head and handle are restored; the lower body and feet stay behind the tabletop.
+            let r = rendered.radius, c = rendered.racket
+            above.addEllipse(in: CGRect(x: Double(c.x) - r * 1.5, y: height - (Double(c.y) + r * 2.1), width: r * 3, height: r * 3.6))
+            nodes.showUpper(tablePath.intersection(above))
             atlas.place(nodes.upper, artId, facing, mirror: mirror, foot: foot, height: actorHeight, phase: phase, sk: skPoint)
         }
     }
@@ -755,6 +767,13 @@ final class CrossScene: SKScene {
         let degrees = UIAccessibility.isReduceMotionEnabled ? 0 : engine.paddleTilt + stroke.angle
         paddleNode.zRotation = CGFloat(-degrees * Double.pi / 180)
     }
+    /// Android 7254ab2: light seat colours (Gaya's yellow and green) are darkened to 60 % so the white names stay readable.
+    private func tagColor(_ seat: Int) -> UIColor {
+        let c = CrossScene.seatColors[colorIndex(seat) % CrossScene.seatColors.count]
+        let f = CrossScoreFeedback.luminance(c) > 0.20 ? 0.60 : 1.0
+        return UIColor(red: CGFloat((c.0 * f).rounded(.down) / 255), green: CGFloat((c.1 * f).rounded(.down) / 255),
+                       blue: CGFloat((c.2 * f).rounded(.down) / 255), alpha: 245 / 255)
+    }
     private func seatColor(_ seat: Int, alpha: Double) -> UIColor {
         let c = CrossScene.seatColors[colorIndex(seat) % CrossScene.seatColors.count]
         return UIColor(red: CGFloat(c.0 / 255), green: CGFloat(c.1 / 255), blue: CGFloat(c.2 / 255), alpha: CGFloat(alpha / 255))
@@ -782,7 +801,7 @@ final class CrossScene: SKScene {
                 at = painted(unpanned(g.fromLocal(s, lateral, CrossGeometry.reach + CrossScene.stand)))
             }
             let serving = ref.server == s && ref.phase == .awaitingServe
-            let label = (serving ? "🏓 " : "") + (s < names.count ? names[s] : "") + (engine.teams == nil ? "  " + String(ref.score(s)) : "")
+            let label = (serving ? "🏓 " : "") + (s < names.count ? names[s] : "") + (showsScores && engine.teams == nil ? "  " + String(ref.score(s)) : "")
             tag.label.text = label
             tag.label.fontSize = 13.5
             let boxWidth = Double(tag.label.frame.width) + 16
@@ -794,7 +813,7 @@ final class CrossScene: SKScene {
             let y = Double(badge.y).mpClamp(minimumY, max(minimumY, height - 12))
             let box = CGRect(x: x - boxWidth / 2, y: height - (y + 6), width: boxWidth, height: 21)
             tag.box.path = CrossScene.rounded(box, 10)
-            tag.box.fillColor = seatColor(s, alpha: 245)
+            tag.box.fillColor = tagColor(s)
             let highlight = (tutorialTarget ?? engine.predictedReceiver) == s
             tag.outline.isHidden = !highlight
             tag.outline.path = tag.box.path
@@ -805,7 +824,7 @@ final class CrossScene: SKScene {
                 tag.aim.position = CGPoint(x: x, y: height - (y - 20))
                 tag.aim.alpha = CGFloat((170 + 85 * sin(now * 1000 / 160)).mpClamp(0, 255) / 255)
             } else { tag.aim.isHidden = true }
-            if let note = notes[s] {
+            if showsScores, let note = notes[s] {
                 let age = (now - note.at) / 1.6
                 if age >= 1 { notes[s] = nil; tag.note.isHidden = true }
                 else {
@@ -836,6 +855,7 @@ final class CrossScene: SKScene {
             board.box.fillColor = UIColor(red: CGFloat((c.0 / 2 + 15) / 255), green: CGFloat((c.1 / 2 + 15) / 255), blue: CGFloat((c.2 / 2 + 25) / 255), alpha: 225 / 255)
             board.outline.isHidden = !(ref.winner == s || (tutorialTarget ?? engine.predictedReceiver) == s)
             board.outline.path = board.box.path
+            board.showFlash(scoreFeedback.color(s, now: CACurrentMediaTime()))
             let name = s < names.count ? names[s] : ""
             let shown = name.count > 10 ? String(name.prefix(9)) + "…" : name
             board.name.text = (ref.server == s ? "🏓 " : "") + shown
@@ -857,10 +877,12 @@ final class CrossScene: SKScene {
             let index = ids.firstIndex(of: teams.seats[min(s, teams.seats.count - 1)]) ?? 0
             let members = g.seats.filter { teams.seats[$0] == ids[index] }
             // One box per team, drawn by its first seat.
-            guard members.first == s else { board.box.isHidden = true; board.outline.isHidden = true; board.name.isHidden = true; board.score.isHidden = true; continue }
+            guard members.first == s else { board.hide(); continue }
             board.box.isHidden = false; board.name.isHidden = false; board.score.isHidden = false; board.outline.isHidden = true
             let x = gap + Double(index) * (w + gap), y = 6.0
             board.box.path = CrossScene.rounded(CGRect(x: x, y: height - (y + h), width: max(1, w), height: h), 12)
+            let now = CACurrentMediaTime()
+            board.showFlash(members.lazy.compactMap { self.scoreFeedback.color($0, now: now) }.first)
             let c = CrossScene.seatColors[ids[index] % CrossScene.seatColors.count]
             board.box.fillColor = UIColor(red: CGFloat(c.0 / 255), green: CGFloat(c.1 / 255), blue: CGFloat(c.2 / 255), alpha: 1)
             let title = members.map { $0 < names.count ? names[$0] : engine.seats[$0].name }.joined(separator: hebrew ? " ו־" : " and ")
@@ -903,6 +925,7 @@ final class CrossScene: SKScene {
     }
     /// Show the score change of a resolved rally next to every affected player (individual play only).
     func showOutcome(_ outcome: CrossRallyOutcome) {
+        scoreFeedback.record(outcome, now: CACurrentMediaTime())
         if engine.teams != nil { return }
         let now = CACurrentMediaTime()
         for s in g.seats {
@@ -1038,5 +1061,15 @@ private final class CrossBoardNodes {
         for node in [box, outline] { parent.addChild(node) }
         for node in [name, score] { parent.addChild(node) }
     }
-    func remove() { [box, outline].forEach { $0.removeFromParent() }; [name, score].forEach { $0.removeFromParent() } }
+    let flash = SKShapeNode()
+    func hide() { box.isHidden = true; outline.isHidden = true; flash.isHidden = true; name.isHidden = true; score.isHidden = true }
+    /// The timed gain/loss outline over the box (Android CrossScoreFeedback), drawn above the highlight outline.
+    func showFlash(_ color: UIColor?) {
+        guard let color else { flash.isHidden = true; return }
+        if flash.parent == nil, let parent = box.parent {
+            flash.fillColor = .clear; flash.lineWidth = 3; flash.zPosition = 0.15; parent.addChild(flash)
+        }
+        flash.isHidden = false; flash.strokeColor = color; flash.path = box.path
+    }
+    func remove() { [box, outline, flash].forEach { $0.removeFromParent() }; [name, score].forEach { $0.removeFromParent() } }
 }

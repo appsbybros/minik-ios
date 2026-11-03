@@ -66,8 +66,8 @@ enum CrossText {
             if MPText.language == "en" { return "\(n(r)) missed \(s == local ? "your" : n(s) + "'s") shot: \(n(s)) +1, \(n(r)) \(lost)" }
             return MPText.t("\(n(r)) missed: \(n(s)) +1, \(n(r)) \(lost)")
         case .net: return MPText.t("\(n(owner)) hit the net", "פגיעה ברשת של \(n(owner))", he) + change
-        case .out: return MPText.t("\(n(owner)): the ball landed out", "הכדור של \(n(owner)) יצא מהשולחן", he) + change
-        case .ownSide: return MPText.t("\(n(owner)): the ball landed on their own side", "הכדור של \(n(owner)) נחת בצד של \(n(owner))", he) + change
+        case .out: return MPText.t("\(n(owner)): the ball landed out", owner == local ? "הכדור שלכם יצא מהשולחן" : "הכדור של \(n(owner)) יצא מהשולחן", he) + change
+        case .ownSide: return MPText.t("\(n(owner)): the ball landed on their own side", owner == local ? "הכדור שלכם נחת בצד שלכם" : "הכדור של \(n(owner)) נחת בצד של \(n(owner))", he) + change
         case .badServe: return MPText.t("\(n(owner)): the serve was not legal", "הגשה לא חוקית של \(n(owner))", he) + change
         }
     }

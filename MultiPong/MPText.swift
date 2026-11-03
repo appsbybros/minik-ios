@@ -70,6 +70,26 @@ enum MPText {
     ]
     /// Android `getString` of a `journey.xml` string: its text in the app language, English otherwise.
     static func journey(_ en: String) -> String { journeyTexts[en]?[current] ?? en }
+    /// Android `res/values*/issue_review.xml` (7254ab2): resource strings of the issue-report fixes, by English text and language.
+    static let issueTexts: [String: [String: String]] = [
+        // R.string.practice_without_limit: the Daily brief's endless action for a stage that is neither serving nor paint.
+        "Practice without a limit": ["he": "אימון ללא הגבלה", "es": "Práctica sin límite", "ar": "تدريب بلا حدود", "hi": "बिना सीमा के अभ्यास", "nl": "Oefenen zonder limiet"],
+        // R.string.serve_marked_court: the title of the serving stages.
+        "Serve to the marked court": ["he": "מגישים לשולחן המסומן", "es": "Saca hacia la zona marcada", "ar": "أرسل إلى الجزء المحدد من الطاولة", "hi": "चिह्नित हिस्से की ओर सर्व करें", "nl": "Serveer naar het gemarkeerde tafelvak"],
+        // R.string.tap_marked_court and R.string.watch_serve_land: the serving practice's instruction before and after the serve.
+        "Tap the highlighted court to serve": ["he": "הקישו על השולחן המודגש כדי להגיש", "es": "Toca la zona resaltada para sacar", "ar": "اضغط على الجزء المضيء للإرسال", "hi": "सर्व करने के लिए चमकते हिस्से पर टैप करें", "nl": "Tik op het gemarkeerde vak om te serveren"],
+        "Watch where your serve lands": ["he": "שימו לב היכן ההגשה נוחתת", "es": "Observa dónde cae tu saque", "ar": "شاهد أين تسقط كرة الإرسال", "hi": "देखें कि आपकी सर्व कहाँ गिरती है", "nl": "Kijk waar je service landt"],
+        // R.string.challenge_completed: a won daily practice.
+        "Challenge completed!": ["he": "האתגר הושלם!", "es": "¡Reto completado!", "ar": "اكتمل التحدي!", "hi": "चुनौती पूरी हुई!", "nl": "Uitdaging voltooid!"],
+        // R.string.control_beginner_only, control_standard_only, control_pro_only: only the selected control level is explained.
+        "Beginner: move your paddle to the ball for an automatic return. Swipe left or right to choose a target.": ["he": "מתחילים: מזיזים את המחבט לכדור להחזרה אוטומטית. מחליקים שמאלה או ימינה כדי לבחור יעד.", "es": "Principiante: mueve la pala hacia la pelota para devolverla automáticamente. Desliza a izquierda o derecha para elegir un destino.", "ar": "مبتدئ: حرّك المضرب نحو الكرة لإعادتها تلقائيًا. اسحب لليسار أو اليمين لاختيار الهدف.", "hi": "शुरुआती: अपने आप रिटर्न करने के लिए पैडल को गेंद तक ले जाएँ। लक्ष्य चुनने के लिए बाएँ या दाएँ स्वाइप करें।", "nl": "Beginner: beweeg je batje naar de bal voor een automatische return. Veeg naar links of rechts om een doel te kiezen."],
+        "Standard: move into position, then tap or swipe to return. Faster swipes add power.": ["he": "רגילה: נעים למקום, ואז מקישים או מחליקים כדי להחזיר. החלקה מהירה מוסיפה עוצמה.", "es": "Estándar: colócate y toca o desliza para devolver. Un deslizamiento más rápido añade potencia.", "ar": "عادي: تحرّك إلى المكان المناسب، ثم انقر أو اسحب لإعادة الكرة. السحب الأسرع يزيد القوة.", "hi": "सामान्य: सही जगह पर जाएँ, फिर रिटर्न करने के लिए टैप या स्वाइप करें। तेज़ स्वाइप से ताकत बढ़ती है।", "nl": "Standaard: ga op de juiste plek staan en tik of veeg om terug te slaan. Sneller vegen geeft meer kracht."],
+        "Pro: use a well-timed swipe to control direction and power.": ["he": "מקצועני: מחליקים בתזמון מדויק כדי לשלוט בכיוון ובעוצמה.", "es": "Pro: desliza en el momento preciso para controlar la dirección y la potencia.", "ar": "محترف: اسحب في الوقت المناسب للتحكم في الاتجاه والقوة.", "hi": "प्रो: दिशा और ताकत नियंत्रित करने के लिए सही समय पर स्वाइप करें।", "nl": "Pro: veeg op het juiste moment om richting en kracht te bepalen."],
+        // R.string.optional_landscape_tip: the orientation tip, at most three times for the app's lifetime.
+        "You can also play in landscape.": ["he": "אפשר לשחק גם במצב אופקי.", "es": "También puedes jugar en horizontal.", "ar": "يمكنك أيضًا اللعب بالوضع الأفقي.", "hi": "आप लैंडस्केप मोड में भी खेल सकते हैं।", "nl": "Je kunt ook in liggende stand spelen."],
+    ]
+    /// Android `getString` of an `issue_review.xml` string: its text in the app language, English otherwise.
+    static func issue(_ en: String) -> String { issueTexts[en]?[current] ?? en }
     /// Android `getString(R.string.…)` for a resource string whose English text is a catalog key: the resource text of the app
     /// language when it differs from the catalog row (`resourceTexts`), otherwise `t(en, he, hebrew)`.
     static func resource(_ en: String, _ he: String, _ hebrew: Bool) -> String {

@@ -478,11 +478,8 @@ extension ModernPongView {
         } court: {
             if let court = model.crossScene {
                 MPXCourt(scene: court, label: courtLabel)
-                    .background(GeometryReader { geo in Color.clear.task(id: ObjectIdentifier(court)) {
-                        // FamilyLandscapeHint (Android PrivateMatchActivity 5c1aa4d): a portrait court suggests landscape.
-                        try? await Task.sleep(nanoseconds: 900_000_000)
-                        if geo.size.height > geo.size.width { model.toast = FamilyMessages.text("For a wider view, play in landscape.", "לתצוגה רחבה יותר, שחקו במצב אופקי.") }
-                    } })
+                    // Android PongOrientationHint (7254ab2): only while the match runs.
+                    .background(MPXLandscapeTipProbe(id: ObjectIdentifier(court), active: { !model.crossPaused }) { model.toast = $0 })
             }
         }
     }
@@ -517,11 +514,8 @@ extension ModernPongView {
             ZStack {
                 if let court = model.crossScene {
                     MPXCourt(scene: court, label: courtLabel)
-                        .background(GeometryReader { geo in Color.clear.task(id: ObjectIdentifier(court)) {
-                            // FamilyLandscapeHint: a portrait court suggests landscape once.
-                            try? await Task.sleep(nanoseconds: 900_000_000)
-                            if geo.size.height > geo.size.width { model.toast = FamilyMessages.text("For a wider view, play in landscape.", "לתצוגה רחבה יותר, שחקו במצב אופקי.") }
-                        } })
+                        // Android PongOrientationHint (7254ab2, CrossActivity): only while the match runs and is not won.
+                        .background(MPXLandscapeTipProbe(id: ObjectIdentifier(court), active: { !model.crossPaused && model.crossResult == nil }) { model.toast = $0 })
                 }
                 if let tourCard = model.tourCard { tourCardView(tourCard) }
             }

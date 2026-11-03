@@ -25,6 +25,8 @@ struct MPXJourneyResult: Equatable {
     /// A short message (Android Toast).
     @Published var notice: String?
     @Published var help: String?
+    /// The help card's title: the current stage (Android 7254ab2 guideDialog).
+    @Published private(set) var helpTitle = ""
     @Published var gateOpen = false
     @Published var shareText: String?
     @Published var actionCamera: Bool { didSet { preferences.crossActionCamera = actionCamera; court?.fullScreen = actionCamera } }
@@ -71,6 +73,8 @@ struct MPXJourneyResult: Equatable {
             : tr("Start against a gentler opponent. Later cycles increase the qualities that matter for this challenge. Your teammate still helps you.",
                  "מתחילים מול יריב עדין יותר. במסלולים הבאים מתחזקים הכישורים החשובים לאתגר הזה. חבר הקבוצה עדיין עוזר לכם.")
     }
+    /// Android 7254ab2: a serving stage is titled by its task, "Serve to the marked court".
+    func stageTitle(_ s: CrossStage) -> String { s.skill == .serve ? MPText.issue("Serve to the marked court") : tr(s.en, s.he) }
     func instruction(_ s: CrossStage) -> String {
         switch s.skill {
         case .serve: return tr("Tap the golden court to serve there. The ball must bounce on your court first, then on the called court.", "הקישו על השולחן הזהוב כדי להגיש אליו. הכדור חייב לקפוץ קודם בצד שלכם, ואז בשולחן המסומן.")
@@ -89,9 +93,15 @@ struct MPXJourneyResult: Equatable {
     // ---- practice and team match -----------------------------------------------------------------------------------------
     func startJourney(_ step: Int) { play(CrossPractice(step: step, avatar: ids[0])) }
     func startChallenge() { lesson = false; startJourney(step) }
-    func endlessServes() { play(CrossPractice(step: 0, avatar: ids[0], open: true)) }
-    /// Android uses step 2 (the "Golden islands" stage) for this playground.
-    func endlessPaint() { play(CrossPractice(step: 2, avatar: ids[0], open: true)) }
+    /// Android 7254ab2: one endless playground, for the current stage (serving, paint, or practice without a limit).
+    func endless() { play(CrossPractice(step: step, avatar: ids[0], open: true)) }
+    var endlessTitle: String {
+        switch stage.skill {
+        case .serve: return tr("Endless serving playground", "מגרש הגשות בלי הגבלה")
+        case .paint: return tr("Endless paint playground", "מגרש צבעים בלי הגבלה")
+        default: return MPText.issue("Practice without a limit")
+        }
+    }
     func learnTeams() { lesson = true; startJourney(7) }
     func onlineTeams() { onOnlineTeams(twoOpponents ? 4 : 3) }
     func resumePractice() {
@@ -163,9 +173,12 @@ struct MPXJourneyResult: Equatable {
         court?.setActive(!on && foreground)
         refresh()
     }
+    /// Android 7254ab2: the help card names the stage and explains only it.
     func showHelp() {
         pause(true)
-        help = instruction(practice?.stage ?? CrossJourney.stages[8]) + "\n\n" + CrossText.setHelp(hebrew)
+        let stage = practice?.stage ?? CrossJourney.stages[8]
+        helpTitle = stageTitle(stage)
+        help = instruction(stage)
     }
     func closeHelp() { help = nil; pause(false) }
     func toggleCamera() {
@@ -175,16 +188,19 @@ struct MPXJourneyResult: Equatable {
     private func refresh() {
         guard page == .game, let e = current else { return }
         let p = practice
-        let title = p.map { tr($0.stage.en, $0.stage.he) } ?? tr("Team match", "משחק קבוצתי")
+        let title = p.map { stageTitle($0.stage) } ?? tr("Team match", "משחק קבוצתי")
         let score: String
         if let p {
-            if p.stage.skill == .paint { score = "\(Int(p.remaining))s · \(Int(p.paint.coverage(0) * 100))% : \(Int(p.paint.coverage(1) * 100))%" }
+            // The endless paint playground has no clock (Android 7254ab2).
+            if p.stage.skill == .paint { score = (p.open ? "" : "\(Int(p.remaining))s · ") + "\(Int(p.paint.coverage(0) * 100))% : \(Int(p.paint.coverage(1) * 100))%" }
             else if p.open { score = "★ \(p.successes)" }
             else { score = "\u{2066}\(p.successes) / \(p.goal)\u{2069} · ♥ \(3 - p.mistakes)" }
         } else { score = "\(e.referee.score(0)) : \(e.referee.score(1))" }
         let tip: String
         if p == nil, let outcome = CrossText.teamOutcome(e, local: 0, hebrew) { tip = outcome }
         else if isPaused { tip = tr("Paused", "מושהה") }
+        // Serving practice keeps serving guidance after the serve (Android 7254ab2).
+        else if p?.stage.skill == .serve { tip = MPText.issue(e.referee.mayServe(0) ? "Tap the highlighted court to serve" : "Watch where your serve lands") }
         else if e.receivingSet { tip = tr("Swipe now to smash!", "החליקו עכשיו להנחתה!") }
         else if e.referee.mayServe(0) { tip = tr("Tap the called court to serve", "הקישו על השולחן המסומן להגשה") }
         else { tip = CrossText.setTip(e, hebrew) ?? tr("Choose your target. Move your paddle to the ball.", "בחרו יעד. הזיזו את המחבט לכדור.") }
@@ -235,7 +251,8 @@ struct MPXJourneyResult: Equatable {
         let score: String
         if let p { score = "\(p.successes) / \(p.goal)" }
         else if let e = match { score = "\(e.referee.score(0)) : \(e.referee.score(1))" } else { score = "" }
-        result = MPXJourneyResult(win: win, title: win ? tr("You won!", "ניצחתם!") : tr("Let's try again", "מנסים שוב"), score: score, celebrate: celebrate)
+        let title = win && p != nil ? MPText.issue("Challenge completed!") : (win ? tr("You won!", "ניצחתם!") : tr("Let's try again", "מנסים שוב"))
+        result = MPXJourneyResult(win: win, title: title, score: score, celebrate: celebrate)
     }
     func resultContinue() {
         guard let r = result else { return }
@@ -249,13 +266,14 @@ struct MPXJourneyResult: Equatable {
     func resultMenu() { result = nil; close() }
 
     // ---- navigation and saving -------------------------------------------------------------------------------------------
-    /// Android navigateBack: a game returns to its page (team pages for team play); any other page closes the journey.
+    /// Android navigateBack: a game returns to its page (team pages for team play); the journey map returns to the Daily brief
+    /// (7254ab2); any other page closes the journey.
     func back() {
         if page == .game {
             let wasTeam = match != nil || lesson
             save()
             if wasTeam { teams() } else { brief() }
-        } else { close() }
+        } else if page == .list { brief() } else { close() }
     }
     func close() { save(); leaveGame(); onClose() }
     func lifecycle(active: Bool) {
@@ -330,8 +348,8 @@ struct MPXJourneyResult: Equatable {
             }
         }
         .foregroundStyle(MPXMenu.deepInk)
-        .alert(tr("Help", "עזרה"), isPresented: Binding(get: { model.help != nil }, set: { if !$0 { model.closeHelp() } })) {
-            Button(tr("Continue", "המשך")) { model.closeHelp() }
+        .alert(model.helpTitle, isPresented: Binding(get: { model.help != nil }, set: { if !$0 { model.closeHelp() } })) {
+            Button(tr("Next", "הבא")) { model.closeHelp() }
         } message: { Text(model.help ?? "") }
         .alert(tr("For grown-ups", "למבוגרים"), isPresented: $model.gateOpen) {
             TextField("8 × 7 = ?", text: $answer).keyboardType(.numberPad)
@@ -379,14 +397,21 @@ struct MPXJourneyResult: Equatable {
             }
         }
     }
-    private func text(_ value: String, _ size: CGFloat = 17, bold: Bool = false) -> some View {
-        Text(value).font(.system(size: size, weight: bold ? .bold : .regular)).multilineTextAlignment(.center).frame(maxWidth: .infinity).padding(.vertical, 8).padding(.horizontal, 4)
+    /// Android 7254ab2 journey colours: Start green, Your journey blue, the endless playground yellow, Back to menu pink.
+    static let green = Color(red: 0x8b / 255, green: 0xd4 / 255, blue: 0xae / 255)
+    static let blue = Color(red: 0xb8 / 255, green: 0xd9 / 255, blue: 1)
+    static let yellow = Color(red: 1, green: 0xdc / 255, blue: 0x70 / 255)
+    /// Headings stay centred; paragraphs follow the reading direction's start edge (Android 7254ab2).
+    private func text(_ value: String, _ size: CGFloat = 17, bold: Bool = false, center: Bool? = nil) -> some View {
+        let centred = center ?? bold
+        return Text(value).font(.system(size: size, weight: bold ? .bold : .regular)).multilineTextAlignment(centred ? .center : .leading)
+            .frame(maxWidth: .infinity, alignment: centred ? .center : .leading).padding(.vertical, 8).padding(.horizontal, 4)
     }
     private func button(_ title: String, primary: Bool = false, fill: Color? = nil, ink: Color = MPXMenu.deepInk, _ action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title).font(.system(size: 17, weight: .semibold)).foregroundStyle(ink).multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity, minHeight: 52).padding(.horizontal, 12)
-                .background(fill ?? (primary ? MPXMenu.gold : MPXMenu.mint), in: RoundedRectangle(cornerRadius: 20))
+                .background(fill ?? (primary ? MPXJourneyView.green : MPXMenu.mint), in: RoundedRectangle(cornerRadius: 20))
         }.buttonStyle(.plain).padding(.top, 9)
     }
     @ViewBuilder private var brief: some View {
@@ -394,7 +419,7 @@ struct MPXJourneyResult: Equatable {
         text(tr("A little practice each day. Your first completed stage of the day earns a bonus. Play more whenever you like; missing a day never erases progress.",
                 "קצת אימון בכל יום. השלב הראשון שתשלימו ביום מזכה בבונוס. אפשר להמשיך לשחק מתי שרוצים; יום ללא משחק אינו מוחק התקדמות."), 15)
         text("\u{2066}\(n % 30 + 1) / 30\u{2069} · " + tr("Cycle", "מסלול") + " \(n / 30 + 1)", 18, bold: true)
-        text(tr(s.en, s.he), 24, bold: true)
+        text(model.stageTitle(s), 24, bold: true)
         MPXPortrait(character: bot.id).frame(height: 130)
         text(bot.name(hebrew: model.hebrew), 20, bold: true)
         text(model.role(s))
@@ -403,12 +428,12 @@ struct MPXJourneyResult: Equatable {
              : tr("Goal: \(s.goal(n / 30)) · Three misses before a retry", "מטרה: \(s.goal(n / 30)) · אחרי שלוש החטאות מנסים שוב"), 18, bold: true)
         if s.streak { text(tr("Keep a streak: a miss resets the counter.", "שומרים על רצף: החטאה מאפסת את המונה.")) }
         button(tr("Start challenge", "מתחילים באתגר"), primary: true) { model.startChallenge() }
-        if model.savedPractice { button(tr("Resume practice", "המשך אימון")) { model.resumePractice() } }
-        if model.savedMatch { button(tr("Resume team match", "המשך משחק קבוצתי")) { model.resumeMatch() } }
-        button(tr("Your journey", "המסע שלכם")) { model.journeyList() }
-        button(tr("Endless serving playground", "מגרש הגשות בלי הגבלה")) { model.endlessServes() }
-        button(tr("Endless paint playground", "מגרש צבעים בלי הגבלה")) { model.endlessPaint() }
-        text(tr("Practice stars", "כוכבי אימון") + ": \(model.preferences.journeyStars)", 15)
+        // Android 7254ab2: the team match resumes from the team page; one endless playground for the current stage.
+        if model.savedPractice { button(tr("Resume practice", "המשך אימון"), primary: true) { model.resumePractice() } }
+        button(tr("Your journey", "המסע שלכם"), fill: MPXJourneyView.blue) { model.journeyList() }
+        button(model.endlessTitle, fill: MPXJourneyView.yellow) { model.endless() }
+        Text(tr("Practice stars", "כוכבי אימון") + ": \(model.preferences.journeyStars)").font(.system(size: 16)).multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity, minHeight: 56).padding(.top, 12)
     }
     @ViewBuilder private var list: some View {
         let current = model.step % 30
@@ -417,7 +442,7 @@ struct MPXJourneyResult: Equatable {
             let name: String = tr(item.element.en, item.element.he)
             text("\(mark) \(item.offset + 1). \(name)")
         }
-        button(tr("Back", "חזרה")) { model.brief() }
+        // Android 7254ab2: no bottom Back; the header arrow returns to the Daily brief.
     }
     @ViewBuilder private var teams: some View {
         text(tr("You and a chosen house teammate against one or two house opponents.", "אתם וחבר קבוצה לבחירתכם מול יריב בית אחד או שניים."))
@@ -433,6 +458,7 @@ struct MPXJourneyResult: Equatable {
         text(tr("One friendly pass, then send to the other team. Double-tap to set. Swipe a raised ball to smash. First team to seven points wins.",
                 "מסירה קבוצתית אחת, ואז מחזירים לקבוצה השנייה. מקישים פעמיים להרמה. מחליקים דרך כדור מורם להנחתה. הקבוצה הראשונה עם שבע נקודות מנצחת."))
         button(tr("Start team match", "מתחילים במשחק קבוצתי"), primary: true) { model.startTeamMatch() }
+        if model.savedMatch { button(tr("Resume team match", "המשך משחק קבוצתי")) { model.resumeMatch() } }
         MPXLink(title: tr("How teams work", "איך משחקים בקבוצה")) { model.learnTeams() }.padding(.top, 12)
         MPXLink(title: tr("Online team game", "משחק קבוצתי ברשת")) { model.onlineTeams() }.padding(.top, 12)
     }
@@ -466,9 +492,10 @@ struct MPXJourneyResult: Equatable {
             Text(tr("Menu music", "מוזיקה בתפריט")).font(.system(size: 17))
         }.frame(minHeight: 56)
         MPXReceptionSettings(preferences: model.preferences, hebrew: model.hebrew)
-        button(tr("Rate this app", "דירוג האפליקציה")) { model.grownUp { model.rate() } }
-        button(tr("Share this app", "שיתוף האפליקציה")) { model.grownUp { model.share() } }
-        button(tr("Send feedback", "שליחת משוב")) { model.grownUp { model.feedback() } }
+        // Android 7254ab2: pink, yellow and orange actions.
+        button(tr("Rate this app", "דירוג האפליקציה"), fill: Color(red: 1, green: 0x5b / 255, blue: 0xa6 / 255)) { model.grownUp { model.rate() } }
+        button(tr("Share this app", "שיתוף האפליקציה"), fill: MPXJourneyView.yellow) { model.grownUp { model.share() } }
+        button(tr("Send feedback", "שליחת משוב"), fill: Color(red: 1, green: 0xb9 / 255, blue: 0x6e / 255)) { model.grownUp { model.feedback() } }
     }
     private var game: some View {
         MPXMatchLayout(tools: 4) {
@@ -483,27 +510,30 @@ struct MPXJourneyResult: Equatable {
         } court: {
             if let court = model.court {
                 MPXCourt(scene: court, label: tr("Three or four player table tennis court. Your arm of the table is at the bottom. Send the ball to any other player.", "מגרש טניס שולחן לשלושה או ארבעה שחקנים. הזרוע שלכם בשולחן נמצאת למטה. שלחו את הכדור לכל שחקן אחר."))
-                    .background(GeometryReader { geo in Color.clear.task(id: ObjectIdentifier(court)) {
-                        // FamilyLandscapeHint: a portrait court suggests landscape once.
-                        try? await Task.sleep(nanoseconds: 900_000_000)
-                        if geo.size.height > geo.size.width { hint = FamilyMessages.text("For a wider view, play in landscape.", "לתצוגה רחבה יותר, שחקו במצב אופקי.") }
-                    } })
+                    // Android PongOrientationHint (7254ab2).
+                    .background(MPXLandscapeTipProbe(id: ObjectIdentifier(court), active: { true }) { hint = $0 })
             }
         }
     }
+    /// Android 7254ab2: a rounded, bounded card that scrolls when it does not fit; Back to menu is pink with white text.
     private func resultCard(_ result: MPXJourneyResult) -> some View {
-        ZStack {
+        let card = VStack(spacing: 10) {
+            if !result.celebrate.isEmpty { MPXTeamVictory(characters: result.celebrate).frame(height: 210) }
+            Text(result.title).font(.system(size: 24, weight: .bold)).multilineTextAlignment(.center)
+            Text(result.score).font(.system(size: 22, weight: .bold)).environment(\.layoutDirection, .leftToRight)
+            button(result.win ? tr("Continue", "המשך") : tr("Try again", "מנסים שוב"), primary: true) { model.resultContinue() }
+            button(tr("Back to menu", "חזרה לתפריט"), fill: MPXMenu.pink, ink: .white) { model.resultMenu() }
+        }
+        .padding(.horizontal, 22).padding(.vertical, 16)
+        return ZStack {
             Color.black.opacity(0.18).ignoresSafeArea()
-            VStack(spacing: 10) {
-                if !result.celebrate.isEmpty { MPXTeamVictory(characters: result.celebrate).frame(height: 210) }
-                Text(result.title).font(.system(size: 24, weight: .bold)).multilineTextAlignment(.center)
-                Text(result.score).font(.system(size: 22, weight: .bold)).environment(\.layoutDirection, .leftToRight)
-                button(result.win ? tr("Continue", "המשך") : tr("Try again", "מנסים שוב"), primary: true) { model.resultContinue() }
-                button(tr("Back to menu", "חזרה לתפריט")) { model.resultMenu() }
+            ViewThatFits(in: .vertical) {
+                card
+                ScrollView { card }
             }
-            .padding(.horizontal, 22).padding(.vertical, 16)
             .background(MPXMenu.panel, in: RoundedRectangle(cornerRadius: 24))
-            .frame(maxWidth: 480).padding(20)
+            .clipShape(RoundedRectangle(cornerRadius: 24))
+            .frame(maxWidth: 520).padding(16)
         }
     }
 }

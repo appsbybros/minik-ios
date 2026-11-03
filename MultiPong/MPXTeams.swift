@@ -390,10 +390,8 @@ struct MPXLobbyPlayer: Identifiable {
         } court: {
             if let court = model.court {
                 MPXCourt(scene: court, label: tr("Team match", "משחק קבוצתי"))
-                    .background(GeometryReader { geo in Color.clear.task(id: ObjectIdentifier(court)) {
-                        try? await Task.sleep(nanoseconds: 900_000_000)
-                        if geo.size.height > geo.size.width { hint = FamilyMessages.text("For a wider view, play in landscape.", "לתצוגה רחבה יותר, שחקו במצב אופקי.") }
-                    } })
+                    // Android PongOrientationHint (7254ab2).
+                    .background(MPXLandscapeTipProbe(id: ObjectIdentifier(court), active: { true }) { hint = $0 })
             }
         }
     }

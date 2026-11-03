@@ -137,6 +137,12 @@ struct CrossLocalResult: Equatable { var title: String; var rows: [MPXResultRow]
         guard !busy else { return }; busy = true; defer { busy = false }
         do { try await operation() } catch { show(error) }
     }
+    /// Android 7254ab2 home: "New friendly game" / "New tournament" open their setup page only when there is room for one more.
+    func openLimitReached(_ kind: MPSessionKind) -> Bool {
+        if hasSpace(kind) { return false }
+        show(MPError.limit)
+        return true
+    }
     /// Android PlayActivity.error: the open-game limit has its own dialog; everything else one of a few plain explanations.
     private func show(_ issue: Error) {
         errorTitle = nil
@@ -433,7 +439,7 @@ struct CrossLocalResult: Equatable { var title: String; var rows: [MPXResultRow]
         let engine = MPEngine(level: MPLevel.control(s.difficulty), target: s.target, bot: opponent?.bot, networked: networked,
                               first: s.authority(match) == repo.uid ? .child : .minik, seed: UInt64(bitPattern: match.seed),
                               alternateServe: !networked, suddenDeath: match.goal == .tiebreak)
-        install(engine); scene?.remoteCharacter = opponent?.identity.characterId; scene?.remoteIcon = MPNames.icons[max(0, opponent?.identity.avatar ?? 0) % MPNames.icons.count]
+        install(engine, character: s.participants[repo.uid]?.identity.characterId); scene?.remoteCharacter = opponent?.identity.characterId; scene?.remoteIcon = MPNames.icons[max(0, opponent?.identity.avatar ?? 0) % MPNames.icons.count]
         let link = MPMatchLink(repo: repo, session: s, record: match, engine: engine, preferences: preferences) { [weak self] in self?.show($0) }
         self.link = link; link.active = foreground; route = .game; link.open()
     }
@@ -560,8 +566,11 @@ struct CrossLocalResult: Equatable { var title: String; var rows: [MPXResultRow]
         preferences.defaults.set(practiceLevel.rawValue, forKey: MPController.practiceLevelKey)
         install(MPEngine(level: practice ? practiceLevel : level, target: target, bot: selectedPlayer.profile, houseControls: !practice)); route = .game
     }
-    private func install(_ engine: MPEngine) {
+    /// Android 7254ab2: outside the guide, the classic court shows the player's own full avatar (Miniko for an icon avatar).
+    private func install(_ engine: MPEngine, tutorial: Bool = false, character: String? = nil) {
         let scene = MPScene(engine: engine); self.scene = scene
+        scene.tutorial = tutorial
+        scene.localCharacterId = character ?? identity?.characterId ?? "miniko"
         scene.onFrame = { [weak self] events in self?.frame(events) }; scene.setActive(foreground)
         childScore = engine.score.child; opponentScore = engine.score.minik; activityAt = MPClock.now
     }
@@ -623,8 +632,9 @@ struct CrossLocalResult: Equatable { var title: String; var rows: [MPXResultRow]
         case .lobby:
             audio.stop()
             if let s = session, s.kind == .tournament, !s.complete, s.human(repo.uid) {
-                // Android 5c1aa4d confirmTournamentExit: Save keeps it for later; Don't save deletes or leaves it.
-                tournamentExitPrompt = true
+                // Android 7254ab2: ordinary Back keeps an unfinished tournament for later, without a question. Leaving or deleting
+                // it stays an explicit action of the tournament screen.
+                saveForLater()
                 return
             }
             if let s = session, s.complete { dismissCompleted(); return }
@@ -974,7 +984,7 @@ struct CrossLocalResult: Equatable { var title: String; var rows: [MPXResultRow]
     func tutorialStart(demo: Bool) {
         tutorialPhase = demo ? .demonstration : .attempt; tutorialSuccess = false; demoGesture = false
         audio.guideMusic(demo && foreground)
-        install(MPEngine(level: tutorialStep.level, target: 7, houseControls: false, exercise: tutorialStep.exercise, seed: 42))
+        install(MPEngine(level: tutorialStep.level, target: 7, houseControls: false, exercise: tutorialStep.exercise, seed: 42), tutorial: true)
         scene?.guidePoint = tutorialStep.serve ? tutorialStep.servePoint : nil; scene?.guideDirection = tutorialStep.serve ? nil : tutorialStep.aim
     }
     private func tutorialFrame() {
