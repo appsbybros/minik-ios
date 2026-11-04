@@ -13,6 +13,8 @@ struct CrossTourCard: Equatable {
 }
 /// The local cross match's result (Android CrossActivity.showResult).
 struct CrossLocalResult: Equatable { var title: String; var rows: [MPXResultRow]; var won: Bool }
+/// Android 47ad0c9 CrossActivity.showHelp: the help for the current lesson or control level, closed with its X.
+struct CrossHelpCard: Equatable { var title: String; var message: String; var resume: Bool }
 
 /// Multi Ping Pong's screen state and flows: Android PlayActivity (home, forms, rooms, tournaments), PrivateMatchActivity (a
 /// room fixture on the classic or the cross table) and CrossActivity (the local cross match and its guide), MinikCrossPong
@@ -67,6 +69,7 @@ struct CrossLocalResult: Equatable { var title: String; var rows: [MPXResultRow]
     /// Android `cross/action_camera` (5c1aa4d): the landscape action camera of the local cross court, remembered.
     @Published var actionCamera: Bool { didSet { preferences.crossActionCamera = actionCamera; if crossMatch == nil { crossScene?.fullScreen = actionCamera } } }
     @Published var tourCard: CrossTourCard?
+    @Published var crossHelp: CrossHelpCard?
     @Published var crossResult: CrossLocalResult?
     @Published var crossTourActive = false
     private var repo: any MPRepository, subscriptions: [MPSubscription] = [], link: MPMatchLink?
@@ -86,6 +89,8 @@ struct CrossLocalResult: Equatable { var title: String; var rows: [MPXResultRow]
     /// The local cross match's engine, or the guide's engine while a lesson plays.
     private var localCross: CrossEngine?
     private var tour: CrossTutorial?, savedGame: CrossEngine?, finishedShown = false
+    /// Android CrossActivity `learn`: the local match was opened from "Learn how to play"; Back from it returns to the guide.
+    private var crossLearn = false
     private static let practiceLevelKey = "modern.pong.practice.level"
     /// CI smoke launches pass `-MinikOfflineSmoke YES`; they must never reach production Firebase.
     static var offlineSmoke: Bool { UserDefaults.standard.bool(forKey: "MinikOfflineSmoke") }
@@ -109,6 +114,8 @@ struct CrossLocalResult: Equatable { var title: String; var rows: [MPXResultRow]
             repo = MPLocalRepository()
             #endif
         }
+        // Android 47ad0c9 ModernAudio / LobbyAudio: "Game sounds" off silences every cue and stops the one that is playing.
+        audio.soundsEnabled = { [preferences] in preferences.journeySound }
     }
     var online: Bool { repo.online }
     var selectedPlayer: MPHousePlayer { MPRoster.all[playerIndex % MPRoster.all.count] }
@@ -269,7 +276,7 @@ struct CrossLocalResult: Equatable { var title: String; var rows: [MPXResultRow]
         }
         session = s; link?.update(s); crossLink?.update(s); preferences.remember(s); rooms = preferences.rooms
         // Android PlayActivity.completed: a room completed while it is shown celebrates the winner once.
-        if route == .lobby, s.complete, MPCompletionText.won(s, uid), preferences.firstCelebration(s) { celebration = UUID() }
+        if route == .lobby { celebrateCompletion(s) }
         if route == .game, let current = fixture, let m = s.matches[current.id] {
             if m.phase == .finished {
                 fixture = m
@@ -416,16 +423,24 @@ struct CrossLocalResult: Equatable { var title: String; var rows: [MPXResultRow]
         celebration = nil; preferences.dismissResult(s); closeObservers(); (repo as? MPLocalRepository)?.remove(s)
         session = nil; scene = nil; clearCross(); fixture = nil; result = nil; rooms = preferences.rooms; route = .menu
     }
-    /// Android PrivateMatchActivity result dialog: a completed round robin or friendly room is dismissed; a completed knockout
-    /// first shows its bracket; an unfinished room continues on its screen (a table's final duel, the next round).
+    /// Android PrivateMatchActivity result dialog (47ad0c9): a completed friendly room is dismissed; a tournament fixture goes
+    /// "Back to tournament", whose screen shows the next round or, once complete, "Tournament finished" with its winner.
     func closeResult() {
         celebration = nil
         guard let s = session else { result = nil; route = .menu; return }
-        if s.complete && !s.knockout { dismissCompleted(); return }
+        if s.complete && s.kind == .friendly { dismissCompleted(); return }
         scene = nil; clearCross(); fixture = nil; result = nil
         route = .lobby
+        celebrateCompletion(s)
         maybeStart(s)
         if foreground { syncLobbyPresence(s) }
+    }
+    /// Android PlayActivity.completed / tournament (47ad0c9): a completed room won by this player celebrates once, while its
+    /// screen is shown; a finished tournament adds the applause.
+    private func celebrateCompletion(_ s: MPSession) {
+        guard route == .lobby, s.complete, MPCompletionText.won(s, repo.uid), preferences.firstCelebration(s) else { return }
+        celebration = UUID()
+        if s.kind == .tournament { audio.play(CrossCue.applause.sound) }
     }
     private func launch(_ s: MPSession, _ match: MPFixture) {
         link?.close(); link = nil; crossLink?.close(); crossLink = nil
@@ -552,7 +567,7 @@ struct CrossLocalResult: Equatable { var title: String; var rows: [MPXResultRow]
         crossLink?.close(); crossLink = nil
         crossScene?.setActive(false); crossScene = nil
         crossMatch = nil; crossStage = nil; crossSounds = nil; crossOutcome = nil; crossStatus = ""; crossHeader = ""
-        localCross = nil; tour = nil; savedGame = nil; tourCard = nil; crossResult = nil; crossTourActive = false
+        localCross = nil; tour = nil; savedGame = nil; tourCard = nil; crossResult = nil; crossTourActive = false; crossHelp = nil
     }
     func startSingle(practice: Bool = false) {
         // Like Android ModernActivity: the guide opens before this screen's first local match unless "Don't show the guide
@@ -616,7 +631,8 @@ struct CrossLocalResult: Equatable { var title: String; var rows: [MPXResultRow]
             // a won fixture whose final duel is still to come does not celebrate yet.
             let celebrate: Bool
             if let s = self.session, let m = self.fixture {
-                if s.complete { celebrate = MPCompletionText.won(s, self.repo.uid) && self.preferences.firstCelebration(s) }
+                // Android 47ad0c9: a completed room celebrates on its own screen (tournament finished), not on this result.
+                if s.complete { celebrate = false }
                 else if s.knockout { celebrate = MPKnockout.goesThrough(s, s.matches[m.id] ?? m, self.repo.uid) }
                 else { celebrate = value.won && s.matches[MPRules.duelId(m.id)] == nil }
             } else { celebrate = value.won }
@@ -644,7 +660,13 @@ struct CrossLocalResult: Equatable { var title: String; var rows: [MPXResultRow]
             if session != nil { leaveCourt(); return }
             goHome()
         case .cross:
-            if tour != nil { endTour(); return }
+            // Android 47ad0c9 navigateBack: a lesson's demonstration or practice returns to its card; a card's Back leaves the
+            // guide (its dialog's cancel); a match opened from "Learn how to play" returns to the guide.
+            if let t = tour {
+                if tourCard == nil { t.back(); showTourCard() } else { exitLearning() }
+                return
+            }
+            if crossLearn { startTour(); return }
             audio.stop()
             goHome()
         case .journey:
@@ -667,9 +689,11 @@ struct CrossLocalResult: Equatable { var title: String; var rows: [MPXResultRow]
         if experience.closesAfterMatch { completion(nil) }
     }
     func close() { foreground = false; audio.stop(); menuMusic.stop(); scene?.setActive(false); crossScene?.setActive(false); journey?.lifecycle(active: false); teams?.lifecycle(active: false); closeObservers() }
-    /// Android PlayActivity onResume/onPause: the menu music plays on the home and room screens only.
+    /// Android PongMenuMusic (47ad0c9): one player for the home, room and journey pages (not their games), keeping its place
+    /// between them; it pauses at once when the menu music is turned off.
     func syncMusic() {
-        menuMusic.set(experience == .full && foreground && (route == .menu || route == .lobby) && preferences.menuMusic)
+        let journeyPage = route == .journey && journey != nil && journey?.page != .game
+        menuMusic.set(experience == .full && foreground && (route == .menu || route == .lobby || journeyPage) && preferences.menuMusic)
     }
     func lifecycle(active: Bool) {
         guard foreground != active else { return }; foreground = active
@@ -764,11 +788,13 @@ struct CrossLocalResult: Equatable { var title: String; var rows: [MPXResultRow]
         if route != .journey && route != .teams { journeyReturn = route }
         journey = CrossJourneyModel(page: page, players: players, preferences: preferences, hebrew: hebrew, audio: audio,
                                     onClose: { [weak self] in self?.closeJourney() }, onOnlineTeams: { [weak self] n in self?.openTeams(players: n) })
+        journey?.musicChanged = { [weak self] in self?.syncMusic() }
         route = .journey
     }
     private func closeJourney() {
         journey = nil
         route = journeyReturn
+        syncMusic()
         if route == .cross { crossScene?.setActive(false) }
         rooms = preferences.rooms
     }
@@ -784,17 +810,16 @@ struct CrossLocalResult: Equatable { var title: String; var rows: [MPXResultRow]
         teams = nil
         route = teamsReturn
         if route == .journey { journey?.lifecycle(active: foreground) }
+        syncMusic()
     }
     /// The tour's "Learn team play" action (Android guide_team_practice): the team game page over the local match.
     func tourTeamPractice() {
         endTour()
         openJourney(.teams)
     }
-    /// Android toggleCamera on the local court: the landscape action camera or every player in view.
-    func toggleActionCamera() {
-        actionCamera.toggle()
-        toast = hebrew ? (actionCamera ? "מצלמת פעולה" : "כל השחקנים במסך") : (actionCamera ? "Action camera" : "Fit all players")
-    }
+    /// Android toggleCamera on the local court (47ad0c9): the action camera or every player in view, in either orientation. The
+    /// button shows the next camera instead of a toast.
+    func toggleActionCamera() { actionCamera.toggle() }
     /// Android confirmTournamentExit: Save keeps the tournament for later; Don't save deletes it (no other connected player) or
     /// leaves it.
     func keepTournament() { tournamentExitPrompt = false; saveForLater() }
@@ -811,6 +836,7 @@ struct CrossLocalResult: Equatable { var title: String; var rows: [MPXResultRow]
     func openCross(learn: Bool, seed: Int64? = nil) {
         audio.stop(); closeObservers(); session = nil; fixture = nil; result = nil; celebration = nil; scene = nil
         clearCross()
+        crossLearn = learn
         installLocalCross(newCrossEngine(seed: seed))
         route = .cross
         if learn || !preferences.crossGuideSeen { startTour() }
@@ -889,7 +915,9 @@ struct CrossLocalResult: Equatable { var title: String; var rows: [MPXResultRow]
         // Android 1dbfe33: a house character's win is told in agreement with the character (MatchResultWords).
         let house = winner < engine.seats.count && engine.seats[winner].kind == .house ? engine.seats[winner].characterId : nil
         let title = won ? MPResultWords.youWon() : MPResultWords.winner(winnerName, houseCharacter: house)
-        let rows = order.map { MPXResultRow(name: $0.offset < names.count ? names[$0.offset] : "", score: $0.element, winner: $0.offset == winner) }
+        // Android 47ad0c9: each name in its seat colour.
+        let rows = order.map { MPXResultRow(name: $0.offset < names.count ? names[$0.offset] : "", score: $0.element, winner: $0.offset == winner,
+                                            color: MPXSeatColor.argb($0.offset)) }
         crossResult = CrossLocalResult(title: title, rows: rows, won: won)
         if won { celebration = UUID() }
     }
@@ -903,7 +931,7 @@ struct CrossLocalResult: Equatable { var title: String; var rows: [MPXResultRow]
         engine.discardEvents(); engine.paused = false; crossScene?.setActive(foreground); crossPaused = false
     }
     func toggleCrossPause() {
-        guard route == .cross, tourCard == nil, let engine = localCross else { return }
+        guard route == .cross, tourCard == nil, crossHelp == nil, let engine = localCross else { return }
         if engine.paused { resumeLocalCross() } else { pauseLocalCross() }
     }
     func restartCross() {
@@ -966,7 +994,42 @@ struct CrossLocalResult: Equatable { var title: String; var rows: [MPXResultRow]
         guard let t = tour else { return }
         if t.next() { showTourCard() } else { endTour() }
     }
-    func tourBack() { tour?.back(); showTourCard() }
+    /// Android 47ad0c9: Back on the first card leaves the guide, like its close (X) control.
+    func tourBack() {
+        guard let t = tour else { return }
+        if t.canGoBack { t.back(); showTourCard() } else { exitLearning() }
+    }
+    /// The guide's close (X) control (Android `guideDialog(…) { finish() }`): the learning screen closes at once.
+    func exitLearning() {
+        audio.stop()
+        goHome()
+    }
+    /// Android CrossActivity.showHelp (47ad0c9): the match pauses and the help shows the current lesson's card, or how to play
+    /// at the chosen control level; its X resumes a match that was running.
+    func showCrossHelp() {
+        let running = localCross?.paused == false
+        pauseLocalCross()
+        let message: String
+        if let t = tour { message = t.card(hebrew).message }
+        else {
+            let level: String
+            switch crossControl {
+            case .beginner: level = text("Serve: tap your side, drag left or right to aim, then lift. Return: move your paddle into the ball's path; it hits automatically.",
+                                         "הגשה: הקישו בצד שלכם, גררו לשמאל או לימין כדי לכוון והרימו את האצבע. החזרה: הזיזו את המחבט למסלול הכדור; החבטה אוטומטית.")
+            case .standard: level = text("Serve: tap your side, drag sideways to aim, then lift. Return: tap as the ball reaches your paddle; drag sideways to choose the other player.",
+                                         "הגשה: הקישו בצד שלכם, גררו לצד כדי לכוון והרימו את האצבע. החזרה: הקישו כשהכדור מגיע למחבט וגררו לצד כדי לבחור שחקן.")
+            case .pro: level = text("Swipe up through the ball. Aim with the swipe direction; a faster swipe adds power.",
+                                    "החליקו למעלה דרך הכדור. כיוון ההחלקה מכוון את החבטה ומהירותה קובעת את העוצמה.")
+            }
+            message = text("Keep the ball on the table and send it to another player's colored arm. ", "השאירו את הכדור על השולחן ושלחו אותו לזרוע הצבעונית של שחקן אחר. ") + level
+        }
+        crossHelp = CrossHelpCard(title: text("Help", "עזרה"), message: message, resume: running)
+    }
+    func closeCrossHelp() {
+        guard let help = crossHelp else { return }
+        crossHelp = nil
+        if help.resume && route == .cross && tourCard == nil { resumeLocalCross() }
+    }
     func tourShow() { tour?.demo(); showTourCard() }
     func tourTry() { tour?.practice(); showTourCard() }
     func endTour() {

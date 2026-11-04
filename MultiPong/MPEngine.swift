@@ -7,12 +7,18 @@ enum MPEvent {
 struct MPStroke {
     var contactAt = 0.10, windowEnd = 0.23, followEnd = 0.34, total = 0.48
     var id = 0, age = 1.0, left = false, point = MPPoint(0.5, 0.87), height = 0.0, contacted = false
+    /// Android 47ad0c9 `Stroke.impactAt`: the stroke age of the actual contact (the earliest allowed contact time until then).
+    /// The cross court aligns its contact pose and arc with it; physics and hit windows never read it.
+    var impact: Double? = nil
+    var impactAt: Double { impact ?? contactAt }
     var active: Bool { age < total }
     var contactWindow: Bool { age >= contactAt && age <= windowEnd && !contacted }
     mutating func start(_ id: Int, _ point: MPPoint, _ height: Double, _ left: Bool) {
-        self.id = id; self.point = point; self.height = height; self.left = left; age = 0; contacted = false
+        self.id = id; self.point = point; self.height = height; self.left = left; age = 0; contacted = false; impact = nil
     }
-    mutating func contact(_ point: MPPoint, _ height: Double) { self.point = point; self.height = height; contacted = true; age = max(age, contactAt) }
+    mutating func contact(_ point: MPPoint, _ height: Double) {
+        self.point = point; self.height = height; contacted = true; age = max(age, contactAt); impact = age
+    }
     mutating func advance(_ dt: Double) { age = min(total, age + dt) }
     mutating func cancel() { age = total; contacted = false }
     /// Android `ActorPresentation.recoveryBlend`: after the opponent's follow-through (0.44 s) its FOLLOW pose

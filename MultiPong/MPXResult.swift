@@ -46,11 +46,12 @@ enum MPResultWords {
     }
 }
 
-/// One player of a result card, in finishing order.
+/// One player of a result card, in finishing order. Android 47ad0c9: a name may show in its seat colour (ARGB).
 struct MPXResultRow: Equatable {
     var name: String
     var score: Int
     var winner = false
+    var color: UInt32? = nil
 }
 
 /// Android MatchResultDialog: a translucent result card over the real court, on a dimmed screen (Android also blurs it from
@@ -58,7 +59,15 @@ struct MPXResultRow: Equatable {
 /// are separate columns that follow the interface direction. Put it over the whole screen; it takes every touch until one of
 /// its buttons closes it.
 struct MPXResultCard: View {
-    struct Action { let title: String; let close: () -> Void }
+    /// Android 47ad0c9 MatchResultDialog.Action: light blue by default; the pink (#E91E63) Menu or "Back to tournament" has
+    /// white lettering.
+    struct Action {
+        let title: String
+        let color: UInt32
+        let close: () -> Void
+        init(title: String, color: UInt32 = 0xffa6dcff, close: @escaping () -> Void) { self.title = title; self.color = color; self.close = close }
+    }
+    static let pink: UInt32 = 0xffe91e63
     let title: String
     let rows: [MPXResultRow]
     let primary: Action
@@ -97,13 +106,15 @@ struct MPXResultCard: View {
     private func panel(wide: Bool) -> some View {
         VStack(spacing: 0) {
             line("★  " + MPResultWords.scores(), size: wide ? 14 : 16, color: Self.gold).multilineTextAlignment(.center).frame(maxWidth: .infinity)
-            line(title, size: wide ? 22 : 26, color: Self.gold).multilineTextAlignment(.center).frame(maxWidth: .infinity)
+            // Android 47ad0c9: the headline is pink.
+            line(title, size: wide ? 22 : 26, color: FamilyKit.color(0xffff5ba6)).multilineTextAlignment(.center).frame(maxWidth: .infinity)
                 .padding(.top, 6).padding(.bottom, wide ? 8 : 16)
             ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
                 let accent = FamilyKit.color(Self.accents[index % Self.accents.count])
                 HStack(spacing: 0) {
                     line(Self.number(index + 1), size: 18, color: accent).frame(width: 30)
-                    line(row.name, size: wide ? 18 : 21).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 10)
+                    line(row.name, size: wide ? 18 : 21, color: row.color.map { FamilyKit.color($0) } ?? .white)
+                        .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 10)
                     line(Self.number(row.score), size: wide ? 22 : 25, color: accent).frame(width: 48)
                 }
                 .padding(.horizontal, 8).padding(.vertical, 5).frame(minHeight: wide ? 38 : 50)
@@ -119,9 +130,10 @@ struct MPXResultCard: View {
                 line(note, size: 15, color: FamilyKit.color(0xffd9ecff), bold: false).frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 10).padding(.bottom, 4)
             }
+            // Android 47ad0c9: the pink secondary action (Menu) comes first, at the reading edge.
             HStack(spacing: 12) {
-                button(primary, color: 0xffa6dcff)
-                if let secondary { button(secondary, color: 0xffffb9cf) }
+                if let secondary { button(secondary, color: MPXResultCard.pink) }
+                button(primary, color: primary.color)
             }
             .padding(.top, 12)
         }
@@ -140,7 +152,7 @@ struct MPXResultCard: View {
             closed = true
             action.close()
         } label: {
-            Text(action.title).font(.system(size: 18, weight: .bold)).foregroundStyle(FamilyKit.color(0xff17384d))
+            Text(action.title).font(.system(size: 18, weight: .bold)).foregroundStyle(color == MPXResultCard.pink ? Color.white : FamilyKit.color(0xff17384d))
                 .multilineTextAlignment(.center).padding(.horizontal, 12).padding(.vertical, 6)
                 .frame(maxWidth: .infinity, minHeight: 48)
         }

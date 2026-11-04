@@ -220,11 +220,13 @@ import StoreKit
                     }
                     MPMenuSection(id: "advanced", title: t("Advanced", "מתקדם"), openByDefault: false) {
                         sectionButton(t("Settings · Feedback & sharing", "הגדרות · משוב ושיתוף"), MPStyle.yellow) { model.openJourney(.settings) }
+                        // Android PlayActivity (MinikPingPong 1cca1cf, 1.0.12): the parents' link is inside Advanced, above
+                        // "More Minik apps & games", light blue (#A6DCFF) on the dark panel, 12 dp above and 8 dp below.
+                        familyLink(commerce.isRemoveAdsActive ? t("Parents / adults · Ads removed", "להורים ולמבוגרים · הפרסומות הוסרו") : t("Parents / adults · Remove ads", "להורים ולמבוגרים · הסרת פרסומות"), color: MPColor.color(0xffa6dcff)) { commerceUnlocked = false; showCommerce = true }
+                            .padding(.top, 12).padding(.bottom, 8)
                         // Android PlayActivity (Advanced): "More Minik apps & games" as a link, behind the family grown-up gate.
                         familyLink(FamilyMessages.text("More Minik apps & games", "עוד אפליקציות ומשחקי מיניק")) { FamilyMessages.shared.showMoreApps(gate: nil) }
                     }
-                    // Android PlayActivity (2026-10): the parents' link is dark blue below the sections.
-                    familyLink(commerce.isRemoveAdsActive ? t("Parents / adults · Ads removed", "להורים ולמבוגרים · הפרסומות הוסרו") : t("Parents / adults · Remove ads", "להורים ולמבוגרים · הסרת פרסומות"), color: MPColor.color(0xff205ca8)) { commerceUnlocked = false; showCommerce = true }
                 } else {
                     action(t("Learn how to play with Mega Minik", "לומדים לשחק עם מגה מיניק"), color: MPStyle.mint) { model.guide() }
                     controls
@@ -326,12 +328,19 @@ import StoreKit
         // Android skips QA and screenshot launches.
         guard model.route == .menu, model.experience == .full, model.ads.configured, StoreScreenshotScene.name == nil else { return }
         try? await Task.sleep(nanoseconds: 1_500_000_000)
-        // Android `hasWindowFocus()`: no other sheet or alert is up.
-        guard !Task.isCancelled, model.route == .menu, !model.busy, !showCommerce, !showHelp, !showGameSettings, model.error == nil else { return }
-        FamilyMessages.shared.remind(ownershipResolved: commerce.ownershipResolved, adFree: { [commerce] in commerce.isRemoveAdsActive },
-                                     purchaseAvailable: commerce.removeAdsProduct != nil, gate: nil) {
-            commerceUnlocked = true
-            showCommerce = true
+        // Android PlayActivity (MinikPingPong 3e351d2): the store's ownership and price can arrive after the menu, so the
+        // idle menu asks again every 2 s, 15 times in all. The reminder's own 14-day policy keeps it to one showing.
+        for attempt in 0..<15 {
+            if attempt > 0 { try? await Task.sleep(nanoseconds: 2_000_000_000) }
+            guard !Task.isCancelled, model.route == .menu else { return }
+            // Android `hasWindowFocus()`: no other sheet or alert is up.
+            guard !model.busy, !showCommerce, !showHelp, !showGameSettings, model.error == nil else { continue }
+            let shown = FamilyMessages.shared.remind(ownershipResolved: commerce.ownershipResolved, adFree: { [commerce] in commerce.isRemoveAdsActive },
+                                                     purchaseAvailable: commerce.removeAdsProduct != nil, gate: nil) {
+                commerceUnlocked = true
+                showCommerce = true
+            }
+            if shown { return }
         }
     }
     /// `face`: an Android raised face (PongCourtStyle start / menu) instead of a flat colour.

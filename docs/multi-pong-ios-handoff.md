@@ -1083,3 +1083,104 @@ e3dae11fcba9c940fdf243cd4f00a95b8f8aa70d23a1c8ee9839aa1c088eab44  app/src/main/r
 45dbf4aab25f386a90461000d98b1449b6dde29eb8067bcaedebd9ef688cd760  app/src/main/res/values-hi/issue_review.xml
 79a7d51910a2ab0574291d3515d1b52060ba2c5505832372e4db9503c58d38f0  app/src/main/res/values-nl/issue_review.xml
 ```
+
+## Update 2026-11-04: Android f620ed8, 5185120, 0aa7014, 3e3664e, 47ad0c9 (version 10.0, the v8 issue report)
+
+Source: `C:\Projects\MinikCrossPong` at `47ad0c9` ("Show occasional ad reminder with one grown-up gate"). The gameplay and screen
+fixes are in `f620ed8` and `5185120`; `0aa7014`, `3e3664e` and `47ad0c9` change only Android monetization (and the ad reminder's
+menu timer in `PlayActivity`); the other commits of the range (`8837740`, `4035011`, `a2c672e`, `020f7a1`, `d89f8f3`, `9630dfe`,
+`e8c3f15`) are device tests, QA evidence, store media and documents. The fixes are listed in Android's
+`docs/qa/issues-20261103-v8/REPORT.md` (issues 1–17). `ANDROID_COMMIT` is now `47ad0c9`, and the catalog was regenerated: it gains
+Android's `issueV8Review2026` rows (the retry explanations, Help, the tournament wording, and Android's code-redemption messages,
+which iOS does not show). Two of its keys already existed ("Let's try again" and the serve card's "Tap your side of the
+table, …" template); as in Kotlin's `Map + Map`, the generator now keeps such a key at its first place with the newer texts, so
+the catalog still has every key once (965 rows). Not built on a Mac yet, and not type-checked on Windows (the Swift front end is blocked there).
+
+| Issue | Android | iOS |
+| --- | --- | --- |
+| 1, 2. Button lettering and colours | `PongButton.kt`: every green action face becomes #58BD8C; text 1.5 dp lower; tutorial Back #E91E63 with white text, Next blue | `ModernPongView.action` and `MPXJourneyView.button` give mint and green actions the #58BD8C face (`MPStyle.green`); `MPXGuideCard` Back #E91E63 / white, Next (133, 215, 255) |
+| 3. Serve-first guide, retry, close | `CrossTutorial.kt`: Serve first, then the table, no introduction; no "Practice never costs points"; "Let's try again"; a failed serve says why (`ServeFault` from `CrossEngine.kt`); gentler Pro demonstration swipe (0.4, −0.8). `GuideDialog.kt`: title with the Minik close (X) at the top end, start-aligned text, Back / Next in one bottom row (mirrored for RTL), Try it yourself / Try again yellow and Show me pink above it, no "To the game"; X leaves the learning screen | `CrossTutorial` (lesson order, `phase`, `canGoBack`, `back`, `card`, `drive`); `CrossEngine` (`CrossServeFault`, `CrossTrainingResult.serveFault`, `judge`, `finish`, `commitSwipe`); `MPXGuideCard` (`MPXUI.swift`, art `minik_close`); `ModernPongRooms.tourCardView`; `MPController.tourBack`, `exitLearning` |
+| 4. Camera control | `CrossCourt.kt`: the action camera works in portrait too; the fit holds the authored bodies of every pose; no toast; the icon shows the next camera (`ic_camera` / `ic_view_mode`) | `CrossScene.actionView`, `layoutCourt` (body bounds of poses 0–3 at u = −0.48, 0, 0.48; margins 14, board + 16; fit × 0.95 action / × 0.85 overview); `crossToolbar` (`camera.fill` "Action camera" / `camera.viewfinder` "Fit all players"); the toasts of `MPController.toggleActionCamera`, `CrossJourneyModel.toggleCamera` and `CrossTeamsModel.toggleCamera` are gone |
+| 5. Contextual Help, learning Back | `CrossActivity.showHelp`: the current lesson's card or how to play at the control level, only an X, resuming the match; Back from a practice returns to its card; Back from a match opened by "Learn how to play" restarts the guide. Journey help has only the X | `MPController.showCrossHelp`, `closeCrossHelp`, `crossHelp`, `back()` (`.cross`), `crossLearn`; `crossGame` overlay; `CrossJourneyModel.showHelp` shown in `MPXGuideCard` instead of an alert |
+| 6. Feet outside the tabletop | `CrossCourt.drawPlayer`: side players stand on the floor at reach + 0.34 (+ 0.32 of the seat size); no clamping of the sprite onto the table | `CrossScene.renderPlayer` (the old fitted-view clamp is removed); the existing upper-body/paddle depth clip stays |
+| 7. Result colours | `MatchResultDialog.kt`: pink headline, names in seat colours, pink #E91E63 Menu first; no "Completed games are not saved."; a room fixture shows who won and "Back to tournament" (tournament) or Menu (friendly) | `MPXResultCard` (`Action.color`, `MPXResultRow.color`, pink title, button order, white text on pink); `crossResultView`; `ModernPongView.roomResultCard`; `MPXSeatColor` |
+| 8. Sound lifecycle | `PongMenuMusic.kt`: one shared player for the menu pages, the journey pages included; turning it off pauses at once. `ModernAudio.kt` / `LobbyAudio.kt`: "Game sounds" off stops the playing cue and blocks every later swing, contact, net, lobby and celebration cue | `MPController.syncMusic` (journey pages, `musicChanged`), `CrossJourneyModel.setMenuMusic`; `MPAudio.soundsEnabled`, `stopEffects`, `CrossJourneyModel.setGameSounds` |
+| 8. Grown-up question | `CrossJourneyActivity.adult`: the shared `FamilyAdultGate` instead of the fixed "8 × 7" | `MPXJourneyView` presents the shared `ParentalGateView` (unchanged; the randomized question of the other Minik apps); `CrossJourneyModel.gateUnlocked`, `gateCancelled` |
+| 10. Tournament creation | "Players advancing from each table", "Top one" / "Top two"; explanations from the reading edge | `ModernPongView.tournamentChoices`, `createForm`, `ordinaryForm`; `ModernPongRooms.roomIntro` game-type line |
+| 11. Roster | Larger centred character arrows; blue Add player; green Start with a 16 dp gap, dimmed (0.48) until full; "Cancel tournament" | `ModernPongView.housePicker`; `ModernPongRooms.waitingTools`, `tournamentExitButton`, `leaveTitle` |
+| 12. Grouped tournament tables | `PlayActivity.groupBracket` + new `TournamentTableCard.kt`: a pink section per round (stage, who goes through, matches left, "(✓ – through)"), each table a white card with avatars, names and scores around the table and its state, this player's Start below it; no join code once closed; no duplicate round heading or current-table block; Cancel after the bracket or match list (`5185120`) | `ModernPongRooms.tournamentRoom`, `groupBracket`, `groupRound`, `tableCard`, `tableState`, `tournamentSummary`, `tournamentPlay`, `roomIntro`; new `MPXTournamentTable`, `MPXTableShape` |
+| 13. Contact timing, header | `ModernEvents.kt` `Stroke.impactAt`; `CrossCourt.kt` poses, contact arc and paddle around it; `PrivateMatchActivity` outlined score header | `MPStroke.impact` / `impactAt`; `CrossScene.renderPlayer`, `ballOffset`, `renderPaddle`; `crossMatchScreen` header shadow (`MPStyle.outline`) |
+| 13. Tournament finished | `PlayActivity.tournament`: "Tournament finished", a pink winner panel with the champion's avatar, the tables, a final Done; confetti and applause once; the last fixture's result no longer celebrates | `ModernPongRooms.tournamentFinished`; `MPController.closeResult` (a finished tournament goes back to its screen), `celebrateCompletion`, `finish` |
+
+### Not ported, and why
+
+- **Monetization** (`AdCoordinator`, `RemoveAdsBilling`, `PlayPurchaseProcessor`, `PurchaseOptionSelector`, `Entitlements`,
+  `EntitlementStore`, `MonetizationConfig`, `AccessCodes`, `AccessTokenRules`, `MonetizationActivity`, the manifest's AdMob and
+  purchase-option metadata, the ad reminder's menu timer in `PlayActivity`): Google Play billing, AdMob, Firebase access codes
+  (app_id 7) and Play Integrity. Multi Ping Pong on iOS shows no ads (`MPAds.interstitialUnit` is nil) and sells nothing.
+- **14, 15. Remove Ads actions and code validation**: the same Android purchase and code screens; iOS has none.
+- **16, 17. Advanced section order**: iOS Multi has no "Parents / adults · Remove ads" link at all; its Advanced section already
+  holds only Settings and "More Minik apps & games". 17 is regular Minik Ping Pong.
+- **9. Family card actions**: the shared family card and grown-up dialog of the Android family library; on iOS they are shared
+  `Family/` and `Sources/` files, not part of this port.
+- **Lettering offsets** (`PongButton.onDraw` +1.5 dp, `ExpandButton`, `PongRaisedLabel`): Android text measurement of its raised
+  faces. SwiftUI centres the text already.
+- **`LocalizedActivity.surface`** turning light-green panels and toolbar controls into 0xff8bd4ae, and the Play section's menu
+  colour: the iOS menu sections, cards and toolbars keep their colours; only actions get the #58BD8C face.
+- **`HousePlayerPicker`'s text arrows** (38 sp): iOS uses chevron symbols, now larger (42 pt) and centred.
+- **Configuration changes** (`screenLayout`, the guide card redrawn after a rotation): SwiftUI keeps its views across rotations.
+- Device-test and QA harness, store screenshots, documents and the version bumps (9.0, 10.0).
+
+### Tests
+
+`Tests/MultiPongTests/IssueReportV8Tests.swift`: Android `ServeTutorialRegressionTest` (every control's serve demonstration lands
+legally on both tables; a practice's Back keeps the serve lesson), the lesson order and first-card Back, the backward-serve retry
+text (EN/HE), `impactAt`, the game-sounds gate, the tournament wording in the catalog (HE, ES), the tournament table's seat
+places and colours, and the learning screen's Back / close / Help flow. `CrossExerciseTests` follows Android `CrossExerciseTest`
+(the backward serve fault).
+
+### SHA-256 of the Android files used at 47ad0c9
+
+`git show 47ad0c9:<path> | sha256sum`. Every other committed hash above is unchanged at `47ad0c9`; the monetization, build and
+status files are listed because they changed, not because they were ported.
+
+```text
+5e0fba3c967163457c60a4cf3cf2da316e5e53edbec009801ac230e456206907  BUILD_STATUS.md
+eb78946af3a8476c698b467bf467c2057cc537d005a4fc33df1cc5647dbc3845  app/build.gradle.kts
+a9ce9cfd7176233fa12a3f1fb2acc309e1d9305f0216c06922b7110b156b356d  app/src/main/AndroidManifest.xml
+c5021724cd052f931ad66db73a6936f1d4403852413ead95d6aaca3217f4621f  app/src/main/java/com/appsbybros/minik/localization/AppText.kt
+e5d8655f507b0eb7697881781a8b712faebce2e6d12402c53fb42ee014476f47  app/src/main/java/com/appsbybros/minik/monetization/AdCoordinator.java
+29944f49b0aff463d5a5d9e71ae3ca38bfaf4c26bdfeb702f829ccf569fa2f60  app/src/main/java/com/appsbybros/minik/monetization/MonetizationActivity.java
+6dd3d2943cfbcc227a45b3109c48157c9c14ca2c83bf6248fe8dc2a2ec99a01e  app/src/main/java/com/appsbybros/minik/pingpong/GuideDialog.kt
+2529947249af3ec1d5ffbcabf54d1d221d68f2f09d8dbea6588875afdc47715b  app/src/main/java/com/appsbybros/minik/pingpong/HousePlayerPicker.kt
+0994d2ef39e882c249312ef68ff20da5c7a69f78e0790a0526263045f711361c  app/src/main/java/com/appsbybros/minik/pingpong/LocalizedActivity.kt
+8bba704a2a666b03d7f43814e46b36b92a4c254fe75a6d675a52553e8a26b5f7  app/src/main/java/com/appsbybros/minik/pingpong/MatchResultDialog.kt
+6e3f6dee739158554b3cad4aa08dd9e1f6a9a15a5d0f5edd5b4987a338dff6e7  app/src/main/java/com/appsbybros/minik/pingpong/ModernAudio.kt
+24113c276ba7db1351457d9e84b7c017a170e3a7142d6a0aea6dc238c0cc15e1  app/src/main/java/com/appsbybros/minik/pingpong/ModernEvents.kt
+5d7dcbd63316f200542cde5063036a2d7d86755f19d08d498a0819855d4e5e06  app/src/main/java/com/appsbybros/minik/pingpong/PongMenuMusic.kt
+f4901e8c662aa27ec8b392802f70390216fdf1f8fa3a10167bc2d33c003be784  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossActivity.kt
+f070be9c29027025c5fa253aef937c39fffa9efb0667d09202aaa1bfc9dfda99  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossCourt.kt
+1cd86853be8b8c5fb1c004d65e1309f5bc7ccbbbfae7adad80538bea4f7de8ee  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossEngine.kt
+b68c4ee2811c8b61f5460f99489ab01d89f342abe28cf719360514fa4988219c  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossJourneyActivity.kt
+856878819b65f60afbffb2bea5d8ee28937735997c031619c80786f19ea719c4  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossTutorial.kt
+ea457e6137aac1dd99f178b03ab25d32d35c36c482134eaeac46cf0a754ca46c  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/ExpandButton.kt
+bada72dd33b22d51ace9ffd6919edc9f9ee49b14560cce0e5377a63907c35d57  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/LobbyAudio.kt
+660a4d4c5a14726548f8ded07199292bb42c8c36669c9f1fe8548d89624cedb1  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/PlayActivity.kt
+9fcb311fc38c5f71cca3b1542ac2afd2eacf53d2798b410536b4c47f1a99bc4e  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/PrivateMatchActivity.kt
+718ae27dd5f4ebb80782e2aa81aac9d3edfb8df17de9b299fe5bc5c596f0f975  app/src/test/java/com/appsbybros/minik/monetization/AccessCodesContractTest.java
+1860bec58df5498f893c120764193529bbb7b7cbf4c6904ae6e41b4bfd1d5385  app/src/test/java/com/appsbybros/minik/monetization/AccessTokenRulesTest.java
+95b05ad6ac67fe8548ecb7b0c5b377f32299bcd667681bc17a692220538652cd  app/src/test/java/com/appsbybros/minik/pingpong/cross/CrossExerciseTest.kt
+2e6f183ba5774dcc8467068466ba59c2952d7512beeec48f185f7ccc5d314543  app/src/main/java/com/appsbybros/minik/pingpong/PongButton.kt
+88b19c17e5c38c4c9a3163a6d7ec702ad107e449d66945fe1df7500a47effe69  app/src/main/java/com/appsbybros/minik/pingpong/TournamentTableCard.kt
+91f3479f24a75a1c511a203bfd3bcd8ccd335174054bf7ca2928ca77defaf4ed  app/src/main/res/drawable/ic_camera.xml
+691f942c105fda1705c34de6071224df29c1ba366c40d21d67a1f924bfd0a84b  app/src/test/java/com/appsbybros/minik/pingpong/cross/ServeTutorialRegressionTest.kt
+```
+
+### SHA-256 of the Android working-tree files used (2026-11-04)
+
+The catalog source as it is on disk (`sha256sum <path>`). The `strings.xml`, `journey.xml` and `issue_review.xml` hashes above are
+unchanged.
+
+```text
+c5021724cd052f931ad66db73a6936f1d4403852413ead95d6aaca3217f4621f  app/src/main/java/com/appsbybros/minik/localization/AppText.kt
+```

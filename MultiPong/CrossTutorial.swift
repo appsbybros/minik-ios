@@ -2,7 +2,8 @@ import Foundation
 
 /// Android cross/CrossTutorial.kt (MinikCrossPong 5c1aa4d): the interactive guide for the 3/4-player
 /// table. Real input, contact and landing rules decide success; nothing scores. Show me / Try it yourself / Try again, like the
-/// classic guide. EN/HE texts verbatim; the other languages through `MPText`, call by call as on Android.
+/// classic guide. EN/HE texts verbatim; the other languages through `MPText`, call by call as on Android. Android 47ad0c9: the
+/// guide starts with the serve (no introduction card), then the table; a failed serve explains what went wrong.
 final class CrossTutorial {
     enum Phase { case intro, info, explain, demo, attempt, result }
     enum Kind { case table, serve, returning, team, scoring }
@@ -23,7 +24,7 @@ final class CrossTutorial {
     let lessons: [Lesson]
     private(set) var index = 0
     var lesson: Lesson { lessons[index] }
-    private(set) var phase = Phase.intro
+    private(set) var phase = Phase.explain
     var changed = false
     let names: [String]
     private(set) var engine: CrossEngine
@@ -45,7 +46,7 @@ final class CrossTutorial {
         let leftSeat = order[0], rightSeat = order[order.count - 1]
         let aheadSeat: Int? = n == 4 ? order[1] : nil
         left = leftSeat; right = rightSeat; ahead = aheadSeat
-        var built: [Lesson] = [Lesson(kind: .table), Lesson(kind: .serve, expected: rightSeat),
+        var built: [Lesson] = [Lesson(kind: .serve, expected: rightSeat), Lesson(kind: .table),
                                Lesson(kind: .returning, expected: leftSeat, server: rightSeat), Lesson(kind: .returning, expected: rightSeat, server: leftSeat)]
         if let aheadSeat { built.append(Lesson(kind: .returning, expected: aheadSeat, server: leftSeat)) }
         built.append(Lesson(kind: .team))
@@ -84,13 +85,13 @@ final class CrossTutorial {
         return true
     }
     /// The card before this one: a lesson's result or practice goes back to its explanation, an explanation to the previous
-    /// lesson, the first lesson to the introduction.
-    var canGoBack: Bool { phase != .intro }
+    /// lesson. Android 47ad0c9: the first lesson's explanation has nothing before it (its Back leaves the guide).
+    var canGoBack: Bool { index > 0 || phase == .result || phase == .attempt || phase == .demo }
     func back() {
         switch phase {
         case .result, .demo, .attempt: phase = firstPhase
         default:
-            if index == 0 { phase = .intro }
+            if index == 0 { phase = firstPhase }
             else { index -= 1; phase = firstPhase }
         }
         engine = make()
@@ -132,7 +133,8 @@ final class CrossTutorial {
             if control == .pro {
                 let spot = geometry.toView(0, e.serveSpot(0))
                 e.touch(geometry.fromView(0, spot + MPPoint(0, 0.10)))
-                e.touch(geometry.fromView(0, spot - MPPoint(0, 0.04)), velocity: MPPoint(0.42, -1.0), down: false)
+                // Android 47ad0c9: a gentler swipe whose demonstration lands legally on both tables.
+                e.touch(geometry.fromView(0, spot - MPPoint(0, 0.04)), velocity: MPPoint(0.4, -0.8), down: false)
                 e.endTouch()
             } else {
                 let at = geometry.fromLocal(0, 0.15, 0.8)
@@ -221,17 +223,24 @@ final class CrossTutorial {
                 message = tr("\(who(lesson.server)) sends you the ball. Return it to \(who(lesson.expected)) \(side(lesson.expected, false)). \(dragHint)",
                              "\(who(lesson.server)) שולח/ת לכם את הכדור. החזירו אותו אל \(who(lesson.expected)) \(side(lesson.expected, true)). \(dragHint)")
             }
-            message += "\n\n" + tr("Practice never costs points.", "בתרגול לא מפסידים נקודות.")
         case .result:
             let r = engine.trainingResult
             if r?.success == true {
                 title = tr("Well done!", "כל הכבוד!")
                 message = tr("The ball reached \(who(lesson.expected)).", "הכדור הגיע אל \(who(lesson.expected)).")
             } else {
-                title = tr("Let's try again!", "בואו ננסה שוב!")
+                title = tr("Let's try again", "בואו ננסה שוב")
                 if r?.kind == .net { message = tr("That hit the net. Hit a little later or gentler.", "הכדור פגע ברשת. נסו קצת מאוחר יותר או בעדינות.") }
                 else if r?.kind == .out || r?.kind == .ownSide { message = tr("That landed out. Use a smaller sideways drag.", "הכדור יצא. נסו גרירה קטנה יותר הצידה.") }
-                else if r?.kind == .badServe { message = tr("Swipe upward through the ball to serve.", "החליקו למעלה דרך הכדור כדי להגיש.") }
+                else if r?.kind == .badServe {
+                    // Android 47ad0c9: the retry names what went wrong with the serve.
+                    switch r?.serveFault {
+                    case .backward?: message = tr("Your swipe went sideways or down. Start below the ball and swipe up through it toward the other player.", "ההחלקה הייתה לצד או למטה. התחילו מתחת לכדור והחליקו דרכו למעלה לכיוון השחקן השני.")
+                    case .weak?: message = tr("The swipe was too short or slow. Start below the ball and make a longer upward swipe through it.", "ההחלקה הייתה קצרה או איטית מדי. התחילו מתחת לכדור והחליקו דרכו למעלה בתנועה ארוכה יותר.")
+                    case .ownBounce?: message = tr("The first bounce missed your serving area. Tap near the middle of your own colored arm before dragging sideways to aim.", "הקפיצה הראשונה החמיצה את אזור ההגשה שלכם. הקישו ליד מרכז הזרוע הצבעונית שלכם, ואז גררו לצד כדי לכוון.")
+                    default: message = tr("The ball bounced on your side again instead of reaching the other player. Start nearer the middle of your arm and use a smaller sideways drag.", "הכדור קפץ שוב בצד שלכם במקום להגיע ליריב. התחילו קרוב יותר למרכז הזרוע שלכם וגררו מעט פחות לצד.")
+                    }
+                }
                 else if r?.kind == .missed { message = tr("The ball got past you. \(dragHint)", "הכדור עבר אתכם. \(dragHint)") }
                 else if let receiver = r?.receiver {
                     message = tr("It went to \(who(receiver)). Aim \(side(lesson.expected, false)) for \(who(lesson.expected)).",

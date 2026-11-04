@@ -60,10 +60,13 @@ struct CrossExercise {
     var feedSide = 0.0
     var paceMultiplier = 1.0
 }
+/// Android 47ad0c9 `ServeFault`: why a drill's serve failed, so the guide can explain the retry.
+enum CrossServeFault { case weak, backward, ownBounce, secondBounce }
 struct CrossTrainingResult: Equatable {
     var success: Bool
     var kind: CrossRallyKind? = nil
     var receiver: Int? = nil
+    var serveFault: CrossServeFault? = nil
 }
 
 /// A simultaneous 3/4-player match on the shared cross table: one ball, one referee, local/remote/house seats. Fixed 1/120 s
@@ -457,7 +460,10 @@ final class CrossEngine {
     /// remote receiver `graceTime` seconds for its strike to arrive before calling missed.
     private func judge(_ kind: CrossRallyKind, _ event: CrossBallEvent?) {
         if settled { return }
-        if exercise != nil { finish(false, kind); return }
+        if exercise != nil {
+            let fault: CrossServeFault? = kind == .badServe ? (referee.phase == .serveOwn ? .ownBounce : .secondBounce) : nil
+            finish(false, kind, fault: fault); return
+        }
         if networked && !authoritative { settled = true; pendingTap = nil; return }
         if kind == .missed && networked, let receiver = referee.receiver, seats[receiver].kind == .remote {
             if grace == nil { grace = CrossEngine.graceTime }
@@ -473,8 +479,8 @@ final class CrossEngine {
         pointDelay = CrossEngine.pointDelayTime; grace = nil; serveAt = nil; pendingServe = nil; pendingTap = nil
         houses.values.forEach { $0.plan = nil }
     }
-    private func finish(_ success: Bool, _ kind: CrossRallyKind?, receiver: Int? = nil) {
-        trainingResult = CrossTrainingResult(success: success, kind: kind, receiver: receiver)
+    private func finish(_ success: Bool, _ kind: CrossRallyKind?, receiver: Int? = nil, fault: CrossServeFault? = nil) {
+        trainingResult = CrossTrainingResult(success: success, kind: kind, receiver: receiver, serveFault: fault)
         pendingTap = nil; pendingServe = nil; serveAt = nil; grace = nil
         houses.values.forEach { $0.plan = nil }
     }
@@ -684,7 +690,7 @@ final class CrossEngine {
         gestureCommitted = true
         if let plan = CrossShots.swipeServe(geometry, physics, server: local, start: serveSpot(local), swipe: swipe) { queueServe(plan); return }
         begin(local, point, CrossShots.contactHeight, left: swipe.x < 0)
-        if exercise != nil { finish(false, .badServe); return }
+        if exercise != nil { finish(false, .badServe, fault: swipe.length < 0.04 ? .weak : .backward); return }
         if networked && !authoritative {
             // The authority judges it: the failed serve is published as a ball dropped from the hand.
             let start = serveSpot(local)

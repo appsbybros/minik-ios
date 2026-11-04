@@ -15,7 +15,9 @@ struct MPXJourneyResult: Equatable {
 /// feedback behind a grown-up question).
 @MainActor final class CrossJourneyModel: ObservableObject {
     enum Page { case brief, list, teams, settings, game }
-    @Published private(set) var page: Page = .brief
+    /// Android 47ad0c9: the menu music plays on the journey's pages and pauses for its games (MPController.syncMusic).
+    @Published private(set) var page: Page = .brief { didSet { if page != oldValue { musicChanged?() } } }
+    var musicChanged: (() -> Void)?
     @Published private(set) var court: CrossScene?
     @Published private(set) var hud = ""
     @Published private(set) var paused = false
@@ -173,7 +175,7 @@ struct MPXJourneyResult: Equatable {
         court?.setActive(!on && foreground)
         refresh()
     }
-    /// Android 7254ab2: the help card names the stage and explains only it.
+    /// Android 7254ab2: the help card names the stage and explains only it. Android 47ad0c9: it has only its close (X) control.
     func showHelp() {
         pause(true)
         let stage = practice?.stage ?? CrossJourney.stages[8]
@@ -181,10 +183,8 @@ struct MPXJourneyResult: Equatable {
         help = instruction(stage)
     }
     func closeHelp() { help = nil; pause(false) }
-    func toggleCamera() {
-        actionCamera.toggle()
-        notice = hebrew ? (actionCamera ? "מצלמת פעולה" : "כל השחקנים במסך") : (actionCamera ? "Action camera" : "Fit all players")
-    }
+    /// Android 47ad0c9 CrossCourt.toggleCamera: no toast any more.
+    func toggleCamera() { actionCamera.toggle() }
     private func refresh() {
         guard page == .game, let e = current else { return }
         let p = practice
@@ -298,13 +298,28 @@ struct MPXJourneyResult: Equatable {
     }
 
     // ---- settings ------------------------------------------------------------------------------------------------------------
-    /// Android `adult { … }`: "8 × 7 = ?" before leaving the app.
+    /// Android 47ad0c9 `adult { … }` (FamilyAdultGate): the shared, randomized grown-up question before leaving the app, as in
+    /// the other Minik apps (ParentalGateView), instead of the fixed "8 × 7 = ?".
     func grownUp(_ action: @escaping () -> Void) { gated = action; gateOpen = true }
-    func answerGate(_ text: String) {
-        gateOpen = false
+    func gateUnlocked() {
         let action = gated
         gated = nil
-        if text.trimmingCharacters(in: .whitespaces) == "56" { action?() } else { notice = tr("Try again", "נסו שוב") }
+        gateOpen = false
+        // The sheet closes first; the action may present another sheet (share) or leave the app.
+        Task { @MainActor in try? await Task.sleep(nanoseconds: 400_000_000); action?() }
+    }
+    func gateCancelled() { gateOpen = false; gated = nil }
+    /// Android 47ad0c9 ModernAudio: turning "Game sounds" off stops the cue that is playing.
+    func setGameSounds(_ on: Bool) {
+        preferences.journeySound = on
+        if !on { audio.stopEffects() }
+        objectWillChange.send()
+    }
+    /// Android PongMenuMusic (47ad0c9): turning the menu music off pauses it at once.
+    func setMenuMusic(_ on: Bool) {
+        preferences.menuMusic = on
+        objectWillChange.send()
+        musicChanged?()
     }
     func rate() {
         // Android opens the store listing; iOS asks the App Store for its own rating prompt.
@@ -327,7 +342,6 @@ struct MPXJourneyResult: Equatable {
 /// The journey screens.
 @MainActor struct MPXJourneyView: View {
     @ObservedObject var model: CrossJourneyModel
-    @State private var answer = ""
     @State private var pickerPlace: Int?
     @State private var hint: String?
     private func tr(_ en: String, _ he: String) -> String { model.tr(en, he) }
@@ -348,13 +362,10 @@ struct MPXJourneyResult: Equatable {
             }
         }
         .foregroundStyle(MPXMenu.deepInk)
-        .alert(model.helpTitle, isPresented: Binding(get: { model.help != nil }, set: { if !$0 { model.closeHelp() } })) {
-            Button(tr("Next", "הבא")) { model.closeHelp() }
-        } message: { Text(model.help ?? "") }
-        .alert(tr("For grown-ups", "למבוגרים"), isPresented: $model.gateOpen) {
-            TextField("8 × 7 = ?", text: $answer).keyboardType(.numberPad)
-            Button(tr("Continue", "המשך")) { model.answerGate(answer); answer = "" }
-            Button(tr("Cancel", "ביטול"), role: .cancel) { answer = "" }
+        // Android 47ad0c9: the stage help has only its close (X) control.
+        .overlay { if let help = model.help { MPXGuideCard(title: model.helpTitle, message: help) { model.closeHelp() } } }
+        .sheet(isPresented: Binding(get: { model.gateOpen }, set: { if !$0 { model.gateCancelled() } })) {
+            ParentalGateView(onCancel: { model.gateCancelled() }, onUnlock: { model.gateUnlocked() }).preferredColorScheme(.light)
         }
         .sheet(isPresented: Binding(get: { model.shareText != nil }, set: { if !$0 { model.shareText = nil } })) {
             MPXShareSheet(text: model.shareText ?? "")
@@ -411,7 +422,8 @@ struct MPXJourneyResult: Equatable {
         Button(action: action) {
             Text(title).font(.system(size: 17, weight: .semibold)).foregroundStyle(ink).multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity, minHeight: 52).padding(.horizontal, 12)
-                .background(fill ?? (primary ? MPXJourneyView.green : MPXMenu.mint), in: RoundedRectangle(cornerRadius: 20))
+                // Android 47ad0c9 PongButton: green and mint actions have the #58BD8C face.
+                .background(fill.map { $0 == MPXJourneyView.green || $0 == MPXMenu.mint ? MPStyle.green : $0 } ?? MPStyle.green, in: RoundedRectangle(cornerRadius: 20))
         }.buttonStyle(.plain).padding(.top, 9)
     }
     @ViewBuilder private var brief: some View {
@@ -484,11 +496,11 @@ struct MPXJourneyResult: Equatable {
         .environment(\.layoutDirection, MPText.rtl ? .rightToLeft : .leftToRight)
     }
     @ViewBuilder private var settings: some View {
-        Toggle(isOn: Binding(get: { model.preferences.journeySound }, set: { model.preferences.journeySound = $0; model.objectWillChange.send() })) {
+        Toggle(isOn: Binding(get: { model.preferences.journeySound }, set: { model.setGameSounds($0) })) {
             Text(tr("Game sounds", "צלילי המשחק")).font(.system(size: 18))
         }.frame(minHeight: 56)
         text(tr("Paddle swings, ball contacts and celebrations in team games and daily practice.", "הנפות מחבט, פגיעות בכדור וחגיגות במשחקי קבוצה ובאימון היומי."), 14)
-        Toggle(isOn: Binding(get: { model.preferences.menuMusic }, set: { model.preferences.menuMusic = $0; model.objectWillChange.send() })) {
+        Toggle(isOn: Binding(get: { model.preferences.menuMusic }, set: { model.setMenuMusic($0) })) {
             Text(tr("Menu music", "מוזיקה בתפריט")).font(.system(size: 17))
         }.frame(minHeight: 56)
         MPXReceptionSettings(preferences: model.preferences, hebrew: model.hebrew)

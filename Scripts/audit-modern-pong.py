@@ -14,7 +14,7 @@ def check(condition,message):
 # Android commit this port matches. Android sources and rules are read from that commit itself (git show, read-only),
 # so uncommitted work in the Android checkout never changes what the port is compared with; the working copies that
 # differ are only listed in the report. Binary assets are still compared with the checkout's files.
-ANDROID_COMMIT='f27a94e'
+ANDROID_COMMIT='3e351d2'
 android_reads=set()
 import subprocess
 def android_blob(p):
@@ -290,6 +290,13 @@ if args.android.exists():
     check('totalShows>=3' in hint and 'You can also play in landscape.' in hint and 'אפשר לשחק גם במצב אופקי.' in hint and 'static let lifetimeLimit = 3' in ios['MPRoomsViews.swift']
           and 'You can also play in landscape.' in ios['MPRoomsViews.swift'] and 'אפשר לשחק גם במצב אופקי.' in ios['MPRoomsViews.swift'] and 'For a wider view' not in ios_all,'Landscape notice: new wording, at most three times in all (Android 490de67)')
     check('marginEnd=dp(8)' in read(src/'multiplayer/PlayActivity.kt') and 'HStack(spacing: 8)' in ios['MPRoomsViews.swift'] and 'HStack(spacing: 8)' in ios['ModernPongView.swift'],'Tournament names 8 points from the portrait, at the start edge (Android 05d4aa0)')
+    play_now=read(src/'multiplayer/PlayActivity.kt'); menu=read(modern/'ModernPongView.swift')
+    adv=menu[menu.index('MPMenuSection(id: "advanced"'):]; adv=adv[:adv.index('} else {')]
+    check('text(advanced,tr("Parents / adults · Remove ads"' in play_now and '0xffa6dcff' in play_now
+          and adv.index('familyLink(commerce.isRemoveAdsActive')<adv.index('familyLink(FamilyMessages.text("More Minik apps') and '0xffa6dcff' in adv and '.padding(.top, 12).padding(.bottom, 8)' in adv,
+          'Parents / Remove ads link inside Advanced, above More Minik apps, light blue (Android 1cca1cf)')
+    check('attempts < 15' in play_now and 'postDelayed(this, 2000)' in play_now and 'for attempt in 0..<15' in menu and '2_000_000_000' in menu and 'if shown { return }' in menu,
+          'Remove-ads reminder retried on the idle menu every 2 s, 15 times (Android 3e351d2)')
 uncommitted=[]
 if args.android.exists():
     for f in sorted(android_reads):

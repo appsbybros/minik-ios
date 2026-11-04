@@ -42,7 +42,7 @@ import unicodedata
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DOC = ROOT / 'docs' / 'multi-pong-ios-handoff.md'
 CATALOG = ROOT / 'MultiPong' / 'MPTextCatalog.swift'
-ANDROID_COMMIT = '8fdf961e55cd180d87677263483c536723501114'
+ANDROID_COMMIT = '47ad0c9862830c349b726f1dc56c226ca750fbd8'
 APP_TEXT = 'app/src/main/java/com/appsbybros/minik/localization/AppText.kt'
 STRINGS = 'app/src/main/res/values{}/strings.xml'
 JOURNEY = 'app/src/main/res/values{}/journey.xml'
@@ -166,7 +166,9 @@ def kotlin_string(s, i):
 
 def android_rows(text):
     """[(chunk, key, [es, ar, hi, nl])] in AppText order: the row groups in the order `rows` adds them (5c1aa4d puts
-    receptionAssistance2026 first and journey2026 last; a later group's value wins for a repeated key, as in Kotlin)."""
+    receptionAssistance2026 first and journey2026 last; a later group's value wins for a repeated key, as in Kotlin).
+    Kotlin's `Map + Map` keeps a repeated key at its first position with the later value (47ad0c9 repeats one template key in
+    issueV8Review2026), so the rows are merged the same way and the catalog has every key once."""
     rows = []
     groups = {}
     for m in re.finditer(r'private fun (\w+)\(\)(?::Map<String,List<String>>)?\s*=\s*mapOf\(', text):
@@ -197,7 +199,14 @@ def android_rows(text):
                 value, i = kotlin_string(text, i)
                 values.append(value)
             rows.append((name, key, values))
-    return rows
+    merged, seen = [], {}
+    for name, key, values in rows:
+        if key in seen:
+            merged[seen[key]] = (merged[seen[key]][0], key, values)
+        else:
+            seen[key] = len(merged)
+            merged.append((name, key, values))
+    return merged
 
 
 def swift_literal(value):

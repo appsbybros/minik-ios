@@ -25,6 +25,13 @@ enum MPXMenu {
     static let hud = Color(red: 0x19 / 255, green: 0x30 / 255, blue: 0x4a / 255).opacity(0xd0 / 255)
 }
 
+/// Android `CrossCourt.SEAT_COLORS[seat % 4]` (the same values as `CrossScene.seatColors`) as opaque ARGB: result names and
+/// tournament table scores (Android 47ad0c9).
+enum MPXSeatColor {
+    static let values: [UInt32] = [0xffb73578, 0xff2570cd, 0xff22c55e, 0xfffacc15]
+    static func argb(_ seat: Int) -> UInt32 { values[((seat % values.count) + values.count) % values.count] }
+}
+
 /// Android PongOrientationHint / LandscapeTipSession (MinikCrossPong 7254ab2): "You can also play in landscape." at most once a
 /// run and three times in the app's lifetime, shared by every match screen. It is never shown once a match was played in landscape
 /// this run, nor while the match is not running (paused or finished). Replaces the old wider-view promise.
@@ -307,6 +314,74 @@ struct MPXReceptionSettings: View {
         if player?.isPlaying == false { player?.play() }
     }
     func stop() { player?.stop(); player = nil }
+}
+
+/// Colours of `MPXGuideCard` (Android GuideDialog 47ad0c9): ink, the blue title, Back #E91E63 and the light blue Next.
+enum MPXGuideStyle {
+    static let ink = Color(red: 35 / 255, green: 57 / 255, blue: 76 / 255)
+    static let heading = Color(red: 29 / 255, green: 112 / 255, blue: 176 / 255)
+    static let backFill = Color(red: 233 / 255, green: 30 / 255, blue: 99 / 255)
+    static let nextFill = Color(red: 133 / 255, green: 215 / 255, blue: 1)
+}
+
+/// One button of `MPXGuideCard`.
+struct MPXGuideAction {
+    let title: String
+    let fill: Color
+    var ink: Color = MPXGuideStyle.ink
+    let action: () -> Void
+}
+
+/// Android GuideDialog (MinikCrossPong 47ad0c9): a light card with its title, the Minik close (X) artwork at the top end, a
+/// paragraph from the reading edge, full-width secondary actions, and Back / Next in one row at the bottom (mirrored for right
+/// to left). The X closes at once. Help cards have only the X.
+struct MPXGuideCard: View {
+    let title: String
+    let message: String
+    var actions: [MPXGuideAction] = []
+    var back: MPXGuideAction? = nil
+    var next: MPXGuideAction? = nil
+    let close: () -> Void
+    var body: some View {
+        VStack(spacing: 0) {
+            ZStack(alignment: .topTrailing) {
+                Text(title).font(.system(size: 24, weight: .bold)).foregroundStyle(MPXGuideStyle.heading).multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity).padding(.horizontal, 46).padding(.vertical, 10)
+                Button(action: close) {
+                    Image("minik_close").resizable().scaledToFit().padding(10).frame(width: 48, height: 48)
+                }.buttonStyle(.plain).accessibilityLabel(MPText.t("Close", "סגירה", MPText.language == "he"))
+            }
+            ViewThatFits(in: .vertical) {
+                content
+                ScrollView { content }
+            }
+            if back != nil || next != nil {
+                HStack(spacing: 12) {
+                    if let back { button(back) }
+                    if let next { button(next) }
+                }.padding(.top, 12)
+            }
+        }
+        .padding(.horizontal, 16).padding(.top, 12).padding(.bottom, 16)
+        .frame(maxWidth: 430)
+        .background(Color(red: 1, green: 250 / 255, blue: 242 / 255), in: RoundedRectangle(cornerRadius: 24))
+        .shadow(radius: 10).padding(12)
+    }
+    private var content: some View {
+        VStack(spacing: 16) {
+            Text(message).font(.system(size: 18)).foregroundStyle(MPXGuideStyle.ink).lineSpacing(3).multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading).fixedSize(horizontal: false, vertical: true)
+            ForEach(actions.indices, id: \.self) { button(actions[$0]) }
+        }
+        .padding(.horizontal, 2).padding(.vertical, 12)
+    }
+    private func button(_ item: MPXGuideAction) -> some View {
+        Button(action: item.action) {
+            Text(item.title).font(.system(size: 16, weight: .bold)).foregroundStyle(item.ink).multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true).padding(12).frame(maxWidth: .infinity, minHeight: 52)
+                .background(item.fill, in: RoundedRectangle(cornerRadius: 14))
+        }.buttonStyle(.plain)
+    }
 }
 
 /// A system share sheet for a text.

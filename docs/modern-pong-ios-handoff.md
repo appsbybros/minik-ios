@@ -2,6 +2,15 @@
 
 **Implemented in source only. Nothing in this document has been compiled, run in a Simulator or on a device, or played between iOS and Android. The Windows source audit and the local-emulator Firebase rules tests pass. An Apple build and native runtime verification are still required. No IPA was produced.**
 
+## 2026-11-04 sync: Android commit `3e351d2`
+
+iOS now matches Android MinikPingPong `3e351d2` (1.0.12 and 1.0.13; app-code commits `47d6f0b`, `1cca1cf`, `9349a36`, `3e351d2`). Not compiled: the Windows Swift checker is blocked by Smart App Control. Ported in `Sources/ModernPong/ModernPongView.swift`:
+
+- **Parents link inside Advanced** (`1cca1cf`): "Parents / adults · Remove ads" moved from below the sections into Advanced, above "More Minik apps & games", light blue `#A6DCFF` on the dark panel, 12 pt above and 8 pt below.
+- **Reminder after the store starts** (`3e351d2`): `familyMenuIdle` asks again every 2 s, 15 times, while the menu is idle, because ownership and price can arrive after the menu. `FamilyMessages.remind` still shows it at most once per 14 days.
+
+Not ported: Google Play billing and purchase-option selection, the Firebase access codes (app_id 6, timed and lifetime) and Play Integrity (iOS sells Remove Ads through the App Store and has no code entry), the shared Android grown-up dialog (iOS already uses `ParentalGateView` before purchase, restore and links), "More below" padding (the iOS menu has no such cue), version bump, device tests and evidence. `Scripts/audit-modern-pong.py` reads Android at `3e351d2` (PASS, 2 new checks).
+
 ## 2026-11-02 sync: Android commit `f27a94e`
 
 iOS now matches Android MinikPingPong `f27a94e` (Android 1.0.10 and 1.0.11; the app-code commits are `05d4aa0`, `f85e5a3` and `490de67`). Type-checked on Windows (Minik Ping Pong, Retro, Multi and the test module: 0 errors, no new warnings); **no XCTest, Simulator or device run**. Ported:

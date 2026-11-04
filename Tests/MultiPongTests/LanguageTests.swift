@@ -133,13 +133,15 @@ final class LanguageTests: XCTestCase {
         MPText.configure("es")
         let tour = CrossTutorial(players: 4, control: .beginner, names: ["Tú"], hebrew: false)
         let card = tour.card(false)
-        XCTAssertEqual("¡Juguemos a Multiplayer Ping Pong!", card.title)
-        XCTAssertEqual("Controles: Principiante (cámbialos en Ajustes ⚙)\n\n4 jugadores comparten mesa y pelota. Siempre estás abajo. Envía la pelota a CUALQUIER rival hasta que alguien alcance la puntuación objetivo.",
+        // Android 47ad0c9: the guide opens on the serve lesson (no introduction card); its text fills the catalog template.
+        let receiver = tour.names[tour.lesson.expected ?? 0]
+        XCTAssertEqual("Saque", card.title)
+        XCTAssertEqual("Controles: Principiante (cámbialos en Ajustes ⚙)\n\nToca tu lado de la mesa y arrastra hacia \(receiver) a tu derecha antes de levantar el dedo. La pelota bota una vez en tu lado y luego en el suyo.",
                        card.message)
         // 5c1aa4d: the guide says "Multiplayer Ping Pong" and adds a team card before scoring (7 cards at a 4-player table).
         XCTAssertEqual("1/7 · Principiante · Cómo jugar", tour.statusText(false))
         MPText.configure("en")
-        XCTAssertTrue(tour.card(false).message.hasPrefix("Controls: Beginner (change it in Settings ⚙)\n\n4 players share one table"))
+        XCTAssertTrue(tour.card(false).message.hasPrefix("Controls: Beginner (change it in Settings ⚙)\n\nTap your side of the table"))
         XCTAssertTrue(tour.card(true).message.hasPrefix("רמת שליטה: מתחילים (אפשר לשנות בהגדרות ⚙)\n\n"))
     }
 }

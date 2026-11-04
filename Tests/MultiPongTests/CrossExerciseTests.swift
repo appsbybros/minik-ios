@@ -88,7 +88,8 @@ final class CrossExerciseTests: XCTestCase {
         let spot = pro.geometry.toView(0, pro.serveSpot(0))
         pro.touch(pro.geometry.fromView(0, spot - MPPoint(0, 0.08)))
         pro.touch(pro.geometry.fromView(0, spot + MPPoint(0, 0.08)), velocity: MPPoint(0, 0.6), down: false)
-        XCTAssertEqual(CrossTrainingResult(success: false, kind: .badServe), pro.trainingResult)
+        // Android 47ad0c9: a downward swipe is reported as a backward serve.
+        XCTAssertEqual(CrossTrainingResult(success: false, kind: .badServe, serveFault: .backward), pro.trainingResult)
         for e in [missed, pro] {
             XCTAssertTrue(e.referee.scores.allSatisfy { $0 == 0 })
             XCTAssertEqual(0, e.referee.ralliesPlayed)

@@ -24,7 +24,8 @@ extension ModernPongView {
     }
     private var leaveTitle: String {
         guard let s = model.session else { return "" }
-        return MPRules.canDelete(s, actor: model.userID) ? t("Delete tournament?", "למחוק את הטורניר?") : t("Leave tournament?", "לעזוב את הטורניר?")
+        // Android 47ad0c9: "Cancel tournament" replaces "Delete tournament".
+        return MPRules.canDelete(s, actor: model.userID) ? t("Cancel tournament?", "לבטל את הטורניר?") : t("Leave tournament?", "לעזוב את הטורניר?")
     }
     private var leaveMessage: String {
         guard let s = model.session else { return "" }
@@ -34,7 +35,8 @@ extension ModernPongView {
     /// Android renderRoom intro card: the room's title, the code to copy, its control level and game type.
     private func roomIntro(_ s: MPSession) -> some View {
         card(MPStyle.mint) {
-            Text(roomTitle(s)).font(.title3.bold()).multilineTextAlignment(.center)
+            // Android 47ad0c9: a tournament that no longer takes players does not show its join code.
+            Text(s.kind == .tournament && !MPRules.acceptsNewPlayer(s) ? t("Tournament", "טורניר") : roomTitle(s)).font(.title3.bold()).multilineTextAlignment(.center)
             if model.online && MPRules.acceptsNewPlayer(s) {
                 Button { UIPasteboard.general.string = s.code; copied = true } label: {
                     Label(t("Copy code", "העתקת הקוד") + " · " + s.code, systemImage: "doc.on.doc").font(.headline).frame(maxWidth: .infinity, minHeight: 56)
@@ -42,7 +44,7 @@ extension ModernPongView {
                 if copied { Text(t("Code copied", "הקוד הועתק")).font(.callout) }
             }
             Text(t("Controls: ", "רמת השליטה: ") + MPControlChoice.title(s.difficulty, hebrew: he)).font(.callout).multilineTextAlignment(.center)
-            if s.tableSize > 2 { Text(gameTypeLine(s)).font(.callout).multilineTextAlignment(.center) }
+            if s.tableSize > 2 { Text(gameTypeLine(s)).font(.callout).multilineTextAlignment(.leading).frame(maxWidth: .infinity, alignment: .leading) }
         }
     }
     private func gameTypeLine(_ s: MPSession) -> String {
@@ -165,24 +167,42 @@ extension ModernPongView {
         return ""
     }
     // ---- tournament ---------------------------------------------------------------------------------------------------------
+    /// Android PlayActivity.tournament (47ad0c9): the roster before the start; a grouped knockout as its round sections; the
+    /// other formats with their summary, playable games and bracket or all matches; Cancel / Leave always last.
     @ViewBuilder private func tournamentRoom(_ s: MPSession) -> some View {
         if s.complete {
-            completedCard(s)
-            if s.knockout { bracket(s) } else { standings(s) }
+            tournamentFinished(s)
+        } else if s.state == "WAITING" {
+            waitingRoster(s)
+            waitingTools(s)
+            tournamentExitButton(s)
+        } else if s.grouped && s.knockout {
+            groupBracket(s)
+            tournamentExitButton(s)
         } else {
-            if s.state == "WAITING" {
-                waitingRoster(s)
-                waitingTools(s)
-                tournamentExitButton(s)
-            } else {
-                tournamentSummary(s)
-                tournamentPlay(s)
+            tournamentSummary(s)
+            tournamentPlay(s)
+        }
+    }
+    /// Android 47ad0c9: "Tournament finished", a pink winner panel with the champion's picture, the tables or standings, and a
+    /// final Done. The confetti and applause play once (MPController.celebrateCompletion).
+    @ViewBuilder private func tournamentFinished(_ s: MPSession) -> some View {
+        card(FamilyKit.color(0xffffe59d)) {
+            Text(t("Tournament finished", "הטורניר הסתיים")).font(.system(size: 24, weight: .bold)).multilineTextAlignment(.center)
+        }
+        let winner = s.knockout ? MPKnockout.winner(s) : MPRules.standings(s).first?.id
+        if let id = winner, let champion = s.participants[id] {
+            card(MPStyle.rose) {
+                Text(t("Winner: ", "המנצח: ") + champion.name(hebrew: he)).font(.system(size: 24, weight: .bold)).multilineTextAlignment(.center)
+                playerPicture(champion).frame(width: 130, height: 140)
             }
         }
+        if s.knockout { bracket(s) } else { standings(s) }
+        action(t("Done", "סיום"), color: MPStyle.green) { model.dismissCompleted() }
     }
     /// Android tournamentExitButton: Delete (nobody else connected) or Leave, after a confirmation.
     private func tournamentExitButton(_ s: MPSession) -> some View {
-        action(MPRules.canDelete(s, actor: model.userID) ? t("Delete tournament", "מחיקת הטורניר") : t("Leave tournament", "עזיבת הטורניר"), color: MPStyle.pink) { confirmLeave = true }
+        action(MPRules.canDelete(s, actor: model.userID) ? t("Cancel tournament", "ביטול הטורניר") : t("Leave tournament", "עזיבת הטורניר"), color: MPStyle.pink) { confirmLeave = true }
             .foregroundStyle(.white).padding(.top, 24)
     }
     /// Android waitingRoster (5c1aa4d): the players with their skills out of 10 (people have no invented skills) and, for the
@@ -238,13 +258,11 @@ extension ModernPongView {
         let remaining = s.matches.values.filter { !$0.terminal }.count
         let roundLeft = MPKnockout.fixtures(s, MPKnockout.current(s)).filter { !$0.terminal }.count
         return VStack(spacing: gap) {
+            // Android 47ad0c9: the summary reads from the start edge; the bracket below names the round (no duplicate heading).
             card(Color(red: 218 / 255, green: 239 / 255, blue: 1)) {
-                if s.knockout {
-                    Text(t("Matches remaining this round: \(roundLeft)", "משחקים שנותרו בסיבוב הזה: \(roundLeft)")).font(.headline).multilineTextAlignment(.center)
-                    Text(MPKnockout.stage(s, hebrew: he)).font(.title2.bold())
-                } else {
-                    Text(t("Finished: \(finished)  •  Remaining: \(remaining)", "הסתיימו: \(finished)  •  נותרו: \(remaining)")).font(.headline).multilineTextAlignment(.center)
-                }
+                Text(s.knockout ? t("Matches remaining this round: \(roundLeft)", "משחקים שנותרו בסיבוב הזה: \(roundLeft)")
+                     : t("Finished: \(finished)  •  Remaining: \(remaining)", "הסתיימו: \(finished)  •  נותרו: \(remaining)"))
+                    .font(.headline).multilineTextAlignment(.leading).frame(maxWidth: .infinity, alignment: .leading)
             }
             if !s.knockout { standings(s) }
         }
@@ -257,7 +275,8 @@ extension ModernPongView {
                 let excluded: Set<String> = used.count < MPRoster.all.count ? used : []
                 card {
                     housePicker(excluded: excluded)
-                    action(t("Add player", "הוספת שחקן"), color: MPStyle.mint) {
+                    // Android 47ad0c9: a blue Add player.
+                    action(t("Add player", "הוספת שחקן"), color: MPStyle.blue) {
                         let chosen = pickedPlayer(excluded: excluded)
                         Task { await model.addHouse(chosen) }
                     }
@@ -267,9 +286,11 @@ extension ModernPongView {
                     }
                 }
             }
-            action(t("Start tournament", "התחלת הטורניר"), color: MPStyle.mint) { Task { await model.startTournament() } }
+            // Android 47ad0c9: green, 16 pt below the roster tools, visibly dimmed until every place is taken.
+            action(t("Start tournament", "התחלת הטורניר"), color: MPStyle.green) { Task { await model.startTournament() } }
                 .disabled(s.participants.count != s.capacity || model.busy)
-                .opacity(s.participants.count == s.capacity ? 1 : 0.55)
+                .opacity(s.participants.count == s.capacity ? 1 : 0.48)
+                .padding(.top, 16 - gap)
         } else {
             card { Text(t("The host will start when everyone has joined.", "המארח יתחיל לאחר שכולם יצטרפו.")).multilineTextAlignment(.center) }
         }
@@ -282,7 +303,7 @@ extension ModernPongView {
             else { Text(t("Next / playable games", "המשחקים הבאים שאפשר לשחק")).font(.title3.bold()).frame(minHeight: 64) }
             ForEach(mine) { matchRow(s, $0, controls: true, showPair: true) }
         }
-        tournamentExitButton(s)
+        // Android 47ad0c9: Cancel / Leave follows the bracket or the match list.
         if s.knockout { bracket(s) }
         else {
             expandHeader(t("All matches", "כל המשחקים") + " (\(s.matches.count))", open: expanded.contains("allMatches")) { toggle("allMatches") }
@@ -290,6 +311,7 @@ extension ModernPongView {
                 card { ForEach(s.matches.values.sorted { $0.id < $1.id }) { matchRow(s, $0, controls: false, showPair: true) } }
             }
         }
+        tournamentExitButton(s)
     }
     // ---- fixtures -----------------------------------------------------------------------------------------------------------
     /// Android PlayActivity.matchRow: players, what kind of fixture it is, its state, its result or the Ready controls.
@@ -369,13 +391,11 @@ extension ModernPongView {
             }
         }
     }
-    /// Android groupBracket: every round's tables in seat order, final scores, who goes through (✓), tie-breaks, final duels,
-    /// walkovers and byes.
+    /// Android groupBracket (47ad0c9): one pink section per round with its stage, who goes through, the matches left in the
+    /// current round and the (✓ – through) legend; each table a white card with the players' avatars, names and scores around
+    /// the table and its state; this player's Start below their table; walkovers and byes.
     private func groupBracket(_ s: MPSession) -> some View {
-        card {
-            Text(s.complete ? t("Tournament tables", "שולחנות הטורניר") : MPKnockout.stage(s, hebrew: he)).font(.title2.bold())
-            Text((MPKnockout.perTable(s) == 1 ? t("The winner of every table goes through.", "המקום הראשון בכל שולחן עולה.") : t("The top two of every table go through.", "שני הראשונים בכל שולחן עולים.")) + t(" ✓ = through.", " ✓ = עלו."))
-                .font(.caption).multilineTextAlignment(.center)
+        VStack(spacing: gap) {
             ForEach(s.rounds.keys.sorted(), id: \.self) { round in groupRound(s, round) }
         }
     }
@@ -384,43 +404,57 @@ extension ModernPongView {
         // Marked as soon as their table is decided, before the next round is drawn.
         let through = Set(MPKnockout.advancing(s, round))
         let tables = MPKnockout.matches(s, round)
-        return VStack(spacing: 6) {
-            Text(MPGroupTournament.stage(drawn.players.count, s.tableSize, hebrew: he, advance: MPKnockout.perTable(s))).font(.headline)
+        let left = MPKnockout.fixtures(s, round).filter { !$0.terminal }.count
+        return card(MPStyle.rose) {
+            Text(MPGroupTournament.stage(drawn.players.count, s.tableSize, hebrew: he, advance: MPKnockout.perTable(s)))
+                .font(.system(size: 21, weight: .bold)).multilineTextAlignment(.center)
+            if !drawn.isFinal {
+                paragraph(MPKnockout.perTable(s) == 1 ? t("The winner of every table goes through.", "המקום הראשון בכל שולחן עולה.") : t("The top two of every table go through.", "שני הראשונים בכל שולחן עולים."), size: 15)
+            }
+            if round == MPKnockout.current(s) && !s.complete {
+                paragraph(t("Matches remaining this round: \(left)", "משחקים שנותרו בסיבוב הזה: \(left)"), size: 15)
+            }
+            paragraph(t("(✓ – through)", "(✓ – עלו)"), size: 14)
             ForEach(Array(tables.enumerated()), id: \.offset) { item in
-                Text(t("Table \(item.offset + 1): ", "שולחן \(item.offset + 1): ") + MPMatchText.ordered(tableLine(s, item.element, through: through)) + phaseNote(item.element))
-                    .font(.callout).multilineTextAlignment(.center)
+                tableCard(s, item.element, title: t("Table \(item.offset + 1)", "שולחן \(item.offset + 1)"), through: through)
                 if let tie = s.matches[MPKnockout.tiebreakId(s.code, round, item.offset)] {
-                    Text(t("Tie-break for 2nd place: ", "שובר שוויון על המקום השני: ") + MPMatchText.ordered(tie.players.map { mark($0, through) + name(s, $0) }.joined(separator: "  ·  ")) + phaseNote(tie))
-                        .font(.footnote).multilineTextAlignment(.center)
+                    tableCard(s, tie, title: t("Tie-break for 2nd place", "שובר שוויון על המקום השני"), through: through)
                 }
                 if let duel = s.matches[MPRules.duelId(item.element.id)] {
-                    Text(t("Final duel: ", "קרב גמר: ") + MPMatchText.ordered(tableLine(s, duel, through: through)) + phaseNote(duel)).font(.footnote).multilineTextAlignment(.center)
+                    tableCard(s, duel, title: t("Final duel", "קרב גמר"), through: through)
                 }
             }
             ForEach(Array(drawn.walkovers.enumerated()), id: \.offset) { item in
-                Text(MPKnockout.walkoverTitle(hebrew: he) + ": " + item.element.map { mark($0, through) + name(s, $0) }.joined(separator: ", ")).font(.footnote).multilineTextAlignment(.center)
+                paragraph(MPKnockout.walkoverTitle(hebrew: he) + ": " + item.element.map { name(s, $0) }.joined(separator: ", "), size: 15)
             }
             if !drawn.byes.isEmpty {
-                Text(t("Bye: ", "עולים ללא משחק: ") + drawn.byes.map { name(s, $0) }.joined(separator: ", ")).font(.footnote).multilineTextAlignment(.center)
+                paragraph(t("Bye: ", "עולים ללא משחק: ") + drawn.byes.map { name(s, $0) }.joined(separator: ", "), size: 15)
             }
-        }.padding(.vertical, 6)
-    }
-    private func name(_ s: MPSession, _ id: String) -> String { s.participants[id]?.name(hebrew: he) ?? "?" }
-    private func mark(_ id: String, _ through: Set<String>) -> String { through.contains(id) ? "✓ " : "" }
-    private func tableLine(_ s: MPSession, _ m: MPFixture, through: Set<String>) -> String {
-        m.players.enumerated().map { item -> String in
-            let score = m.phase == .finished ? " \(item.offset < m.scores.count ? m.scores[item.offset] : 0)" : ""
-            return mark(item.element, through) + name(s, item.element) + score
-        }.joined(separator: "  ·  ")
-    }
-    private func phaseNote(_ m: MPFixture) -> String {
-        switch m.phase {
-        case .finished: return ""
-        case .playing: return t(" (playing)", " (משחקים)")
-        case .cancelled: return t(" (cancelled)", " (בוטל)")
-        case .waiting, .ready: return t(" (not started)", " (טרם התחיל)")
         }
     }
+    /// A paragraph of a tournament section, from the reading edge.
+    private func paragraph(_ value: String, size: CGFloat) -> some View {
+        Text(value).font(.system(size: size)).multilineTextAlignment(.leading).frame(maxWidth: .infinity, alignment: .leading)
+    }
+    /// Android 47ad0c9 TournamentTableCard in a white card: the title, the players around their table, the state; this
+    /// player's controls follow in the pink section.
+    @ViewBuilder private func tableCard(_ s: MPSession, _ m: MPFixture, title: String, through: Set<String>) -> some View {
+        card(Color.white) {
+            Text(title).font(.system(size: 18, weight: .bold)).multilineTextAlignment(.center)
+            MPXTournamentTable(session: s, match: m, through: through, hebrew: he)
+            Text(tableState(m)).font(.system(size: 16, weight: .bold)).multilineTextAlignment(.center)
+        }
+        if !s.complete && m.contains(model.userID) && !m.terminal { matchControls(s, m, pair: m.players.count == 2) }
+    }
+    private func tableState(_ m: MPFixture) -> String {
+        switch m.phase {
+        case .playing: return t("In progress", "בתהליך")
+        case .finished: return t("Finished", "הסתיים")
+        case .cancelled: return t("Cancelled", "בוטל")
+        case .waiting, .ready: return t("Not started", "טרם התחיל")
+        }
+    }
+    private func name(_ s: MPSession, _ id: String) -> String { s.participants[id]?.name(hebrew: he) ?? "?" }
     /// Android PlayActivity.standings: placement points (or win points for pairs), wins, losses, started, finished, remaining.
     func standings(_ s: MPSession) -> some View {
         card {
@@ -472,7 +506,9 @@ extension ModernPongView {
             MPXTool(symbol: MPText.rtl ? "arrow.right" : "arrow.left", label: t("Back", "חזרה"), fill: MPStyle.bar) { model.back() }
         } status: { wide in
             VStack(spacing: 4) {
+                // Android 47ad0c9: a dark outline keeps the header readable over the bright sunset.
                 Text(model.crossHeader).font(.system(size: 18, weight: .bold)).foregroundStyle(.white).multilineTextAlignment(.center)
+                    .shadow(color: MPStyle.outline, radius: 1).shadow(color: MPStyle.outline, radius: 1)
                 courtStatus(model.crossStatus, wide: wide)
             }
         } court: {
@@ -489,9 +525,11 @@ extension ModernPongView {
             MPXTool(symbol: MPText.rtl ? "arrow.right" : "arrow.left", label: t("Back", "חזרה"), fill: MPStyle.bar) { model.back() }
             MPXTool(symbol: model.crossPaused ? "play.fill" : "pause.fill", label: model.crossPaused ? t("Resume", "המשך") : t("Pause", "השהיה"),
                     fill: model.crossPaused ? Color(red: 22 / 255, green: 163 / 255, blue: 94 / 255) : MPStyle.pink) { model.toggleCrossPause() }
-            MPXTool(symbol: "camera.viewfinder", label: t("Action camera / fit all players", "מצלמת פעולה / כל השחקנים במסך"),
+            // Android 47ad0c9: the camera button shows the next camera (no toast); Help explains the current lesson or level.
+            MPXTool(symbol: model.actionCamera ? "camera.viewfinder" : "camera.fill",
+                    label: model.actionCamera ? t("Fit all players", "כל השחקנים במסך") : t("Action camera", "מצלמת פעולה"),
                     fill: Color(red: 29 / 255, green: 112 / 255, blue: 176 / 255)) { model.toggleActionCamera() }
-            MPXTool(symbol: "questionmark", label: t("How to play", "איך משחקים"), fill: Color(red: 247 / 255, green: 204 / 255, blue: 79 / 255)) { model.startTour() }
+            MPXTool(symbol: "questionmark", label: t("How to play", "איך משחקים"), fill: Color(red: 247 / 255, green: 204 / 255, blue: 79 / 255)) { model.showCrossHelp() }
             MPXTool(symbol: "arrow.counterclockwise", label: t("New match", "משחק חדש"), fill: Color(red: 48 / 255, green: 72 / 255, blue: 99 / 255)) { model.restartCross() }
             MPXTool(symbol: "gearshape.fill", label: t("Settings", "הגדרות"), fill: Color(red: 48 / 255, green: 72 / 255, blue: 99 / 255)) { openCrossSettings() }
         }
@@ -518,47 +556,34 @@ extension ModernPongView {
                         .background(MPXLandscapeTipProbe(id: ObjectIdentifier(court), active: { !model.crossPaused && model.crossResult == nil }) { model.toast = $0 })
                 }
                 if let tourCard = model.tourCard { tourCardView(tourCard) }
+                if let help = model.crossHelp { MPXGuideCard(title: help.title, message: help.message) { model.closeCrossHelp() } }
             }
         }
         // Android 1dbfe33 MatchResultDialog: the result card over the whole match screen.
         .overlay { if let outcome = model.crossResult { crossResultView(outcome) } }
     }
+    /// Android 47ad0c9 CrossActivity.showGuideCard: Back (pink) and Next (blue) at the bottom; an explanation or a retry adds
+    /// Try it yourself / Try again (yellow) and Show me (pink); the team and scoring cards add Learn team play. The X closes the
+    /// learning screen; Back on the first card does too.
     private func tourCardView(_ tourCard: CrossTourCard) -> some View {
-        VStack(spacing: 10) {
-            Text(tourCard.title).font(.title2.bold()).multilineTextAlignment(.center)
-            ScrollView { Text(tourCard.message).font(.callout).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true) }.frame(maxHeight: 300)
-            tourActions(tourCard)
+        let yellow = Color(red: 1, green: 211 / 255, blue: 90 / 255), pink = Color(red: 1, green: 0x5b / 255, blue: 0xa6 / 255)
+        var actions: [MPXGuideAction] = []
+        if tourCard.phase == .explain || tourCard.phase == .result {
+            actions.append(MPXGuideAction(title: tourCard.phase == .result ? t("Try again", "ננסה שוב") : t("Try it yourself", "עכשיו תורכם"), fill: yellow) { model.tourTry() })
+            actions.append(MPXGuideAction(title: t("Show me", "הראו לי"), fill: pink) { model.tourShow() })
         }
-        .padding(18).frame(maxWidth: 520)
-        .background(.white, in: RoundedRectangle(cornerRadius: 22)).shadow(radius: 10).padding(16)
-    }
-    @ViewBuilder private func tourActions(_ tourCard: CrossTourCard) -> some View {
-        let blue = Color(red: 133 / 255, green: 215 / 255, blue: 1), yellow = Color(red: 1, green: 211 / 255, blue: 90 / 255)
-        let mint = Color(red: 122 / 255, green: 231 / 255, blue: 190 / 255), gray = Color(red: 226 / 255, green: 232 / 255, blue: 240 / 255)
-        // Android 5c1aa4d: the team and scoring cards lead to the team game first (R.string.guide_team_practice).
         if tourCard.phase == .info && tourCard.teamPractice {
-            action(MPText.journey("Learn team play"), color: blue) { model.tourTeamPractice() }
+            actions.append(MPXGuideAction(title: MPText.journey("Learn team play"), fill: MPXGuideStyle.nextFill) { model.tourTeamPractice() })
         }
-        switch tourCard.phase {
-        case .explain:
-            action(t("Show me", "הראו לי"), color: blue) { model.tourShow() }
-            action(t("Try it yourself", "עכשיו תורכם"), color: yellow) { model.tourTry() }
-        case .result:
-            action(t("Try again", "ננסה שוב"), color: blue) { model.tourTry() }
-        default:
-            EmptyView()
-        }
-        HStack(spacing: 8) {
-            if tourCard.canGoBack { action(t("Back", "חזרה"), color: gray) { model.tourBack() } }
-            action(t("Next", "הבא"), color: yellow) { model.tourNext() }
-        }
-        action(t("To the game", "למשחק"), color: mint) { model.endTour() }
+        return MPXGuideCard(title: tourCard.title, message: tourCard.message, actions: actions,
+                            back: MPXGuideAction(title: t("Back", "חזרה"), fill: MPXGuideStyle.backFill, ink: .white) { model.tourBack() },
+                            next: MPXGuideAction(title: t("Next", "הבא"), fill: MPXGuideStyle.nextFill) { model.tourNext() }) { model.exitLearning() }
     }
+    /// Android 47ad0c9 CrossActivity.showResult: names in seat colours, a pink Menu first and Play again; no "not saved" note.
     private func crossResultView(_ outcome: CrossLocalResult) -> some View {
         MPXResultCard(title: outcome.title, rows: outcome.rows,
                       primary: .init(title: t("Play again", "לשחק שוב")) { model.closeCrossResult(playAgain: true) },
-                      secondary: .init(title: t("Menu", "תפריט")) { model.closeCrossResult(playAgain: false) },
-                      note: t("Completed games are not saved.", "משחקים שהסתיימו אינם נשמרים."))
+                      secondary: .init(title: t("Menu", "תפריט"), color: MPXResultCard.pink) { model.closeCrossResult(playAgain: false) })
     }
     /// Android CrossActivity.showSettings: players, control level, points to win and the three house players.
     var crossSettings: some View {
@@ -619,5 +644,103 @@ extension ModernPongView {
             }.padding(.horizontal, 14).frame(maxWidth: .infinity, minHeight: 56)
         }
         .buttonStyle(.plain).background(MPStyle.lilac, in: RoundedRectangle(cornerRadius: 15))
+    }
+}
+
+/// Android TournamentTableCard (MinikCrossPong 47ad0c9): a fixture's actual seats around their shared table, on a 3 × 3 grid
+/// with the table in the middle and this fixture's first seat at the bottom. Each seat shows the player's avatar, a ✓ when they
+/// go through, the name and, once finished, the score in the seat colour. The grid itself is always left to right.
+struct MPXTournamentTable: View {
+    let session: MPSession
+    let match: MPFixture
+    let through: Set<String>
+    let hebrew: Bool
+    private static let ink = Color(red: 0x17 / 255, green: 0x36 / 255, blue: 0x4a / 255)
+    var body: some View {
+        Grid(horizontalSpacing: 0, verticalSpacing: 0) {
+            ForEach(0..<3, id: \.self) { row in
+                GridRow {
+                    ForEach(0..<3, id: \.self) { column in cell(row: row, column: column) }
+                }
+            }
+        }
+        .environment(\.layoutDirection, .leftToRight)
+    }
+    /// Android `onLayout`: (column, row) of each seat for a table of 2, 3 or 4.
+    static func place(_ seat: Int, count: Int) -> (column: Int, row: Int) {
+        switch count {
+        case 2: return seat == 0 ? (1, 2) : (1, 0)
+        case 3: return seat == 0 ? (1, 2) : (seat == 1 ? (2, 0) : (0, 0))
+        default:
+            switch seat {
+            case 0: return (1, 2)
+            case 1: return (2, 1)
+            case 2: return (1, 0)
+            default: return (0, 1)
+            }
+        }
+    }
+    @ViewBuilder private func cell(row: Int, column: Int) -> some View {
+        let count = match.players.count
+        let seat = (0..<count).first { candidate in
+            let at = MPXTournamentTable.place(candidate, count: count)
+            return at.column == column && at.row == row
+        }
+        if row == 1 && column == 1 {
+            MPXTableShape(players: count).frame(height: 116).frame(maxWidth: .infinity)
+        } else if let seat {
+            seatView(seat)
+        } else {
+            Color.clear.frame(maxWidth: .infinity, minHeight: 116)
+        }
+    }
+    private func seatView(_ seat: Int) -> some View {
+        let id = match.players[seat]
+        let p = session.participants[id]
+        let bot = p?.bot?.characterId ?? "", own = p?.identity.characterId ?? ""
+        let character = !bot.isEmpty ? bot : (!own.isEmpty ? own : "miniko")
+        return VStack(spacing: 2) {
+            MPXPortrait(character: character).frame(height: 64)
+            Text((through.contains(id) ? "✓ " : "") + (p?.name(hebrew: hebrew) ?? "?")).font(.system(size: 15, weight: .bold))
+                .foregroundStyle(MPXTournamentTable.ink).multilineTextAlignment(.center).lineLimit(3)
+            if match.phase == .finished {
+                Text(String(match.scoreOf(id))).font(.system(size: 21, weight: .bold)).foregroundStyle(FamilyKit.color(MPXSeatColor.argb(seat)))
+            }
+        }
+        .padding(.vertical, 3)
+        .frame(maxWidth: .infinity, minHeight: 116)
+        .environment(\.layoutDirection, MPText.rtl ? .rightToLeft : .leftToRight)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// The small table drawing of `MPXTournamentTable`: the union of the arms in teal with a light edge, and the nets.
+struct MPXTableShape: View {
+    let players: Int
+    var body: some View {
+        Canvas { context, size in
+            let g = CrossGeometry(min(4, max(2, players)))
+            let scale = Double(min(size.width, size.height)) / 2.4
+            let cx = Double(size.width) / 2, cy = Double(size.height) / 2
+            var table: CGPath?
+            for seat in g.seats {
+                let corners = g.armCorners(seat).map { CGPoint(x: cx + $0.x * scale, y: cy + $0.y * scale) }
+                let arm = CGMutablePath()
+                arm.addLines(between: corners); arm.closeSubpath()
+                table = table.map { $0.union(arm) } ?? arm
+            }
+            if let table {
+                let shape = Path(table)
+                context.fill(shape, with: .color(FamilyKit.color(0xff268f9c)))
+                context.stroke(shape, with: .color(FamilyKit.color(0xffc7f6ed)), lineWidth: 2)
+            }
+            var nets = Path()
+            for net in g.nets {
+                nets.move(to: CGPoint(x: cx, y: cy))
+                nets.addLine(to: CGPoint(x: cx + net.end.x * scale, y: cy + net.end.y * scale))
+            }
+            context.stroke(nets, with: .color(FamilyKit.color(0xff17364a)), lineWidth: 2)
+        }
+        .accessibilityHidden(true)
     }
 }

@@ -172,10 +172,8 @@ struct MPXLobbyPlayer: Identifiable {
     func togglePause() { manuallyPaused.toggle(); link?.setActive(foreground && !manuallyPaused) }
     func openHelp() { manuallyPaused = true; link?.setActive(false); help = true }
     func closeHelp() { help = false; manuallyPaused = false; link?.setActive(foreground) }
-    func toggleCamera() {
-        actionCamera.toggle()
-        notice = hebrew ? (actionCamera ? "מצלמת פעולה" : "כל השחקנים במסך") : (actionCamera ? "Action camera" : "Fit all players")
-    }
+    /// Android 47ad0c9 CrossCourt.toggleCamera: no toast any more.
+    func toggleCamera() { actionCamera.toggle() }
     func lifecycle(active: Bool) {
         foreground = active
         link?.setActive(active && !manuallyPaused)

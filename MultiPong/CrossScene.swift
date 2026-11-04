@@ -148,7 +148,7 @@ final class CrossScene: SKScene {
     var names: [String] = []
     /// Kept for the room screens; remote players without a character are shown by their name tag only (5c1aa4d).
     var avatarIcons: [Int: String] = [:]
-    /// The landscape action camera (Android `fullScreen`); portrait always fits the table and every body.
+    /// The action camera (Android `fullScreen`), in portrait and landscape (Android 47ad0c9); off, every player is in view.
     var fullScreen = true { didSet { if oldValue != fullScreen { scoreFeedback.clear(); layoutCourt() } } }
     /// Reception assistance and sound settings (Android `reception_assistance`, `cross_skill_journey/sound`).
     var preferences = MPPreferences()
@@ -200,7 +200,8 @@ final class CrossScene: SKScene {
     private var showsScores: Bool { practice?.stage.skill != .serve }
     private var scoreboardHeight: Double { !showsScores ? 0 : (width > height ? 48 : 66) }
     private let scoreFeedback = CrossScoreFeedback()
-    private var actionView: Bool { fullScreen && width > height }
+    /// Android 47ad0c9: the action camera has a visible effect in portrait too.
+    private var actionView: Bool { fullScreen }
 
     init(engine: CrossEngine) {
         self.engine = engine
@@ -256,7 +257,7 @@ final class CrossScene: SKScene {
         if !active { cancelTouch() }
         bindSounds(force: false)
     }
-    /// Android `toggleCamera`: the landscape action camera or every player in view; remembered.
+    /// Android `toggleCamera`: the action camera or every player in view; remembered.
     func toggleCamera() { fullScreen.toggle() }
 
     private var g: CrossGeometry { engine.geometry }
@@ -298,20 +299,43 @@ final class CrossScene: SKScene {
             minY = min(minY, (v.y * t - up) * kk); maxY = max(maxY, (v.y * t + down) * kk)
         }
         for s in geometry.seats { geometry.armCorners(s).forEach { include($0) } }
-        tableMinX = minX; tableMaxX = maxX; tableMinY = minY; tableMaxY = maxY
-        let board = scoreboardHeight
-        scaleLimit = min((w - 24) / max(0.01, maxX - minX), (h - board - 24) / max(0.01, maxY - minY))
-        if actionView {
-            // Crop the near/far players if necessary, but reserve floor space beside both lateral arms so a camera zoom never
-            // pushes bodies into the table.
-            for s in geometry.seats where abs(geometry.toView(seat, geometry.home(s)).x) > 0.45 {
-                include(geometry.fromLocal(s, 0, CrossGeometry.reach + CrossScene.stand), half: 0.72)
-            }
-        } else {
-            for s in geometry.seats { include(geometry.fromLocal(s, 0, CrossGeometry.reach + CrossScene.stand), up: 0.43, down: 0.48, half: 0.48) }
+        // Android 47ad0c9: fit the authored bodies and their legal lateral travel, not just the tabletop. These are the same
+        // feet, pose anchors and heights renderPlayer uses, at scale 1.
+        func unit(_ p: MPPoint, _ height: Double = 0) -> CGPoint {
+            let v = geometry.toView(seat, p), kk = k(v.y)
+            return CGPoint(x: v.x * kk, y: (v.y * t - height * CrossScene.liftScale) * kk)
         }
-        let fit = min((w - 20) / max(0.01, maxX - minX), (h - board - 20) / max(0.01, maxY - minY))
-        scale = max(1, actionView ? min(fit * 0.91, scaleLimit * 0.94) : fit)
+        let atlas = MPXPoseAtlas.shared
+        for s in geometry.seats where s < engine.seats.count {
+            let info = engine.seats[s]
+            let botCharacter = info.bot?.characterId ?? ""
+            let id = botCharacter.isEmpty ? info.characterId : botCharacter
+            guard !id.isEmpty, atlas.has(id) else { continue }
+            let view = geometry.toView(seat, geometry.home(s))
+            let facing: MPXPoseAtlas.Facing = view.y > 0.45 ? .rear : (view.y < -0.45 ? .front : .side)
+            let mirror = view.x > 0.45, actorHeight = id == "minik" ? 0.76 : 0.84
+            let contactPose = id == "minik" && facing == .front ? 2 : 0
+            guard let contact = atlas.geometry(id, facing, mirror: mirror, foot: .zero, height: actorHeight, phase: contactPose) else { continue }
+            for u in [-0.48, 0.0, 0.48] {
+                let rest = unit(geometry.fromLocal(s, u, CrossGeometry.homeDepth), 0.15)
+                var foot = CGPoint(x: rest.x - contact.racket.x, y: rest.y - contact.racket.y)
+                if s != seat && abs(view.x) > 0.45 {
+                    let floor = unit(geometry.fromLocal(s, u, CrossGeometry.reach + 0.34))
+                    foot = CGPoint(x: Double(floor.x), y: Double(floor.y) + k(view.y) * 0.32)
+                }
+                for pose in 0...3 {
+                    guard let bounds = atlas.geometry(id, facing, mirror: mirror, foot: foot, height: actorHeight, phase: pose)?.bounds else { continue }
+                    minX = min(minX, Double(bounds.minX)); maxX = max(maxX, Double(bounds.maxX))
+                    minY = min(minY, Double(bounds.minY)); maxY = max(maxY, Double(bounds.maxY))
+                }
+            }
+        }
+        // Camera following is bounded by the complete scene extents as well.
+        tableMinX = minX; tableMaxX = maxX; tableMinY = minY; tableMaxY = maxY
+        let margin = 14.0, board = scoreboardHeight + 16
+        let fit = min((w - 2 * margin) / max(0.01, maxX - minX), (h - board - 2 * margin) / max(0.01, maxY - minY))
+        scaleLimit = fit * 0.98
+        scale = max(1, actionView ? fit * 0.95 : fit * 0.85)
         fittedScale = scale; pan = 0; panY = 0
         cx = w / 2 - (minX + maxX) * scale / 2
         cy = board + (h - board - (maxY - minY) * scale) * 0.5 - minY * scale
@@ -659,18 +683,19 @@ final class CrossScene: SKScene {
         let phase: Int
         if walking { phase = walkFrame[seat] ?? 0 }
         else if !stroke.active { phase = 0 }
-        else if stroke.age < stroke.contactAt - 0.04 { phase = id == "minik" && facing == .rear ? 0 : 1 }
-        else if stroke.age <= stroke.contactAt + 0.075 { phase = contactPose }
+        // Android 47ad0c9: around the actual impact time, not the earliest allowed contact time.
+        else if stroke.age < stroke.impactAt - 0.04 { phase = id == "minik" && facing == .rear ? 0 : 1 }
+        else if stroke.age <= stroke.impactAt + 0.075 { phase = contactPose }
         else if stroke.age < stroke.followEnd { phase = 3 }
         else { phase = 0 }
         guard let contact = atlas.geometry(id, facing, mirror: mirror, foot: .zero, height: actorHeight, phase: contactPose) else { return }
         let rest = unpanned(g.fromLocal(seat, u, CrossGeometry.homeDepth), 0.15)
         var foot = CGPoint(x: rest.x - contact.racket.x, y: rest.y - contact.racket.y)
-        if let extent = atlas.geometry(artId, facing, mirror: mirror, foot: foot, height: actorHeight, phase: phase)?.bounds, !actionView {
-            // Keep the whole body on screen in the fitted view.
-            let edge = 4.0
-            if Double(extent.minX) - pan < edge { foot.x += CGFloat(edge - (Double(extent.minX) - pan)) }
-            if Double(extent.maxX) - pan > width - edge { foot.x -= CGFloat(Double(extent.maxX) - pan - (width - edge)) }
+        // Android 47ad0c9: a side player stands on the floor beyond its arm's edge, never on the tabletop. The physical stance
+        // takes precedence over clamping the sprite into the view (the camera fit already holds every body).
+        if seat != viewSeat && abs(view.x) > 0.45 {
+            let floor = unpanned(g.fromLocal(seat, u, CrossGeometry.reach + 0.34))
+            foot = CGPoint(x: Double(floor.x), y: Double(floor.y) + sizeAt(g.home(seat)) * 0.32)
         }
         if let racket = atlas.geometry(id, facing, mirror: mirror, foot: foot, height: actorHeight, phase: contactPose)?.racket { contactRackets[seat] = racket }
         let shadow = CGRect(x: Double(foot.x) - actorHeight * 0.21, y: Double(foot.y) - actorHeight * 0.025, width: actorHeight * 0.42, height: actorHeight * 0.06)
@@ -696,7 +721,7 @@ final class CrossScene: SKScene {
     private func ballOffset() -> CGPoint {
         var best: (seat: Int, distance: Double)?
         for seat in g.seats where contactRackets[seat] != nil && engine.stroke(seat).active {
-            let s = engine.stroke(seat), d = abs(s.age - s.contactAt)
+            let s = engine.stroke(seat), d = abs(s.age - s.impactAt)
             if best == nil || d < best!.distance { best = (seat, d) }
         }
         guard let chosen = best, chosen.distance < 0.16, let racket = contactRackets[chosen.seat] else { return .zero }
@@ -759,7 +784,7 @@ final class CrossScene: SKScene {
         guard let local = engine.localSeat, engine.seats[local].characterId.trimmingCharacters(in: .whitespaces).isEmpty else { paddleNode.isHidden = true; return }
         let stroke = engine.stroke(local)
         let at = engine.paddle ?? engine.restingPaddle
-        let contact = stroke.active && stroke.contacted && stroke.age < stroke.contactAt + 0.07
+        let contact = stroke.active && stroke.contacted && stroke.age < stroke.impactAt + 0.07
         let p = contact ? stroke.point : at
         paddleNode.isHidden = false
         paddleNode.position = sk(unpanned(p, contact ? stroke.height : 0))
