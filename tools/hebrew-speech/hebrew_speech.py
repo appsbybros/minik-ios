@@ -279,11 +279,15 @@ def collect_mathplus():
 # "{kaˈtsav|קצב}" in a recorded text is said exactly as the IPA before the bar (Hila follows
 # it, stress included), for words that vowel marks don't fix.
 PHONEME = re.compile(r'\{([^{}|]+)\|([^{}]+)\}')
+# "יהיה ⏸200 {fa|FA}": a pause of exactly 200 ms between two words, where Hila runs them together
+# (owner, 2026-11-04: "הצליליהיפה"). A comma gives about 500 ms.
+PAUSE = re.compile(r'\s*⏸(\d+)\s*')
 
 
 def synthesize(text, voice, region, secret, output_format='audio-24khz-48kbitrate-mono-mp3'):
     lines = [html.escape(line.strip()) for line in text.split('\n') if line.strip()]
     body = PHONEME.sub(r"<phoneme alphabet='ipa' ph='\1'>\2</phoneme>", '<break time="500ms"/>'.join(lines))
+    body = PAUSE.sub(r' <break time="\1ms"/> ', body)
     ssml = (f"<speak version='1.0' xml:lang='he-IL'><voice name='{voice}'>{body}</voice></speak>").encode('utf-8')
     request = urllib.request.Request(
         f'https://{region}.tts.speech.microsoft.com/cognitiveservices/v1', data=ssml, method='POST',
