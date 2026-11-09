@@ -62,7 +62,9 @@ final class MPLargeMatch {
                                                           ballRadius: max(5, CGFloat(fit.width) * 0.014))) + 4
         let extra = max(headroom - fit.top, 0)
         layout = fit; layout.top = fit.top + extra; layout.depth = fit.depth - extra; layout.floorDrop = floor; positioned = false
-        let drop = layout.floorDrop
+        // Android 1ee5f05 (1.0.15) `farFloorDrop`: perspective foreshortens the far table-to-floor drop. Using the
+        // near drop put the house player's chest beneath the far edge during every return.
+        let drop = farFloorDrop
         rival.configure(height: actorHeight(1), ground: { [unowned self] p in var q = self.projected(p); q.y += CGFloat(drop); return q },
                         world: { [unowned self] p in self.layout.ground(x: Double(p.x), y: Double(p.y) - drop) },
                         ballPoint: { [unowned self] p, z in self.ballPoint(p, z) })
@@ -82,12 +84,14 @@ final class MPLargeMatch {
         return s.active ? s.point.y.mpClamp(i == 0 ? 0.72 : 0, i == 0 ? 1 : 0.28) : i == 0 ? 0.94 : 0.02
     }
     private var ballRadius: CGFloat { max(5, CGFloat(layout.width) * 0.014) }
+    /// Android 1ee5f05 `farFloorDrop`: the far player's floor sits 0.40 actor heights below the far edge.
+    private var farFloorDrop: Double { layout.actorHeight * 0.40 }
     private func contactPhase(_ i: Int) -> Int {
         // Android c9f5fa6: the extended arm keeps the body outside the sideline during a short wide return.
         if i == 1 && MPProjection.besideTable(engine.motion.body) { return 1 }
         let s = stroke(i)
         let impact = ballPoint(s.point, s.height).y
-        let floor = i == 0 ? nearFloorY : CGFloat(layout.top + layout.floorDrop)
+        let floor = i == 0 ? nearFloorY : CGFloat(layout.top + farFloorDrop)
         func gap(_ phase: Int) -> CGFloat {
             guard let g = poses.geometry(ids[i], face(i), mirror: mirror(i), foot: .zero, height: actorHeight(i), phase: phase) else { return .greatestFiniteMagnitude }
             return max((i == 0 ? floor + g.racket.y - impact : impact - floor - g.racket.y) - g.radius - ballRadius, 0)
@@ -131,7 +135,7 @@ final class MPLargeMatch {
         ids[0] = MPRoster.find(local)?.id ?? "miniko"; ids[1] = MPRoster.find(remote)?.id ?? "minik"
         if !engine.networked {
             rival.update(dt, character: ids[1])
-            var q = projected(rival.floorFoot); q.y += CGFloat(layout.floorDrop); feet[1] = q
+            var q = projected(rival.floorFoot); q.y += CGFloat(farFloorDrop); feet[1] = q
         }
         for i in 0...1 {
             if i == 1 && !engine.networked { continue }
@@ -148,9 +152,10 @@ final class MPLargeMatch {
             let x = impact.x - anchor.x
             // The tabletop is not the floor. A complete pose may step back from the baseline, but never lift its feet
             // through the table to follow a high ball.
-            let floorY = i == 0 ? nearFloorY : side ? impact.y - anchor.y : min(impact.y - anchor.y, CGFloat(layout.top + layout.floorDrop))
+            let floorY = i == 0 ? nearFloorY : side ? impact.y - anchor.y : min(impact.y - anchor.y, CGFloat(layout.top + farFloorDrop))
             let previous = feet[i].x
-            let fraction = !positioned || s.contacted && ages[i] < 0.04 ? 1 : CGFloat(1 - exp(-dt / (s.active ? 0.025 : 0.08)))
+            // Android 1ee5f05: no snap or fast follow at contact, so the feet do not jump.
+            let fraction = !positioned ? 1 : CGFloat(1 - exp(-dt / 0.08))
             feet[i] = CGPoint(x: previous + (x - previous) * fraction, y: !positioned ? floorY : feet[i].y + (floorY - feet[i].y) * fraction)
             let distance = abs(feet[i].x - previous); moving[i] = positioned && Double(distance) > layout.actorHeight * 0.001
             walk[i] += Double(distance) / layout.actorHeight * 7
@@ -229,12 +234,13 @@ final class MPLargeMatch {
                 let a = scene(CGPoint(x: -10000, y: -10000)), b = scene(CGPoint(x: 10000, y: line))
                 revealMask.path = CGPath(rect: CGRect(x: min(a.x, b.x), y: min(a.y, b.y), width: abs(b.x - a.x), height: abs(b.y - a.y)), transform: nil)
                 player(revealPlayer, 1, scene: scene)
-            } else if let g = farGeometry, s.contacted && ages[1] < 0.085 {
-                // Only the striking hand can reach over the far edge. Never reveal an idle patch of torso through the
-                // tabletop.
+            } else if let g = farGeometry {
+                // Android 1ee5f05: keep the authored racket, grip and arm connected, revealed down to the waist. A
+                // round racket-only cut-out made the paddle float in front of a torso hidden by the table.
                 reveal.isHidden = false
-                let r = g.radius * 1.25, c = scene(g.racket)
-                revealMask.path = CGPath(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: 2 * r, height: 2 * r), transform: nil)
+                let waist = min(g.bounds.minY + g.bounds.height * 0.73, max(groundPoint(MPPoint(targetX(1), 0)).y, g.racket.y + g.radius * 1.10))
+                let a = scene(CGPoint(x: -10000, y: -10000)), b = scene(CGPoint(x: 10000, y: waist))
+                revealMask.path = CGPath(rect: CGRect(x: min(a.x, b.x), y: min(a.y, b.y), width: abs(b.x - a.x), height: abs(b.y - a.y)), transform: nil)
                 player(revealPlayer, 1, scene: scene)
             } else { reveal.isHidden = true }
         }

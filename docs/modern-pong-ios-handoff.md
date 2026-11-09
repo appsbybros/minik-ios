@@ -2,6 +2,19 @@
 
 **Implemented in source only. Nothing in this document has been compiled, run in a Simulator or on a device, or played between iOS and Android. The Windows source audit and the local-emulator Firebase rules tests pass. An Apple build and native runtime verification are still required. No IPA was produced.**
 
+## 2026-11-09 sync: Android commit `1491c5f`
+
+iOS now matches Android MinikPingPong `1491c5f` (1.0.15 to 1.0.18; game commits `1ee5f05`, `131bd3a`, `ef28b1c`). Not compiled on Windows; the iOS Compile Check runs when the owner runs `release_ios.py`.
+
+- **No jumping at contact** (`1ee5f05`): on both tables the feet follow the paddle at one racket height and ease at one speed; a contact no longer snaps the body to the ball (`MPScene.playerTarget/targetFoot/updateLocalPlayer/renderLocalPlayer`, `MPLargeMatch.update`).
+- **Far player on the floor** (`1ee5f05`): the large table's far floor is 0.40 actor heights below the far edge (`farFloorDrop`), and the far player's arm, grip and racket are revealed down to the waist instead of a round racket cut-out (`MPLargeMatch`, `MPGroundedRival.render`).
+- **Pelvis anchor** (`1ee5f05`): every pose frame, standing and walking, is anchored at the pelvis (`MPPoseAtlas.sheet`).
+- **Swipe aims** (`1ee5f05`): a swipe made while the incoming ball is within reach (0.24 of the paddle, past 0.55) aims the return and does not walk the player.
+- **Reception camera** (`131bd3a`, `ef28b1c`): one transform `p * zoom + t` eased as a whole; one reception keeps its first focus and peak strength until 0.28 s after it; framing that caps the zoom also caps the pan; the actors' extent only grows during a reception; the offset never uncovers a view edge. The singles camera frames the receiving position (y 0.16 / 0.84), not the ball (`MPReceptionCamera`, `MPScene.updateCamera/placeCamera`).
+- **House player position** (`ef28b1c`): ready stance at -0.035, a baseline limit for contacts, a cost for leaving the home line, and no sideways pose for a ball in the middle 0.12-0.88 (`MPGroundedRival.readyFoot/poseFor`).
+
+Not ported: `cb66b90` and `1491c5f` (Android `PongButton` text offsets; SwiftUI centres button text), `3ab581d` (Android device test only), version bump, device tests. `Scripts/audit-modern-pong.py` reads Android at `1491c5f` (PASS, 6 new checks).
+
 ## 2026-11-04 sync: Android commit `3e351d2`
 
 iOS now matches Android MinikPingPong `3e351d2` (1.0.12 and 1.0.13; app-code commits `47d6f0b`, `1cca1cf`, `9349a36`, `3e351d2`). Not compiled: the Windows Swift checker is blocked by Smart App Control. Ported in `Sources/ModernPong/ModernPongView.swift`:

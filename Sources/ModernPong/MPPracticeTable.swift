@@ -15,9 +15,9 @@ enum MPArtFiles {
 }
 
 /// Android `PongPlayerAtlas`: complete authored paddle poses (front, side and rear; four phases each), anchored at
-/// the feet. Atlases are decoded on demand and released with the court that uses them. Since Android 29f5dc7 a
-/// walking atlas (`<id>-walk`) is registered to the pelvis of the standing body instead of the shoe touching the
-/// bottom row, so a step no longer translates the whole body sideways.
+/// the feet. Atlases are decoded on demand and released with the court that uses them. Since Android 1ee5f05 every
+/// frame (standing and walking) is registered to its pelvis instead of the shoe touching the bottom row, so a step or
+/// a mirrored pose no longer translates the whole body sideways.
 final class MPPoseAtlas {
     enum Facing: Int { case front, side, rear }
     struct Geometry { let bounds: CGRect; let racket: CGPoint; let radius: CGFloat; let frame: Int }
@@ -108,13 +108,12 @@ final class MPPoseAtlas {
         if let sheet = sheets[id] { return sheet }
         guard let frames = MPPoseAtlas.frames(id), let image = MPArtFiles.image("pong-poses/" + id + ".png")?.cgImage else { return nil }
         let heights = (0..<3).map { frames[$0 * 4].visible.height }
+        // Android 1ee5f05 (1.0.15): one pelvis anchor for every phase of every atlas, not a different planted shoe
+        // for each drawing, so mirroring turns about the body instead of moving it.
         var registered = frames
-        if id.hasSuffix("-walk"), let base = sheet(String(id.dropLast(5))), let walkAlpha = Alpha(image), let baseAlpha = Alpha(base.image) {
-            registered = frames.enumerated().map { i, f in
-                let facing = i / 4, rest = base.frames[facing * 4]
-                let offset = (Float(rest.foot.x) - MPPoseAtlas.hipX(baseAlpha, rest)) / Float(base.heights[facing]) * Float(heights[facing])
-                return Frame(source: f.source, visible: f.visible, foot: CGPoint(x: CGFloat(MPPoseAtlas.hipX(walkAlpha, f) + offset), y: f.foot.y),
-                             paddle: f.paddle, radius: f.radius)
+        if let alpha = Alpha(image) {
+            registered = frames.map { f in
+                Frame(source: f.source, visible: f.visible, foot: CGPoint(x: CGFloat(MPPoseAtlas.hipX(alpha, f)), y: f.foot.y), paddle: f.paddle, radius: f.radius)
             }
         }
         let sheet = Sheet(image: image, frames: registered, heights: heights)

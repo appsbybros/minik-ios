@@ -45,22 +45,28 @@ final class MPGroundedRival {
         lastPlan = nil
         if returning && elapsed >= duration { positioned = false }
     }
-    /// Android `readyFoot` (f85e5a3): the ready stance fitted to the authored paddle, without lifting the feet or
-    /// revealing a patch of torso over the tabletop. Contact poses and their floor routes keep their reach and timing.
+    /// Android `readyFoot` (f85e5a3, ef28b1c 1.0.16: closer to the end line, -0.035): the ready stance fitted to the
+    /// authored paddle, without lifting the feet or revealing a patch of torso over the tabletop.
     private func readyFoot() -> MPPoint {
-        let base = MPPoint(0.5, -0.10), ground = project(base)
+        let base = MPPoint(0.5, -0.035), ground = project(base)
         guard let ready = poses.geometry(id, .front, mirror: false, foot: ground, height: height, phase: 0) else { return base }
         let overlap = max(ready.racket.y + ready.radius * 1.05 + height * 0.012 - ball(MPPoint(0.5, 0), 0).y, 0)
         if overlap == 0 { return base }
-        return MPPoint(0.5, min(-0.10, inverse(CGPoint(x: ground.x, y: ground.y - overlap)).y))
+        return MPPoint(0.5, min(-0.035, inverse(CGPoint(x: ground.x, y: ground.y - overlap)).y))
     }
     private func legal(_ p: MPPoint) -> Bool { p.y <= -0.004 || p.x <= -0.004 || p.x >= 1.004 }
     private func offFootprint(_ q: MPPoint) -> Bool { q.y <= 0 || q.x <= -0.004 || q.x >= 1.004 }
     /// Android `poseFor`: the cheapest legal pose whose drawn racket meets the ball with both shoes off the tabletop.
+    /// Android ef28b1c (1.0.16): a baseline player reaches with the racket instead of walking its chest into the table
+    /// (`baselineLimit`), stays near its home line, and never turns sideways for a ball in the middle of the table.
     private func poseFor(_ point: MPPoint, _ z: Double) -> Pose {
         let at = ball(point, z)
         var best: Pose?, cost = Double.greatestFiniteMagnitude
+        let home = readyFoot()
+        let baselineLimit = min(-0.035, home.y + 0.012)
+        let middle = (0.12...0.88).contains(point.x)
         for facing in [MPPoseAtlas.Facing.front, .side] {
+            if facing == .side && middle { continue }
             for mirror in [false, true] {
                 for phase in [2, 1, 0, 3] {
                     guard let g = poses.geometry(id, facing, mirror: mirror, foot: .zero, height: height, phase: phase) else { continue }
@@ -68,12 +74,14 @@ final class MPGroundedRival {
                     let soles = poses.floorSupports(id, facing, mirror: mirror, foot: project(exact), height: height, phase: phase).map(inverse)
                     let left = MPPoint(exact.x - max((soles.map(\.x).max() ?? exact.x) + 0.006, 0), exact.y)
                     let right = MPPoint(exact.x + max(1.006 - (soles.map(\.x).min() ?? exact.x), 0), exact.y)
-                    for p in [exact, MPPoint(exact.x, min(exact.y, -0.006)), left, right] {
+                    for p in [exact, MPPoint(exact.x, min(exact.y, baselineLimit)), left, right] {
+                        if middle && p.y > baselineLimit { continue }
+                        if (0...1).contains(p.x) && (p.y > baselineLimit || facing == .side) { continue }
                         guard legal(p), poses.floorSupports(id, facing, mirror: mirror, foot: project(p), height: height, phase: phase).allSatisfy({ offFootprint(inverse($0)) }),
                               let actual = poses.geometry(id, facing, mirror: mirror, foot: project(p), height: height, phase: phase) else { continue }
                         let gap = Double(hypot(at.x - actual.racket.x, at.y - actual.racket.y))
                         if gap > Double(actual.radius + height * 0.025) { continue }
-                        let c = floorFoot.distance(p) + gap / Double(height) * 0.12 + (phase == 2 ? 0 : 0.015)
+                        let c = floorFoot.distance(p) + gap / Double(height) * 0.12 + (phase == 2 ? 0 : 0.015) + abs(p.y - home.y) * 1.8
                         if c < cost { cost = c; best = Pose(foot: p, facing: facing, mirror: mirror, phase: phase) }
                     }
                 }
@@ -83,7 +91,7 @@ final class MPGroundedRival {
         let mirror = point.x < 0.5
         let racket = poses.geometry(id, .front, mirror: mirror, foot: .zero, height: height, phase: 2)?.racket ?? .zero
         let p = inverse(CGPoint(x: at.x - racket.x, y: at.y - racket.y))
-        return Pose(foot: MPPoint(p.x, min(p.y, -0.10)), facing: .front, mirror: mirror, phase: 2)
+        return Pose(foot: MPPoint(p.x, min(p.y, baselineLimit)), facing: .front, mirror: mirror, phase: 2)
     }
     /// Android `canReach` (engine `botCanReach`).
     func canReach(_ point: MPPoint, _ z: Double) -> Bool {
@@ -142,7 +150,8 @@ final class MPGroundedRival {
                           foot: project(floorFoot), height: height, phase: walking ? gait.phase : phase, championRank: engine.championLevel, scene: scene)
     }
     /// Android `draw` and `drawAboveTable`: the complete body (the caller keeps it under the tabletop), and the same
-    /// pose revealed outside the tabletop, above the feet's table line, and around a contacting racket. The table hides
+    /// pose revealed outside the tabletop and above the waist (Android 1ee5f05: the arm, grip and racket stay joined to
+    /// the body; the old round racket cut-out made the paddle float over a hidden torso). The table hides
     /// the lower leg behind its corner. `tabletop` and `bounds` are view coordinates; the tabletop runs clockwise on
     /// screen, so the outside region is (bounds − tabletop) under either fill rule.
     func render(tabletop: CGPath, bounds: CGRect, scene: (CGPoint) -> CGPoint) {
@@ -157,12 +166,9 @@ final class MPGroundedRival {
         region.addPath(tabletop)
         outside.path = region.copy(using: &t)
         let line = ball(floorFoot, 0).y
-        upper.path = CGPath(rect: CGRect(x: bounds.minX, y: bounds.minY, width: bounds.width, height: max(0, line - bounds.minY)), transform: &t)
-        // The contacting hand is above the surface even when the body is behind it.
-        if let g = geometry, engine.minikStroke.active {
-            let r = g.radius * 1.25
-            hand.path = CGPath(ellipseIn: CGRect(x: g.racket.x - r, y: g.racket.y - r, width: 2 * r, height: 2 * r), transform: &t)
-        } else { hand.path = nil }
+        let waist = geometry.map { g in min(g.bounds.minY + g.bounds.height * 0.73, max(line, g.racket.y + g.radius * 1.10)) } ?? line
+        upper.path = CGPath(rect: CGRect(x: bounds.minX, y: bounds.minY, width: bounds.width, height: max(0, waist - bounds.minY)), transform: &t)
+        hand.path = nil
     }
     func setHidden(_ hidden: Bool) { body.isHidden = hidden; above.isHidden = hidden }
 }

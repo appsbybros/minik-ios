@@ -81,6 +81,13 @@ final class MPScene: SKScene {
     private var dragStartX: CGFloat = 0, dragPaddle = MPPoint(0.5, 0.87), dragWidth: CGFloat = 1
     private var proPath: [MPPoint] = [], proStarted = 0.0
     private var tapDown = CGPoint.zero, tapDragged = false, standardCommitted = false
+    /// Android 1ee5f05 `aimingSwipe`: a swipe that starts (or turns) while the incoming ball is within reach aims the
+    /// return; it no longer also walks the player away from the ball.
+    private var aimingSwipe = false
+    private func incomingWithinReach() -> Bool {
+        guard let f = engine.flight else { return false }
+        return !f.resolved && f.striker == .minik && f.position.y >= 0.55 && abs(engine.restingPaddle.x - f.position.x) <= 0.24
+    }
     /// Android 838c209 `positioningServe`: while a serve is awaited, a drag repositions the player and a tap serves at
     /// finger-up, independently of rally swipe detection. Once a gesture has moved, returning to its start is still
     /// movement.
@@ -373,11 +380,13 @@ final class MPScene: SKScene {
             MPLooseBall.Body(x: Double((nearX - tableRect.minX) / tableRect.width), y: 1.06, radiusX: 0.15, radiusY: 0.06, bottom: engine.visibleFloor, top: 2.7),
             MPLooseBall.Body(x: grounded?.x ?? Double((farX - tableRect.minX) / tableRect.width), y: grounded?.y ?? -0.06, radiusX: 0.14, radiusY: 0.06, bottom: engine.visibleFloor, top: 2.7)]
     }
-    /// Android ModernCourt: the camera centres between the receiving paddle (or the far server) and the ball.
+    /// Android ModernCourt (131bd3a): reception frames the receiving position (the far server's spot, or the
+    /// paddle's), not a focal point travelling with each bounce of the ball.
     private func updateCamera(_ dt: Double) {
-        let at = engine.reception.receiver == 1 ? MPEngine.servePoint : (engine.paddle ?? engine.restingPaddle)
-        let a = screenPoint(at), b = screenPoint(engine.ball, engine.renderedHeight)
-        let focus = CGPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2)
+        let receiver = engine.reception.receiver
+        var at = receiver == 1 ? MPEngine.servePoint : (engine.paddle ?? engine.restingPaddle)
+        at.y = receiver == 1 ? 0.16 : 0.84
+        let focus = screenPoint(at, 0)
         receptionCamera.update(dt, assist: engine.reception, local: 0, focus: focus, size: size, holding: activeTouch != nil, reduceMotion: UIAccessibility.isReduceMotionEnabled)
         // Android 579de33 `constrainReceptionCamera`: both players stay whole while zoomed. Android lets the far player
         // draw up under its transparent HUD; this court view cannot draw beyond its own edges, so they bound the frame.
@@ -390,19 +399,19 @@ final class MPScene: SKScene {
     /// The view centre in the court's top-left coordinates, converted to the scene's y-up coordinates.
     private func placeCamera() {
         let c = receptionCamera, zoom = max(c.zoom, 0.01)
-        let centre = CGPoint(x: c.x + (size.width / 2 - c.x - c.tx) / zoom, y: c.y + (size.height / 2 - c.y - c.ty) / zoom)
-        cameraNode.position = c.amount == 0 ? CGPoint(x: size.width / 2, y: size.height / 2) : CGPoint(x: centre.x, y: size.height - centre.y)
+        let centre = CGPoint(x: (size.width / 2 - c.tx) / zoom, y: (size.height / 2 - c.ty) / zoom)
+        cameraNode.position = CGPoint(x: centre.x, y: size.height - centre.y)
         cameraNode.setScale(1 / zoom)
     }
     // MARK: Full player (compact court)
+    /// Android 1ee5f05 (1.0.15): the feet follow the paddle at one fixed racket height. A stroke's contact point no
+    /// longer pulls the body, so Minik does not jump at contact.
     private func playerTarget() -> (MPPoint, Double) {
-        let s = engine.childStroke
-        if s.active { return (s.point, s.height) }
-        return (engine.paddle ?? engine.restingPaddle, engine.restingHeight)
+        (engine.paddle ?? engine.restingPaddle, 0.18)
     }
     private func targetFoot() -> CGPoint {
         let (p, z) = playerTarget()
-        let racket = poses.geometry(selectedLocalCharacter, .rear, mirror: playerMirror, foot: .zero, height: playerHeight, phase: 2)?.racket ?? .zero
+        let racket = poses.geometry(selectedLocalCharacter, .rear, mirror: false, foot: .zero, height: playerHeight, phase: 0)?.racket ?? .zero
         // Finger/paddle depth is not permission to step through the end of the table, for idle movement, empty swings
         // and contact snaps alike.
         return CGPoint(x: sceneX(p.x) - racket.x, y: max(nearFloorY, sceneY(p.y, z) - racket.y))
@@ -416,7 +425,7 @@ final class MPScene: SKScene {
         if stroke.contacted && observedContact != stroke.id { observedContact = stroke.id; contactAge = 0 }
         let target = targetFoot()
         guard let previous = playerFoot else { playerFoot = target; return }
-        let factor = CGFloat(1 - exp(-dt / (stroke.active ? 0.018 : 0.075)))
+        let factor = CGFloat(1 - exp(-dt / 0.075))
         let x = previous.x + (target.x - previous.x) * factor, y = previous.y + (target.y - previous.y) * factor
         let distance = hypot(x - previous.x, y - previous.y)
         playerMoving = distance > playerHeight * 0.001
@@ -426,11 +435,10 @@ final class MPScene: SKScene {
     private func renderLocalPlayer() -> Bool {
         guard showsLocalAvatar else { return false }
         if playerFoot == nil { updateLocalPlayer(0) }
-        guard var foot = playerFoot else { return false }
+        guard let foot = playerFoot else { return false }
         let s = engine.childStroke
         let phase = !s.active ? 0 : !s.contacted ? (selectedLocalCharacter == "minik" ? 0 : 1) : contactAge < 0.085 ? 2 : contactAge < 0.27 ? 3 : 0
-        // At impact the engine's actual contact is authoritative; later frames keep the same floor anchor.
-        if s.active && s.contacted && contactAge < 0.04 { foot = targetFoot(); playerFoot = foot }
+        // Android 1ee5f05: contact never changes the floor anchor; only manual footwork does.
         playerShadow.isHidden = false; playerShadow.position = sk(foot)
         playerShadow.path = CGPath(ellipseIn: CGRect(x: -playerHeight * 0.24, y: -playerHeight * 0.035, width: playerHeight * 0.48, height: playerHeight * 0.06), transform: nil)
         let walkingNow = playerMoving && !s.active
@@ -732,7 +740,7 @@ final class MPScene: SKScene {
             engine.endTouch(cancelled: true); return
         }
         switch pipeline {
-        case .tap: beginFootwork(v.x); tapDown = v; tapDragged = false; standardCommitted = false
+        case .tap: beginFootwork(v.x); tapDown = v; tapDragged = false; standardCommitted = false; aimingSwipe = incomingWithinReach()
         case .pro: proPath = []; beginFootwork(v.x); proStarted = touch.timestamp; sample(v); engine.touch(point(v), movePaddle: !showsLocalAvatar)
         case .direct:
             let p = point(v); previousTouch = p
@@ -755,7 +763,11 @@ final class MPScene: SKScene {
             if tapDragged && !standardCommitted {
                 let velocity = tracker.velocity
                 standardCommitted = engine.standardSwipe(MPPoint(Double(velocity.dx / gestureScale), Double(velocity.dy / gestureScale)))
-                if !standardCommitted { engine.prepareGesture(footwork(v.x)); engine.guidePreparedTap(from: point(tapDown), to: point(v)) }
+                if !standardCommitted {
+                    if !aimingSwipe { engine.prepareGesture(footwork(v.x)) }
+                    aimingSwipe = aimingSwipe || incomingWithinReach()
+                    engine.guidePreparedTap(from: point(tapDown), to: point(v))
+                }
             }
             previousTouchTime = touch.timestamp
         case .pro:
@@ -797,7 +809,7 @@ final class MPScene: SKScene {
         switch pipeline {
         case .tap:
             if !tapDragged { engine.touch(point(v), movePaddle: !showsLocalAvatar) }
-            else if !standardCommitted { engine.prepareGesture(footwork(v.x)) }
+            else if !standardCommitted && !aimingSwipe { engine.prepareGesture(footwork(v.x)) }
             engine.endTouch()
         case .pro:
             sample(v)

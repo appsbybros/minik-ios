@@ -148,44 +148,80 @@ enum MPReceptionSettings {
 
 /// Android `ReceptionCamera`: a reversible screen transform (top-left origin, y down) that eases toward the
 /// receiver. It holds still during a touch, and iOS Reduce Motion keeps the full table (Android: animations off).
+/// Android 131bd3a / ef28b1c (1.0.15-1.0.16): the zoom and its offset are eased together as one transform
+/// (`p * zoom + t`); one reception keeps its first focus and its peak strength until 0.28 s after it ends, so the
+/// camera holds still instead of pumping; framing that caps the zoom also caps the pan; and the offset never uncovers
+/// the edge of the view.
 struct MPReceptionCamera {
     private(set) var amount = 0.0
     private(set) var x: CGFloat = 0, y: CGFloat = 0, tx: CGFloat = 0, ty: CGFloat = 0
     private var framingLimit = CGFloat.infinity
-    var zoom: CGFloat { min(CGFloat(1 + 0.42 * amount), framingLimit) }
+    private var renderedZoom: CGFloat = 1
+    private var visibleTop = CGFloat.nan, visibleBottom = CGFloat.nan
+    private var actorTop: CGFloat = 0, actorBottom: CGFloat = 0
+    private var frame = CGSize.zero
+    private var receiving = false, releaseDelay = 0.0, peakStrength = 0.0
+    private var receptionFocus = CGPoint.zero
+    var zoom: CGFloat { renderedZoom }
     mutating func update(_ dt: Double, assist: MPReceptionAssist, local: Int, focus: CGPoint, size: CGSize, holding: Bool, reduceMotion: Bool) {
+        if frame != size {
+            if frame.width > 0 { framingLimit = .infinity; visibleTop = .nan; visibleBottom = .nan }
+            frame = size
+        }
         if holding { return }
-        framingLimit = .infinity
         let own = assist.receiver == local
         let allowed = MPReceptionSettings.value(own ? "zoom" : "follow") && assist.receiver >= 0 && !reduceMotion
-        let target = allowed ? assist.strength : 0
+        let incoming = allowed && assist.strength > 0
+        if incoming {
+            if !receiving { peakStrength = 0; receptionFocus = focus }
+            peakStrength = max(peakStrength, assist.strength)
+            releaseDelay = 0.28
+        } else { releaseDelay = max(releaseDelay - dt, 0) }
+        receiving = incoming || releaseDelay > 0
+        let target = receiving ? peakStrength : 0
+        let fixedFocus = receiving ? receptionFocus : focus
         let k = 1 - exp(-dt.mpClamp(0, 0.075) * 4)
         amount += (target - amount) * k
-        if amount < 0.0001 { amount = 0; x = focus.x; y = focus.y }
-        else { x += (focus.x - x) * CGFloat(k); y += (focus.y - y) * CGFloat(k) }
+        if amount < 0.0001 { amount = 0; x = fixedFocus.x; y = fixedFocus.y }
+        else if receiving { x += (fixedFocus.x - x) * CGFloat(k); y += (fixedFocus.y - y) * CGFloat(k) }
         x = min(size.width * 0.88, max(size.width * 0.12, x)); y = min(size.height * 0.88, max(size.height * 0.12, y))
-        tx = (size.width * 0.5 - x) * CGFloat(amount); ty = (size.height * 0.62 - y) * CGFloat(amount)
+        let targetZoom = min(CGFloat(1 + 0.42 * amount), framingLimit)
+        // If framing prevents zoom, it must also prevent reception panning.
+        let framedAmount = min(max((targetZoom - 1) / 0.42, 0), 1)
+        let targetX = (size.width * 0.5 - x) * framedAmount
+        var targetY = (size.height * 0.62 - y) * framedAmount
+        if visibleTop.isFinite, targetZoom > 1.0001 {
+            let lower = visibleTop - (y + (actorTop - y) * targetZoom), upper = visibleBottom - (y + (actorBottom - y) * targetZoom)
+            if lower <= upper { targetY = min(max(targetY, lower), upper) }
+        }
+        // Resolve framing before easing the final transform, and ease the complete offset (not a moving pivot plus a
+        // separate pan). Valid endpoints stay inside the view throughout the interpolation.
+        let offsetX = min(max((1 - targetZoom) * x + targetX, size.width * (1 - targetZoom)), 0)
+        let offsetY = min(max((1 - targetZoom) * y + targetY, size.height * (1 - targetZoom)), 0)
+        renderedZoom += (targetZoom - renderedZoom) * CGFloat(k)
+        tx += (offsetX - tx) * CGFloat(k); ty += (offsetY - ty) * CGFloat(k)
     }
-    /// Android 579de33 `keepPlayersVisible`: zoom the singles scene without losing either player's head or feet
-    /// beyond `visibleTop...visibleBottom` (court points, y down).
+    /// Android 579de33 / 131bd3a `keepPlayersVisible`: zoom the singles scene without losing either player's head or
+    /// feet beyond `visibleTop...visibleBottom` (court points, y down). The actors' extent only grows during a
+    /// reception, so a swing pose cannot pump the camera in and out.
     mutating func keepPlayersVisible(top: CGFloat, bottom: CGFloat, visibleTop: CGFloat, visibleBottom: CGFloat) {
-        guard amount > 0.0001, bottom > top, visibleBottom > visibleTop else { return }
-        framingLimit = max((visibleBottom - visibleTop) / (bottom - top), 1)
-        let lower = visibleTop - (y + (top - y) * zoom), upper = visibleBottom - (y + (bottom - y) * zoom)
-        if lower <= upper { ty = min(max(ty, lower), upper) }
+        guard bottom > top, visibleBottom > visibleTop else { return }
+        self.visibleTop = visibleTop; self.visibleBottom = visibleBottom
+        if framingLimit.isInfinite { actorTop = top; actorBottom = bottom }
+        else { actorTop = min(actorTop, top); actorBottom = max(actorBottom, bottom) }
+        framingLimit = max((visibleBottom - visibleTop) / (actorBottom - actorTop), 1)
     }
-    /// Android `begin`: translate, then scale about the focus.
+    /// Android `begin`: translate, then scale about the view's origin.
     func apply(_ context: CGContext) {
-        context.translateBy(x: tx, y: ty)
-        context.translateBy(x: x, y: y); context.scaleBy(x: zoom, y: zoom); context.translateBy(x: -x, y: -y)
+        context.translateBy(x: tx, y: ty); context.scaleBy(x: zoom, y: zoom)
     }
     /// A world point's position on screen.
-    func painted(_ p: CGPoint) -> CGPoint { CGPoint(x: x + (p.x - x) * zoom + tx, y: y + (p.y - y) * zoom + ty) }
+    func painted(_ p: CGPoint) -> CGPoint { CGPoint(x: p.x * zoom + tx, y: p.y * zoom + ty) }
     /// Android `ReceptionCamera.scenery`: the same transform for a view whose points are `offset` from the court's
     /// (`translate(offset); begin; translate(-offset)`); `offset` is the court origin in that view.
     func transform(offset: CGPoint) -> CGAffineTransform {
-        CGAffineTransform(a: zoom, b: 0, c: 0, d: zoom, tx: (offset.x + x) * (1 - zoom) + tx, ty: (offset.y + y) * (1 - zoom) + ty)
+        CGAffineTransform(a: zoom, b: 0, c: 0, d: zoom, tx: offset.x * (1 - zoom) + tx, ty: offset.y * (1 - zoom) + ty)
     }
     /// The world point under a screen point (touch input).
-    func base(_ p: CGPoint) -> CGPoint { CGPoint(x: x + (p.x - tx - x) / zoom, y: y + (p.y - ty - y) / zoom) }
+    func base(_ p: CGPoint) -> CGPoint { CGPoint(x: (p.x - tx) / zoom, y: (p.y - ty) / zoom) }
 }

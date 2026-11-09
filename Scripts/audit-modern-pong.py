@@ -14,7 +14,7 @@ def check(condition,message):
 # Android commit this port matches. Android sources and rules are read from that commit itself (git show, read-only),
 # so uncommitted work in the Android checkout never changes what the port is compared with; the working copies that
 # differ are only listed in the report. Binary assets are still compared with the checkout's files.
-ANDROID_COMMIT='3e351d2'
+ANDROID_COMMIT='1491c5f'
 android_reads=set()
 import subprocess
 def android_blob(p):
@@ -297,6 +297,19 @@ if args.android.exists():
           'Parents / Remove ads link inside Advanced, above More Minik apps, light blue (Android 1cca1cf)')
     check('attempts < 15' in play_now and 'postDelayed(this, 2000)' in play_now and 'for attempt in 0..<15' in menu and '2_000_000_000' in menu and 'if shown { return }' in menu,
           'Remove-ads reminder retried on the idle menu every 2 s, 15 times (Android 3e351d2)')
+    # Android 1ee5f05, 131bd3a, ef28b1c (1.0.15-1.0.16): grounded players, reception camera, house player position.
+    lm=code(read(src/'LargeMatchRenderer.kt')); rc=code(read(src/'ReceptionCamera.kt')); at=code(read(src/'PongPlayerAtlas.kt'))
+    ios_lm=code(read(modern/'MPLargeMatch.swift')); ios_rc=code(read(modern/'MPReception.swift'))
+    check('farFloorDrop get()=layout.actorHeight*.40' in lm and 'g.bounds.height()*.73f' in lm and 'farFloorDrop: Double { layout.actorHeight * 0.40 }' in ios_lm
+          and 'g.bounds.height * 0.73' in ios_lm and 'ages[1] < 0.085' not in ios_lm,'Large table: far floor 0.40 actor heights, arm and racket revealed to the waist (Android 1ee5f05)')
+    check('(1-exp(-dt/.08))' in lm and 'CGFloat(1 - exp(-dt / 0.08))' in ios_lm and 'to .18' in k['ModernCourt.kt'] and '(engine.paddle ?? engine.restingPaddle, 0.18)' in ios['MPScene.swift']
+          and 'contactAge < 0.04 { foot' not in ios['MPScene.swift'],'No foot jump at contact on either table (Android 1ee5f05)')
+    check('frames.map { f -> f.copy(foot=PointF(hipX(image,f),f.foot.y)) }' in at and 'MPPoseAtlas.hipX(alpha, f)' in ios['MPPracticeTable.swift'],'Every pose frame anchored at the pelvis (Android 1ee5f05)')
+    both('ModernCourt.kt',['aimingSwipe=incomingWithinReach()','abs(engine.restingPaddle.x-it.position.x)<=.24','if(!aimingSwipe)engine.prepareGesture'],'MPScene.swift',['aimingSwipe = incomingWithinReach()','abs(engine.restingPaddle.x - f.position.x) <= 0.24','if !aimingSwipe { engine.prepareGesture'],'A swipe with the ball in reach aims instead of walking (Android 1ee5f05)')
+    both('ModernCourt.kt',['at.copy(y=if(receiver==1).16 else .84)'],'MPScene.swift',['at.y = receiver == 1 ? 0.16 : 0.84'],'Reception frames the receiving position, not the ball (Android 131bd3a)')
+    check('releaseDelay=.28' in rc and 'renderedZoom' in rc and 'c.scale(zoom,zoom)}' in rc and 'releaseDelay = 0.28' in ios_rc and 'renderedZoom' in ios_rc
+          and 'context.scaleBy(x: zoom, y: zoom)' in ios_rc and 'width*(1-targetZoom)' in rc and 'size.width * (1 - targetZoom)' in ios_rc,'Reception zoom holds still, eases one transform and never uncovers an edge (Android 131bd3a)')
+    both('GroundedRival.kt',['Vec(.5,-.035)','baselineLimit=minOf(-.035,home.y+.012)','abs(p.y-home.y)*1.8','point.x in .12.. .88'],'MPGroundedRival.swift',['MPPoint(0.5, -0.035)','min(-0.035, home.y + 0.012)','abs(p.y - home.y) * 1.8','(0.12...0.88).contains(point.x)'],'House player stays near its baseline, never sideways mid-table (Android ef28b1c)')
 uncommitted=[]
 if args.android.exists():
     for f in sorted(android_reads):
