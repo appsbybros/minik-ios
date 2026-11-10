@@ -1,6 +1,6 @@
 import Foundation
 
-// Android cross/CrossMatch.kt (MinikCrossPong 828c6fc).
+// Android cross/CrossMatch.kt (MinikCrossPong 828c6fc; 1fc4bc2: the classic final's two-point lead and resumable eliminations).
 
 /// winnerTakesAll: the first to the target wins (losses at 0 forgiven). elimination: players drop out (below zero, or the fewest
 /// points whenever someone reaches the target) and the table shrinks until two remain.
@@ -121,7 +121,7 @@ final class CrossMatch {
         finals = Array(repeating: 0, count: n)
         engine = CrossMatch.makeEngine(roster: numbered, seats: everyone, control: control, target: target, seed: seed, stage: 0, networked: networked,
                                        server: crossMod(firstServer, max(1, n)), scoring: CrossMatch.scoring(n, mode: mode, goal: decided), scores: nil,
-                                       authoritative: true, paused: false)
+                                       goal: decided, authoritative: true, paused: false)
     }
     var winner: Int? { finished && goal != .topTwo ? placement.first : nil }
     var localOut: Bool { localSeat.map { out.contains($0) } ?? false }
@@ -142,14 +142,17 @@ final class CrossMatch {
         return .multi
     }
     private static func makeEngine(roster: [CrossSeat], seats: [Int], control: CrossControl, target: Int, seed: Int64, stage: Int, networked: Bool,
-                                   server: Int, scoring: CrossScoring, scores: [Int]?, authoritative: Bool, paused: Bool) -> CrossEngine {
+                                   server: Int, scoring: CrossScoring, scores: [Int]?, goal: CrossGoal, authoritative: Bool, paused: Bool) -> CrossEngine {
         let table = seats.enumerated().map { item -> CrossSeat in
             var seat = roster[item.element]
             seat.index = item.offset
             return seat
         }
+        // Android 1fc4bc2: a two-player stage (the elimination final on the cross table) keeps the two-point lead of its control
+        // level, except in a tie-break.
         let engine = CrossEngine(seats: table, control: control, target: target, seed: seed &+ 7919 &* Int64(stage), networked: networked,
-                                 firstServer: server, scoring: scoring, startScores: scores)
+                                 firstServer: server, scoring: scoring, startScores: scores,
+                                 classicWinByTwo: seats.count == 2 && control.level.needsTwoPointLead && goal != .tiebreak)
         engine.authoritative = authoritative
         engine.paused = paused
         return engine
@@ -157,7 +160,7 @@ final class CrossMatch {
     private func build(_ seats: [Int], scores: [Int]?, server: Int) -> CrossEngine {
         CrossMatch.makeEngine(roster: roster, seats: seats, control: control, target: target, seed: seed, stage: stage, networked: networked,
                               server: server, scoring: CrossMatch.scoring(seats.count, mode: mode, goal: goal), scores: scores,
-                              authoritative: auth, paused: hold)
+                              goal: goal, authoritative: auth, paused: hold)
     }
     func drainEvents() -> [CrossEvent] {
         let drained = events
@@ -251,15 +254,25 @@ final class CrossMatch {
     /// nothing, for an invalid state.
     func restoreState(_ s: CrossMatchState, preserveInput: Bool = false) throws {
         let seatRange = 0..<players
+        // Android 1fc4bc2: a player who just went out is still at the table during the announcement (the next stage leaves them
+        // out), and the last one out of a finished top-two table is still in its last stage; both checkpoints must reopen.
+        let goal = self.goal
+        func eliminatedOk(_ seat: Int) -> Bool {
+            guard seatRange.contains(seat) else { return false }
+            if !s.active.contains(seat) { return true }
+            if s.transition != nil, let n = s.next, !n.active.contains(seat) { return true }
+            return s.finished && goal == .topTwo && s.placement.dropFirst(2).contains(seat) && !s.placement.prefix(2).contains(where: { s.eliminated.contains($0) })
+        }
         guard s.active.count >= 2, s.active.count <= players, s.active.allSatisfy({ seatRange.contains($0) }), s.active == s.active.sorted(),
               Set(s.active).count == s.active.count, s.finals.count == players,
-              s.eliminated.allSatisfy({ seatRange.contains($0) && !s.active.contains($0) }),
+              Set(s.eliminated).count == s.eliminated.count, s.eliminated.allSatisfy(eliminatedOk),
               s.placement.allSatisfy({ seatRange.contains($0) }), s.transition.map({ $0.isFinite }) ?? true else {
             throw CrossStateError.invalid("Invalid match state")
         }
         if let n = s.next {
-            guard n.active.count >= 2, n.active.allSatisfy({ seatRange.contains($0) }), n.scores.count == n.active.count else {
-                throw CrossStateError.invalid("Invalid next stage")
+            guard s.transition != nil, n.active == s.active.filter({ !s.eliminated.contains($0) }), n.active.count >= 2,
+                  n.active.allSatisfy({ seatRange.contains($0) }), n.scores.count == n.active.count, n.active.indices.contains(n.server) else {
+                throw CrossStateError.invalid("Invalid match state")
             }
         }
         guard s.engine.referee.scores.count == s.active.count else { throw CrossStateError.invalid("Stage seat count mismatch") }

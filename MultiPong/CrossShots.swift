@@ -16,6 +16,8 @@ struct CrossServe {
 
 enum CrossShots {
     static let clearance = 0.03
+    /// Android 971e958 `SET_DEPTH`: where a raised pass (a set) lands on the partner's arm.
+    static let setDepth = 0.88
     static let minTime = 0.45
     static let maxTime = 2.4
     /// Classic pace → world units/s for targeted shots (Standard/Beginner base 0.40 → 0.98; 5c1aa4d raised it from 2.2).
@@ -49,6 +51,13 @@ enum CrossShots {
             }
         }
         return time.mpClamp(minTime, maxTime)
+    }
+    /// Android 971e958 `raisedPass`: a slower high pass with a reachable receiving bounce, leaving time to smash. Ordinary gravity
+    /// and restitution still govern both flight and bounce.
+    static func raisedPass(_ g: CrossGeometry, _ t: MPTuning, from: MPPoint, height: Double, target: MPPoint, pace: Double) -> CrossLaunch {
+        let normal = flightTime(g, t, from: from, height: height, target: target, pace: pace)
+        let time = (normal + 0.55).mpClamp(1.65, 3.0)
+        return CrossLaunch(velocity: (target - from) * (1 / time), lift: (0.5 * t.gravity * time * time - height) / time)
     }
     /// Assisted shot (Beginner/Standard humans, house players, serves) whose first bounce is exactly `target`. Quality loss
     /// lowers the lift, so a poor contact can net; callers move `target` for aim noise, so a poor aim can go out. Nothing

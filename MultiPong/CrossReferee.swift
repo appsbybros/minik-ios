@@ -69,6 +69,8 @@ final class CrossReferee {
     /// Team play (Android `teams`): teammates share every point and nobody loses one; a miss or fault gives the other team the
     /// point. Only for the multi scoring of a 3/4-seat table.
     let teams: CrossTeams?
+    /// Android 1fc4bc2 `winByTwo`: a classic final on the cross table keeps its control level's two-point lead.
+    let winByTwo: Bool
     private var board: [Int]
     private var won: [Int]
     private var faulted: [Int]
@@ -91,8 +93,9 @@ final class CrossReferee {
     /// Android requires target >= 1, classic scoring only for two players and start scores in [0, target): invalid values
     /// (only possible from a corrupt checkpoint) are corrected here instead of crashing the court.
     init(_ geometry: CrossGeometry, target: Int, firstServer: Int = 0, scoring: CrossScoring = .multi, startScores: [Int]? = nil,
-         teams: CrossTeams? = nil) {
+         teams: CrossTeams? = nil, winByTwo: Bool = false) {
         self.geometry = geometry
+        self.winByTwo = winByTwo
         self.target = max(1, target)
         let mode: CrossScoring = scoring == .classic && geometry.players != 2 ? .multi : scoring
         self.scoring = mode
@@ -204,7 +207,7 @@ final class CrossReferee {
         let seatRange = 0..<players
         guard seatRange.contains(s.server), seatRange.contains(s.striker), s.receiver.map({ seatRange.contains($0) }) ?? true,
               s.winner.map({ seatRange.contains($0) }) ?? true else { throw CrossStateError.invalid("Seat out of range") }
-        guard s.rallyId >= 1, s.ralliesPlayed >= 0, s.hits >= 0, s.scores.allSatisfy({ $0 >= 0 && $0 <= target }) else { throw CrossStateError.invalid("Invalid referee state") }
+        guard s.rallyId >= 1, s.ralliesPlayed >= 0, s.hits >= 0, s.scores.allSatisfy({ $0 >= 0 && (winByTwo || $0 <= target) }) else { throw CrossStateError.invalid("Invalid referee state") }
         // A receiver exists exactly while the ball is receivable (and may remain on a resolved missed); a winner ends play.
         let receiverOk = (s.phase != .receivable || s.receiver != nil) && (s.receiver == nil || s.phase == .receivable || s.phase == .resolved)
         let winnerOk = s.winner.map { s.phase == .resolved && s.scores[$0] >= target } ?? true
@@ -244,8 +247,8 @@ final class CrossReferee {
         if gainer != nil { missed[loser] += 1 } else { faulted[loser] += 1 }
         ralliesPlayed += 1
         var reached: Int?
-        // The first to reach the target wins at once (no win-by-two); in elimination it only triggers a drop-out.
-        if let gain, board[gain] >= target {
+        // Multi-table points resolve at target; a classic final keeps its control-level two-point-lead rule (Android 1fc4bc2).
+        if let gain, board[gain] >= target && (!winByTwo || board[gain] - board[crossMod(gain + 1, players)] >= 2) {
             if scoring == .elimination { reached = gain } else if winner == nil { winner = gain }
         }
         phase = .resolved

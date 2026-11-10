@@ -5,7 +5,8 @@ import XCTest
 // contacts and landings only.
 
 final class CrossPracticeTests: XCTestCase {
-    /// Kotlin `drive`: serve to the target, choose the target (or the partner), double-tap a set, swipe a raised ball.
+    /// Kotlin `drive`: serve to the target, choose the target (or the partner), double-tap a set, swipe a raised ball. (c93e760: also
+    /// while an aiming lesson waits for its target.)
     private func drive(_ p: CrossPractice, _ seconds: Double = 100) {
         p.start()
         for _ in 0..<Int(seconds * 120) {
@@ -13,7 +14,8 @@ final class CrossPracticeTests: XCTestCase {
             let e = p.engine
             if !e.paused {
                 if e.referee.mayServe(0) { e.touch(p.target); e.endTouch() }
-                else if e.predictedReceiver == 0 {
+                // Android c93e760: an aiming lesson waits for the chosen target before each feed.
+                else if e.predictedReceiver == 0 || p.stage.aimed && e.referee.phase == .awaitingServe {
                     if e.selectedAim != p.target && p.stage.skill != .pass { e.touch(p.target) }
                     if p.stage.skill == .set { e.liftToTeammate() }
                     if p.stage.skill == .pass {

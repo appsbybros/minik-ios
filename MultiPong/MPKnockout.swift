@@ -245,20 +245,16 @@ enum MPKnockout {
         if s.grouped, let drawn = s.rounds[round] {
             let next = s.rounds[round + 1]?.players.count ?? expected(s, drawn)
             let semifinal = next > 4 && MPGroupTournament.advancing(next, s.tableSize, advance: perTable(s)) <= 4
-            if he { return next <= 4 ? "העפלת לגמר!" : (semifinal ? "העפלת לשולחנות חצי הגמר!" : "העפלת לסיבוב הבא!") }
-            return next <= 4 ? "You reached the final!" : (semifinal ? "You reached the semifinal tables!" : "You advanced to the next round!")
+            // iOS (2026-11-10, owner decision): through MPText (MPTextIOS), not English outside English and Hebrew.
+            if next <= 4 { return MPText.t("You reached the final!", "העפלת לגמר!", he) }
+            return semifinal ? MPText.t("You reached the semifinal tables!", "העפלת לשולחנות חצי הגמר!", he)
+                : MPText.t("You advanced to the next round!", "העפלת לסיבוב הבא!", he)
         }
         let next = s.rounds[round + 1]?.players.count ?? (((s.rounds[round]?.players.count ?? 0) + 1) / 2)
-        if he {
-            if next <= 2 { return "העפלת לגמר!" }
-            if next <= 4 { return "העפלת לחצי הגמר!" }
-            if next <= 8 { return "העפלת לרבע הגמר!" }
-            return "העפלת לסיבוב הבא!"
-        }
-        if next <= 2 { return "You reached the final!" }
-        if next <= 4 { return "You reached the semifinals!" }
-        if next <= 8 { return "You reached the quarterfinals!" }
-        return "You advanced to the next round!"
+        if next <= 2 { return MPText.t("You reached the final!", "העפלת לגמר!", he) }
+        if next <= 4 { return MPText.t("You reached the semifinals!", "העפלת לחצי הגמר!", he) }
+        if next <= 8 { return MPText.t("You reached the quarterfinals!", "העפלת לרבע הגמר!", he) }
+        return MPText.t("You advanced to the next round!", "העפלת לסיבוב הבא!", he)
     }
     /// `uid` goes through from `m`'s round (so far): from a terminal table, a tie-break or without playing.
     static func goesThrough(_ s: MPSession, _ m: MPFixture, _ uid: String) -> Bool { roundOf(s, m).map { advancing(s, $0).contains(uid) } ?? false }
@@ -396,14 +392,20 @@ enum MPCompletionText {
         return "\(rank)th"
     }
     private static func placed(_ rank: Int, hebrew he: Bool) -> String {
-        MPText.t("Tournament finished. You placed \(ordinal(rank)).", "הטורניר הסתיים. סיימתם במקום ה־\(rank).", he)
+        // iOS (2026-11-10): a catalog translation takes the plain place number ("puesto 2"), never the English ordinal ("2nd").
+        let place = !he && MPText.columns.contains(MPText.language) ? String(rank) : ordinal(rank)
+        return MPText.t("Tournament finished. You placed \(place).", "הטורניר הסתיים. סיימתם במקום ה־\(rank).", he)
     }
 }
 
-/// Android `ControlChoice.title`: the room's control level (wire 4/0/3; older 1 and 2 are Standard).
+/// Android `ControlChoice.title`: the room's control level (wire 4/1/0/3; an older 2 is Standard). Android b0cdeb3 restored
+/// Starter (1).
 enum MPControlChoice {
+    /// Android b0cdeb3 PlayActivity / CrossActivity `controlValues`: the order of the control pickers.
+    static let values = [4, 1, 0, 3]
     static func title(_ value: Int, hebrew he: Bool) -> String {
         switch MPLevel.control(value) {
+        case .medium: return MPText.t("Starter", "נינוחה", he)
         case .easy: return MPText.t("Standard", "רגילה", he)
         case .superHard: return MPText.t("Pro", "מקצועני", he)
         default: return MPText.t("Beginner", "מתחילים", he)

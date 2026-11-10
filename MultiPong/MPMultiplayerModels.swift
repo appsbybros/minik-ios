@@ -356,7 +356,8 @@ struct MPSession: Codable, Equatable, Identifiable {
     init(code: String, kind: MPSessionKind, host: MPIdentity, capacity: Int = 2, legs: Int = 1, winPoints: Int = 3, difficulty: Int = 0, target: Int = 7,
          format: MPTournamentFormat = .roundRobin, tableSize: Int = 2, gameMode: MPGameMode = .winnerTakesAll, advance: Int = 2) {
         let friendly = kind == .friendly
-        let table = MPGroupTournament.tableSize(tableSize)
+        // Android bb8acda: a two-player tournament is a pair, even when an older setup retained a Y/cross table.
+        let table = !friendly && capacity == 2 ? 2 : MPGroupTournament.tableSize(tableSize)
         self.code = code; self.kind = kind; self.host = host.id
         if friendly { self.capacity = table }
         else if table > 2 { self.capacity = MPGroupTournament.capacity(capacity, format) }
@@ -447,7 +448,108 @@ enum MPError: String, Error, LocalizedError {
     case invalidResult = "Invalid final score."
     case left = "You have left this tournament."
     case seatTaken = "This seat is taken."
+    // Android 9adf1f1 SavedLobbyRollback.restore (its `require` messages; PlayActivity.error shows the general explanation).
+    case rollbackChanged = "The room has changed or started. Reopen it before discarding changes."
+    case rollbackPeerEdit = "The player list changed on another device. Reopen it before discarding changes."
+    case rollbackFull = "The room has new players and cannot restore the earlier player list."
+    case rollbackSeat = "A saved seat is now occupied. Reopen the room before discarding changes."
+    // Android 83b050d LocalPongRepository / RoomBook (`check` and `error` messages).
+    case saveFailed = "Could not save the game."
+    case noSave = "No saved game."
     var errorDescription: String? { rawValue }
+}
+
+/// Android 5375378 / 1fc4bc2 `FriendlyRematch`: direct bot rematches. Other humans must not be enrolled without their own
+/// readiness.
+enum MPFriendlyRematch {
+    static func available(_ s: MPSession, uid: String) -> Bool {
+        s.kind == .friendly && s.complete && s.participants[uid] != nil && s.participants[uid]?.bot == nil &&
+            s.participants.values.allSatisfy { $0.id == uid || $0.bot != nil }
+    }
+    /// The same room settings and roster (with their seats) under a new code, hosted by `uid`, without matches, presence,
+    /// departures or knockout rounds.
+    static func create(_ s: MPSession, uid: String, code: String, now: Int64) throws -> MPSession {
+        guard available(s, uid: uid) else { throw MPError.permission }
+        var next = s
+        next.code = code; next.host = uid; next.matches = [:]; next.connections = [:]; next.state = "WAITING"
+        next.createdAt = now; next.lastActivityAt = now; next.departed = [:]; next.rounds = [:]
+        return next
+    }
+}
+
+/// Android 9adf1f1 `SavedLobbyRollback`: undo the host's unsaved house-player edits without overwriting online peers.
+enum MPSavedLobbyRollback {
+    static func available(_ saved: MPSession, _ current: MPSession, uid: String) -> Bool {
+        saved.code == current.code && saved.kind == current.kind && saved.host == uid && current.host == uid &&
+            saved.state == "WAITING" && current.state == "WAITING" && saved.matches.isEmpty && current.matches.isEmpty
+    }
+    static func restore(_ saved: MPSession, edited: MPSession, latest: MPSession, uid: String) throws -> MPSession {
+        guard available(saved, edited, uid: uid) && available(saved, latest, uid: uid) else { throw MPError.rollbackChanged }
+        let savedBots = saved.participants.filter { $0.value.bot != nil }
+        let editedBots = edited.participants.filter { $0.value.bot != nil }
+        let latestBots = latest.participants.filter { $0.value.bot != nil }
+        // A retry may observe peer joins or presence changes; preserve them. A different host session editing the roster must
+        // not be silently overwritten.
+        guard latestBots == editedBots else { throw MPError.rollbackPeerEdit }
+        let people = latest.participants.filter { $0.value.bot == nil }.merging(savedBots) { _, bot in bot }
+        guard people.count <= latest.capacity else { throw MPError.rollbackFull }
+        var restored = latest
+        restored.participants = people
+        if latest.kind == .tournament { return restored }
+        var seats = latest.seating().filter { latest.participants[$0.key]?.bot == nil }
+        let savedSeating = saved.seating()
+        // Kotlin walks the saved house players in insertion order; a sorted walk gives the same seats or the same refusal.
+        for id in savedBots.keys.sorted() {
+            guard let old = savedSeating[id] else { throw MPError.rollbackSeat }
+            guard !seats.values.contains(old) else { throw MPError.rollbackSeat }
+            seats[id] = old
+        }
+        restored.seats = seats
+        return restored
+    }
+}
+
+/// Android 83b050d `SaveComparison`: compare game state, excluding transport counters and lobby-presence housekeeping. Numbers
+/// compare as doubles (Kotlin `Number.toDouble()`); a JSON boolean stays a boolean.
+enum MPSaveComparison {
+    static let housekeeping: Set<String> = ["connections", "lastActivityAt", "revision", "serverAt", "clientAt"]
+    static func meaningful(_ value: Any?) -> Any {
+        guard let value else { return NSNull() }
+        switch value {
+        case let map as [String: Any]:
+            var out: [String: Any] = [:]
+            for (key, item) in map where !housekeeping.contains(key) { out[key] = meaningful(item) }
+            return out
+        case let list as [Any]: return list.map { meaningful($0) }
+        case let number as NSNumber:
+            if CFGetTypeID(number) == CFBooleanGetTypeID() { return number.boolValue }
+            return number.doubleValue
+        default: return value
+        }
+    }
+    /// Structural equality of two `meaningful` values.
+    static func equal(_ a: Any, _ b: Any) -> Bool {
+        switch (a, b) {
+        case let (x as [String: Any], y as [String: Any]):
+            return x.count == y.count && x.allSatisfy { key, value in y[key].map { equal(value, $0) } ?? false }
+        case let (x as [Any], y as [Any]):
+            return x.count == y.count && zip(x, y).allSatisfy { equal($0, $1) }
+        case let (x as Bool, y as Bool): return x == y
+        case let (x as Double, y as Double): return x == y
+        case let (x as String, y as String): return x == y
+        case (is NSNull, is NSNull): return true
+        default: return false
+        }
+    }
+    /// A value as stored and read back as JSON (Android keeps its saves as `JsonWire` text).
+    static func json(_ value: Any) -> Any? {
+        guard JSONSerialization.isValidJSONObject(value), let data = try? JSONSerialization.data(withJSONObject: value) else { return nil }
+        return try? JSONSerialization.jsonObject(with: data)
+    }
+    static func same(_ a: MPSession, _ b: MPSession) -> Bool {
+        guard let left = try? MPCodec.session(a), let right = try? MPCodec.session(b) else { return false }
+        return equal(meaningful(json(left)), meaningful(json(right)))
+    }
 }
 struct MPStanding: Identifiable, Equatable {
     var id: String; var played = 0, wins = 0, losses = 0, points = 0, pointsFor = 0, pointsAgainst = 0
@@ -481,7 +583,8 @@ enum MPRules {
     /// one through, the final table, every round-robin table); a TOP_TWO table sends both survivors on instead.
     static func needsDuel(_ s: MPSession, _ m: MPFixture) -> Bool { m.phase == .finished && m.goal == .win && m.players.count > 2 && s.gameMode == .elimination }
     /// Adds `m`'s final duel once, in the transition that stores the table: the table's placement[0] against placement[1], the
-    /// room target and the classic pair rules. A house-only duel is simulated at once.
+    /// room target and the classic pair rules (the two-point lead where the difficulty needs it). A house-only duel is played live
+    /// when the friendly-room host is watching; tournament-only fixtures are simulated (Android 1fc4bc2).
     static func withDuel(_ s: MPSession, _ m: MPFixture) -> MPSession {
         let id = duelId(m.id)
         if !needsDuel(s, m) || s.matches[id] != nil || m.placement.count < 2 { return s }
@@ -489,8 +592,19 @@ enum MPRules {
         // Like every other new fixture: the stored authority equals what the codec writes, so a round trip compares equal.
         duel.authorityUid = s.authority(duel)
         var n = s
-        n.matches[id] = houseOnly(s, duel) ? simulated(s, duel) : duel
+        n.matches[id] = houseOnly(s, duel) && s.kind != .friendly ? simulated(s, duel) : duel
         return n
+    }
+    /// Android 1fc4bc2 `spectatedDuel`: the friendly host watches the live final duel of two house players.
+    static func spectatedDuel(_ s: MPSession, _ m: MPFixture, uid: String) -> Bool {
+        s.kind == .friendly && s.host == uid && isDuel(m) && houseOnly(s, m) && s.human(uid)
+    }
+    /// Android 1fc4bc2 `startSpectatedDuel`: the watching host starts the house players' final duel once.
+    static func startSpectatedDuel(_ s: MPSession, id: String, actor: String) -> MPSession {
+        guard var m = s.matches[id] else { return s }
+        if !spectatedDuel(s, m, uid: actor) || m.terminal || m.phase == .playing { return s }
+        m.phase = .playing; m.starts = 1
+        var n = s; n.matches[id] = m; return n
     }
     private static func stays(_ s: MPSession, _ uid: String) -> Bool { s.participants[uid] != nil && s.departed[uid] != true }
     /// Kotlin `players.sortedByDescending(m::scoreOf)`: higher score first, seat order on ties (a stable sort).

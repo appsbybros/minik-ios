@@ -18,11 +18,20 @@ enum CrossText {
         if e.setArmed { return MPText.t("Set ready! Meet the ball to lift it to your teammate", "ההרמה מוכנה! פגשו את הכדור כדי להרים לחבר", he) }
         return MPText.t("Double-tap near the ball to set up your teammate's smash", "הקישו פעמיים ליד הכדור להרמה לחבר שינחית", he)
     }
-    /// Why the rally ended and which team scored (Android: English or Hebrew only).
+    /// Android 971e958 `receivingSetTip`: while the teammate's high pass comes to the local player, wait for its bounce; once it
+    /// has bounced (receivable), swipe up through it to smash. Replaces "Swipe now to smash!" on the journey and team courts.
+    static func receivingSetTip(_ e: CrossEngine, _ he: Bool) -> String {
+        if e.referee.phase == .receivable {
+            return MPText.t("Swipe up through the bounced ball to smash", "החליקו למעלה דרך הכדור אחרי הקפיצה כדי להנחית", he)
+        }
+        return MPText.t("Your teammate is setting for you. Wait for the bounce.", "חבר הקבוצה מרים לכם. חכו לקפיצה בצד שלכם.", he)
+    }
+    /// Why the rally ended and which team scored. Android shows English or Hebrew only; iOS (stage 5, owner decision) shows its
+    /// own translations in the other languages (MPTextIOS).
     static func teamOutcome(_ e: CrossEngine, local: Int, _ he: Bool) -> String? {
         if e.referee.phase != .resolved { return nil }
         guard let o = e.referee.lastOutcome else { return nil }
-        func tr(_ en: String, _ h: String) -> String { he ? h : en }
+        func tr(_ en: String, _ h: String) -> String { MPText.t(en, h, he) }
         let why: String
         switch o.kind {
         case .net: why = tr("Ball hit the net", "הכדור פגע ברשת")
@@ -113,6 +122,8 @@ enum CrossText {
         case .yourReturn:
             switch e.control {
             case .beginner: return tr("Move your paddle to the ball — it hits by itself. Swipe a little left or right to choose who gets it (🎯)", "הזיזו את המחבט לכדור — החבטה אוטומטית. החליקו מעט שמאלה או ימינה כדי לבחור למי (🎯)")
+            // Android b0cdeb3.
+            case .starter: return tr("Move into reach, then tap or swipe early to aim. Starter gives you a longer return window.", "זזים אל הכדור, ואז מקישים או מחליקים מוקדם כדי לכוון. בשליטה נינוחה יש יותר זמן להחזרה.")
             case .standard: return tr("Tap as the ball reaches your paddle; drag sideways to aim", "הקישו כשהכדור מגיע למחבט; גררו הצידה לכיוון")
             case .pro: return tr("Swipe through the ball toward a player", "החליקו דרך הכדור לעבר שחקן")
             }

@@ -39,10 +39,12 @@ enum MPLevel: Int, Codable, CaseIterable {
         case .superHard: return "Super hard"
         }
     }
-    /// Android `ControlChoice.normalize`: room/control choices are Beginner (4), Standard (0) or Pro (3).
+    /// Android `ControlChoice.normalize` / `difficulty` (b0cdeb3): room/control choices are Beginner (4), Starter (1, Android EASY =
+    /// iOS `.medium`), Standard (0; an older 2 too) or Pro (3); anything else is Beginner.
     static func control(_ value: Int) -> MPLevel {
         switch value {
-        case 0, 1, 2: return .easy
+        case 0, 2: return .easy
+        case 1: return .medium
         case 3: return .superHard
         default: return .beginner
         }

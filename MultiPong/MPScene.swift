@@ -14,14 +14,28 @@ final class MPScene: SKScene {
     private let cameraNode = SKCameraNode()
     private var previousTime: TimeInterval = 0, accumulator = 0.0
     private var activeTouch: UITouch?, previousTouch: MPPoint?, previousTouchTime = 0.0
+    /// Android fcfd6b2 ModernCourt `standardGesture`: Standard (tap control without automatic contact) away from a serve separates
+    /// footwork from aiming. A finger that has not moved 12 points is a tap (one return from the current stance at finger-up); a
+    /// drag moves the player, or, once the incoming ball is reachable (`canAimReturn`), aims the return from where aiming began.
+    private var standardGesture = false, standardDragged = false, standardAiming = false, standardStarted = false
+    private var standardAnchor = MPPoint(0.5, 0.87), standardDown = CGPoint.zero, standardAimX: CGFloat = 0
+    private var standardSamples: [(time: TimeInterval, point: CGPoint)] = []
     private var arenaOrigin = CGPoint.zero, worldScale = 1.0
     /// Android LocalizedActivity's illustrated setting: modern_surround fills the whole screen behind the court.
     private let backdropNode = SKSpriteNode()
     private let floorNode = SKSpriteNode(), actorNode = SKSpriteNode(), paddleNode = SKSpriteNode()
-    /// Android ModernCourt: Minik's FOLLOW pose drawn under READY while the recovery cross-fades.
-    private let recoveryNode = SKSpriteNode()
-    private let actorCrop = SKCropNode(), actorMask = SKShapeNode(), bodyCrop = SKCropNode(), bodyMask = SKShapeNode(), bodyNode = SKSpriteNode()
+    /// Android 3b52d51 `tabletop`: the arena painting is drawn only inside its authored table and net, not its old oval rug.
+    private let floorCrop = SKCropNode(), floorMask = SKShapeNode()
+    /// The tabletop in scene coordinates.
+    private var tabletopScene: CGPath = CGMutablePath()
+    private let actorCrop = SKCropNode(), actorMask = SKShapeNode()
     private let frontCrop = SKCropNode(), frontMask = SKShapeNode(), armCrop = SKCropNode(), armMask = SKShapeNode(), armNode = SKSpriteNode()
+    /// Android a9140c3/4969038 `drawMinik`: the far Minik (atlas FRONT pose) and its shadow outside the tabletop, and its traced
+    /// hands and paddle over it.
+    private let farCrop = SKCropNode(), farMask = SKShapeNode(), farShadow = SKShapeNode(), farBody = SKSpriteNode()
+    private let farHandsCrop = SKCropNode(), farHandsMask = SKShapeNode(), farHands = SKSpriteNode()
+    /// Android 3b52d51 `SunsetTerrace.foreground`: the terrace's foreground foliage over the court (with the backdrop, unzoomed).
+    private let foliageCrop = SKCropNode(), foliageMask = SKShapeNode(), foliage = SKSpriteNode()
     private let ballNode = SKShapeNode(circleOfRadius: 1), shadowNode = SKShapeNode(ellipseOf: CGSize(width: 2, height: 1))
     private let bounceNode = SKShapeNode(), guideNode = SKShapeNode(), iconNode = SKLabelNode()
     private var textures: [String: SKTexture] = [:]
@@ -46,11 +60,15 @@ final class MPScene: SKScene {
         self.engine = engine
         super.init(size: CGSize(width: 430, height: 760))
         scaleMode = .resizeFill; backgroundColor = UIColor(red: 0.92, green: 0.68, blue: 0.45, alpha: 1)
-        // Android 5c1aa4d: the evening terrace (SunsetTerrace) is the setting around the classic table too.
+        // Android 5c1aa4d: the evening terrace (SunsetTerrace) is the setting around the classic table too. Android draws it as its
+        // own view, outside the reception zoom, so it is a child of the camera here (with the foreground foliage).
         backdropNode.texture = SKTexture(imageNamed: "mpx_sunset_portrait"); backdropNode.zPosition = -1
-        // Android ModernCourt fades the arena's decorative outer floor into that setting; the fade is baked into this texture.
-        floorNode.anchorPoint = CGPoint(x: 0, y: 1); floorNode.texture = texture("ping_pong_arena_faded")
-        floorNode.zPosition = 0; actorNode.zPosition = 1; bounceNode.zPosition = 2; shadowNode.zPosition = 3; paddleNode.zPosition = 4; ballNode.zPosition = 5; guideNode.zPosition = 6; iconNode.zPosition = 2
+        // Android 3b52d51: the arena painting clipped to its tabletop (the earlier faded floor is gone).
+        floorNode.anchorPoint = CGPoint(x: 0, y: 1); floorNode.texture = texture("ping_pong_arena")
+        floorCrop.maskNode = floorMask; floorCrop.addChild(floorNode); floorCrop.zPosition = 0
+        // Android 5375378 order: arena, table frame, bounce, ball shadow, (the ball when behind the far player), the far player,
+        // the ball in front of it, the local player or paddle, then the ball nearest the viewer.
+        floorNode.zPosition = 0; actorNode.zPosition = 1; bounceNode.zPosition = 2; shadowNode.zPosition = 3; paddleNode.zPosition = 4; ballNode.zPosition = 5; guideNode.zPosition = 6; iconNode.zPosition = 3.2
         ballNode.fillColor = .white; ballNode.strokeColor = .lightGray; ballNode.lineWidth = 0.8
         shadowNode.fillColor = .black; shadowNode.strokeColor = .clear; shadowNode.alpha = 0.22
         bounceNode.fillColor = .clear; bounceNode.strokeColor = .white; bounceNode.lineWidth = 2
@@ -59,15 +77,19 @@ final class MPScene: SKScene {
         compactFrame.anchorPoint = CGPoint(x: 0, y: 1); compactFrame.zPosition = 0.5; compactFrame.isHidden = true
         playerShadow.fillColor = UIColor(red: 7 / 255, green: 28 / 255, blue: 39 / 255, alpha: 85 / 255); playerShadow.strokeColor = .clear
         playerShadow.zPosition = 3.5; playerShadow.isHidden = true; playerNode.zPosition = 4; playerNode.isHidden = true
-        actorCrop.maskNode = actorMask; actorCrop.addChild(recoveryNode); actorCrop.addChild(actorNode); actorCrop.zPosition = 1
-        recoveryNode.zPosition = 0.9; recoveryNode.isHidden = true
-        bodyCrop.maskNode = bodyMask; bodyCrop.addChild(bodyNode); bodyCrop.zPosition = 0.8
-        frontCrop.maskNode = frontMask; frontCrop.addChild(armCrop); armCrop.maskNode = armMask; armCrop.addChild(armNode); frontCrop.zPosition = 1.2
-        [actorMask, bodyMask, frontMask, armMask].forEach { $0.fillColor = .white; $0.strokeColor = .clear; $0.lineWidth = 0 }
-        let nodes: [SKNode] = [backdropNode, floorNode, compactFrame, bodyCrop, actorCrop, frontCrop, bounceNode, shadowNode, playerShadow, playerNode, paddleNode, ballNode, guideNode, iconNode]
+        actorCrop.maskNode = actorMask; actorCrop.addChild(actorNode); actorCrop.zPosition = 3.2
+        frontCrop.maskNode = frontMask; frontCrop.addChild(armCrop); armCrop.maskNode = armMask; armCrop.addChild(armNode); frontCrop.zPosition = 3.3
+        farShadow.fillColor = UIColor(red: 7 / 255, green: 28 / 255, blue: 39 / 255, alpha: 85 / 255); farShadow.strokeColor = .clear
+        farCrop.maskNode = farMask; farCrop.addChild(farShadow); farCrop.addChild(farBody); farCrop.zPosition = 3.2; farBody.zPosition = 0.01
+        farHandsCrop.maskNode = farHandsMask; farHandsCrop.addChild(farHands); farHandsCrop.zPosition = 3.3
+        farCrop.isHidden = true; farHandsCrop.isHidden = true
+        foliageCrop.maskNode = foliageMask; foliageCrop.addChild(foliage); foliageCrop.zPosition = 10
+        [actorMask, frontMask, armMask, farMask, farHandsMask, floorMask, foliageMask].forEach { $0.fillColor = .white; $0.strokeColor = .clear; $0.lineWidth = 0 }
+        let nodes: [SKNode] = [floorCrop, compactFrame, actorCrop, frontCrop, farCrop, farHandsCrop, bounceNode, shadowNode, playerShadow, playerNode, paddleNode, ballNode, guideNode, iconNode]
         nodes.forEach(addChild)
-        // Android ReceptionCamera: a camera that zooms toward the receiving paddle and the ball; touches map back through it.
+        // Android ReceptionCamera: a camera that zooms about a fixed pivot; touches map back through it.
         addChild(cameraNode); camera = cameraNode
+        cameraNode.addChild(backdropNode); cameraNode.addChild(foliageCrop)
     }
     required init?(coder: NSCoder) { return nil }
     override func didMove(to view: SKView) { view.isMultipleTouchEnabled = false; layoutCourt() }
@@ -91,7 +113,13 @@ final class MPScene: SKScene {
             let fitted = min((h - 24) / 2180, (w - 16) / 1120)
             worldScale = max(0.01, fitted * (w > h ? 1.08 : 1))
             horizontalScale = w > h ? min(worldScale * 1.85, (w - 32) / 941) : worldScale
-            top = max(254 * worldScale, h - 24 - 1827 * worldScale)
+            if w > h {
+                // Android 3b52d51: in landscape the neutral player's shoes are anchored to the floor near the bottom; the accepted
+                // table scale stays, only its placement changes.
+                let racket = atlas.geometry(selectedLocalCharacter, .rear, mirror: false, foot: .zero, height: 550 * worldScale, phase: 2)?.racket.y ?? 0
+                let footOffset = max(1627 * worldScale, MPNearPlayerProjection.imageY(0.87) * worldScale - Double(racket))
+                top = max(254 * worldScale, h - 10 - footOffset)
+            } else { top = max(254 * worldScale, h - 24 - 1827 * worldScale) }
         } else {
             worldScale = max(0.01, min((h - 24) / 1793, (w - 16) / MPProjection.tableWidth))
             horizontalScale = worldScale
@@ -103,18 +131,44 @@ final class MPScene: SKScene {
         let art = landscape ? (width: 1794.0, height: 877.0) : (width: 941.0, height: 1672.0)
         backdropNode.texture = SKTexture(imageNamed: landscape ? "mpx_sunset_landscape" : "mpx_sunset_portrait")
         let cover = max(Double(size.width) / art.width, Double(size.height) / art.height)
+        // In the camera's coordinates (its centre is the view's centre).
         backdropNode.size = CGSize(width: art.width * cover, height: art.height * cover)
-        backdropNode.position = CGPoint(x: Double(size.width) / 2, y: Double(size.height) - art.height * cover / 2)
+        backdropNode.position = CGPoint(x: 0, y: Double(size.height) / 2 - art.height * cover / 2)
+        // Android 3b52d51 `SunsetTerrace.drawForeground`: the same painting's foreground foliage, over the court.
+        let painting = CGRect(x: -art.width * cover / 2, y: -Double(size.height) / 2, width: art.width * cover, height: art.height * cover)
+        let foliagePath = CGMutablePath()
+        foliagePath.addPath(MPXTerraceFoliage.path(portrait: !landscape, in: painting), transform: CGAffineTransform(a: 1, b: 0, c: 0, d: -1, tx: 0, ty: 0))
+        foliageMask.path = foliagePath
+        foliage.texture = backdropNode.texture; foliage.size = backdropNode.size; foliage.position = backdropNode.position
         placeCamera()
         arenaOrigin = CGPoint(x: (w - 941 * horizontalScale) / 2, y: h - top)
         floorNode.position = arenaOrigin; floorNode.size = CGSize(width: 941 * horizontalScale, height: 1672 * worldScale)
+        // Android 3b52d51 `tabletop` (arena pixels, y down): the table outline with its rounded corners, the two net posts and the
+        // net band; scaled by the table's horizontal and vertical scales and moved to the arena.
+        let outline = CGMutablePath()
+        outline.move(to: CGPoint(x: 155, y: 186)); outline.addLine(to: CGPoint(x: 785, y: 186)); outline.addQuadCurve(to: CGPoint(x: 821, y: 222), control: CGPoint(x: 820, y: 186))
+        outline.addLine(to: CGPoint(x: 849, y: 1406)); outline.addQuadCurve(to: CGPoint(x: 804, y: 1457), control: CGPoint(x: 850, y: 1457))
+        outline.addLine(to: CGPoint(x: 133, y: 1457)); outline.addQuadCurve(to: CGPoint(x: 91, y: 1409), control: CGPoint(x: 91, y: 1457))
+        outline.addLine(to: CGPoint(x: 122, y: 222)); outline.addQuadCurve(to: CGPoint(x: 155, y: 186), control: CGPoint(x: 122, y: 186)); outline.closeSubpath()
+        let leftPost = CGPath(roundedRect: CGRect(x: 73, y: 694, width: 39, height: 110), cornerWidth: 18, cornerHeight: 18, transform: nil)
+        let rightPost = CGPath(roundedRect: CGRect(x: 829, y: 694, width: 39, height: 110), cornerWidth: 18, cornerHeight: 18, transform: nil)
+        let net = CGPath(rect: CGRect(x: 96, y: 727, width: 750, height: 59), transform: nil)
+        let authored = outline.union(leftPost).union(rightPost).union(net)
+        let placed = CGMutablePath(), scenePath = CGMutablePath()
+        placed.addPath(authored, transform: CGAffineTransform(a: horizontalScale, b: 0, c: 0, d: worldScale, tx: Double(arenaOrigin.x), ty: top))
+        scenePath.addPath(placed, transform: CGAffineTransform(a: 1, b: 0, c: 0, d: -1, tx: 0, ty: size.height))
+        tabletopScene = scenePath
+        floorMask.path = scenePath
+        // The far player is drawn outside the tabletop.
+        farMask.path = CGPath(rect: CGRect(x: -w, y: -h, width: 3 * w, height: 3 * h), transform: nil).subtracting(scenePath)
         renderCompactFrame()
         render()
     }
-    /// A table point at a height, in scene coordinates (y up). The full avatar uses the near-side perspective.
+    /// A table point at a height, in scene coordinates (y up). The full avatar uses the near-side perspective. As Android `sceneY`, a
+    /// height below the table plane (the loose ball falling to the floor after a point, 5375378) is drawn below it.
     private func screen(_ p: MPPoint, height: Double = 0) -> CGPoint {
         let ground = showsLocalAvatar ? MPNearPlayerProjection.imageY(p.y) : MPProjection.imageY(p.y)
-        let y = ground - max(0, height) * (MPProjection.bottom - MPProjection.top) * 0.075
+        let y = ground - height * (MPProjection.bottom - MPProjection.top) * 0.075
         return CGPoint(x: arenaOrigin.x + (MPProjection.left + p.x * MPProjection.tableWidth) * horizontalScale, y: arenaOrigin.y - y * worldScale)
     }
     private func table(_ point: CGPoint) -> MPPoint {
@@ -155,8 +209,17 @@ final class MPScene: SKScene {
                 c.setFillColor(color(0xff142e3c))
                 c.fillEllipse(in: CGRect(x: x - w * 1.6, y: table.maxY + drop - w * 0.4, width: w * 3.2, height: w * 0.8))
             }
-            c.setFillColor(color(0xff193e50))
-            c.addPath(CGPath(roundedRect: CGRect(x: table.minX + w, y: table.maxY - 15 * scale, width: table.width - 2 * w, height: 39 * scale), cornerWidth: 12 * scale, cornerHeight: 12 * scale, transform: nil)); c.fillPath()
+            // Android d376d64: a slim rounded table rim (a vertical gradient, clamped), not a heavy rectangular bar across the knees,
+            // and its light top line.
+            let rim = CGPath(roundedRect: CGRect(x: table.minX + 3 * scale, y: table.maxY - 3 * scale, width: table.width - 6 * scale, height: 11 * scale),
+                             cornerWidth: 5 * scale, cornerHeight: 5 * scale, transform: nil)
+            c.saveGState(); c.addPath(rim); c.clip()
+            if let g = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: [color(0xffd7f4ed), color(0xff6ba9af)] as CFArray, locations: nil) {
+                c.drawLinearGradient(g, start: CGPoint(x: 0, y: table.maxY), end: CGPoint(x: 0, y: table.maxY + 8 * scale), options: [.drawsBeforeStartLocation, .drawsAfterEndLocation])
+            }
+            c.restoreGState()
+            c.setStrokeColor(color(0xfff4fff9)); c.setLineWidth(3 * scale); c.setLineCap(.round)
+            c.move(to: CGPoint(x: table.minX + 8 * scale, y: table.maxY - 2 * scale)); c.addLine(to: CGPoint(x: table.maxX - 8 * scale, y: table.maxY - 2 * scale)); c.strokePath()
         }
         compactFrame.isHidden = false; compactFrame.texture = SKTexture(image: image); compactFrame.size = bounds.size; compactFrame.position = flip(bounds.origin)
     }
@@ -207,29 +270,33 @@ final class MPScene: SKScene {
         accumulator += elapsed
         while accumulator >= 1.0 / 120 { engine.advance(1.0 / 120); accumulator -= 1.0 / 120 }
         if showsLocalAvatar { updateLocalPlayer(elapsed) }
-        // The focus between the receiving paddle and the ball, in view coordinates (y down).
-        // Android ModernCourt: the other side's receiver is focused at Minik's serve point (ActorPresentation.servePoint).
-        let at = engine.reception.receiver == 1 ? MPPoint(0.5, 0.13) : (engine.paddle ?? engine.restingPaddle)
-        let a = screen(at), b = screen(engine.renderedBall, height: max(0, engine.flight?.height ?? 0.055))
-        receptionView.update(cameraElapsed, assist: engine.reception, local: 0, focus: CGPoint(x: (a.x + b.x) / 2, y: size.height - (a.y + b.y) / 2),
-                             width: Double(size.width), height: Double(size.height), holding: activeTouch != nil,
-                             zoomOwn: preferences.receptionZoom, follow: preferences.receptionFollow)
+        // Android 5375378: the reception zoom has a fixed pivot; it never pans toward the receiver or the ball.
+        receptionView.update(cameraElapsed, assist: engine.reception, local: 0, width: Double(size.width), height: Double(size.height),
+                             holding: activeTouch != nil, zoomOwn: preferences.receptionZoom, follow: preferences.receptionFollow)
         placeCamera()
         onFrame?(engine.drainEvents()); render()
     }
-    /// The camera shows the scene at the reception zoom: a point p appears at focus + (p − focus) × zoom + shift.
+    /// The camera shows the scene at the reception zoom: a point p appears at focus + (p − focus) × zoom.
     private func placeCamera() {
-        let z = receptionView.zoom, focus = receptionView.focus, shift = receptionView.shift
+        let z = receptionView.zoom, focus = receptionView.focus
         let fx = Double(focus.x), fy = Double(size.height) - Double(focus.y)
-        let cx = (Double(size.width) / 2 - fx * (1 - z) - Double(shift.x)) / z
-        let cy = (Double(size.height) / 2 - fy * (1 - z) + Double(shift.y)) / z
+        let cx = (Double(size.width) / 2 - fx * (1 - z)) / z
+        let cy = (Double(size.height) / 2 - fy * (1 - z)) / z
         cameraNode.setScale(CGFloat(1 / z))
         cameraNode.position = receptionView.amount == 0 ? CGPoint(x: size.width / 2, y: size.height / 2) : CGPoint(x: cx, y: cy)
     }
     private func render() {
-        let p = engine.renderedBall, height = max(0, engine.flight?.height ?? 0.055)
+        // Android 5375378 `renderHeight`: the loose ball's height after a point, which may fall below the table plane.
+        let p = engine.renderedBall, drawnHeight = engine.renderHeight, height = max(0, drawnHeight)
         let radius = MPProjection.tableWidth * horizontalScale * 0.017 * (1 + min(height, 0.4) * 0.55)
-        ballNode.position = screen(p, height: height); ballNode.setScale(radius)
+        ballNode.position = screen(p, height: drawnHeight); ballNode.setScale(radius)
+        // Android 5375378 order: the loose ball after a point behind the far end (y < -0.10) under the far player; a ball short of
+        // y 1.12 over the far player but under the local player and the paddle; a nearer ball over everything.
+        let behindFar = engine.postPointBall && p.y < -0.10, behindNear = p.y < 1.12
+        ballNode.zPosition = behindFar ? 3.1 : behindNear ? 3.4 : 5
+        // No ball before a serve, and none under the tabletop (Android `ballVisible`, `renderHeight < 0 && ball.inside`).
+        ballNode.isHidden = !engine.ballVisible || (drawnHeight < 0 && p.inside)
+        shadowNode.isHidden = !(engine.ballVisible && drawnHeight >= 0 && p.inside)
         shadowNode.position = screen(p); shadowNode.xScale = radius * (0.85 + min(height / 0.5, 1) * 0.6); shadowNode.yScale = radius * 0.6
         shadowNode.alpha = 0.3 - min(height / 0.5, 1) * 0.18
         if let bounce = engine.bouncePoint, engine.bounceAge < 0.38 {
@@ -257,7 +324,7 @@ final class MPScene: SKScene {
         let factor = min(MPProjection.tableWidth * worldScale * 0.31 / max(1, imageSize.width), (1437 - 186) * worldScale * 0.16 / max(1, imageSize.height))
         paddleNode.size = CGSize(width: imageSize.width * factor, height: imageSize.height * factor)
         paddleNode.anchorPoint = CGPoint(x: levelName == "starter" ? 0.5 : left ? 0.28 : 0.76, y: 0.72)
-        paddleNode.position = screen(position, height: atContact ? stroke.height : engine.paddle != nil && engine.level.pro ? height : engine.restingHeight)
+        paddleNode.position = screen(position, height: atContact ? stroke.height : engine.paddle != nil && engine.level.pro ? max(0, engine.flight?.height ?? 0.055) : engine.restingHeight)
         // Android 7254ab2: the full avatar holds the paddle; the bare paddle is the guide's.
         paddleNode.isHidden = showsLocalAvatar || !(position.strikeZone || stroke.active)
         renderLocalPlayer()
@@ -281,7 +348,7 @@ final class MPScene: SKScene {
         // through recovery and footwork. Footwork translates the ready pose; there is no walk cycle.
         let motion = engine.motion, stroke = engine.minikStroke, facingLeft = stroke.left
         let edge = screen(.init(0, 0)).y
-        bodyCrop.isHidden = true; frontCrop.isHidden = true; recoveryNode.isHidden = true; actorNode.alpha = 1
+        frontCrop.isHidden = true; farCrop.isHidden = true; farHandsCrop.isHidden = true; actorNode.alpha = 1
         actorMask.path = CGPath(rect: CGRect(x: 0, y: 0, width: size.width, height: size.height), transform: nil)
         let character = remoteCharacter ?? engine.bot?.characterId ?? "minik"
         if remoteCharacter == "" { actorNode.isHidden = true; iconNode.isHidden = false; iconNode.text = remoteIcon; iconNode.position = screen(.init(engine.ball.x.mpClamp(0.1, 0.9), 0.04)); return }
@@ -319,37 +386,51 @@ final class MPScene: SKScene {
                 }; armMask.path = path
             }
         } else {
-            let names = ["ready", "ready", "windup", "accelerate", "contact", "follow"]
-            let bodyPosition = CGPoint(x: arenaOrigin.x + motion.body.x * horizontalScale, y: arenaOrigin.y - motion.body.y * worldScale)
-            func pose(_ node: SKSpriteNode, _ index: Int, alpha: Double) {
-                node.texture = texture((facingLeft ? "minik_left_" : "minik_motion_") + names[index])
-                let registration: (Double, Double, Double)
-                if facingLeft { registration = index == 5 ? (0.507, 0.652, 0.994) : (0.5, 0.65, 1) }
-                else if index == 5 { registration = (0.490, 0.729, 0.879) }
-                else { registration = (0.5, 0.65, 1) }
-                node.size = CGSize(width: 600 * worldScale * registration.2, height: 600 * worldScale * registration.2)
-                node.anchorPoint = CGPoint(x: registration.0, y: 1 - registration.1)
-                node.position = bodyPosition; node.alpha = CGFloat(alpha)
+            // Android a9140c3, 3b52d51, 4969038 `drawMinik`: the non-winking Minik atlas (FRONT) stands on the terrace behind the
+            // table, its contact racket over the engine's racket centre. The tabletop hides the body at its actual far edge; only
+            // the traced hands and paddle overlap it, never a slice of the belly.
+            actorNode.isHidden = true
+            let phase = !stroke.active ? 0 : !stroke.contacted ? 1 : stroke.age < 0.36 ? 2 : stroke.age < 0.52 ? 3 : 0
+            let tableTop = Double(size.height) - Double(arenaOrigin.y) + 186 * worldScale
+            let height = min(520 * worldScale, max(1, (tableTop - 8) / 0.82))
+            // Android ActorPresentation.racketCentre: the body plus the contact face offset.
+            let offset = MPProjection.offset(facingLeft)
+            guard let reference = atlas.geometry("minik", .front, mirror: facingLeft, foot: .zero, height: height, phase: 2) else { return }
+            let foot = CGPoint(x: Double(arenaOrigin.x) + (motion.body.x + offset.x) * horizontalScale - Double(reference.racket.x), y: tableTop + 190 * worldScale)
+            farCrop.isHidden = false
+            farShadow.path = CGPath(ellipseIn: CGRect(x: Double(foot.x) - height * 0.24, y: Double(size.height) - (Double(foot.y) + height * 0.035),
+                                                      width: height * 0.48, height: height * 0.06), transform: nil)
+            let skPoint: (CGPoint) -> CGPoint = { [unowned self] in self.flip($0) }
+            atlas.place(farBody, "minik", .front, mirror: facingLeft, foot: foot, height: height, phase: phase, sk: skPoint)
+            if let hands = atlas.frontHands("minik", mirror: facingLeft, foot: foot, height: height, phase: phase) {
+                let handsPath = CGMutablePath()
+                handsPath.addPath(hands, transform: CGAffineTransform(a: 1, b: 0, c: 0, d: -1, tx: 0, ty: size.height))
+                farHandsMask.path = tabletopScene.intersection(handsPath)
+                farHandsCrop.isHidden = false
+                atlas.place(farHands, "minik", .front, mirror: facingLeft, foot: foot, height: height, phase: phase, sk: skPoint)
             }
-            // Android ModernCourt/ActorPresentation.recoveryBlend: after the follow-through, FOLLOW fades into READY
-            // over 0.16 s instead of snapping between the two drawings.
-            let recovery = stroke.recoveryBlend
-            if phase == 0 && recovery < 1 {
-                recoveryNode.isHidden = false; pose(recoveryNode, 5, alpha: 1 - recovery); pose(actorNode, 0, alpha: recovery)
-            } else { pose(actorNode, phase, alpha: 1) }
-            bodyCrop.isHidden = false; bodyNode.texture = texture("minik_motion_body"); bodyNode.size = CGSize(width: 600 * worldScale, height: 600 * worldScale)
-            bodyNode.anchorPoint = CGPoint(x: 0.5, y: 0.35); bodyNode.position = actorNode.position
-            bodyMask.path = CGPath(rect: CGRect(x: 0, y: edge, width: size.width, height: max(0, actorNode.position.y + 40 * worldScale - edge)), transform: nil)
         }
     }
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard activeTouch == nil, let touch = touches.first else { return }
         activeTouch = touch; let p = table(touch.location(in: self)); previousTouch = p; previousTouchTime = touch.timestamp
+        let location = touch.location(in: self)
+        standardGesture = !engine.level.pro && !engine.automaticContact && !engine.awaitingServe
+        standardDragged = false; standardStarted = false; standardAiming = engine.canAimReturn()
+        standardAnchor = engine.restingPaddle; standardDown = location; standardAimX = location.x
+        standardSamples = [(touch.timestamp, location)]
+        // Android fcfd6b2: a Standard gesture first tells a tap from footwork; its finger-down is not yet input.
+        if standardGesture { return }
         engine.touch(p)
     }
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = activeTouch, touches.contains(touch) else { return }
         let samples = event?.coalescedTouches(for: touch) ?? [touch]
+        if standardGesture {
+            for sample in samples { standardSamples.append((sample.timestamp, sample.location(in: self))) }
+            standardTouch(touch.location(in: self), up: false)
+            return
+        }
         for sample in samples {
             let p = table(sample.location(in: self)), old = previousTouch ?? p, dt = max(1.0 / 120, sample.timestamp - previousTouchTime)
             guard sample.timestamp > previousTouchTime, p.distance(old) > 0.00001 else { continue }
@@ -357,9 +438,42 @@ final class MPScene: SKScene {
             previousTouch = p; previousTouchTime = sample.timestamp
         }
     }
-    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) { touchesMoved(touches, with: event); engine.endTouch(); activeTouch = nil; previousTouch = nil }
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        if standardGesture, let touch = activeTouch, touches.contains(touch) {
+            let location = touch.location(in: self)
+            standardSamples.append((touch.timestamp, location))
+            standardTouch(location, up: true)
+        } else { touchesMoved(touches, with: event) }
+        engine.endTouch(); activeTouch = nil; previousTouch = nil; standardSamples = []
+    }
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) { cancelTouch() }
-    private func cancelTouch() { engine.release(); activeTouch = nil; previousTouch = nil }
+    private func cancelTouch() { engine.release(); activeTouch = nil; previousTouch = nil; standardSamples = [] }
+    /// Android fcfd6b2 ModernCourt `standardTouch` (`location` in scene points, y up). Distances and speeds are measured against the
+    /// table rectangle (Android `table`: 754 arena pixels wide, 1251 high), with the finger's y speed downward as on Android.
+    private func standardTouch(_ location: CGPoint, up: Bool) {
+        let tableWidth = MPProjection.tableWidth * horizontalScale, tableHeight = (MPProjection.bottom - MPProjection.top) * worldScale
+        standardDragged = standardDragged || hypot(location.x - standardDown.x, location.y - standardDown.y) > 12
+        if standardDragged {
+            if !standardAiming && engine.canAimReturn() { standardAiming = true; standardAimX = location.x }
+            if standardAiming {
+                let speed = standardVelocity()
+                let movement = MPPoint(Double(speed.dx) / max(1, tableWidth), -Double(speed.dy) / max(1, tableHeight))
+                let displacement = Double(location.x - standardAimX) / max(1, tableWidth)
+                if !standardStarted { standardStarted = engine.aimReturn(displacement, movement: movement, start: true) }
+                else { engine.aimReturn(displacement, movement: movement, start: false) }
+            } else {
+                engine.moveOnly(MPPoint((standardAnchor.x + Double(location.x - standardDown.x) / max(1, tableWidth)).mpClamp(0.02, 0.98), standardAnchor.y))
+            }
+        } else if up { engine.aimReturn(0, movement: .zero, start: true) }
+    }
+    /// Android VelocityTracker: the finger's speed over the last few samples (scene points per second, y up).
+    private func standardVelocity() -> CGVector {
+        guard let last = standardSamples.last else { return .zero }
+        standardSamples = standardSamples.filter { last.time - $0.time <= 0.08 }
+        guard let first = standardSamples.first, last.time - first.time > 0.004 else { return .zero }
+        let dt = CGFloat(last.time - first.time)
+        return CGVector(dx: (last.point.x - first.point.x) / dt, dy: (last.point.y - first.point.y) / dt)
+    }
 }
 enum MPArt {
     private static func originalGrip(_ id: String, left: Bool) -> MPPoint {

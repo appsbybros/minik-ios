@@ -27,7 +27,8 @@ struct MPXLobbyPlayer: Identifiable {
     @Published var help = false
     @Published var shareText: String?
     @Published private(set) var revision = 0
-    @Published var actionCamera: Bool { didSet { preferences.crossActionCamera = actionCamera; court?.fullScreen = actionCamera } }
+    /// Android `cross/close_camera` (a9140c3), shared with the other cross courts; off by default.
+    @Published var actionCamera: Bool { didSet { preferences.crossCloseCamera = actionCamera; court?.fullScreen = actionCamera } }
     private(set) var link: CrossTeamRoom?
     private var cancelling = false, manuallyPaused = false, foreground = true
     let preferences: MPPreferences
@@ -38,10 +39,11 @@ struct MPXLobbyPlayer: Identifiable {
     init(players: Int, preferences: MPPreferences, hebrew: Bool, audio: MPAudio, onClose: @escaping () -> Void) {
         mode = players == 3 ? "THREE" : "FOUR"
         self.preferences = preferences; self.hebrew = hebrew; self.audio = audio; self.onClose = onClose
-        actionCamera = preferences.crossActionCamera
+        actionCamera = preferences.crossCloseCamera
     }
-    /// Android `tr`: English or Hebrew only, as the activity writes them.
-    func tr(_ en: String, _ he: String) -> String { hebrew ? he : en }
+    /// Android `tr` writes English or Hebrew only. iOS fix (2026-11-10, owner decision): through `MPText.t`, so Spanish, Arabic,
+    /// Hindi and Dutch show the catalog row or the iOS-only translation (MPTextIOS) instead of English.
+    func tr(_ en: String, _ he: String) -> String { MPText.t(en, he, hebrew) }
 
     // ---- connection ------------------------------------------------------------------------------------------------------------
     func create() { connect { $0.createFlexible(mode: self.mode) } }
@@ -90,7 +92,8 @@ struct MPXLobbyPlayer: Identifiable {
             if let outcome = CrossText.teamOutcome(game, local: r.localSeat, hebrew) { next = outcome }
             else if r.phase == "finished" { next = tr("Match complete", "המשחק הסתיים") }
             else if r.waiting { next = tr("Waiting for every player to return", "ממתינים שכל השחקנים יחזרו") }
-            else if game.receivingSet { next = tr("Swipe now to smash!", "החליקו עכשיו להנחתה!") }
+            // Android 971e958: wait for the teammate's high pass to bounce, then swipe up through it (catalog languages).
+            else if game.receivingSet { next = CrossText.receivingSetTip(game, hebrew) }
             else if game.referee.mayServe(r.localSeat) { next = tr("Tap another court to serve", "הקישו על שולחן אחר להגשה") }
             else { next = CrossText.setTip(game, hebrew) ?? tr("Move your paddle to the ball", "הזיזו את המחבט לכדור") }
             if hint != next { hint = next }
@@ -256,12 +259,13 @@ struct MPXLobbyPlayer: Identifiable {
     private func text(_ value: String, _ size: CGFloat = 18) -> some View {
         Text(value).font(.system(size: size, weight: .bold)).multilineTextAlignment(.center).frame(maxWidth: .infinity).padding(.vertical, 8).padding(.horizontal, 4)
     }
+    /// Android e7f3f27: PongSpacing.ACTION_TOP_DP (16) above every action (was 20); 6fcb446 PongButton: labels 17 → 18.
     private func button(_ title: String, accent: Bool = false, fill: Color? = nil, ink: Color = MPXMenu.deepInk, _ action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(title).font(.system(size: 17, weight: .semibold)).foregroundStyle(ink).multilineTextAlignment(.center)
+            Text(title).font(.system(size: 18, weight: .semibold)).foregroundStyle(ink).multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity, minHeight: 52).padding(.horizontal, 12)
                 .background(fill ?? (accent ? MPXMenu.gold : MPXMenu.cyan), in: RoundedRectangle(cornerRadius: 20))
-        }.buttonStyle(.plain).padding(.top, 20)
+        }.buttonStyle(.plain).padding(.top, MPSpacing.actionTop)
     }
     @ViewBuilder private var setup: some View {
         text(tr("Team size", "גודל הקבוצות"))
@@ -275,9 +279,11 @@ struct MPXLobbyPlayer: Identifiable {
             .textInputAutocapitalization(.characters).autocorrectionDisabled().font(.title3.bold()).multilineTextAlignment(.center)
             .foregroundStyle(MPXMenu.deepInk).padding(12).frame(minHeight: 52)
             .background(Color.white, in: RoundedRectangle(cornerRadius: 12)).overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(white: 0.75)))
-            .environment(\.layoutDirection, .leftToRight).padding(.bottom, 12)
+            // Android e7f3f27: no space below the code field; Join keeps its own 16 pt above.
+            .environment(\.layoutDirection, .leftToRight)
         button(tr("Join team room", "הצטרפות לחדר קבוצתי")) { model.join() }
-        button(tr("Cancel", "ביטול"), fill: MPXMenu.pink, ink: .white) { model.cancelRoom() }.padding(.top, 12).padding(.bottom, 16)
+        // Android: Cancel 32 pt below Join and 16 pt above the page's end.
+        button(tr("Cancel", "ביטול"), fill: MPXMenu.pink, ink: .white) { model.cancelRoom() }.padding(.top, 32 - MPSpacing.actionTop).padding(.bottom, 16)
     }
     @ViewBuilder private var lobby: some View {
         if let r = model.room {
@@ -370,7 +376,8 @@ struct MPXLobbyPlayer: Identifiable {
             .navigationTitle(tr("Choose a player", "בחירת שחקן")).navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button(tr("Cancel", "ביטול")) { model.picker = nil } } }
         }
-        .environment(\.layoutDirection, model.hebrew ? .rightToLeft : .leftToRight)
+        // Arabic reads right to left too (the sheet does not inherit the screen's direction).
+        .environment(\.layoutDirection, MPText.rtl ? .rightToLeft : .leftToRight)
     }
     private var game: some View {
         MPXMatchLayout(tools: 4) {
@@ -381,7 +388,9 @@ struct MPXLobbyPlayer: Identifiable {
         } status: { wide in
             VStack(spacing: 2) {
                 Text(tr("Team match", "משחק קבוצתי")).font(.system(size: 20, weight: .bold)).environment(\.layoutDirection, .leftToRight)
-                Text(model.hint).font(.system(size: 15, weight: .bold)).multilineTextAlignment(.center).lineLimit(wide ? 12 : 4)
+                // Android 1fc4bc2: the hint follows the reading direction's start edge (the title stays centred).
+                Text(model.hint).font(.system(size: 15, weight: .bold)).multilineTextAlignment(.leading).lineLimit(wide ? 12 : 4)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
             .foregroundStyle(.white).frame(maxWidth: .infinity).padding(.horizontal, 8).padding(.vertical, 6)
             .background(MPXMenu.hud, in: RoundedRectangle(cornerRadius: 14)).padding(.horizontal, 4)

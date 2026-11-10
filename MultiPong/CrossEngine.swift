@@ -4,15 +4,18 @@ import Foundation
 
 enum CrossSeatKind { case local, remote, house }
 
-/// Control levels, their stable room/preference ordinals (Android ControlChoice 4 / 0 / 3) and the classic level that supplies
-/// the local human's input forgiveness (Android BEGINNER / STARTER / HARD = iOS `.beginner` / `.easy` / `.superHard`).
+/// Control levels, their stable room/preference ordinals (Android ControlChoice 4 / 0 / 3 / 1) and the classic level that
+/// supplies the local human's input forgiveness (Android BEGINNER / STARTER / HARD / EASY = iOS `.beginner` / `.easy` /
+/// `.superHard` / `.medium`). Android b0cdeb3 restored the fourth level, Starter (wire value 1), appended after Pro, so the
+/// case order is Android's `entries` order.
 enum CrossControl: CaseIterable {
-    case beginner, standard, pro
+    case beginner, standard, pro, starter
     var choice: Int {
         switch self {
         case .beginner: return 4
         case .standard: return 0
         case .pro: return 3
+        case .starter: return 1
         }
     }
     var level: MPLevel {
@@ -20,12 +23,14 @@ enum CrossControl: CaseIterable {
         case .beginner: return .beginner
         case .standard: return .easy
         case .pro: return .superHard
+        case .starter: return .medium
         }
     }
     /// Android `CrossControl.fromChoice(ControlChoice.normalize(value))`.
     static func fromChoice(_ value: Int) -> CrossControl {
         switch MPLevel.control(value) {
         case .easy: return .standard
+        case .medium: return .starter
         case .superHard: return .pro
         default: return .beginner
         }
@@ -106,8 +111,13 @@ final class CrossEngine {
     static let touchLimit = 100.0
     /// Android publishes a strike when the engine's last local strike is a new object (`!==`); iOS numbers them instead.
     private static var strikeCounter = 0
+    /// Android b0cdeb3: Starter's stroke keeps its window open much longer (0.85 / 1.10 / 1.50); Beginner and Standard end at 0.65.
     static func localStroke(_ control: CrossControl) -> MPStroke {
-        control == .pro ? MPStroke() : MPStroke(contactAt: 0.10, windowEnd: 0.40, followEnd: 0.50, total: 0.62)
+        switch control {
+        case .pro: return MPStroke()
+        case .starter: return MPStroke(contactAt: 0.10, windowEnd: 0.85, followEnd: 1.10, total: 1.50)
+        case .beginner, .standard: return MPStroke(contactAt: 0.10, windowEnd: 0.40, followEnd: 0.50, total: 0.65)
+        }
     }
     static func actorStroke() -> MPStroke { MPStroke(contactAt: CrossActor.windup, windowEnd: 0.27, followEnd: CrossActor.followEnd, total: CrossActor.total) }
 
@@ -123,6 +133,12 @@ final class CrossEngine {
     let teams: CrossTeams?
     let tapTargets: Bool
     let teamLesson: Int?
+    /// Android 1fc4bc2: an elimination final played on the cross table keeps the classic two-point lead of its control level.
+    let classicWinByTwo: Bool
+    /// Android 6fcb446/971e958 `localFootworkRight`: how far right (local u) the learner's own player may walk. Walking beside the
+    /// table is distinct from where a ball may be struck: a learning court (`tapTargets`) whose local player has a character gets
+    /// 0.50 more than the strike zone's half width, for the right-handed rear poses' body; ball and rule boundaries stay intact.
+    let localFootworkRight: Double
     let players: Int
     let geometry: CrossGeometry
     let aims: CrossAimMap
@@ -154,8 +170,13 @@ final class CrossEngine {
     private var teamLift = false
     private var teamPass = false
     private var teamHoldUntil: Int64 = 0
+    /// Android 971e958: a team touch that may still become the first tap of a double tap (held 40 substeps after finger-up).
+    private var setTapPending = false
     /// The court of another player the local player tapped (journeys and team tables): the next return goes there.
     private(set) var selectedAim: MPPoint?
+    /// Android d0bed3b: a per-stroke court tap (Beginner touch, Starter/Standard `aimReturn`, a tapped serve), separate from the
+    /// persistent practice target; a sideways drag of more than 12 points clears it.
+    private var tappedAim: MPPoint?
     private var practicePaddlePlaced = false
     /// One raised pass is armed for the local return (a double tap).
     var setArmed: Bool { teamLift }
@@ -178,6 +199,11 @@ final class CrossEngine {
     private(set) var localStrikeID = 0
     private var pendingServe: CrossServe?
     private var pendingTap: MPPoint?
+    /// Android 5375378: the decided ball's free motion after a point (drawing only; the simulated ball stays where the point was
+    /// decided, which is what a checkpoint carries), and the ball state before the latest substep (the motion of a ball that
+    /// stopped on its deciding substep).
+    private var looseBall: MPLooseBall?
+    private var beforeBallStep: CrossBallState?
     private var serveArmed = false
     private var serveTap: MPPoint?
     private var aimDp = 0.0
@@ -206,7 +232,7 @@ final class CrossEngine {
     /// renumbered by position here, so a stray index can never break the arrays.
     init(seats input: [CrossSeat], control: CrossControl, target: Int, seed: Int64, networked: Bool = false, firstServer: Int = 0,
          exercise: CrossExercise? = nil, scoring: CrossScoring = .multi, startScores: [Int]? = nil, teams: CrossTeams? = nil,
-         tapTargets: Bool = false, teamLesson: Int? = nil) {
+         tapTargets: Bool = false, teamLesson: Int? = nil, classicWinByTwo: Bool = false, localFootworkRight: Double? = nil) {
         let numbered = input.enumerated().map { item -> CrossSeat in
             var seat = item.element
             seat.index = item.offset
@@ -220,14 +246,20 @@ final class CrossEngine {
         // Android requires team membership to match the table; a mismatch plays individually.
         var membership: CrossTeams?
         if let teams, teams.seats.count == n { membership = teams }
-        self.teams = membership; self.tapTargets = tapTargets; self.teamLesson = teamLesson
+        self.teams = membership; self.tapTargets = tapTargets; self.teamLesson = teamLesson; self.classicWinByTwo = classicWinByTwo
+        // Android default: STRIKE_HALF + (tapTargets && a LOCAL seat whose characterId is not blank ? 0.50 : 0).
+        let character = numbered.contains { $0.kind == .local && !$0.characterId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        self.localFootworkRight = localFootworkRight ?? CrossGeometry.strikeHalf + (tapTargets && character ? 0.50 : 0)
         teamFlight = membership.map { CrossTeamFlight(members: $0.seats) }
         let g = CrossGeometry(n)
         geometry = g
         aims = CrossAimMap(g)
         let local = numbered.first(where: { $0.kind == .local })?.index
         localSeat = local
-        let own = MPTuning.values(control.level)
+        var own = MPTuning.values(control.level)
+        // Android b0cdeb3: Starter keeps the values of Difficulty.EASY (iOS `.medium`) with a wider sideways reach and a longer timing
+        // window.
+        if control == .starter { own.tapSpatialTolerance = 0.28; own.tapTimingWindow = 0.80 }
         tuning = own
         var shared = own
         shared.gravity = CrossEngine.gravity; shared.bounceRestitution = CrossEngine.restitution; shared.netHeight = CrossEngine.netHeight
@@ -236,7 +268,8 @@ final class CrossEngine {
         if let exercise { start = exercise.drill == .serve ? local : (exercise.server ?? local.map { $0 + 1 }) }
         let opener = start ?? firstServer
         opening = opener
-        referee = CrossReferee(g, target: target, firstServer: opener, scoring: scoring, startScores: startScores, teams: membership)
+        referee = CrossReferee(g, target: target, firstServer: opener, scoring: scoring, startScores: startScores, teams: membership,
+                               winByTwo: classicWinByTwo)
         ball = CrossBall(g, tuning: shared, initial: CrossBallState(position: .zero, height: 0, velocity: .zero, lift: 0, stopped: true))
         // Each house player draws its own well-mixed seed: nearly equal seeds give correlated XorWow streams.
         var master = MPKotlinRandom(seed: seed)
@@ -254,8 +287,25 @@ final class CrossEngine {
     var ballState: CrossBallState { ball.state }
     var ballPosition: MPPoint { ball.position }
     var ballHeight: Double { ball.height }
+    /// Android 5375378: the drawn height (the loose ball's after a point; below 0 under the table plane).
+    var renderHeight: Double { looseBall?.height ?? ball.height }
+    var postPointBall: Bool { looseBall != nil }
+    /// Android 5375378: no ball is drawn while a serve is awaited, until the server's swing starts.
+    var ballVisible: Bool { referee.phase != .awaitingServe || strokes[referee.server].active }
+    /// Android 5375378 `coastBall`: the decided ball continues from its state (a ball that stopped on its deciding substep from the
+    /// substep before), a net ball rebounding at a fifth of its speed, onto the cross table, its floor 0.38 below the tabletop.
+    private func coastBall() {
+        if looseBall != nil { return }
+        let s = ball.state
+        let previous = beforeBallStep
+        let velocity = s.stopped ? (previous?.velocity ?? s.velocity) : s.velocity
+        let net = netAge < 0.02
+        let table = geometry
+        looseBall = MPLooseBall(s.position, s.height, net ? velocity * -0.2 : velocity, s.stopped ? (previous?.lift ?? s.lift) : s.lift,
+                                floor: -0.38, onTable: { table.onTable($0) }, classicNet: false)
+    }
     /// Drawing position: a network correction is blended away over `blend` seconds.
-    var renderBallPosition: MPPoint { ball.position + reconciliation * (reconciliationAge / CrossEngine.blend) }
+    var renderBallPosition: MPPoint { (looseBall?.position ?? ball.position) + reconciliation * (reconciliationAge / CrossEngine.blend) }
     /// Seat expected to receive the live ball (owner of its next receiving bounce), for the target indicator.
     var predictedReceiver: Int? {
         switch referee.phase {
@@ -303,7 +353,8 @@ final class CrossEngine {
     }
     func discardEvents() { events.removeAll() }
     func restart() {
-        referee = CrossReferee(geometry, target: referee.target, firstServer: opening, scoring: scoring, startScores: startScores, teams: teams)
+        referee = CrossReferee(geometry, target: referee.target, firstServer: opening, scoring: scoring, startScores: startScores, teams: teams,
+                               winByTwo: classicWinByTwo)
         stopAfterRally = false
         paused = false; teamFlight = teams.map { CrossTeamFlight(members: $0.seats) }; events.removeAll(); release()
         for i in strokes.indices { strokes[i].cancel() }
@@ -314,10 +365,11 @@ final class CrossEngine {
         startRally()
     }
     private func startRally() {
+        looseBall = nil; beforeBallStep = nil
         practicePaddlePlaced = false
         if var flight = teamFlight { flight.setReceiver = nil; flight.friendlyHits = 0; teamFlight = flight }
         teamLift = false; teamPass = false; teamHoldUntil = 0
-        pointDelay = nil; grace = nil; serveAt = nil; serveSwing = false; pendingServe = nil; pendingTap = nil
+        setTapPending = false; tappedAim = nil; pointDelay = nil; grace = nil; serveAt = nil; serveSwing = false; pendingServe = nil; pendingTap = nil
         serveArmed = false; settled = false; predicted = nil; trainingResult = nil; trainingTime = 0; gestureAnchor = nil
         variation.reset()
         houses.values.forEach { $0.newRally() }
@@ -381,8 +433,9 @@ final class CrossEngine {
         localContact()
         houseContacts()
     }
-    /// A decided ball finishes its flight silently: no events, it simply falls away.
-    private func coast() { if !ball.stopped { ball.step(CrossEngine.step) } }
+    /// A decided ball finishes its flight silently: no events, it simply falls away. Android 5375378: as a loose ball; the simulated
+    /// ball (and so every checkpoint) keeps the state in which the point was decided.
+    private func coast() { coastBall(); looseBall?.advance(CrossEngine.step, physics) }
     /// Rackets with no plan or stroke drift home (between rallies, and while another seat serves).
     private func idle(except: Int? = nil) {
         for i in 0..<players where i != localSeat && i != except && !strokes[i].active && houses[i]?.plan == nil { motions[i].settle() }
@@ -434,6 +487,7 @@ final class CrossEngine {
         committed(seat, plan.start, plan.height, serve: true)
     }
     private func stepBall() {
+        beforeBallStep = ball.state
         if let event = ball.step(CrossEngine.step) { ballEvent(event) }
         else if referee.phase == .receivable && referee.unreachable(ball.state) { judge(.missed, nil) }
     }
@@ -474,9 +528,10 @@ final class CrossEngine {
         if let outcome { resolved(outcome) }
     }
     private func resolved(_ outcome: CrossRallyOutcome) {
+        coastBall()
         emit(.rally(outcome))
         if let winner = outcome.winner { emit(.victory(seat: winner)) }
-        pointDelay = CrossEngine.pointDelayTime; grace = nil; serveAt = nil; pendingServe = nil; pendingTap = nil
+        tappedAim = nil; pointDelay = CrossEngine.pointDelayTime; grace = nil; serveAt = nil; pendingServe = nil; pendingTap = nil
         houses.values.forEach { $0.plan = nil }
     }
     private func finish(_ success: Bool, _ kind: CrossRallyKind?, receiver: Int? = nil, fault: CrossServeFault? = nil) {
@@ -517,7 +572,7 @@ final class CrossEngine {
         var receiver: Int?
         if shouldSet { receiver = mate }
         else if let others = teams?.opponents(seat), !others.isEmpty { receiver = others[(referee.rallyId + referee.hits) % others.count] }
-        let point = receiver.map { geometry.fromLocal($0, (house.random.nextDouble() - 0.5) * (shouldSet ? 0.16 : 0.45), 0.88) }
+        let point = receiver.map { geometry.fromLocal($0, (house.random.nextDouble() - 0.5) * (shouldSet ? 0.16 : 0.45), shouldSet ? CrossShots.setDepth : 0.88) }
         var shot = normal
         if let point, c.quality >= CrossHouse.good {
             shot.launch = teamShot(s.position, h, point, lob: shouldSet, power: isSet ? 1.65 : 1,
@@ -582,21 +637,26 @@ final class CrossEngine {
         default: predicted = nil
         }
     }
+    /// Android d0bed3b: a swing or a contact no longer moves the local player's resting position (contact is an animation
+    /// excursion, `CrossPaddlePose`, never new footwork).
     private func begin(_ seat: Int, _ point: MPPoint, _ height: Double, left: Bool) {
-        if seat == localSeat { rest(seat, point) }
         serial += 1
         strokes[seat].start(serial, point, height, left)
         emit(.swing(seat: seat, id: strokes[seat].id))
     }
     /// One contact event per stroke: the stroke's `contacted` guards a second one.
     private func contact(_ seat: Int, _ point: MPPoint, _ height: Double) {
-        if seat == localSeat { rest(seat, point) }
         if strokes[seat].contacted { return }
         strokes[seat].contact(point, height)
         emit(.contact(seat: seat, id: strokes[seat].id, point: point, height: height))
     }
+    /// Android 6fcb446 `inFootworkZone`: the strike zone's depth, and sideways from its left edge to `localFootworkRight`.
+    private func inFootworkZone(_ local: Int, _ point: MPPoint) -> Bool {
+        let at = geometry.toLocal(local, point)
+        return at.v >= CrossGeometry.strikeNear && at.v <= CrossGeometry.strikeFar && at.u >= -CrossGeometry.strikeHalf && at.u <= localFootworkRight
+    }
     private func rest(_ local: Int, _ point: MPPoint) {
-        if !geometry.inStrikeZone(local, point) { return }
+        if !inFootworkZone(local, point) { return }
         restingPaddle = point
         motions[local].place(geometry.toLocal(local, point))
     }
@@ -614,27 +674,43 @@ final class CrossEngine {
         // A tap on another player's court picks where the next return goes (journeys and team tables).
         if down, tapTargets, let point, let owner = geometry.owner(point), owner != local { selectedAim = point }
         if down {
-            // A team touch holds the automatic return briefly, so a second tap can still arm a raised pass.
-            if teams != nil && !receivingSet && !referee.mayServe(local) { teamHoldUntil = ticks + 34 }
-            aimDp = 0; gestureSpeed = 0; gestureLast = point; gestureTravel = 0; gestureCommitted = false
+            // A team touch holds the automatic return briefly (Android 971e958: 40 substeps, renewed at finger-up), so a second
+            // tap can still arm a raised pass.
+            setTapPending = teams != nil && !receivingSet && !referee.mayServe(local)
+            if setTapPending { teamHoldUntil = ticks + 40 }
+            tappedAim = nil; aimDp = 0; gestureSpeed = 0; gestureLast = point; gestureTravel = 0; gestureCommitted = false
             gestureAnchor = point.flatMap { geometry.inStrikeZone(local, $0) ? $0 : nil }
         } else if drag.x.isFinite { aimDp = drag.x }
+        // Android d0bed3b: a Beginner touch on another player's court (outside the learning courts) aims the next return there;
+        // a sideways drag of more than 12 points aims by the drag instead.
+        if !tapTargets && control == .beginner && down { tappedAim = otherCourt(local, point) }
+        if abs(drag.x) > 12 { tappedAim = nil }
+        if setTapPending && drag.length > 12 { setTapPending = false; teamHoldUntil = 0 }
         gestureSpeed = max(gestureSpeed, velocity.length)
         lastVelocity = velocity
         if referee.mayServe(local) && pendingServe == nil { serveInput(local, point, velocity, down: down); return }
         if pendingServe != nil { return }
-        if let point, geometry.inStrikeZone(local, point) { practicePaddlePlaced = true; movePaddle(local, point) }
+        if let point, inFootworkZone(local, point) { practicePaddlePlaced = true; movePaddle(local, point) }
         if receivingSet {
             if !down, let point { swipe(local, point, velocity) }
             return
         }
-        if teams != nil, let point, let owner = geometry.owner(point), owner == teammate(local), teamFlight?.friendlyHits == 0 { teamPass = true }
+        // Kotlin `geometry.owner(point)==teammate(local)` (two nils are equal too).
+        if teams != nil, let point, geometry.owner(point) == teammate(local), teamFlight?.friendlyHits == 0 {
+            teamPass = true; teamHoldUntil = 0; setTapPending = false
+        }
         switch control {
         case .beginner: break // position alone arms the automatic contact
-        case .standard:
-            if down {
-                if let point, geometry.inStrikeZone(local, point) { tap(local, point) }
-            } else if let point, pendingTap != nil, !strokes[local].contacted, geometry.inStrikeZone(local, point) { pendingTap = point }
+        case .standard, .starter:
+            // Android b0cdeb3: a swipe begun early can arm when it reaches the receiving window; movement alone, without a
+            // deliberate finger gesture, cannot hit.
+            if let point, geometry.inStrikeZone(local, point) {
+                if down { tap(local, point) }
+                else if !strokes[local].contacted {
+                    if pendingTap != nil { pendingTap = point }
+                    else if velocity.length > 0.08 && predictedReceiver == local { tap(local, point) }
+                }
+            }
         case .pro:
             if !teamLift && !down, let point { swipe(local, point, velocity) }
         }
@@ -648,8 +724,12 @@ final class CrossEngine {
                 if last.distance(serveSpot(local)) <= physics.swipeCollisionForgiveness { commitSwipe(local, last, lastVelocity) }
             }
         }
+        // Android 971e958: the released first tap of a possible double tap holds the automatic return 40 substeps more.
+        if setTapPending && !cancelled && !teamLift { teamHoldUntil = ticks + 40 }
+        if cancelled { teamHoldUntil = 0 }
+        setTapPending = false
         // CANCEL drops a pending timed contact; a released tap keeps its stroke window.
-        if cancelled { pendingTap = nil }
+        if cancelled { pendingTap = nil; tappedAim = nil }
         serveArmed = false; serveTap = nil
         gestureLast = nil; gestureTravel = 0; lastVelocity = .zero
         paddle = nil
@@ -659,6 +739,41 @@ final class CrossEngine {
         let before = geometry.toView(local, restingPaddle).x
         paddle = point; rest(local, point)
         paddleTilt = ((geometry.toView(local, point).x - before) * 160).mpClamp(-14, 14)
+    }
+    /// Android fcfd6b2 `moveOnly`: footwork is independent of a stroke. Used while the ball is away.
+    func moveOnly(_ point: MPPoint) {
+        guard let local = localSeat else { return }
+        if playable() && inFootworkZone(local, point) { movePaddle(local, point) }
+    }
+    /// Android fcfd6b2 `canAimReturn`: a reachable incoming ball (Starter from depth 0.25, Standard 0.55, within the sideways tap
+    /// tolerance of the resting paddle) changes a sideways gesture from footwork to aim.
+    func canAimReturn() -> Bool {
+        guard let local = localSeat else { return false }
+        if !playable() || (control != .starter && control != .standard) || predictedReceiver != local || receivingSet { return false }
+        let at = geometry.toLocal(local, ball.position)
+        return at.v >= (control == .starter ? 0.25 : 0.55) &&
+            abs(at.u - geometry.toLocal(local, restingPaddle).u) <= physics.tapSpatialTolerance
+    }
+    /// Android fcfd6b2/d0bed3b `aimReturn`: binds the reachable paddle position once (a tap at the resting paddle); aiming never
+    /// drags the player sideways. `drag` is the sideways finger travel in points, `speed` the gesture speed (world units/s);
+    /// `target`, a tap's point: another player's court there is the return's target.
+    @discardableResult func aimReturn(drag: Double, speed: Double, start: Bool, target: MPPoint? = nil) -> Bool {
+        guard let local = localSeat else { return false }
+        if start {
+            if !canAimReturn() { return false }
+            tappedAim = otherCourt(local, target)
+            aimDp = 0; gestureSpeed = 0
+            tap(local, restingPaddle)
+        }
+        if pendingTap == nil || strokes[local].contacted { return false }
+        if drag.isFinite { aimDp = drag; if abs(drag) > 12 { tappedAim = nil } }
+        if speed.isFinite { gestureSpeed = max(gestureSpeed, speed) }
+        return true
+    }
+    /// Android d0bed3b `otherCourt`: a finite point on the court of a player who is neither this one nor a teammate.
+    private func otherCourt(_ local: Int, _ point: MPPoint?) -> MPPoint? {
+        guard let p = point, p.length.isFinite, let owner = geometry.owner(p), owner != local, teams?.same(owner, local) != true else { return nil }
+        return p
     }
     private func serveInput(_ local: Int, _ point: MPPoint?, _ velocity: MPPoint, down: Bool) {
         if control != .pro {
@@ -683,7 +798,9 @@ final class CrossEngine {
         let power = automaticContact ? 0 : gesturePower()
         let aim = aims.aim(local, dragDp: aimDp, power: power, serveLateral: lateral, variation: sway())
         let pace = automaticContact ? CrossShots.basePace(physics) : CrossShots.pace(physics, power: power)
-        queueServe(CrossShots.tapServe(geometry, physics, server: local, start: serveSpot(local), tap: tap, second: selectedAim ?? aim.point, pace: pace))
+        // Android d0bed3b: a tap on another player's court serves there, unless the finger then dragged more than 12 points.
+        let tapped = abs(aimDp) <= 12 ? otherCourt(local, tap) : nil
+        queueServe(CrossShots.tapServe(geometry, physics, server: local, start: serveSpot(local), tap: tap, second: selectedAim ?? tapped ?? aim.point, pace: pace))
     }
     /// Pro serve: a swipe through the ball (the classic swipe serve); a weak or backward swipe is a bad serve.
     private func commitSwipe(_ local: Int, _ point: MPPoint, _ swipe: MPPoint) {
@@ -708,14 +825,16 @@ final class CrossEngine {
         let toward = geometry.toView(plan.server, plan.second ?? plan.first).x
         begin(plan.server, plan.start, plan.height, left: toward < geometry.toView(plan.server, plan.start).x)
     }
-    /// Standard: a tap in the strike zone starts a stroke; it can make contact only when this seat is (or is about to be) the
-    /// receiver. An early or empty swing is audible, never contact.
+    /// Standard/Starter: a tap in the strike zone starts a stroke; it can make contact only when this seat is (or is about to be)
+    /// the receiver and a travelling ball is already deep enough (Android 5375378: 0.55; b0cdeb3: 0.25 for Starter). Footwork while
+    /// the ball is away must not animate a swing (Android fcfd6b2).
     private func tap(_ local: Int, _ point: MPPoint) {
         let s = strokes[local]
         if s.active && !s.contacted && s.age < CrossEngine.retap { return }
         let travelling = referee.phase == .serveOwn || referee.phase == .toReceiver
-        pendingTap = !settled && (referee.mayStrike(local) || (travelling && predicted == local)) ? point : nil
-        begin(local, point, ball.height, left: geometry.toLocal(local, point).u < 0)
+        let depth = control == .starter ? 0.25 : 0.55
+        pendingTap = !settled && (referee.mayStrike(local) || (travelling && predicted == local && geometry.toLocal(local, ball.position).v >= depth)) ? point : nil
+        if pendingTap != nil { begin(local, point, ball.height, left: geometry.toLocal(local, point).u < 0) }
     }
     /// Pro: the gesture IS the swing. Segments are swept so a fast stroke cannot tunnel through the ball; the motion must run
     /// from outward to inward (toward the centre) and pass within swipeCollisionForgiveness of the ball.
@@ -761,9 +880,8 @@ final class CrossEngine {
         // double tap.
         if tapTargets && !practicePaddlePlaced { return }
         if receivingSet || (teams != nil && ticks < teamHoldUntil && !teamLift) { return }
-        if teams != nil, let tap = pendingTap, s.age > s.windowEnd, !s.contacted, s.age < 0.65 {
-            begin(local, tap, ball.height, left: geometry.toLocal(local, tap).u < 0)
-        } else if pendingTap != nil && s.age > s.windowEnd && !s.contacted { pendingTap = nil }
+        // Android 5375378 / fcfd6b2: a pending tap lasts the whole stroke, so one tap returns a ball that arrives a little later.
+        if pendingTap != nil && s.age >= s.total && !s.contacted { pendingTap = nil; tappedAim = nil }
         if settled || !referee.mayStrike(local) || ball.stopped || !geometry.inStrikeZone(local, ball.position) { return }
         let at = ball.position
         if teamLift && (paddle ?? restingPaddle).distance(at) <= CrossEngine.autoReach {
@@ -779,11 +897,14 @@ final class CrossEngine {
                 begin(local, at, ball.height, left: geometry.toLocal(local, at).u < 0)
                 strike(local, assisted(local, power: 0))
             }
-        case .standard:
-            guard let tap = pendingTap, strokes[local].contactWindow else { return }
+        case .standard, .starter:
+            // Android 5375378: contact from 0.04 s until the stroke ends; b0cdeb3: only the sideways distance counts.
+            guard let tap = pendingTap, !s.contacted, s.age >= 0.04, s.age <= s.total else { return }
             let depth = geometry.toLocal(local, at).v
             let timing = (depth - CrossEngine.idealDepth) / max(abs(geometry.toLocal(local, ball.velocity).v), CrossEngine.minTimingSpeed)
-            if tap.distance(at) <= physics.tapSpatialTolerance && abs(timing) <= physics.tapTimingWindow { strike(local, assisted(local, power: gesturePower())) }
+            if abs(geometry.toLocal(local, tap).u - geometry.toLocal(local, at).u) <= physics.tapSpatialTolerance && abs(timing) <= physics.tapTimingWindow {
+                strike(local, assisted(local, power: gesturePower()))
+            }
         case .pro: break // the swipe itself makes contact
         }
     }
@@ -794,7 +915,7 @@ final class CrossEngine {
         let h = max(s.height, CrossShots.contactHeight)
         ball.launch(s.position, h, shot)
         contact(local, s.position, h)
-        pendingTap = nil; aimDp = 0; gestureSpeed = 0; gestureAnchor = nil; practicePaddlePlaced = false
+        pendingTap = nil; tappedAim = nil; aimDp = 0; gestureSpeed = 0; gestureAnchor = nil; practicePaddlePlaced = false
         committed(local, s.position, h, serve: false)
     }
     /// Beginner/Standard: the aim map picks the opponent and spot from the drag; pace is base (+35 % x power for Standard).
@@ -802,13 +923,14 @@ final class CrossEngine {
         let s = ball.state
         // Team play: one friendly pass (raised after a double tap) goes to the partner.
         if let mate = teammate(local), teamLift || teamPass, teamFlight?.friendlyHits == 0 {
-            return teamShot(s.position, max(s.height, CrossShots.contactHeight), geometry.fromLocal(mate, 0, 0.88), lob: teamLift)
+            return teamShot(s.position, max(s.height, CrossShots.contactHeight), geometry.fromLocal(mate, 0, teamLift ? CrossShots.setDepth : 0.88), lob: teamLift)
         }
-        let aim = aims.aim(local, dragDp: aimDrag(), power: power, sender: referee.striker, variation: sway())
+        // Android fcfd6b2: only the automatic (Beginner) return alternates its side; a Starter/Standard return goes where it is aimed.
+        let aim = aims.aim(local, dragDp: aimDrag(), power: power, sender: referee.striker, variation: automaticContact ? sway() : 0)
         let pace = automaticContact ? CrossShots.basePace(physics) : CrossShots.pace(physics, power: power)
-        // A tapped court is the target, except the own team's court once the friendly pass is used; a team return never goes
-        // to the partner by the drag alone.
-        var selected = selectedAim
+        // A tapped court (the practice target, else this stroke's court tap, d0bed3b) is the target, except the own team's court
+        // once the friendly pass is used; a team return never goes to the partner by the drag alone.
+        var selected = selectedAim ?? tappedAim
         if let point = selected, let teams, teamFlight?.friendlyHits == 1, let owner = geometry.owner(point), teams.same(owner, local) { selected = nil }
         var safe = aim.point
         if let selected { safe = selected }
@@ -822,6 +944,8 @@ final class CrossEngine {
     var aimTarget: Int? {
         guard let local = localSeat else { return nil }
         if control == .pro || paused || predictedReceiver != local { return nil }
+        // Android c93e760/d0bed3b: a chosen court names its owner.
+        if let owner = (selectedAim ?? tappedAim).flatMap({ geometry.owner($0) }) { return owner }
         return aims.aim(local, dragDp: aimDrag(), power: 0, sender: referee.striker).opponent
     }
     /// A deliberate double tap arms one raised pass; the paddle must still meet the live receiving ball.
@@ -829,15 +953,17 @@ final class CrossEngine {
         guard let local = localSeat else { return false }
         if !playable() || teammate(local) == nil || teamFlight?.friendlyHits != 0 || receivingSet || referee.mayServe(local) { return false }
         if predictedReceiver != local { return false }
-        teamLift = true; teamPass = true; teamHoldUntil = 0; pendingTap = nil
+        teamLift = true; teamPass = true; teamHoldUntil = 0; setTapPending = false; pendingTap = nil
+        // Android 971e958: the deliberate double tap is sufficient input when already in place. Contact still requires the live
+        // ball inside the ordinary paddle reach.
+        practicePaddlePlaced = true
         return true
     }
-    /// A team shot to `to`: a normal targeted shot, or (`lob`) a high pass that takes 0.16 s longer than the pace (at most 2.55 s).
+    /// A team shot to `to`: a normal targeted shot, or (`lob`) the slower raised pass (Android 971e958 `CrossShots.raisedPass`).
     private func teamShot(_ from: MPPoint, _ height: Double, _ to: MPPoint, lob: Bool, power: Double = 1, contactPace: Double? = nil) -> CrossLaunch {
         let pace = (contactPace ?? CrossShots.basePace(physics)) * power
         if !lob { return CrossShots.targeted(geometry, physics, from: from, height: height, target: to, pace: pace) }
-        let time = min(2.55, CrossShots.flightTime(geometry, physics, from: from, height: height, target: to, pace: pace) + 0.16)
-        return CrossLaunch(velocity: (to - from) * (1 / time), lift: (0.5 * physics.gravity * time * time - height) / time)
+        return CrossShots.raisedPass(geometry, physics, from: from, height: height, target: to, pace: pace)
     }
     /// Alternating side for assisted placements: consecutive human returns never repeat one spot.
     private func sway() -> Double { (referee.rallyId + referee.hits) % 2 == 0 ? 1 : -1 }
@@ -874,7 +1000,7 @@ final class CrossEngine {
         }
         try referee.restore(next)
         teamFlight = state.team
-        if !same || next.hits != old.hits || !next.phase.live || state.team?.friendlyHits != 0 { teamLift = false; teamPass = false; teamHoldUntil = 0 }
+        if !same || next.hits != old.hits || !next.phase.live || state.team?.friendlyHits != 0 { teamLift = false; teamPass = false; teamHoldUntil = 0; setTapPending = false }
         if !same { selectedAim = state.practiceAim; practicePaddlePlaced = state.paddlePlaced }
         if !preserveInput, let local, state.motions.count == players {
             let m = state.motions[local]
@@ -886,7 +1012,14 @@ final class CrossEngine {
             pendingServe = nil; pendingTap = nil; variation.reset()
         }
         let known = lastStrike
+        beforeBallStep = ball.state
         ball.restore(state.ball)
+        // Android 5375378/af84f72: a decided rally's checkpoint carries the ball where the point was decided; every phone rebuilds
+        // the same loose ball from it. A repeated checkpoint of the same decided rally keeps the ball already coasting here.
+        if next.phase == .resolved {
+            if next.rallyId != old.rallyId { looseBall = nil }
+            coastBall()
+        } else { looseBall = nil }
         pointDelay = state.pointDelay
         grace = authoritative ? state.grace : nil
         if authoritative && next.phase == .awaitingServe && houses[next.server] != nil, let delay = state.serveDelay {
@@ -911,7 +1044,7 @@ final class CrossEngine {
             emit(.rally(outcome))
             if let winner = outcome.winner { emit(.victory(seat: winner)) }
         }
-        reconciliation = before - ball.position
+        reconciliation = before - (looseBall?.position ?? ball.position)
         reconciliationAge = reconciliation.length < 0.4 ? CrossEngine.blend : 0
     }
     /// Peers ease other seats' rackets along the authority's motion plans; a fresh restore (`snap`) places them exactly.

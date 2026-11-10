@@ -200,15 +200,71 @@ extension MPRepository {
     }
     func cleanup() async throws {
         for s in sessions.values where s.expired(MPClock.now) { try await leave(s, delete: true) }
-        // Android PlayActivity.refreshRooms: completed local rooms are dismissed, not kept as history.
-        for s in sessions.values where s.complete { remove(s) }
+        // Android PlayActivity.refreshRooms: completed local rooms are dismissed, not kept as history, unless the player saved
+        // them explicitly (83b050d `book.hasExplicitSave`, which MPController supplies).
+        for s in sessions.values where s.complete && !keepCompleted(s) { remove(s) }
     }
-    /// Android `LocalPongRepository.remove`: drops a completed local room and its checkpoints.
+    /// Android 83b050d: a completed local room with an explicit save stays (RoomBook.hasExplicitSave).
+    var keepCompleted: (MPSession) -> Bool = { _ in false }
+
+    // ---- Android 83b050d: the explicit save, separate from the rolling crash-recovery checkpoints ----------------------------
+    private func savedKey(_ s: MPSession) -> String { "modern.local.saved." + s.id }
+    /// The stored room with `s`'s id (Android `LocalPongRepository.sessions()` looked up by key).
+    func storedSession(_ s: MPSession) -> MPSession? { sessions[s.id] }
+    /// Android `saveImage`: the room without presence and the live checkpoint of each of its matches.
+    private func saveImage(_ s: MPSession) throws -> MPWire {
+        var room = s
+        room.connections = [:]
+        var live: MPWire = [:]
+        for id in s.matches.keys { if let w = defaults.dictionary(forKey: "modern.live." + id + "/checkpoint") { live[id] = w } }
+        let session: MPWire = try MPCodec.session(room)
+        return ["session": session, "live": live]
+    }
+    private func savedImage(_ s: MPSession) -> [String: Any]? {
+        defaults.data(forKey: savedKey(s)).flatMap { try? JSONSerialization.jsonObject(with: $0) } as? [String: Any]
+    }
+    /// Android `saveCheckpoint`: the explicit save of the stored room and its matches' live state.
+    func saveCheckpoint(_ s: MPSession) throws {
+        guard let current = sessions[s.id] else { throw MPError.missing }
+        let image = try saveImage(current)
+        guard JSONSerialization.isValidJSONObject(image), let data = try? JSONSerialization.data(withJSONObject: image) else { throw MPError.saveFailed }
+        defaults.set(data, forKey: savedKey(s))
+    }
+    func hasSavedCheckpoint(_ s: MPSession) -> Bool { defaults.object(forKey: savedKey(s)) != nil }
+    /// Android `hasUnsavedChanges`: without a save, always; otherwise whether `s` and the live state differ from the save in
+    /// anything but presence and housekeeping (`SaveComparison.meaningful`).
+    func hasUnsavedChanges(_ s: MPSession) -> Bool {
+        guard let saved = savedImage(s) else { return true }
+        guard let image = try? saveImage(s) else { return true }
+        return !MPSaveComparison.equal(MPSaveComparison.meaningful(saved), MPSaveComparison.meaningful(MPSaveComparison.json(image)))
+    }
+    /// Android `restoreSavedCheckpoint`: the saved room (no presence, active now) and exactly its saved live state replace the
+    /// stored ones. Listeners are not told: the room screen has already detached.
+    func restoreSavedCheckpoint(_ s: MPSession) throws -> MPSession {
+        guard let saved = savedImage(s) else { throw MPError.noSave }
+        var restored = try MPCodec.session(saved["session"])
+        restored.connections = [:]
+        restored.lastActivityAt = MPClock.now
+        guard restored.kind == s.kind, restored.code == s.code, restored.host == uid else { throw MPError.permission }
+        var ids = Set(s.matches.keys).union(restored.matches.keys)
+        if let current = sessions[s.id] { ids.formUnion(current.matches.keys) }
+        for id in ids { defaults.removeObject(forKey: "modern.live." + id + "/checkpoint") }
+        for (id, body) in MPCodec.map(saved["live"]) {
+            let w = MPCodec.map(body)
+            if PropertyListSerialization.propertyList(w, isValidFor: .binary) { defaults.set(w, forKey: "modern.live." + id + "/checkpoint") }
+        }
+        var all = sessions
+        all[s.id] = restored
+        sessions = all
+        return restored
+    }
+    /// Android `LocalPongRepository.remove`: drops a completed local room, its explicit save (83b050d) and its checkpoints.
     func remove(_ s: MPSession) { drop(s) }
     private func drop(_ s: MPSession) {
         var all = sessions
         all[s.id] = nil
         sessions = all
+        defaults.removeObject(forKey: savedKey(s))
         for id in s.matches.keys { defaults.removeObject(forKey: "modern.live." + id + "/checkpoint") }
     }
 }

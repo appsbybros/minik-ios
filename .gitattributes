@@ -8,3 +8,7 @@ Maze/game/** -text
 # Triple Shot for iOS: TripleShot/Res is Android's res/ and assets/ copied byte for byte, with the generated
 # R.swift (Scripts/tripleshot-sync-resources.py): no line-ending conversion.
 TripleShot/Res/** -text
+
+# Multi Ping Pong for iOS: the pose atlas is Android MinikCrossPong's pong-poses/atlas.json byte for byte
+# (Scripts/audit-multi-pong.py compares the bytes): no line-ending conversion.
+Resources/MultiPongAssets.xcassets/mpx_pose_atlas.dataset/atlas.json -text

@@ -25,7 +25,8 @@ final class MPPreferences {
     func load<T: Decodable>(_ key: String, _ type: T.Type) -> T? { defaults.data(forKey: prefix + key).flatMap { try? JSONDecoder().decode(type, from: $0) } }
     func save<T: Encodable>(_ key: String, _ value: T) { defaults.set(try? JSONEncoder().encode(value), forKey: prefix + key) }
     var identity: MPIdentity? { get { load("identity", MPIdentity.self) } set { save("identity", newValue) } }
-    /// Beginner / Standard / Pro. Beginner is the default without a saved choice (Android `controlDifficulty`, default 4);
+    /// Beginner / Starter / Standard / Pro (Android `controlDifficulty` 4 / 1 / 0 / 3, read through `ControlChoice.normalize` as
+    /// Android b0cdeb3 does: a saved 1 is Starter, a saved 2 Standard). Beginner is the default without a saved choice (default 4);
     /// an earlier saved Standard/Pro choice keeps its meaning.
     var control: MPLevel {
         get {
@@ -82,15 +83,12 @@ final class MPPreferences {
         }
         set { defaults.set(newValue.joined(separator: ","), forKey: prefix + "cross.opponents") }
     }
-    /// Android `cross_local/full_screen`, now read only by a room fixture's court (PrivateMatchActivity 5c1aa4d), default off.
-    var crossFullScreen: Bool {
-        get { defaults.object(forKey: prefix + "cross.fullScreen") == nil ? false : defaults.bool(forKey: prefix + "cross.fullScreen") }
-        set { defaults.set(newValue, forKey: prefix + "cross.fullScreen") }
-    }
-    /// Android `cross/action_camera` (5c1aa4d): the landscape action camera of the local, journey and team courts, default on.
-    var crossActionCamera: Bool {
-        get { defaults.object(forKey: prefix + "cross.actionCamera") == nil ? true : defaults.bool(forKey: prefix + "cross.actionCamera") }
-        set { defaults.set(newValue, forKey: prefix + "cross.actionCamera") }
+    /// Android `cross/close_camera` (a9140c3): the close camera of every cross court (local, room, journey and team), default off:
+    /// the stable large whole-court view. It replaces Android's `cross/action_camera` (default on) and `cross_local/full_screen`,
+    /// which are no longer read.
+    var crossCloseCamera: Bool {
+        get { defaults.object(forKey: prefix + "cross.closeCamera") == nil ? false : defaults.bool(forKey: prefix + "cross.closeCamera") }
+        set { defaults.set(newValue, forKey: prefix + "cross.closeCamera") }
     }
     // Android ReceptionSettings (`reception_assistance`, 5c1aa4d): zoom for my return, gentle slow motion for my return, zoom for
     // another human's return. All off by default.
@@ -139,14 +137,53 @@ final class MPPreferences {
         var all = flags(name); guard !all.contains(id) else { return }
         all.append(id); save(name, Array(all.suffix(512)))
     }
+    private func unflag(_ name: String, _ id: String) {
+        let all = flags(name); guard all.contains(id) else { return }
+        save(name, all.filter { $0 != id })
+    }
     /// Android `RoomBook.completionKnown`.
     func completionKnown(_ s: MPSession) -> Bool { flags("completed").contains(s.id) }
-    /// Android `RoomBook.remember`: an open room is listed; a completed one is marked and removed from the list.
+    /// Android `RoomBook.remember` (83b050d): a late refresh after cancellation or dismissal is ignored; an open room is listed;
+    /// a completed one is marked and removed from the list unless it was explicitly saved.
     func remember(_ s: MPSession) {
-        if s.complete { flag("completed", s.id); removed(s); return }
         guard !completionKnown(s) else { return }
+        if s.complete && !hasExplicitSave(s) { flag("completed", s.id); removed(s); return }
         rooms = rooms.filter { $0.id != s.id } + [s]
     }
+    // Android 83b050d RoomBook `saved/<key>`: the room as the player last saved it with "Save and exit" (or "Save for later"),
+    // separate from the listed copy that every snapshot refreshes. iOS keys it by the room's id (kind path + code).
+    private func explicitKey(_ id: String) -> String { prefix + "saved." + id }
+    /// Android `RoomBook.explicitSave`.
+    func explicitSave(_ s: MPSession) -> MPSession? {
+        defaults.data(forKey: explicitKey(s.id)).flatMap { try? JSONDecoder().decode(MPSession.self, from: $0) }
+    }
+    /// Android `RoomBook.hasExplicitSave`.
+    func hasExplicitSave(_ s: MPSession) -> Bool { defaults.object(forKey: explicitKey(s.id)) != nil }
+    /// Android `RoomBook.saveExplicitly`: stores the save, clears a completion mark and lists the room.
+    func saveExplicitly(_ s: MPSession) throws {
+        guard let data = try? JSONEncoder().encode(s) else { throw MPError.saveFailed }
+        defaults.set(data, forKey: explicitKey(s.id))
+        unflag("completed", s.id)
+        remember(s)
+    }
+    /// Android `RoomBook.migrateExplicitSaves`: once, every room already listed (saved automatically before 83b050d) becomes an
+    /// explicit save; a local room also gets its local checkpoint.
+    @MainActor func migrateExplicitSaves(_ local: MPLocalRepository?) {
+        guard !defaults.bool(forKey: prefix + "explicitSavesMigrated") else { return }
+        for listed in rooms {
+            let room: MPSession? = local == nil ? listed : local?.storedSession(listed)
+            guard let room else { continue }
+            if let local { try? local.saveCheckpoint(room) }
+            try? saveExplicitly(room)
+        }
+        defaults.set(true, forKey: prefix + "explicitSavesMigrated")
+    }
+    /// Android 1fc4bc2 `friendlyRoster<n>`: the house characters of the last started friendly table of `n` seats, clockwise from
+    /// the host; `teamRoster<n>` the local team game's teammate and opponents (CrossJourneyActivity).
+    func friendlyRoster(_ tableSize: Int) -> String { defaults.string(forKey: prefix + "friendlyRoster" + String(tableSize)) ?? "" }
+    func setFriendlyRoster(_ tableSize: Int, _ value: String) { defaults.set(value, forKey: prefix + "friendlyRoster" + String(tableSize)) }
+    func teamRoster(_ players: Int) -> String { defaults.string(forKey: prefix + "teamRoster" + String(players)) ?? "" }
+    func setTeamRoster(_ players: Int, _ value: String) { defaults.set(value, forKey: prefix + "teamRoster" + String(players)) }
     /// Android `RoomBook.dismissResult`: "Done" (or Back) on a completed room.
     func dismissResult(_ s: MPSession) { flag("completed", s.id); removed(s) }
     /// Android `RoomBook.firstCelebration`: a completed room celebrates a win once.
@@ -154,8 +191,8 @@ final class MPPreferences {
         if flags("celebrated").contains(s.id) { return false }
         flag("celebrated", s.id); return true
     }
-    /// Android `RoomBook.forget` / `deleted`: no notice is queued.
-    func removed(_ s: MPSession) { rooms = rooms.filter { $0.id != s.id } }
+    /// Android `RoomBook.forget` / `deleted`: no notice is queued; the explicit save goes too (83b050d).
+    func removed(_ s: MPSession) { rooms = rooms.filter { $0.id != s.id }; defaults.removeObject(forKey: explicitKey(s.id)) }
     /// Android `RoomBook.closed` (5c1aa4d): a cancelled, finished or left room is also marked complete, so a late refresh of it
     /// is ignored instead of listing it again.
     func closed(_ s: MPSession) { flag("completed", s.id); removed(s) }

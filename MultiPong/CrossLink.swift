@@ -104,7 +104,23 @@ enum CrossLinkIssue: Equatable {
         let seq = MPCodec.number(w, "revision")
         if seq <= revision { return }
         revision = seq
-        if CrossWire.number(w, "protocol", 1) != Int64(CrossLink.protocolVersion) { message(.version); return }
+        if CrossWire.number(w, "protocol", 1) != Int64(CrossLink.protocolVersion) {
+            // Android b0cdeb3: upgrade an already saved classic human final without losing earned scores. The unfinished rally
+            // restarts with the same server on the common final table.
+            if CrossWire.number(w, "protocol", 1) == 1 && record.players.count == 2 && MPRules.isDuel(record) {
+                if authority && !loaded {
+                    do {
+                        let old = try CrossLink.legacyScore(MPCodec.map(MPCodec.map(w["engine"])["score"]))
+                        guard let child = seatOf[authorityId] else { throw CrossStateError.invalid("Key \(authorityId) is missing in the map.") }
+                        try match.restoreState(try CrossLink.legacyDuel(match, old, childSeat: child))
+                        gate.restore(MPCodec.map(w["seen"]).mapValues { ($0 as? NSNumber)?.int64Value ?? 0 })
+                        loaded = true; checkpoint(); drainBuffered()
+                    } catch { message(.failed(error.localizedDescription)) }
+                }
+                return
+            }
+            message(.version); return
+        }
         // Only the fixture's authority writes checkpoints.
         let writer = CrossWire.text(w, "authority")
         if !writer.isEmpty && writer != authorityId { return }
@@ -269,6 +285,42 @@ enum CrossLinkIssue: Equatable {
         active = false; ended = true
         subscriptions.forEach { $0.close() }
         subscriptions = []
+    }
+    /// Android `ScoreState.read` (classic protocol 1): a missing number reads as 0 and a missing server as CHILD; an unknown side
+    /// fails like Kotlin's `Player.valueOf`.
+    nonisolated static func legacyScore(_ w: MPWire) throws -> MPScore {
+        guard let server = MPSide(rawValue: CrossWire.text(w, "server", "CHILD")) else { throw CrossStateError.invalid("Unknown server") }
+        let winnerText = CrossWire.text(w, "winner")
+        var winner: MPSide?
+        if !winnerText.isEmpty {
+            guard let side = MPSide(rawValue: winnerText) else { throw CrossStateError.invalid("Unknown winner") }
+            winner = side
+        }
+        return MPScore(child: CrossWire.int(w, "child"), minik: CrossWire.int(w, "minik"), rallies: CrossWire.int(w, "rallies"), server: server,
+                       winner: winner, streak: CrossWire.int(w, "streak"))
+    }
+    /// Android b0cdeb3 `legacyDuel`: a classic final's saved score (`childSeat` is the seat of the authority that wrote it) as a
+    /// checkpoint of the two-seat cross final: the same points, server and rally count; finished when it already had a winner.
+    nonisolated static func legacyDuel(_ match: CrossMatch, _ score: MPScore, childSeat: Int) throws -> CrossMatchState {
+        guard match.players == 2, childSeat == 0 || childSeat == 1, score.child >= 0, score.minik >= 0 else {
+            throw CrossStateError.invalid("Failed requirement.")
+        }
+        var state = match.exportState()
+        func seat(_ side: MPSide) -> Int { side == .child ? childSeat : 1 - childSeat }
+        let points = childSeat == 0 ? [score.child, score.minik] : [score.minik, score.child]
+        let winner = score.winner.map { seat($0) }
+        let server = seat(score.server)
+        state.finals = points
+        state.finished = winner != nil
+        state.placement = winner.map { [$0, 1 - $0] } ?? []
+        state.engine.referee.scores = points
+        state.engine.referee.server = server
+        state.engine.referee.striker = server
+        state.engine.referee.rallyId = score.rallies + 1
+        state.engine.referee.ralliesPlayed = score.rallies
+        state.engine.referee.winner = winner
+        state.engine.referee.phase = winner == nil ? .awaitingServe : .resolved
+        return state
     }
     /// Engine seats in fixture order: this phone's player local, the other humans remote, house players house.
     static func seats(_ session: MPSession, _ record: MPFixture, uid: String) -> [CrossSeat] {

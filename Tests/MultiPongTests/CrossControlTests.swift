@@ -1,8 +1,9 @@
 import XCTest
 @testable import MinikMultiPingPong
 
-// Android app/src/test/.../cross/CrossControlTest.kt (MinikCrossPong 828c6fc).
-/// The local human's three control levels on the cross table.
+// Android app/src/test/.../cross/CrossControlTest.kt (MinikCrossPong 828c6fc; b0cdeb3 and fcfd6b2 for the fourth level, Starter,
+// the saved classic final and the early tap).
+/// The local human's four control levels on the cross table.
 final class CrossControlTests: XCTestCase {
     private func table(_ players: Int) -> [CrossSeat] {
         players == 3 ? localTable("mia", "june") : localTable("mia", "june", "amber")
@@ -93,10 +94,76 @@ final class CrossControlTests: XCTestCase {
             XCTAssertEqual(0.075, e.physics.netHeight)
             XCTAssertEqual(e.tuning.swipeCollisionForgiveness, e.physics.swipeCollisionForgiveness)
         }
-        // Older intermediate ordinals use Standard input; anything else is Beginner.
-        XCTAssertEqual(CrossControl.standard, CrossControl.fromChoice(1))
+        // Older intermediate ordinals use Standard input; anything else is Beginner. Android b0cdeb3: 1 is Starter again.
+        XCTAssertEqual(CrossControl.starter, CrossControl.fromChoice(1))
         XCTAssertEqual(CrossControl.standard, CrossControl.fromChoice(2))
         XCTAssertEqual(CrossControl.beginner, CrossControl.fromChoice(9))
+    }
+
+    // iOS (Android b0cdeb3 CrossControl.STARTER(1, Difficulty.EASY)): Starter's wire value, input values and stroke.
+    func testStarterIsWireValueOneWithEasyValuesAndALongerWindow() {
+        XCTAssertEqual(CrossControl.allCases, [.beginner, .standard, .pro, .starter]) // Kotlin `entries` order
+        XCTAssertEqual(1, CrossControl.starter.choice)
+        XCTAssertEqual(MPLevel.medium, CrossControl.starter.level)                     // Kotlin Difficulty.EASY
+        XCTAssertEqual(CrossControl.starter, CrossControl.fromChoice(CrossControl.starter.choice))
+        let e = engine(4, .starter)
+        var expected = MPTuning.values(.medium)
+        expected.tapSpatialTolerance = 0.28
+        expected.tapTimingWindow = 0.80
+        XCTAssertEqual(tuningNumbers(expected), tuningNumbers(e.tuning))
+        XCTAssertFalse(e.automaticContact)
+        XCTAssertEqual(3.6, e.physics.gravity)
+        let stroke = CrossEngine.localStroke(.starter)
+        XCTAssertEqual([0.10, 0.85, 1.10, 1.50], [stroke.contactAt, stroke.windowEnd, stroke.followEnd, stroke.total])
+        for control in [CrossControl.beginner, .standard] {
+            let s = CrossEngine.localStroke(control)
+            XCTAssertEqual([0.10, 0.40, 0.50, 0.65], [s.contactAt, s.windowEnd, s.followEnd, s.total], "\(control)")
+        }
+    }
+
+    // Kotlin (b0cdeb3): savedClassicFinalKeepsScoresAndCorrectPlayerSeats
+    func testSavedClassicFinalKeepsScoresAndCorrectPlayerSeats() throws {
+        for child in 0...1 {
+            for winner in [nil, MPSide.child] as [MPSide?] {
+                let m = CrossMatch(roster: localTable("kyra"), control: .standard, target: 7, seed: 22, mode: .elimination)
+                let old = MPScore(child: winner == nil ? 2 : 7, minik: 4, rallies: 6, server: .minik, winner: winner, streak: 0)
+                try m.restoreState(CrossLink.legacyDuel(m, old, childSeat: child))
+                XCTAssertEqual(old.child, m.scores()[child])
+                XCTAssertEqual(4, m.scores()[1 - child])
+                XCTAssertEqual(1 - child, m.engine.referee.server)
+                XCTAssertEqual(winner != nil, m.finished)
+            }
+        }
+    }
+
+    // Kotlin (b0cdeb3): starterAndStandardOneGestureAtPlayerDepthReturnTheLiveBall
+    func testStarterAndStandardOneGestureAtPlayerDepthReturnTheLiveBall() {
+        for control in [CrossControl.starter, .standard] {
+            for n in 2...4 {
+                for u in [-0.3, 0.0, 0.3] {
+                    let roster = [humanSeat(0)] + (1..<n).map { houseSeat($0, "kyra") }
+                    let e = CrossEngine(seats: roster, control: control, target: 7, seed: 11)
+                    e.incoming(from: 1, to: 0, u: u)
+                    e.waitForBall(0, depth: 0.82)
+                    let at = e.geometry.toLocal(0, e.ballPosition)
+                    // A finger at the player's depth, not exactly at the ball's ground shadow.
+                    let touch = e.geometry.fromLocal(0, at.u, 1.12)
+                    e.touch(touch)
+                    e.endTouch()
+                    XCTAssertEqual(1, e.play(1.2) { e.referee.striker == 0 }.contacts(0).count, "\(control)/\(n)/\(u)")
+                }
+            }
+        }
+    }
+
+    // Kotlin (b0cdeb3): starterHasLongerPreparationButStillNeedsAPlayerGesture
+    func testStarterHasLongerPreparationButStillNeedsAPlayerGesture() {
+        let easy = engine(4, .starter)
+        let standard = engine(4, .standard)
+        XCTAssertTrue(easy.tuning.tapTimingWindow > standard.tuning.tapTimingWindow)
+        XCTAssertTrue(CrossEngine.localStroke(.starter).total > CrossEngine.localStroke(.standard).total)
+        easy.incoming(from: 2, to: 0)
+        XCTAssertTrue(easy.play(3.0) { easy.referee.resolved }.contacts(0).isEmpty)
     }
 
     // Kotlin: beginnerContactIsAutomaticAtTheRetainedPaddleAndHappensOnce
@@ -240,7 +307,7 @@ final class CrossControlTests: XCTestCase {
         e.endTouch()
         let resting = e.play(3.0) { e.referee.resolved }
         XCTAssertTrue(resting.contacts(0).isEmpty)
-        // A tap far too early (the ball has only just left the opposite player) is only an empty swing.
+        // A tap far too early (the ball has only just left the opposite player) remains movement without a swing (Android fcfd6b2).
         let early = engine(4, .standard)
         early.approaching(from: 2, to: 0)
         XCTAssertEqual(0, early.predictedReceiver)
@@ -248,7 +315,7 @@ final class CrossControlTests: XCTestCase {
         early.touch(early.geometry.fromLocal(0, 0, 1.0))
         early.endTouch()
         let events = early.play(5.0) { early.referee.resolved }
-        XCTAssertEqual(1, events.swings(0).count)
+        XCTAssertTrue(events.swings(0).isEmpty)
         XCTAssertTrue(events.contacts(0).isEmpty)
         XCTAssertEqual(CrossRallyKind.missed, only(events.rallies())?.kind)
     }

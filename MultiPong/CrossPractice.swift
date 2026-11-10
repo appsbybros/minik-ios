@@ -223,7 +223,9 @@ final class CrossPractice {
                                   paceMultiplier: stage.fast ? 1.2 : 1)
         }
         return CrossEngine(seats: roster, control: .beginner, target: 999, seed: Int64(step) * 2001 + Int64(attempts), firstServer: server,
-                           exercise: drill, teams: teams, tapTargets: true, teamLesson: stage.skill == .smash ? 0 : nil)
+                           exercise: drill, teams: teams, tapTargets: true, teamLesson: stage.skill == .smash ? 0 : nil,
+                           // Android 6fcb446: the learner's own player walks 0.50 beyond the strike zone's right edge.
+                           localFootworkRight: CrossGeometry.strikeHalf + 0.50)
     }
     private func makeEngine() -> CrossEngine {
         CrossPractice.makeEngine(stage: stage, cycle: cycle, step: step, attempts: attempts, roster: roster, teams: teams)
@@ -231,6 +233,9 @@ final class CrossPractice {
     func start() { started = true }
     func advance(_ dt: Double) {
         if paused || ended || !started || !dt.isFinite { return }
+        // Android c93e760: aiming lessons give the learner time to choose each new target before the feeder starts. This is an
+        // explicit choice, never an auto-selected hit.
+        if stage.aimed && nextIn <= 0 && engine.selectedAim == nil && engine.referee.phase == .awaitingServe { return }
         var left = min(1.0 / 30, max(0, dt))
         while left > 1e-9 && !ended {
             let n = min(left, CrossEngine.step)

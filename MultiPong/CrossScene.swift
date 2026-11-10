@@ -1,14 +1,17 @@
 import SpriteKit
 import UIKit
 
-/// Android PongPlayerAtlas (MinikCrossPong 5c1aa4d): complete authored paddle poses, no detached limbs or synthetic legs. Each
-/// character sheet (`mpx_pose_<id>`, and `mpx_pose_<id>_walk`) holds 12 frames: rows FRONT, SIDE, REAR of 4 phases. The frame's
-/// foot, visible bounds and paddle centre are in frame pixels (`mpx_pose_atlas`, Android `pong-poses/atlas.json`).
+/// Android PongPlayerAtlas (MinikCrossPong 5c1aa4d, dd94c09): complete authored paddle poses, no detached limbs or synthetic legs.
+/// Each character sheet (`mpx_pose_<id>`, and `mpx_pose_<id>_walk`) holds 12 frames: rows FRONT, SIDE, REAR of 4 phases. The
+/// frame's foot, visible bounds and paddle centre are in frame pixels (`mpx_pose_atlas`, Android `pong-poses/atlas.json`).
+/// Android a9140c3: every frame is registered to its pelvis (`hipX`) instead of the shoe touching the bottom row, and the floor
+/// support of both shoes (`floorSupports`) is read from the same pixels. Android 4969038, d376d64, b0cdeb3, fcfd6b2: the traced
+/// front hands and paddle of Minik, Mia, Flare and Kyra (`frontHands`), the only part of a far player drawn over the table.
 final class MPXPoseAtlas {
     enum Facing: Int { case front = 0, side = 1, rear = 2 }
     struct Geometry { var bounds: CGRect; var racket: CGPoint; var radius: Double }
     private struct Frame { var source: CGRect; var visible: CGRect; var foot: CGPoint; var paddle: CGPoint; var radius: Double }
-    private struct Sheet { var sheet: SKTexture; var size: CGSize; var frames: [Frame]; var heights: [Double] }
+    private struct Sheet { var sheet: SKTexture; var size: CGSize; var frames: [Frame]; var heights: [Double]; var soles: [[CGPoint]] }
     static let shared = MPXPoseAtlas()
     private lazy var manifest: [String: Any] = {
         guard let data = NSDataAsset(name: "mpx_pose_atlas")?.data, let value = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return [:] }
@@ -35,9 +38,79 @@ final class MPXPoseAtlas {
         let size = CGSize(width: image.size.width * image.scale, height: image.size.height * image.scale)
         let sheet = SKTexture(image: image)
         sheet.filteringMode = .linear
-        let value = Sheet(sheet: sheet, size: size, frames: frames, heights: (0...2).map { Double(frames[$0 * 4].visible.height) })
+        // Android a9140c3: a common pelvis anchor for every phase, not a different planted shoe for each drawing; mirroring now
+        // turns about the body instead of moving it. Feet and racket stay intact in each original image. The alpha channel is
+        // read once and released.
+        var registered = frames
+        var soles = frames.map { [$0.foot] }
+        if let cg = image.cgImage, let alpha = Alpha(cg) {
+            registered = frames.map { f -> Frame in
+                var r = f
+                r.foot.x = CGFloat(MPXPoseAtlas.hipX(alpha, f))
+                return r
+            }
+            soles = registered.map { MPXPoseAtlas.soles(alpha, $0) }
+        }
+        let value = Sheet(sheet: sheet, size: size, frames: registered, heights: (0...2).map { Double(frames[$0 * 4].visible.height) }, soles: soles)
         characters[id] = value
         return value
+    }
+    /// The sheet's alpha channel, top row first (Android `Bitmap.getPixel` alpha).
+    private struct Alpha {
+        let width: Int, height: Int, values: [UInt8]
+        init?(_ image: CGImage) {
+            let w = image.width, h = image.height
+            guard w > 0, h > 0 else { return nil }
+            var rgba = [UInt8](repeating: 0, count: w * h * 4)
+            let drawn: Bool = rgba.withUnsafeMutableBytes { buffer in
+                guard let context = CGContext(data: buffer.baseAddress, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                                              space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+                context.draw(image, in: CGRect(x: 0, y: 0, width: w, height: h))
+                return true
+            }
+            guard drawn else { return nil }
+            width = w; height = h; values = stride(from: 3, to: rgba.count, by: 4).map { rgba[$0] }
+        }
+        func at(_ x: Int, _ y: Int) -> Int { x >= 0 && y >= 0 && x < width && y < height ? Int(values[y * width + x]) : 0 }
+    }
+    /// Android a9140c3 `hipX`: the median alpha-weighted centre (alpha ≥ 128) of the rows 60…68 % down the visible body, in
+    /// Kotlin Float arithmetic; the authored foot when no row has an opaque pixel.
+    private static func hipX(_ alpha: Alpha, _ f: Frame) -> Float {
+        var centers: [Float] = []
+        let top = Float(f.visible.minY), height = Float(f.visible.height)
+        let first = Int(top + height * Float(0.60)), last = Int(top + height * Float(0.68))
+        let left = Int(Float(f.visible.minX)), right = Int(Float(f.visible.maxX))
+        let sourceX = Int(f.source.minX), sourceY = Int(f.source.minY)
+        if first <= last {
+            for y in first...last {
+                var weight = 0.0, moment = 0.0
+                for x in left..<max(left, right) {
+                    let a = alpha.at(sourceX + x, sourceY + y)
+                    if a >= 128 { weight += Double(a); moment += Double(a) * Double(x) }
+                }
+                if weight > 0 { centers.append(Float(moment / weight)) }
+            }
+        }
+        let sorted = centers.sorted()
+        return sorted.isEmpty ? Float(f.foot.x) : sorted[sorted.count / 2]
+    }
+    /// Android a9140c3 `floorSupports` pixels: in each column of the bottom 16 % of the visible body the lowest pixel with alpha
+    /// ≥ 160; the first and last such column (frame pixels), or the registered foot when there is none.
+    private static func soles(_ alpha: Alpha, _ f: Frame) -> [CGPoint] {
+        var columns: [CGPoint] = []
+        let top = Int(Float(f.visible.maxY) - Float(f.visible.height) * Float(0.16)), bottom = Int(Float(f.visible.maxY)) - 1
+        let left = Int(Float(f.visible.minX)), right = Int(Float(f.visible.maxX))
+        let sourceX = Int(f.source.minX), sourceY = Int(f.source.minY)
+        if bottom >= top {
+            for x in left..<max(left, right) {
+                for y in stride(from: bottom, through: top, by: -1) where alpha.at(sourceX + x, sourceY + y) >= 160 {
+                    columns.append(CGPoint(x: Double(x), y: Double(y)))
+                    break
+                }
+            }
+        }
+        guard let first = columns.first, let last = columns.last else { return [f.foot] }
+        return [first, last]
     }
     private func frame(_ id: String, _ facing: Facing, _ phase: Int) -> (Sheet, Frame)? {
         guard let c = character(id) else { return nil }
@@ -54,6 +127,77 @@ final class MPXPoseAtlas {
         return Geometry(bounds: CGRect(x: min(l, r), y: y(Double(f.visible.minY)), width: abs(r - l), height: Double(f.visible.height) * scale),
                         racket: CGPoint(x: x(Double(f.paddle.x)), y: y(Double(f.paddle.y))), radius: f.radius * scale)
     }
+    /// Android a9140c3 `floorSupports`: the ground support of both shoes, not just the single registration anchor (view
+    /// coordinates, y down). Empty when the art is missing.
+    func floorSupports(_ id: String, _ facing: Facing, mirror: Bool, foot: CGPoint, height: Double, phase: Int) -> [CGPoint] {
+        guard let c = character(id) else { return [] }
+        let index = facing.rawValue * 4 + min(3, max(0, phase))
+        let f = c.frames[index], scale = height / max(1, c.heights[facing.rawValue])
+        return c.soles[index].map {
+            CGPoint(x: Double(foot.x) + (Double($0.x) - Double(f.foot.x)) * scale * (mirror ? -1 : 1), y: Double(foot.y) + (Double($0.y) - Double(f.foot.y)) * scale)
+        }
+    }
+    /// Android `drawMinikFrontHands` / `drawMiaFrontHands` / `drawFlareFrontHands` / `drawKyraFrontHands` (4969038, d376d64, b0cdeb3,
+    /// fcfd6b2): the traced hands, forearms and paddle of the FRONT pose as one path in view coordinates (y down), with the frame's
+    /// registration, scale and mirror. Nil for a character without traced hands. The caller clips the same pose to it.
+    func frontHands(_ id: String, mirror: Bool, foot: CGPoint, height: Double, phase: Int) -> CGPath? {
+        guard let masks = MPXPoseAtlas.frontHandMasks[id], masks.count == 4, let pair = frame(id, .front, phase) else { return nil }
+        let (c, f) = pair
+        let scale = height / max(1, c.heights[Facing.front.rawValue]), m: Double = mirror ? -1 : 1
+        let registration = CGAffineTransform(a: CGFloat(scale * m), b: 0, c: 0, d: CGFloat(scale),
+                                      tx: CGFloat(Double(foot.x) - Double(f.foot.x) * scale * m), ty: CGFloat(Double(foot.y) - Double(f.foot.y) * scale))
+        let path = CGMutablePath()
+        for polygon in masks[min(3, max(0, phase))] where polygon.count >= 6 {
+            path.move(to: CGPoint(x: polygon[0], y: polygon[1]), transform: registration)
+            for i in stride(from: 2, to: polygon.count - 1, by: 2) { path.addLine(to: CGPoint(x: polygon[i], y: polygon[i + 1]), transform: registration) }
+            path.closeSubpath()
+        }
+        return path
+    }
+    /// Android PongPlayerAtlas `minikFrontHands`, `miaFrontHands`, `flareFrontHands`, `kyraFrontHands`: per phase, the polygons
+    /// (x, y pairs in frame pixels) of the four complete FRONT drawings.
+    private static let frontHandMasks: [String: [[[Double]]]] = ["minik": minikFrontHands, "mia": miaFrontHands, "flare": flareFrontHands, "kyra": kyraFrontHands]
+    private static let minikFrontHands: [[[Double]]] = [
+        [[126, 211, 151, 209, 169, 221, 179, 240, 178, 256, 164, 267, 152, 275, 141, 273, 137, 267, 127, 261, 119, 245, 120, 227],
+         [165, 215, 174, 203, 190, 199, 207, 203, 217, 215, 222, 232, 217, 249, 205, 260, 190, 264, 175, 259, 164, 247, 161, 232],
+         [263, 208, 284, 209, 300, 220, 309, 236, 303, 250, 284, 258, 265, 255, 251, 244, 249, 226]],
+        [[40, 123, 67, 119, 92, 130, 104, 151, 103, 175, 90, 190, 115, 176, 139, 181, 181, 194, 183, 220, 129, 225, 104, 214, 96, 221, 84, 220, 76, 209, 71, 192, 51, 188, 35, 175, 31, 152],
+         [217, 211, 243, 213, 259, 224, 264, 240, 254, 253, 233, 256, 215, 246, 208, 229]],
+        [[135, 209, 156, 208, 176, 218, 187, 230, 185, 247, 173, 260, 154, 263, 137, 254, 127, 242, 127, 224],
+         [181, 224, 197, 219, 199, 205, 214, 193, 235, 191, 255, 198, 266, 215, 266, 234, 255, 250, 236, 260, 214, 257, 201, 245, 185, 245],
+         [270, 204, 293, 209, 308, 221, 310, 237, 296, 245, 277, 241, 265, 230]],
+        [[151, 196, 174, 199, 239, 207, 258, 215, 273, 227, 276, 240, 263, 252, 249, 253, 237, 246, 173, 240, 151, 231],
+         [267, 211, 274, 191, 288, 179, 308, 175, 326, 183, 335, 198, 334, 219, 321, 235, 301, 243, 283, 238, 273, 228, 262, 234, 256, 226]]
+    ]
+    private static let miaFrontHands: [[[Double]]] = [
+        [[126, 97, 109, 118, 96, 148, 99, 172, 112, 186, 123, 190, 133, 189, 140, 184, 151, 185, 158, 180, 166, 170, 162, 152, 146, 150, 133, 156, 131, 138, 139, 116],
+         [215, 99, 230, 100, 252, 130, 279, 158, 282, 180, 266, 188, 245, 178, 227, 158, 213, 137]],
+        [[159, 102, 140, 123, 128, 154, 105, 177, 96, 182, 80, 174, 58, 177, 50, 190, 54, 208, 75, 216, 96, 207, 109, 204, 142, 184, 157, 164, 173, 135],
+         [236, 100, 265, 116, 285, 140, 291, 164, 278, 181, 257, 174, 247, 155, 229, 140]],
+        [[130, 94, 115, 115, 120, 145, 135, 169, 157, 177, 182, 171, 196, 159, 198, 141, 185, 128, 167, 126, 152, 134, 147, 112],
+         [213, 99, 233, 112, 243, 143, 260, 136, 276, 137, 281, 154, 272, 175, 249, 183, 230, 169, 215, 143]],
+        [[123, 94, 107, 112, 109, 134, 140, 153, 205, 160, 243, 151, 260, 145, 275, 146, 296, 141, 307, 127, 307, 108, 295, 96, 279, 92, 265, 101, 260, 114, 242, 113, 213, 121, 165, 117, 149, 99]]
+    ]
+    private static let flareFrontHands: [[[Double]]] = [
+        [[119, 108, 103, 129, 89, 158, 88, 183, 104, 201, 123, 208, 140, 204, 160, 203, 177, 190, 178, 170, 166, 157, 148, 157, 134, 170, 128, 169, 132, 139, 141, 118],
+         [238, 108, 256, 124, 273, 151, 291, 173, 299, 195, 291, 217, 278, 215, 264, 201, 257, 179, 240, 163]],
+        [[111, 115, 101, 143, 82, 147, 79, 127, 60, 119, 41, 126, 37, 145, 44, 162, 62, 168, 72, 180, 91, 176, 116, 170, 133, 150, 138, 126],
+         [249, 110, 271, 120, 288, 140, 301, 168, 293, 191, 274, 207, 250, 208, 236, 196, 246, 180, 265, 172, 244, 149]],
+        [[112, 108, 101, 128, 111, 155, 131, 173, 151, 179, 174, 176, 195, 169, 203, 152, 198, 137, 181, 130, 164, 134, 150, 148, 139, 143, 133, 114],
+         [231, 109, 251, 120, 269, 143, 283, 175, 302, 188, 303, 207, 291, 216, 278, 202, 262, 197, 247, 169, 231, 149]],
+        [[133, 111, 123, 130, 134, 151, 156, 165, 184, 170, 210, 170, 243, 168, 264, 172, 278, 167, 298, 164, 310, 151, 310, 136, 300, 123, 283, 122, 268, 133, 261, 149, 235, 148, 204, 143, 174, 132, 153, 116],
+         [244, 177, 264, 176, 284, 185, 295, 202, 291, 219, 278, 224, 262, 209, 243, 199]]
+    ]
+    private static let kyraFrontHands: [[[Double]]] = [
+        [[128, 109, 110, 128, 101, 155, 95, 180, 109, 198, 135, 201, 150, 191, 174, 194, 185, 179, 187, 159, 175, 145, 154, 145, 145, 157, 140, 146, 153, 121],
+         [238, 108, 257, 120, 266, 145, 280, 172, 284, 187, 276, 204, 260, 210, 244, 199, 242, 181, 250, 169, 233, 146]],
+        [[139, 110, 136, 138, 121, 156, 104, 161, 95, 154, 89, 146, 69, 146, 52, 154, 48, 175, 60, 190, 78, 194, 92, 202, 108, 192, 134, 184, 157, 170, 164, 128],
+         [227, 109, 246, 120, 267, 143, 285, 168, 287, 185, 275, 202, 255, 202, 243, 192, 241, 177, 250, 165, 231, 151]],
+        [[132, 104, 119, 116, 118, 139, 127, 161, 148, 174, 169, 180, 190, 176, 201, 162, 204, 143, 193, 131, 172, 126, 159, 135, 151, 120],
+         [219, 110, 240, 123, 256, 150, 279, 166, 301, 178, 312, 196, 311, 212, 295, 220, 280, 207, 270, 196, 249, 186, 229, 170, 216, 143]],
+        [[140, 109, 125, 120, 124, 139, 138, 154, 161, 165, 191, 175, 217, 174, 237, 168, 248, 176, 270, 177, 281, 163, 281, 144, 269, 128, 249, 124, 235, 132, 228, 146, 211, 147, 179, 137, 157, 117],
+         [240, 178, 264, 178, 287, 185, 301, 202, 299, 215, 284, 218, 269, 208, 245, 201]]
+    ]
     /// Places `node` (anchor at the foot) for the pose; `sk` turns view coordinates into the scene's.
     @discardableResult func place(_ node: SKSpriteNode, _ id: String, _ facing: Facing, mirror: Bool, foot: CGPoint, height: Double, phase: Int,
                                   sk: (CGPoint) -> CGPoint) -> Geometry? {
@@ -92,13 +236,15 @@ final class MPXPoseAtlas {
     }
 }
 
-/// Android ReceptionCamera (5c1aa4d): an eased zoom toward the receiving paddle and the ball, a reversible screen transform that
-/// stays fixed while a finger is down. "zoom" asks for it on this player's own returns, "follow" on another human's.
+/// Android ReceptionCamera (5375378): an eased zoom toward this player's (or another human's) return, a reversible screen
+/// transform that stays fixed while a finger is down. "zoom" asks for it on this player's own returns, "follow" on another
+/// human's. The pivot is fixed at (50 %, 62 %) of the view: assistance changes the magnification, never pans the court sideways.
+/// Used by the classic court (`MPScene`); the cross court has its own `CrossCamera` since Android a9140c3.
 struct CrossReceptionCamera {
     private(set) var amount = 0.0
-    private var x = 0.0, y = 0.0, tx = 0.0, ty = 0.0
+    private var x = 0.0, y = 0.0
     var zoom: Double { 1 + 0.42 * amount }
-    mutating func update(_ dt: Double, assist: CrossReception, local: Int, focus: CGPoint, width: Double, height: Double, holding: Bool,
+    mutating func update(_ dt: Double, assist: CrossReception, local: Int, width: Double, height: Double, holding: Bool,
                          zoomOwn: Bool, follow: Bool) {
         if holding { return }
         let own = assist.receiver == local
@@ -106,25 +252,80 @@ struct CrossReceptionCamera {
         let target = allowed ? assist.strength : 0
         let k = 1 - exp(-min(0.075, max(0, dt)) * 4)
         amount += (target - amount) * k
-        if amount < 0.0001 { amount = 0; x = Double(focus.x); y = Double(focus.y) }
-        else { x += (Double(focus.x) - x) * k; y += (Double(focus.y) - y) * k }
-        x = min(width * 0.88, max(width * 0.12, x)); y = min(height * 0.88, max(height * 0.12, y))
-        tx = (width * 0.5 - x) * amount; ty = (height * 0.62 - y) * amount
+        if amount < 0.0001 { amount = 0 }
+        x = width * 0.5; y = height * 0.62
     }
     /// Base (camera-free) view point → painted view point.
-    func painted(_ p: CGPoint) -> CGPoint { CGPoint(x: x + (Double(p.x) - x) * zoom + tx, y: y + (Double(p.y) - y) * zoom + ty) }
+    func painted(_ p: CGPoint) -> CGPoint { CGPoint(x: x + (Double(p.x) - x) * zoom, y: y + (Double(p.y) - y) * zoom) }
     /// Painted view point → base view point (touches).
-    func base(_ p: CGPoint) -> CGPoint { CGPoint(x: x + (Double(p.x) - tx - x) / zoom, y: y + (Double(p.y) - ty - y) / zoom) }
-    /// The camera's focus and translation (view coordinates).
+    func base(_ p: CGPoint) -> CGPoint { CGPoint(x: x + (Double(p.x) - x) / zoom, y: y + (Double(p.y) - y) / zoom) }
+    /// The fixed pivot (view coordinates).
     var focus: CGPoint { CGPoint(x: x, y: y) }
-    var shift: CGPoint { CGPoint(x: tx, y: ty) }
 }
 
-/// One rendered world for every seat (Android cross/CrossCourt.kt, MinikCrossPong 5c1aa4d): the shared table rotated so the
-/// viewer's seat is at the bottom, with thickness, supports, mesh nets and a sunset sheen; whole authored player poses that walk
-/// and swing outside the table (the local player seen from behind, holding the real paddle); a fitted overview and, in
-/// landscape, an optional gently zooming action camera; the reception zoom; team colours and a team scoreboard; and the daily
-/// practice targets and paint. Drawing, input and collision all use CrossGeometry. Android draws in view coordinates (y down);
+/// Android CrossCamera (a9140c3, 5375378): a reversible scene transform. The whole-court view (the default) is completely
+/// stationary; the close view fits the ball and the relevant players by scaling around the fixed centre of the court area, at most
+/// 1.48 times, with no tracking pan. Touches use the exact inverse; a held finger freezes it.
+struct CrossCamera {
+    private(set) var zoom = 1.0
+    private var dx = 0.0, dy = 0.0
+    mutating func reset() { zoom = 1; dx = 0; dy = 0 }
+    /// `viewport` and `required` are camera-free view rectangles (y down).
+    mutating func update(_ dt: Double, close: Bool, viewport: CGRect, required: CGRect, holding: Bool) {
+        if holding || viewport.width <= 0 || viewport.height <= 0 { return }
+        let px = Double(viewport.midX), py = Double(viewport.midY)
+        func limit(_ distance: Double, _ space: Double) -> Double { distance > 0 ? space / distance : .infinity }
+        let desired = close ? max(1, min(1.48,
+                                         limit(px - Double(required.minX), px - Double(viewport.minX)),
+                                         limit(Double(required.maxX) - px, Double(viewport.maxX) - px),
+                                         limit(py - Double(required.minY), py - Double(viewport.minY)),
+                                         limit(Double(required.maxY) - py, Double(viewport.maxY) - py))) : 1
+        let k = 1 - exp(-min(0.1, max(0, dt)) / (desired < zoom ? 0.20 : 0.65))
+        zoom += (desired - zoom) * k
+        if abs(zoom - 1) < 0.0005 { zoom = 1 }
+        // Translation is only the offset of scaling around this fixed pivot: with an unchanged zoom nothing can slide.
+        dx = px * (1 - zoom); dy = py * (1 - zoom)
+    }
+    /// Base (camera-free) view point → painted view point.
+    func painted(_ p: CGPoint) -> CGPoint { CGPoint(x: Double(p.x) * zoom + dx, y: Double(p.y) * zoom + dy) }
+    /// Painted view point → base view point (touches).
+    func base(_ p: CGPoint) -> CGPoint { CGPoint(x: (Double(p.x) - dx) / zoom, y: (Double(p.y) - dy) / zoom) }
+    /// The translation of the transform (view coordinates).
+    var shift: CGPoint { CGPoint(x: dx, y: dy) }
+}
+
+/// Android 3b52d51 `SunsetTerrace.drawForeground`: the foreground foliage traced in the original terrace painting, drawn again
+/// over the court with the painting's exact transform (a depth pass, not a pasted image). The polygons are fractions of the
+/// painting's width and height (y down); the portrait painting's when the terrace is not wider than tall, else the landscape one's.
+enum MPXTerraceFoliage {
+    /// The foliage of the painting drawn into `rect` (view coordinates, y down), as one path filled by the non-zero rule.
+    static func path(portrait: Bool, in rect: CGRect) -> CGPath {
+        let path = CGMutablePath()
+        for polygon in (portrait ? MPXTerraceFoliage.portrait : MPXTerraceFoliage.landscape) where polygon.count >= 6 {
+            func point(_ i: Int) -> CGPoint { CGPoint(x: Double(rect.minX) + polygon[i] * Double(rect.width), y: Double(rect.minY) + polygon[i + 1] * Double(rect.height)) }
+            path.move(to: point(0))
+            for i in stride(from: 2, to: polygon.count - 1, by: 2) { path.addLine(to: point(i)) }
+            path.closeSubpath()
+        }
+        // Android Path's default WINDING fill, made explicit for the SpriteKit mask.
+        return path.normalized(using: .winding)
+    }
+    private static let portrait: [[Double]] = [
+        [0, 0.735, 0.054, 0.731, 0.028, 0.755, 0.011, 0.772, 0.081, 0.763, 0.124, 0.768, 0.062, 0.785, 0.018, 0.801, 0.08, 0.787, 0.14, 0.802, 0.065, 0.809, 0.13, 0.822, 0.153, 0.803, 0.166, 0.824, 0.189, 0.811, 0.181, 0.836, 0.218, 0.831, 0.245, 0.848, 0.204, 0.843, 0.217, 0.867, 0.177, 0.85, 0.165, 0.879, 0.246, 0.886, 0.285, 0.912, 0.232, 0.902, 0.193, 0.904, 0.249, 0.931, 0.214, 0.928, 0.279, 0.949, 0.312, 0.951, 0.262, 0.966, 0.314, 0.985, 0.311, 1, 0, 1],
+        [1, 0.739, 0.962, 0.735, 0.98, 0.753, 0.949, 0.759, 0.916, 0.77, 0.978, 0.768, 0.95, 0.792, 0.92, 0.805, 0.89, 0.807, 0.92, 0.822, 0.858, 0.823, 0.814, 0.813, 0.851, 0.839, 0.9, 0.859, 0.818, 0.86, 0.857, 0.875, 0.76, 0.879, 0.813, 0.894, 0.849, 0.903, 0.757, 0.905, 0.698, 0.922, 0.754, 0.923, 0.808, 0.932, 0.764, 0.956, 0.697, 0.977, 0.738, 0.976, 0.735, 1, 1, 1]
+    ]
+    private static let landscape: [[Double]] = [
+        [0, 0.67, 0.025, 0.66, 0.006, 0.706, 0.061, 0.737, 0.086, 0.733, 0.062, 0.762, 0.11, 0.747, 0.09, 0.791, 0.14, 0.774, 0.17, 0.738, 0.164, 0.787, 0.19, 0.77, 0.21, 0.789, 0.24, 0.76, 0.232, 0.806, 0.267, 0.831, 0.25, 0.867, 0.273, 0.91, 0.26, 0.954, 0.287, 1, 0, 1],
+        [1, 0.773, 0.97, 0.743, 0.987, 0.802, 0.948, 0.828, 0.925, 0.807, 0.936, 0.866, 0.889, 0.874, 0.865, 0.86, 0.879, 0.895, 0.833, 0.883, 0.803, 0.929, 0.834, 0.937, 0.81, 0.976, 0.797, 1, 1, 1]
+    ]
+}
+
+/// One rendered world for every seat (Android cross/CrossCourt.kt, MinikCrossPong 5c1aa4d, dd94c09): the shared table rotated so
+/// the viewer's seat is at the bottom, with thickness, supports, mesh nets and a sunset sheen; whole authored player poses that
+/// walk and swing outside the table (the local player seen from behind, holding the real paddle; far players behind the table rim
+/// with only their hands and paddle over it); one large fixed whole-court view and the optional close camera (Android a9140c3);
+/// the terrace's foreground foliage over the court (3b52d51); team colours and a team scoreboard; and the daily practice targets
+/// and paint. Drawing, input and collision all use CrossGeometry. Android draws in view coordinates (y down);
 /// here "view" points are those coordinates and `sk` turns them into SpriteKit's (y up).
 final class CrossScene: SKScene {
     static let depth = 4.2
@@ -148,19 +349,26 @@ final class CrossScene: SKScene {
     var names: [String] = []
     /// Kept for the room screens; remote players without a character are shown by their name tag only (5c1aa4d).
     var avatarIcons: [Int: String] = [:]
-    /// The action camera (Android `fullScreen`), in portrait and landscape (Android 47ad0c9); off, every player is in view.
-    var fullScreen = true { didSet { if oldValue != fullScreen { scoreFeedback.clear(); layoutCourt() } } }
+    /// The close camera (Android `fullScreen`, a9140c3): a reversible zoom toward the rally, at most 1.48 times and without pan;
+    /// off (the default, Android `cross/close_camera` false), the stable large whole-court view. Switching never resizes the table.
+    var fullScreen = false { didSet { if oldValue != fullScreen { scoreFeedback.clear() } } }
     /// Reception assistance and sound settings (Android `reception_assistance`, `cross_skill_journey/sound`).
     var preferences = MPPreferences()
     /// Team and practice screens: every engine event plays its cue while the court runs (Android CrossCourt.soundEffects).
     var playCue: ((CrossCue) -> Void)? { didSet { bindSounds(force: true) } }
 
     private var scale = 1.0, cx = 0.0, cy = 0.0
-    private var tilt = 0.72
-    private var pan = 0.0, panY = 0.0, panMin = 0.0, panMax = 0.0
-    private var fittedScale = 1.0, scaleLimit = 1.0
-    private var tableMinX = 0.0, tableMaxX = 0.0, tableMinY = 0.0, tableMaxY = 0.0
-    private var receptionCamera = CrossReceptionCamera()
+    private var tilt = 0.52
+    /// Android keeps a pan in its projection; since a9140c3 it is always 0 (the court never slides).
+    private var pan = 0.0, panY = 0.0
+    /// Android CrossCourt `receptionCamera` (a CrossCamera since a9140c3); `camera` is SKScene's own camera node.
+    private var courtCamera = CrossCamera()
+    /// Android a9140c3 `updateCamera`: the last committed strike and how long ago it was seen.
+    private var shotKey = "", shotAge = 10.0
+    /// Android 3b52d51 `ballPresentationOffset`: the committed strike whose flight starts at the drawn paddle, and that offset.
+    private var contactFlightKey = "", contactFlightOffset = CGPoint.zero
+    /// Android a9140c3 `stanceSoles`: both shoes' floor supports of every standing and walking pose, per character/facing/mirror.
+    private var stanceSoles: [String: [CGPoint]] = [:]
     private var notes: [Int: (text: String, at: TimeInterval)] = [:]
     private var previousTime: TimeInterval = 0
     private var hasRendered = false
@@ -168,6 +376,18 @@ final class CrossScene: SKScene {
     private var downPoint = CGPoint.zero
     private var samples: [(time: TimeInterval, point: CGPoint)] = []
     private var lastTapAt: TimeInterval = -1000, lastTapPoint = CGPoint.zero, raisedTap = false
+    /// Android 971e958: the second tap of a double tap counts within the system's double-tap timeout (Android
+    /// `ViewConfiguration.getDoubleTapTimeout()`, 300 ms; iOS exposes no such value).
+    static let doubleTapTimeout = 0.300
+    /// Android fcfd6b2 `standardGesture`: on a Starter/Standard court away from the own serve (not a raised ball, not a learning
+    /// court), a finger first tells a tap from footwork. A finger that never moves 12 points is one tap: a return from the current
+    /// stance at finger-up, aimed at the court it lifted on (d0bed3b). A drag walks the player sideways, or, once the incoming
+    /// ball is reachable (`canAimReturn`), aims the bound return from where aiming began.
+    private var standardGesture = false, standardDragged = false, standardAiming = false, standardStarted = false
+    private var standardAnchor = MPPoint.zero, standardWidth = 1.0, aimStartX = 0.0
+    /// Android 6fcb446/971e958 `practiceDrag`: on a learning court a drag that starts on the visible local body (not on a raised
+    /// ball) walks that player, whatever table area its head overlaps.
+    private var practiceDrag = false
     private var walkDistance: [Int: Double] = [:], lastLateral: [Int: Double] = [:], lastStep: [Int: TimeInterval] = [:]
     private var walkFrame: [Int: Int] = [:], walkFrameAt: [Int: TimeInterval] = [:]
     private var bodyBounds: [Int: CGRect] = [:]
@@ -183,6 +403,8 @@ final class CrossScene: SKScene {
     private var territoryNodes: [SKShapeNode] = []
     private var territoryPaths: [CGPath] = []
     private var tablePath: CGPath = CGMutablePath()
+    /// Android 80fc74e `tableBodyMask`: the table with its visible 5 pt rim, which hides a far (FRONT) player's body.
+    private var tableBodyMask: CGPath = CGMutablePath()
     private var outsidePath: CGPath = CGMutablePath()
     private let practiceCrop = SKCropNode(), practiceMask = SKShapeNode(), practiceNode = SKNode()
     private let netsNode = SKNode()
@@ -200,8 +422,9 @@ final class CrossScene: SKScene {
     private var showsScores: Bool { practice?.stage.skill != .serve }
     private var scoreboardHeight: Double { !showsScores ? 0 : (width > height ? 48 : 66) }
     private let scoreFeedback = CrossScoreFeedback()
-    /// Android 47ad0c9: the action camera has a visible effect in portrait too.
-    private var actionView: Bool { fullScreen }
+    /// Android 3b52d51 `SunsetTerrace.foreground`: the terrace painting's foreground foliage, drawn over the court (not zoomed).
+    private let foliageCrop = SKCropNode(), foliageMask = SKShapeNode(), foliage = SKSpriteNode()
+    private var foliageFrame = CGRect.null, foliageWindow = CGSize.zero
 
     init(engine: CrossEngine) {
         self.engine = engine
@@ -233,7 +456,8 @@ final class CrossScene: SKScene {
         ballNode.strokeColor = UIColor(red: 171 / 255, green: 186 / 255, blue: 200 / 255, alpha: 1); ballNode.zPosition = 5
         ballShine.fillColor = .white; ballShine.strokeColor = .clear; ballShine.zPosition = 5.05
         paddleNode.zPosition = 6
-        arrowNode.fillColor = UIColor(white: 1, alpha: 230 / 255); arrowNode.strokeColor = .clear; arrowNode.zPosition = 30
+        // Android draws the edge arrow inside the camera transform, after the ball and the paddle.
+        arrowNode.fillColor = UIColor(white: 1, alpha: 230 / 255); arrowNode.strokeColor = .clear; arrowNode.zPosition = 7
         let arrow = CGMutablePath()
         arrow.move(to: CGPoint(x: 10, y: 0)); arrow.addLine(to: CGPoint(x: -6, y: -7)); arrow.addLine(to: CGPoint(x: -6, y: 7)); arrow.closeSubpath()
         arrowNode.path = arrow
@@ -244,7 +468,11 @@ final class CrossScene: SKScene {
         canvas.addChild(netsNode)
         for node in [ballShadow, ballNode, ballShine, netFlash] { canvas.addChild(node) }
         canvas.addChild(paddleNode)
-        hud.addChild(arrowNode)
+        canvas.addChild(arrowNode)
+        // Android 3b52d51: the foliage pass is drawn after the camera's content, before the tags and the scoreboard.
+        foliageMask.fillColor = .white; foliageMask.strokeColor = .clear; foliageMask.lineWidth = 0
+        foliageCrop.maskNode = foliageMask; foliageCrop.addChild(foliage); foliageCrop.zPosition = 10; foliageCrop.isHidden = true
+        addChild(foliageCrop)
         buildPaddle()
         rebuild()
     }
@@ -257,7 +485,7 @@ final class CrossScene: SKScene {
         if !active { cancelTouch() }
         bindSounds(force: false)
     }
-    /// Android `toggleCamera`: the action camera or every player in view; remembered.
+    /// Android `toggleCamera`: the close camera or the whole court; the owner remembers it (`cross/close_camera`).
     func toggleCamera() { fullScreen.toggle() }
 
     private var g: CrossGeometry { engine.geometry }
@@ -265,9 +493,12 @@ final class CrossScene: SKScene {
 
     // ---- projection -------------------------------------------------------------------------------
     private func k(_ y: Double) -> Double { CrossScene.depth / (CrossScene.depth + (CrossScene.near - y)) }
-    /// Concave display height: low balls separate clearly from the net band, high lobs stay on screen.
-    private func lift(_ h: Double) -> Double { CrossScene.liftMax * (1 - exp(-max(h, 0) / CrossScene.liftScale)) }
-    /// Android `screen`: view coordinates (y down) including the camera pan (not the reception zoom).
+    /// Concave display height: low balls separate clearly from the net band, high lobs stay on screen. Android 5375378: a
+    /// height below the table plane continues the curve's slope at 0 linearly.
+    private func lift(_ h: Double) -> Double {
+        h < 0 ? h * CrossScene.liftMax / CrossScene.liftScale : CrossScene.liftMax * (1 - exp(-h / CrossScene.liftScale))
+    }
+    /// Android `screen`: view coordinates (y down) including the camera pan (always 0), not the close camera's zoom.
     func screen(_ p: MPPoint, _ h: Double = 0) -> CGPoint {
         let q = unpanned(p, h)
         return CGPoint(x: Double(q.x) - pan, y: Double(q.y) - panY)
@@ -287,10 +518,15 @@ final class CrossScene: SKScene {
         return g.fromView(viewSeat, MPPoint((sx + pan - cx) / (scale * k(y)), y))
     }
 
+    /// Android a9140c3/0285385 `layoutFor`: one large fixed projection for both camera views. The fit holds the table arms and every
+    /// player's grounded rest and contact poses at the middle of their reach (the same feet, anchors and heights as renderPlayer,
+    /// at scale 1), with an 8 pt margin and 99 % of the fit. The close camera only adds a reversible zoom; it never resizes the table.
     func layoutCourt() {
         let w = width, h = height
         guard w > 1, h > 1 else { return }
-        tilt = w > h ? 0.72 : 1.28
+        contactFlightKey = ""; contactFlightOffset = .zero
+        tilt = w > h ? 0.52 : 1.72
+        courtCamera.reset()
         var minX = 0.0, maxX = 0.0, minY = 0.0, maxY = 0.0
         let geometry = g, seat = viewSeat, t = tilt
         func include(_ p: MPPoint, up: Double = 0, down: Double = 0, half: Double = 0) {
@@ -299,11 +535,9 @@ final class CrossScene: SKScene {
             minY = min(minY, (v.y * t - up) * kk); maxY = max(maxY, (v.y * t + down) * kk)
         }
         for s in geometry.seats { geometry.armCorners(s).forEach { include($0) } }
-        // Android 47ad0c9: fit the authored bodies and their legal lateral travel, not just the tabletop. These are the same
-        // feet, pose anchors and heights renderPlayer uses, at scale 1.
-        func unit(_ p: MPPoint, _ height: Double = 0) -> CGPoint {
+        func unit(_ p: MPPoint, _ height: Double) -> CGPoint {
             let v = geometry.toView(seat, p), kk = k(v.y)
-            return CGPoint(x: v.x * kk, y: (v.y * t - height * CrossScene.liftScale) * kk)
+            return CGPoint(x: v.x * kk, y: (v.y * t - lift(height)) * kk)
         }
         let atlas = MPXPoseAtlas.shared
         for s in geometry.seats where s < engine.seats.count {
@@ -314,35 +548,55 @@ final class CrossScene: SKScene {
             let view = geometry.toView(seat, geometry.home(s))
             let facing: MPXPoseAtlas.Facing = view.y > 0.45 ? .rear : (view.y < -0.45 ? .front : .side)
             let mirror = view.x > 0.45, actorHeight = id == "minik" ? 0.76 : 0.84
-            let contactPose = id == "minik" && facing == .front ? 2 : 0
-            guard let contact = atlas.geometry(id, facing, mirror: mirror, foot: .zero, height: actorHeight, phase: contactPose) else { continue }
-            for u in [-0.48, 0.0, 0.48] {
-                let rest = unit(geometry.fromLocal(s, u, CrossGeometry.homeDepth), 0.15)
-                var foot = CGPoint(x: rest.x - contact.racket.x, y: rest.y - contact.racket.y)
-                if s != seat && abs(view.x) > 0.45 {
-                    let floor = unit(geometry.fromLocal(s, u, CrossGeometry.reach + 0.34))
-                    foot = CGPoint(x: Double(floor.x), y: Double(floor.y) + k(view.y) * 0.32)
-                }
-                for pose in 0...3 {
-                    guard let bounds = atlas.geometry(id, facing, mirror: mirror, foot: foot, height: actorHeight, phase: pose)?.bounds else { continue }
-                    minX = min(minX, Double(bounds.minX)); maxX = max(maxX, Double(bounds.maxX))
-                    minY = min(minY, Double(bounds.minY)); maxY = max(maxY, Double(bounds.maxY))
-                }
+            let contactPose = 2
+            // Android a9140c3: the middle of the reach only (u = 0), the rest and the contact pose.
+            guard let foot = playerFoot(id, facing, mirror: mirror, seat: s, u: 0, unitScale: 1, project: unit) else { continue }
+            for pose in [0, contactPose] {
+                guard let bounds = atlas.geometry(id, facing, mirror: mirror, foot: foot, height: actorHeight, phase: pose)?.bounds else { continue }
+                minX = min(minX, Double(bounds.minX)); maxX = max(maxX, Double(bounds.maxX))
+                minY = min(minY, Double(bounds.minY)); maxY = max(maxY, Double(bounds.maxY))
             }
         }
-        // Camera following is bounded by the complete scene extents as well.
-        tableMinX = minX; tableMaxX = maxX; tableMinY = minY; tableMaxY = maxY
-        let margin = 14.0, board = scoreboardHeight + 16
-        let fit = min((w - 2 * margin) / max(0.01, maxX - minX), (h - board - 2 * margin) / max(0.01, maxY - minY))
-        scaleLimit = fit * 0.98
-        scale = max(1, actionView ? fit * 0.95 : fit * 0.85)
-        fittedScale = scale; pan = 0; panY = 0
+        let margin = 8.0, board = scoreboardHeight + 16
+        scale = max(1, min((w - 2 * margin) / max(0.01, maxX - minX), (h - board - 2 * margin) / max(0.01, maxY - minY)) * 0.99)
+        pan = 0; panY = 0
         cx = w / 2 - (minX + maxX) * scale / 2
         cy = board + (h - board - (maxY - minY) * scale) * 0.5 - minY * scale
-        panMin = fullScreen ? -scale * 0.12 : 0; panMax = fullScreen ? scale * 0.12 : 0
-        pan = pan.mpClamp(panMin, panMax)
         buildPaths()
         render()
+    }
+    /// Android a9140c3 `playerFoot`: the authored contact pose's racket defines where the feet stand at the rest depth; the paddle
+    /// depth never moves a body onto the table. A side player stands on the floor just beyond its arm's edge (reach + 0.05) with
+    /// BOTH shoes outside the enlarged arm (the innermost floor support of every standing and walking pose), not one shoe at its
+    /// edge while the other leg and hip stay inside the table. `project` is `unpanned` (or the layout's unit projection).
+    private func playerFoot(_ id: String, _ facing: MPXPoseAtlas.Facing, mirror: Bool, seat: Int, u: Double, unitScale: Double,
+                            project: (MPPoint, Double) -> CGPoint) -> CGPoint? {
+        let atlas = MPXPoseAtlas.shared
+        let actorHeight = unitScale * (id == "minik" ? 0.76 : 0.84)
+        let contactPose = 2
+        guard let contact = atlas.geometry(id, facing, mirror: mirror, foot: .zero, height: actorHeight, phase: contactPose) else { return nil }
+        let rest = project(g.fromLocal(seat, u, CrossGeometry.homeDepth), 0.15)
+        var foot = CGPoint(x: rest.x - contact.racket.x, y: rest.y - contact.racket.y)
+        let view = g.toView(viewSeat, g.home(seat))
+        if seat != viewSeat && abs(view.x) > 0.45 {
+            let floor = project(g.fromLocal(seat, u, CrossGeometry.reach + 0.05), 0)
+            let key = id + "/" + String(facing.rawValue) + "/" + String(mirror)
+            let offsets: [CGPoint]
+            if let known = stanceSoles[key] { offsets = known }
+            else {
+                var found: [CGPoint] = []
+                for art in [id, id + "-walk"] {
+                    for phase in 0...3 { found += atlas.floorSupports(art, facing, mirror: mirror, foot: .zero, height: 1, phase: phase) }
+                }
+                stanceSoles[key] = found
+                offsets = found
+            }
+            let xs = offsets.map { Double($0.x) }
+            let inward = (view.x > 0 ? xs.min() : xs.max()) ?? 0
+            foot.x = CGFloat(Double(floor.x) - inward * actorHeight)
+            foot.y = CGFloat(Double(floor.y) + unitScale * k(view.y) * 0.32)
+        }
+        return foot
     }
     /// Per-seat nodes for the current table (a new stage may have fewer seats).
     private func rebuild() {
@@ -382,6 +636,9 @@ final class CrossScene: SKScene {
         }
         let shape: CGPath = table ?? CGMutablePath()
         tablePath = shape
+        // Android 80fc74e: the visible rim (the 5 pt round-joined stroke) extends outside the playing surface. Bodies behind it are
+        // hidden there too; their hands are restored separately.
+        tableBodyMask = shape.union(shape.copy(strokingWithWidth: 5, lineCap: .butt, lineJoin: .round, miterLimit: 4))
         // Cast shadow and support legs are behind the extruded table, never collision surfaces.
         castShadow.path = shape; castShadow.position = CGPoint(x: 8, y: -scale * 0.27)
         tableUnder.path = shape; tableUnder.position = CGPoint(x: 0, y: -8)
@@ -430,9 +687,15 @@ final class CrossScene: SKScene {
             lines.addLine(to: sk(unpanned(g.fromLocal(s, 0, CrossGeometry.reach))))
         }
         centreLines.path = lines
-        // Bodies are drawn outside the table (Android clipOutPath).
-        outsidePath = CGPath(rect: CGRect(x: -3 * width, y: -height, width: 7 * width, height: 3 * height), transform: nil).subtracting(shape)
-        actors.values.forEach { $0.setMask(outsidePath) }
+        // Bodies are drawn outside the table (Android clipOutPath); a far (FRONT) body outside the table and its rim (80fc74e). The
+        // floor shadow is clipped by the table alone.
+        let everything = CGPath(rect: CGRect(x: -3 * width, y: -height, width: 7 * width, height: 3 * height), transform: nil)
+        outsidePath = everything.subtracting(shape)
+        let outsideBody = everything.subtracting(tableBodyMask)
+        for (seat, nodes) in actors {
+            let front = g.toView(viewSeat, g.home(seat)).y < -0.45
+            nodes.setMasks(body: front ? outsideBody : outsidePath, shadow: outsidePath)
+        }
         buildNets()
     }
     private func buildNets() {
@@ -504,33 +767,40 @@ final class CrossScene: SKScene {
             if let step { step(slice) } else { engine.advance(slice) }
             remaining -= slice
         }
-        follow(elapsed)
-        let receiver = g.seats.contains(engine.reception.receiver) ? engine.reception.receiver : viewSeat
-        let a = screen(engine.racket(receiver)), b = screen(engine.renderBallPosition, engine.ballHeight)
-        receptionCamera.update(cameraElapsed, assist: engine.reception, local: viewSeat, focus: CGPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2),
-                      width: width, height: height, holding: activeTouch != nil, zoomOwn: preferences.receptionZoom, follow: preferences.receptionFollow)
+        updateCamera(cameraElapsed)
         onFrame?()
         render()
     }
-    /// The action camera follows the ball with a slight zoom; it freezes while a finger is down so a drag keeps its coordinates.
-    private func follow(_ dt: Double) {
-        guard actionView, width > 1, activeTouch == nil else { return }
-        let v = g.toView(viewSeat, engine.renderBallPosition)
-        let ease = 1 - exp(-dt / 0.55)
-        let wanted = min(scaleLimit, fittedScale * (1 + 0.035 * (abs(v.y) / 1.4).mpClamp(0, 1)))
-        let old = scale
-        scale += (wanted - scale) * ease
-        let margin = 12.0, board = scoreboardHeight
-        let xLow = cx + tableMaxX * scale - (width - margin)
-        let xHigh = cx + tableMinX * scale - margin
-        let yLow = cy + tableMaxY * scale - (height - margin)
-        let yHigh = cy + tableMinY * scale - (board + margin)
-        func bounded(_ x: Double, _ lo: Double, _ hi: Double) -> Double { lo <= hi ? x.mpClamp(lo, hi) : (lo + hi) / 2 }
-        let targetX = bounded(v.x * scale * 0.16, xLow, xHigh)
-        let targetY = bounded(v.y * scale * 0.10, yLow, yHigh)
-        pan += (targetX - pan) * ease; panY += (targetY - panY) * ease
-        pan = bounded(pan, xLow, xHigh); panY = bounded(panY, yLow, yHigh)
-        if abs(scale - old) > 0.005 { buildPaths() }
+    /// Android a9140c3/5375378 `updateCamera`: the close camera keeps the ball and the relevant players in view — every player
+    /// while a point starts, a hitter prepares or for 0.42 s after a strike, then the predicted receiver (and the hitter until
+    /// 0.70 s) — inside the court area below the scoreboard. Bodies count down to 79 % of their height. Frozen while a finger is
+    /// down so a drag keeps its coordinates. Uses the previous frame's bodies and rackets, as Android does.
+    private func updateCamera(_ dt: Double) {
+        guard width > 1, height > 1 else { return }
+        let key = engine.lastCommittedStrike.map { "\($0.rallyId)/\($0.hitIndex)/\($0.seat)" } ?? ""
+        if key != shotKey { shotKey = key; shotAge = 0 } else { shotAge += dt }
+        let ball = renderedBallPoint()
+        var required = CGRect(x: Double(ball.x) - 16, y: Double(ball.y) - 16, width: 32, height: 32)
+        let starting = engine.referee.phase == .awaitingServe || engine.referee.phase == .resolved
+        // See the hitter prepare and release before following the reception.
+        let preparing = g.seats.contains { let s = engine.stroke($0); return s.active && !s.contacted }
+        let visible: [Int]
+        if starting || preparing || shotAge < 0.42 { visible = Array(g.seats) }
+        else { visible = [engine.predictedReceiver, shotAge < 0.70 ? engine.lastCommittedStrike?.seat : nil].compactMap { $0 } }
+        for seat in visible {
+            if let r = bodyBounds[seat] {
+                required = CrossScene.union(required, CGRect(x: Double(r.minX) - 8, y: Double(r.minY) - 10, width: Double(r.width) + 16, height: Double(r.height) * 0.79 + 10))
+            }
+            if let c = contactRackets[seat] { required = CrossScene.union(required, CGRect(x: Double(c.x) - 16, y: Double(c.y) - 16, width: 32, height: 32)) }
+        }
+        let viewport = CGRect(x: 8, y: scoreboardHeight + 8, width: max(0, width - 16), height: max(0, height - scoreboardHeight - 16))
+        courtCamera.update(dt, close: fullScreen, viewport: viewport, required: required, holding: activeTouch != nil)
+    }
+    /// Android RectF.union: an empty rectangle adds nothing.
+    private static func union(_ a: CGRect, _ b: CGRect) -> CGRect {
+        if b.width <= 0 || b.height <= 0 { return a }
+        if a.width <= 0 || a.height <= 0 { return b }
+        return a.union(b)
     }
 
     // ---- sounds -------------------------------------------------------------------------------------
@@ -555,10 +825,11 @@ final class CrossScene: SKScene {
     private func render() {
         guard size.width > 1, size.height > 1 else { return }
         hasRendered = true
-        // The pan, then the reception zoom about its focus (Android ReceptionCamera.begin).
-        let z = receptionCamera.zoom, focus = sk(receptionCamera.focus), shift = receptionCamera.shift
+        // The pan (always 0), then the close camera's zoom about its fixed pivot (Android CrossCamera.begin): a base view point p is
+        // painted at p × zoom + shift.
+        let z = courtCamera.zoom, shift = courtCamera.shift
         canvas.setScale(CGFloat(z))
-        canvas.position = CGPoint(x: -pan * z + Double(focus.x) * (1 - z) + Double(shift.x), y: panY * z + Double(focus.y) * (1 - z) - Double(shift.y))
+        canvas.position = CGPoint(x: Double(shift.x) - pan * z, y: height * (1 - z) - Double(shift.y) + panY * z)
         bodyBounds = [:]; contactRackets = [:]
         let receiver = tutorialTarget ?? engine.predictedReceiver
         if let receiver, receiver >= 0, receiver < territoryPaths.count {
@@ -571,12 +842,33 @@ final class CrossScene: SKScene {
             bounceNode.alpha = CGFloat(1 - engine.bounceAge / 0.38) * 220 / 255
         } else { bounceNode.isHidden = true }
         renderPractice()
-        // Back-to-front: farther players first, so nearer bodies overlap correctly; the local player last.
-        let others = g.seats.filter { $0 != viewSeat }.sorted { screen(g.home($0)).y < screen(g.home($1)).y }
-        for (order, seat) in others.enumerated() { renderPlayer(seat, depth: 2 + Double(order) * 0.1) }
-        if let local = engine.localSeat { renderPlayer(local, depth: 3) } else { actors[viewSeat]?.hideAll() }
-        renderBall()
+        let ballDepth: Double
+        if engine.postPointBall {
+            // Android 5375378: live contact uses the traced racket anchors; after a point the freely bouncing ball is depth-sorted
+            // with the bodies (nets first, then the players back to front, the ball before the first player nearer than it), so it
+            // cannot be pasted onto a tail.
+            netsNode.zPosition = 1.9
+            func depthOf(_ seat: Int) -> Double { g.toView(viewSeat, g.home(seat)).y }
+            let ball = g.toView(viewSeat, engine.renderBallPosition).y
+            var drawn: Double?
+            for (order, seat) in g.seats.sorted(by: { depthOf($0) < depthOf($1) || (depthOf($0) == depthOf($1) && $0 < $1) }).enumerated() {
+                let depth = 2 + Double(order) * 0.1
+                if drawn == nil && ball < depthOf(seat) { drawn = depth - 0.05 }
+                renderPlayer(seat, depth: depth)
+            }
+            ballDepth = drawn ?? (2 + Double(engine.players) * 0.1)
+        } else {
+            netsNode.zPosition = 4
+            // Back-to-front: farther players first, so nearer bodies overlap correctly; the local player last. A spectator (the
+            // friendly host watching a house final) sees the nearest seat's player there too (Android 1fc4bc2 `drawLocalAvatar`).
+            let others = g.seats.filter { $0 != viewSeat }.sorted { screen(g.home($0)).y < screen(g.home($1)).y }
+            for (order, seat) in others.enumerated() { renderPlayer(seat, depth: 2 + Double(order) * 0.1) }
+            renderPlayer(viewSeat, depth: 3)
+            ballDepth = 4.8
+        }
+        renderBall(depth: ballDepth)
         renderPaddle()
+        renderForeground()
         renderTags()
         if showsScores {
             if let last = engine.referee.lastOutcome { scoreFeedback.record(last, now: CACurrentMediaTime()) }
@@ -652,9 +944,12 @@ final class CrossScene: SKScene {
             }
         }
     }
-    /// Android drawPlayer (5c1aa4d): a whole authored pose standing outside the table, walking with its racket's sideways moves,
-    /// winding up, meeting the ball and following through. The contact pose's racket defines where the feet stand; the paddle
-    /// depth never moves a body onto the table. Facing players' upper bodies are in front of the raised tabletop.
+    /// Android drawPlayer (5c1aa4d, dd94c09): a whole authored pose standing outside the table, walking with its racket's sideways
+    /// moves, winding up, meeting the ball and following through. The contact pose's racket defines where the feet stand
+    /// (`playerFoot`); the paddle depth never moves a body onto the table. A far (FRONT) player stands behind the table and its rim:
+    /// the tabletop hides the whole body and only the traced hands and paddle of Minik, Mia, Flare and Kyra cross it (4969038,
+    /// d376d64, 80fc74e, b0cdeb3, fcfd6b2). A side player's connected upper body is in front of the raised tabletop down to its
+    /// waist (0285385); the lower body and shoes stay behind it.
     private func renderPlayer(_ seat: Int, depth: Double) {
         guard let nodes = actors[seat], seat < engine.seats.count else { return }
         nodes.setDepth(depth)
@@ -665,7 +960,8 @@ final class CrossScene: SKScene {
         let atlas = MPXPoseAtlas.shared
         guard !id.isEmpty, atlas.has(id) else { return }
         let local = g.toLocal(seat, engine.racket(seat))
-        let u = local.u.mpClamp(-0.48, 0.48)
+        // Android 6fcb446/971e958: on a learning court the local player walks as far as its footwork reach.
+        let u = engine.tapTargets && seat == viewSeat ? local.u.mpClamp(-CrossGeometry.strikeHalf, engine.localFootworkRight) : local.u.mpClamp(-0.48, 0.48)
         let view = g.toView(viewSeat, g.home(seat))
         let facing: MPXPoseAtlas.Facing = view.y > 0.45 ? .rear : (view.y < -0.45 ? .front : .side)
         let mirror = view.x > 0.45
@@ -679,7 +975,8 @@ final class CrossScene: SKScene {
         let desired = Int((walkDistance[seat] ?? 0) / 0.11) % 4
         if now - (walkFrameAt[seat] ?? 0) >= 0.110 && walkFrame[seat] != desired { walkFrame[seat] = desired; walkFrameAt[seat] = now }
         let artId = walking && atlas.has(id + "-walk") ? id + "-walk" : id
-        let contactPose = id == "minik" && facing == .front ? 2 : 0
+        // Android a9140c3: every character meets the ball in its contact pose 2.
+        let contactPose = 2
         let phase: Int
         if walking { phase = walkFrame[seat] ?? 0 }
         else if !stroke.active { phase = 0 }
@@ -688,40 +985,63 @@ final class CrossScene: SKScene {
         else if stroke.age <= stroke.impactAt + 0.075 { phase = contactPose }
         else if stroke.age < stroke.followEnd { phase = 3 }
         else { phase = 0 }
-        guard let contact = atlas.geometry(id, facing, mirror: mirror, foot: .zero, height: actorHeight, phase: contactPose) else { return }
-        let rest = unpanned(g.fromLocal(seat, u, CrossGeometry.homeDepth), 0.15)
-        var foot = CGPoint(x: rest.x - contact.racket.x, y: rest.y - contact.racket.y)
-        // Android 47ad0c9: a side player stands on the floor beyond its arm's edge, never on the tabletop. The physical stance
-        // takes precedence over clamping the sprite into the view (the camera fit already holds every body).
-        if seat != viewSeat && abs(view.x) > 0.45 {
-            let floor = unpanned(g.fromLocal(seat, u, CrossGeometry.reach + 0.34))
-            foot = CGPoint(x: Double(floor.x), y: Double(floor.y) + sizeAt(g.home(seat)) * 0.32)
-        }
+        guard let foot = playerFoot(id, facing, mirror: mirror, seat: seat, u: u, unitScale: scale, project: { self.unpanned($0, $1) }) else { return }
         if let racket = atlas.geometry(id, facing, mirror: mirror, foot: foot, height: actorHeight, phase: contactPose)?.racket { contactRackets[seat] = racket }
         let shadow = CGRect(x: Double(foot.x) - actorHeight * 0.21, y: Double(foot.y) - actorHeight * 0.025, width: actorHeight * 0.42, height: actorHeight * 0.06)
         nodes.showShadow(CGPath(ellipseIn: CGRect(x: shadow.minX, y: height - shadow.maxY, width: shadow.width, height: shadow.height), transform: nil))
         let skPoint: (CGPoint) -> CGPoint = { [unowned self] p in self.sk(p) }
         let rendered = atlas.place(facing == .rear ? nodes.free : nodes.body, artId, facing, mirror: mirror, foot: foot, height: actorHeight, phase: phase, sk: skPoint)
         if let rendered { bodyBounds[seat] = rendered.bounds }
-        // At the raised tabletop the intact upper body is in front of the surface; lower body and shoes stay behind it.
-        if facing != .rear, let rendered {
-            let line = Double(foot.y) - actorHeight * 0.48
-            let above = CGMutablePath()
-            above.addRect(CGRect(x: Double(rendered.bounds.minX), y: height - line, width: Double(rendered.bounds.width), height: max(0, line - Double(rendered.bounds.minY))))
-            // Android 7254ab2: the paddle is in front of the table even when its authored pose is lower than the torso cutoff.
-            // Its complete head and handle are restored; the lower body and feet stay behind the tabletop.
-            let r = rendered.radius, c = rendered.racket
-            above.addEllipse(in: CGRect(x: Double(c.x) - r * 1.5, y: height - (Double(c.y) + r * 2.1), width: r * 3, height: r * 3.6))
-            nodes.showUpper(tablePath.intersection(above))
+        // The body was clipped out of this mask (CrossActorNodes.setMasks); what crosses it is drawn inside it.
+        let bodyMask = facing == .front ? tableBodyMask : tablePath
+        if facing == .front && ["mia", "minik", "flare", "kyra"].contains(id) {
+            // The tabletop occludes the whole body; restore only the traced hands and paddle. A low racket never extends a torso
+            // mask into the shorts. Nothing crosses the table while walking.
+            if !walking, let hands = atlas.frontHands(id, mirror: mirror, foot: foot, height: actorHeight, phase: phase) {
+                let skHands = CGMutablePath()
+                skHands.addPath(hands, transform: CGAffineTransform(a: 1, b: 0, c: 0, d: -1, tx: 0, ty: size.height))
+                nodes.showUpper(bodyMask.intersection(skHands))
+                atlas.place(nodes.upper, id, facing, mirror: mirror, foot: foot, height: actorHeight, phase: phase, sk: skPoint)
+            }
+        } else if facing != .rear, let rendered {
+            // The paddle is in front of the table even when its authored pose is lower than the torso cutoff: reveal one connected
+            // upper body down to the waist (Android 0285385, 3b52d51), not a round paddle patch that could sever the wrist.
+            let waist = max(Double(foot.y) - actorHeight * 0.48, Double(rendered.racket.y) + rendered.radius * 1.45)
+            let above = CGPath(rect: CGRect(x: Double(rendered.bounds.minX), y: height - waist, width: Double(rendered.bounds.width),
+                                            height: max(0, waist - Double(rendered.bounds.minY))), transform: nil)
+            nodes.showUpper(bodyMask.intersection(above))
             atlas.place(nodes.upper, artId, facing, mirror: mirror, foot: foot, height: actorHeight, phase: phase, sk: skPoint)
         }
     }
-    /// A short smooth contact arc joins the simulated flight to the authored paddle pose: drawing and touch only, never game time,
-    /// score or network state.
+    /// Android 3b52d51/1fc4bc2 `ballPresentationOffset` (drawing and touch only, never game time, ownership, score or network
+    /// state). A committed strike's first flight starts at the drawn contact paddle and joins the simulated path linearly by its
+    /// first real bounce (the offset fades with the flight time, no extra acceleration). Otherwise only an incoming anticipation:
+    /// the responsible receiver's swing meets the ball at its paddle within 0.16 s of the impact, while the swing's point is within
+    /// 0.20 of the ball; an old follow-through never pulls a returned ball back. The loose ball after a point has no offset
+    /// (Android 5375378).
     private func ballOffset() -> CGPoint {
+        if engine.postPointBall { return .zero }
+        if let hit = engine.lastCommittedStrike {
+            let key = "\(hit.rallyId)/\(hit.hitIndex)/\(hit.seat)"
+            if key != contactFlightKey, let racket = contactRackets[hit.seat] {
+                contactFlightKey = key
+                let p = unpanned(hit.point, hit.height)
+                contactFlightOffset = CGPoint(x: racket.x - p.x, y: racket.y - p.y)
+            }
+            let firstFlight = hit.serve ? engine.referee.phase == .serveOwn : engine.referee.phase == .toReceiver
+            if firstFlight && key == contactFlightKey && !engine.ballState.stopped {
+                let gravity = engine.physics.gravity
+                let duration = (hit.ball.lift + sqrt(hit.ball.lift * hit.ball.lift + 2 * gravity * max(0, hit.ball.height))) / gravity
+                let elapsed = (hit.ball.lift - engine.ballState.lift) / gravity
+                let weight = (1 - elapsed / max(0.001, duration)).mpClamp(0, 1)
+                return CGPoint(x: Double(contactFlightOffset.x) * weight, y: Double(contactFlightOffset.y) * weight)
+            }
+        }
         var best: (seat: Int, distance: Double)?
-        for seat in g.seats where contactRackets[seat] != nil && engine.stroke(seat).active {
-            let s = engine.stroke(seat), d = abs(s.age - s.impactAt)
+        for seat in g.seats where seat == engine.referee.receiver && engine.referee.phase == .receivable && contactRackets[seat] != nil {
+            let s = engine.stroke(seat)
+            guard s.active && !s.contacted && s.point.distance(engine.ballPosition) < 0.20 else { continue }
+            let d = abs(s.age - s.impactAt)
             if best == nil || d < best!.distance { best = (seat, d) }
         }
         guard let chosen = best, chosen.distance < 0.16, let racket = contactRackets[chosen.seat] else { return .zero }
@@ -730,17 +1050,31 @@ final class CrossScene: SKScene {
         let physics = unpanned(stroke.point, stroke.height)
         return CGPoint(x: Double(racket.x - physics.x) * weight, y: Double(racket.y - physics.y) * weight)
     }
-    private func renderBall() {
-        let state = engine.ballState
+    /// Android `renderedBallPoint`: where the ball is drawn (base view coordinates, the contact offset included).
+    func renderedBallPoint() -> CGPoint {
+        let b = screen(engine.renderBallPosition, engine.renderHeight), o = ballOffset()
+        return CGPoint(x: b.x + o.x, y: b.y + o.y)
+    }
+    /// Android drawBall at `depth` (its shadow, the net flash, the ball and the edge arrow in Android's order). Android 5375378: no
+    /// ball before a serve swing (`ballVisible`), none under the tabletop, and the loose ball's height below the table plane uses
+    /// the linear branch of `lift`.
+    private func renderBall(depth: Double) {
         let ground = engine.renderBallPosition
-        let h = state.height
+        let h = engine.renderHeight
+        guard engine.ballVisible, !(h < 0 && g.onTable(ground)) else {
+            for node in [ballShadow, ballNode, ballShine, netFlash, arrowNode] { node.isHidden = true }
+            return
+        }
+        ballShadow.zPosition = CGFloat(depth); netFlash.zPosition = CGFloat(depth + 0.01)
+        ballNode.zPosition = CGFloat(depth + 0.02); ballShine.zPosition = CGFloat(depth + 0.025); arrowNode.zPosition = CGFloat(depth + 0.03)
+        ballNode.isHidden = false; ballShine.isHidden = false
         let unit = sizeAt(ground)
-        let radius = unit * CrossScene.ballSize * (1 + min(h, 0.4) * 0.35)
+        let radius = unit * CrossScene.ballSize * (1 + h.mpClamp(0, 0.4) * 0.35)
         let offset = ballOffset()
         let lifted = unpanned(ground, h)
         let s = sk(unpanned(ground)), b = sk(CGPoint(x: lifted.x + offset.x, y: lifted.y + offset.y))
-        let raised = min(h, 1.5) / 1.5
-        if g.onTable(ground) {
+        let raised = h.mpClamp(0, 1.5) / 1.5
+        if h >= 0 && g.onTable(ground) {
             ballShadow.isHidden = false
             ballShadow.position = CGPoint(x: s.x + CGFloat(radius * 0.15), y: s.y - CGFloat(radius * 0.2))
             ballShadow.xScale = CGFloat(radius * (1 + raised * 0.6)); ballShadow.yScale = CGFloat(radius * (0.5 + raised * 0.25))
@@ -756,10 +1090,9 @@ final class CrossScene: SKScene {
         ballNode.position = b; ballNode.setScale(CGFloat(max(0.5, radius)))
         ballNode.lineWidth = CGFloat(0.8 / max(0.5, radius))
         ballShine.position = CGPoint(x: b.x - CGFloat(radius * 0.3), y: b.y + CGFloat(radius * 0.35)); ballShine.setScale(CGFloat(max(0.2, radius * 0.35)))
-        // A ball outside the visible area gets a small edge arrow pointing to it.
-        let onScreen = screen(ground, h)
+        // A ball outside the visible area gets a small edge arrow pointing to it (Android: from the drawn ball, inside the camera).
         let inset = 14.0
-        let bx = Double(onScreen.x), by = Double(onScreen.y)
+        let bx = Double(lifted.x + offset.x) - pan, by = Double(lifted.y + offset.y) - panY
         if bx < 0 || bx > width || by < 0 || by > height {
             let ex = bx.mpClamp(inset, width - inset), ey = by.mpClamp(inset, height - inset)
             let angle = atan2(by - ey, bx - ex)
@@ -784,13 +1117,40 @@ final class CrossScene: SKScene {
         guard let local = engine.localSeat, engine.seats[local].characterId.trimmingCharacters(in: .whitespaces).isEmpty else { paddleNode.isHidden = true; return }
         let stroke = engine.stroke(local)
         let at = engine.paddle ?? engine.restingPaddle
-        let contact = stroke.active && stroke.contacted && stroke.age < stroke.impactAt + 0.07
-        let p = contact ? stroke.point : at
+        // Android d0bed3b `CrossPaddlePose`: after the impact the paddle eases from the contact back to the player's stance.
+        let pose = CrossPaddlePose.at(stroke, at)
+        let p = pose.point
         paddleNode.isHidden = false
-        paddleNode.position = sk(unpanned(p, contact ? stroke.height : 0))
+        paddleNode.position = sk(unpanned(p, pose.height))
         paddleNode.setScale(CGFloat(max(1, sizeAt(p) * 0.09)))
         let degrees = UIAccessibility.isReduceMotionEnabled ? 0 : engine.paddleTilt + stroke.angle
         paddleNode.zRotation = CGFloat(-degrees * Double.pi / 180)
+    }
+    /// Android 3b52d51 `SunsetTerrace.foreground(this, canvas)`: after the camera's content and before the tags, the terrace's
+    /// foreground foliage is drawn again over the court, unzoomed. The terrace (`MPXSunsetBackground`) aspect-fills the whole
+    /// window, top aligned and horizontally centred; this scene finds its own place in the window and draws that painting's
+    /// foliage at the same spot. Rebuilt only when the scene moves or resizes.
+    private func renderForeground() {
+        guard let view, let window = view.window, window.bounds.width > 0, window.bounds.height > 0 else { foliageCrop.isHidden = true; return }
+        let frame = view.convert(view.bounds, to: nil), terrace = window.bounds.size
+        if frame == foliageFrame && terrace == foliageWindow && !foliageCrop.isHidden { return }
+        foliageFrame = frame; foliageWindow = terrace
+        let landscape = terrace.width > terrace.height
+        guard let image = UIImage(named: landscape ? "mpx_sunset_landscape" : "mpx_sunset_portrait"), image.size.width > 0, image.size.height > 0 else {
+            foliageCrop.isHidden = true; return
+        }
+        let cover = max(terrace.width / image.size.width, terrace.height / image.size.height)
+        let w = image.size.width * cover, h = image.size.height * cover
+        // The painting's rectangle in this scene's view coordinates (y down).
+        let destination = CGRect(x: (terrace.width - w) / 2 - frame.minX, y: -frame.minY, width: w, height: h)
+        let skMask = CGMutablePath()
+        skMask.addPath(MPXTerraceFoliage.path(portrait: !landscape, in: destination), transform: CGAffineTransform(a: 1, b: 0, c: 0, d: -1, tx: 0, ty: size.height))
+        foliageMask.path = skMask
+        foliage.texture = SKTexture(image: image)
+        foliage.texture?.filteringMode = .linear
+        foliage.size = CGSize(width: w, height: h)
+        foliage.position = sk(CGPoint(x: destination.midX, y: destination.midY))
+        foliageCrop.isHidden = false
     }
     /// Android 7254ab2: light seat colours (Gaya's yellow and green) are darkened to 60 % so the white names stay readable.
     private func tagColor(_ seat: Int) -> UIColor {
@@ -803,9 +1163,9 @@ final class CrossScene: SKScene {
         let c = CrossScene.seatColors[colorIndex(seat) % CrossScene.seatColors.count]
         return UIColor(red: CGFloat(c.0 / 255), green: CGFloat(c.1 / 255), blue: CGFloat(c.2 / 255), alpha: CGFloat(alpha / 255))
     }
-    /// Base view point (pan included) → painted view point (reception zoom).
+    /// Base view point (pan included) → painted view point (the close camera's zoom).
     private func painted(_ unpannedPoint: CGPoint) -> CGPoint {
-        receptionCamera.painted(CGPoint(x: Double(unpannedPoint.x) - pan, y: Double(unpannedPoint.y) - panY))
+        courtCamera.painted(CGPoint(x: Double(unpannedPoint.x) - pan, y: Double(unpannedPoint.y) - panY))
     }
     /// Name (and, individually, score) next to every player, with a server marker and floating +1/−1 notes. The badges sit above
     /// the drawn heads; a side player on the right has it below, a far head near the score strip has it beside.
@@ -832,7 +1192,10 @@ final class CrossScene: SKScene {
             let boxWidth = Double(tag.label.frame.width) + 16
             var badge = at
             if homeView.y < -0.45, Double(at.y) < minimumY, let box = bodyBounds[s] {
-                badge = painted(CGPoint(x: Double(box.minX) - boxWidth / 2 - 10, y: Double(box.minY) + 22))
+                // Android 9862dc6: the central far badge shares the left neighbour's head row, so it goes to the right of its head;
+                // genuinely left-hand seats keep their outside-left badge.
+                let left = homeView.x < -0.05
+                badge = painted(CGPoint(x: left ? Double(box.minX) - boxWidth / 2 - 10 : Double(box.maxX) + boxWidth / 2 + 10, y: Double(box.minY) + 22))
             }
             let x = Double(badge.x).mpClamp(boxWidth / 2 + 2, max(boxWidth / 2 + 2, width - boxWidth / 2 - 2))
             let y = Double(badge.y).mpClamp(minimumY, max(minimumY, height - 12))
@@ -905,12 +1268,15 @@ final class CrossScene: SKScene {
             guard members.first == s else { board.hide(); continue }
             board.box.isHidden = false; board.name.isHidden = false; board.score.isHidden = false; board.outline.isHidden = true
             let x = gap + Double(index) * (w + gap), y = 6.0
-            board.box.path = CrossScene.rounded(CGRect(x: x, y: height - (y + h), width: max(1, w), height: h), 12)
+            // Android dd94c09: each team box (and its highlight) reaches 4 pt further down; the texts keep their places.
+            let bottomPadding = 4.0
+            board.box.path = CrossScene.rounded(CGRect(x: x, y: height - (y + h + bottomPadding), width: max(1, w), height: h + bottomPadding), 12)
             let now = CACurrentMediaTime()
             board.showFlash(members.lazy.compactMap { self.scoreFeedback.color($0, now: now) }.first)
             let c = CrossScene.seatColors[ids[index] % CrossScene.seatColors.count]
             board.box.fillColor = UIColor(red: CGFloat(c.0 / 255), green: CGFloat(c.1 / 255), blue: CGFloat(c.2 / 255), alpha: 1)
-            let title = members.map { $0 < names.count ? names[$0] : engine.seats[$0].name }.joined(separator: hebrew ? " ו־" : " and ")
+            // iOS (2026-11-10, owner decision): the joining word in every app language (MPTextIOS; Android: English or Hebrew).
+            let title = members.map { $0 < names.count ? names[$0] : engine.seats[$0].name }.joined(separator: MPText.t(" and ", " ו־", hebrew))
             board.name.text = title
             var font = 13.0
             board.name.fontSize = CGFloat(font)
@@ -962,10 +1328,10 @@ final class CrossScene: SKScene {
     }
 
     // ---- input --------------------------------------------------------------------------------------
-    /// The touch in base view coordinates: the reception zoom is undone, as Android transforms the MotionEvent.
+    /// The touch in base view coordinates: the close camera's zoom is undone, as Android transforms the MotionEvent.
     private func viewPoint(_ touch: UITouch) -> CGPoint {
         let p = touch.location(in: self)
-        return receptionCamera.base(CGPoint(x: p.x, y: size.height - p.y))
+        return courtCamera.base(CGPoint(x: p.x, y: size.height - p.y))
     }
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard acceptsInput, activeTouch == nil, let touch = touches.first else { return }
@@ -973,13 +1339,24 @@ final class CrossScene: SKScene {
         let p = viewPoint(touch)
         downPoint = p
         samples = [(touch.timestamp, p)]
+        let serving = engine.localSeat.map { engine.referee.mayServe($0) } ?? true
+        standardGesture = (engine.control == .starter || engine.control == .standard) && !serving && !engine.receivingSet && !engine.tapTargets
+        standardDragged = false; standardStarted = false; standardAiming = engine.canAimReturn()
+        // A drag starting on the visible local body remains footwork even when its head or shoulder overlaps a selectable table
+        // area; on a raised ball it is the smash.
+        let visibleBall = renderedBallPoint()
+        let startsOnBall = hypot(Double(p.x - visibleBall.x), Double(p.y - visibleBall.y)) < max(44, scale * 0.16)
+        practiceDrag = engine.tapTargets && !(engine.receivingSet && startsOnBall) && !serving && bodyBounds[viewSeat]?.contains(p) == true
+        standardAnchor = engine.restingPaddle; aimStartX = Double(p.x)
+        let anchor = g.toView(viewSeat, standardAnchor)
+        standardWidth = max(1, abs(Double(screen(g.fromView(viewSeat, MPPoint(anchor.x + 1, anchor.y))).x - screen(standardAnchor).x)))
         // Team play: a second quick tap near the first arms one raised pass to the teammate.
         raisedTap = false
         if engine.teams != nil {
             let gap = touch.timestamp - lastTapAt
-            raisedTap = gap > 0.001 && gap <= 0.280 && hypot(p.x - lastTapPoint.x, p.y - lastTapPoint.y) < 56 && engine.liftToTeammate()
+            raisedTap = gap >= 0.001 && gap <= CrossScene.doubleTapTimeout && hypot(p.x - lastTapPoint.x, p.y - lastTapPoint.y) < 56 && engine.liftToTeammate()
         }
-        send(p, down: !raisedTap)
+        send(p, down: true)
     }
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard acceptsInput, let touch = activeTouch, touches.contains(touch) else { return }
@@ -996,7 +1373,7 @@ final class CrossScene: SKScene {
             samples.append((touch.timestamp, p))
             if hypot(p.x - downPoint.x, p.y - downPoint.y) < 12 { lastTapAt = raisedTap ? -1000 : touch.timestamp; lastTapPoint = p }
             else { lastTapAt = -1000 }
-            send(p, down: false)
+            send(p, down: false, up: true)
             engine.endTouch(cancelled: false)
         }
         activeTouch = nil; samples = []
@@ -1004,7 +1381,7 @@ final class CrossScene: SKScene {
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) { cancelTouch() }
     func cancelTouch() {
         if activeTouch != nil { engine.release() }
-        activeTouch = nil; samples = []
+        activeTouch = nil; samples = []; practiceDrag = false
     }
     /// Android VelocityTracker: the finger's speed over the last few samples, in points per second.
     private func fingerVelocity() -> CGVector {
@@ -1014,24 +1391,68 @@ final class CrossScene: SKScene {
         let dt = CGFloat(last.time - first.time)
         return CGVector(dx: (last.point.x - first.point.x) / dt, dy: (last.point.y - first.point.y) / dt)
     }
-    private func send(_ p: CGPoint, down: Bool) {
-        // A finger on the drawn ball means the simulated ball (the contact arc only moves the picture).
-        let rawBall = screen(engine.renderBallPosition, engine.ballState.height)
+    private func send(_ p: CGPoint, down: Bool, up: Bool = false) {
+        // Android 971e958: the second tap armed a set; it keeps the current footwork and aim.
+        if raisedTap { return }
+        if standardGesture { standardTouch(p, down: down, up: up); return }
+        // Android 5375378: a finger on the airborne ball (nearer to the drawn ball than to its ground point) is a touch at the ball's
+        // world position, not at the farther table surface behind it; the drag and aim displacement are kept.
+        let rawBall = screen(engine.renderBallPosition, engine.renderHeight)
         let offset = ballOffset()
+        let groundBall = screen(engine.ballPosition)
+        let visibleDistance = hypot(Double(p.x - rawBall.x - offset.x), Double(p.y - rawBall.y - offset.y))
         let touchingBall = engine.predictedReceiver == engine.localSeat &&
-            hypot(Double(p.x - rawBall.x - offset.x), Double(p.y - rawBall.y - offset.y)) < max(44, scale * 0.16)
-        let point = touchingBall ? world(Double(p.x - offset.x), Double(p.y - offset.y)) : world(Double(p.x), Double(p.y))
+            visibleDistance < max(44, scale * 0.16) && visibleDistance < hypot(Double(p.x - groundBall.x), Double(p.y - groundBall.y))
+        let projected = touchingBall ? world(Double(groundBall.x + p.x - rawBall.x - offset.x), Double(groundBall.y + p.y - rawBall.y - offset.y))
+            : world(Double(p.x), Double(p.y))
+        // Android c93e760/6fcb446/971e958: learners drag the visible player, whose feet are below the table: a drag from the body
+        // walks it sideways from where it stood; any other touch below the far strike edge is projected onto the legal racket
+        // depth (up to the footwork reach). Other courts still select aim; the smash keeps its swept ball gesture.
+        let serving = engine.localSeat.map { engine.referee.mayServe($0) } ?? true
+        let point: MPPoint
+        if practiceDrag {
+            let at = g.toLocal(viewSeat, standardAnchor)
+            point = g.fromLocal(viewSeat, (at.u + Double(p.x - downPoint.x) / standardWidth).mpClamp(-CrossGeometry.strikeHalf, engine.localFootworkRight), at.v)
+        } else if engine.tapTargets && !serving {
+            let at = g.toLocal(viewSeat, projected)
+            point = at.v >= CrossGeometry.strikeNear ? g.fromLocal(viewSeat, at.u.mpClamp(-CrossGeometry.strikeHalf, engine.localFootworkRight),
+                                                                    at.v.mpClamp(CrossGeometry.strikeNear, CrossGeometry.strikeFar)) : projected
+        } else { point = projected }
         let here = g.toView(viewSeat, point)
         let unit = max(1, scale * k(here.y))
         let finger = fingerVelocity()
         let velocity = MPPoint(Double(finger.dx) / unit, Double(finger.dy) / (unit * tilt))
         let drag = MPPoint(Double(p.x - downPoint.x), Double(p.y - downPoint.y))
+        if practiceDrag && engine.receivingSet { engine.moveOnly(point); return }
         engine.touch(point, drag: drag, velocity: velocity, down: down)
+    }
+    /// Android fcfd6b2/d0bed3b `standardTouch` (base view points, y down).
+    private func standardTouch(_ p: CGPoint, down: Bool, up: Bool) {
+        if down { return } // distinguish a tap from footwork first
+        standardDragged = standardDragged || hypot(p.x - downPoint.x, p.y - downPoint.y) > 12
+        let finger = fingerVelocity()
+        if standardDragged {
+            if !standardAiming && engine.canAimReturn() { standardAiming = true; aimStartX = Double(p.x) }
+            if standardAiming {
+                let speed = hypot(Double(finger.dx), Double(finger.dy)) / standardWidth
+                // Keep the stance for the whole aiming gesture, including its follow-through.
+                if !standardStarted { standardStarted = engine.aimReturn(drag: Double(p.x) - aimStartX, speed: speed, start: true) }
+                else { engine.aimReturn(drag: Double(p.x) - aimStartX, speed: speed, start: false) }
+            } else {
+                let anchor = g.toView(viewSeat, standardAnchor)
+                let u = (anchor.x + Double(p.x - downPoint.x) / standardWidth).mpClamp(-CrossGeometry.strikeHalf, CrossGeometry.strikeHalf)
+                engine.moveOnly(g.fromView(viewSeat, MPPoint(u, anchor.y.mpClamp(CrossGeometry.strikeNear, CrossGeometry.strikeFar))))
+            }
+        } else if up {
+            // A single tap returns from the current stance; no teleport to the tapped pixel. The court it lifted on is its target.
+            engine.aimReturn(drag: 0, speed: 0, start: true, target: world(Double(p.x), Double(p.y)))
+        }
     }
 }
 
-/// One player's sprites: a floor shadow and the body clipped to the space outside the table, the upper body over the tabletop
-/// (facing players) and an unclipped body (the local player seen from behind).
+/// One player's sprites: a floor shadow clipped to the space outside the table, the body clipped to the space outside the table
+/// (a far player: outside the table and its rim), what crosses the tabletop (a side player's upper body, a far player's traced
+/// hands and paddle) and an unclipped body (the local player seen from behind).
 private final class CrossActorNodes {
     let crop = SKCropNode(), mask = SKShapeNode()
     let shadowCrop = SKCropNode(), shadowMask = SKShapeNode(), shadow = SKShapeNode()
@@ -1045,7 +1466,7 @@ private final class CrossActorNodes {
         upperCrop.maskNode = upperMask; upperCrop.addChild(upper)
         parent.addChild(shadowCrop); parent.addChild(crop); parent.addChild(upperCrop); parent.addChild(free)
     }
-    func setMask(_ path: CGPath) { mask.path = path; shadowMask.path = path }
+    func setMasks(body: CGPath, shadow: CGPath) { mask.path = body; shadowMask.path = shadow }
     func setDepth(_ z: Double) {
         shadowCrop.zPosition = CGFloat(z); crop.zPosition = CGFloat(z + 0.01); upperCrop.zPosition = CGFloat(z + 0.02); free.zPosition = CGFloat(z + 0.03)
     }

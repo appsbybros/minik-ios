@@ -255,7 +255,8 @@ struct MPXTeamVictory: View {
                 }
             }
         }
-        .accessibilityLabel(MPText.language == "he" ? "חברי הקבוצה חוגגים יחד" : "Your teammates celebrate together")
+        // iOS (2026-11-10, owner decision): in every app language (MPTextIOS; Android: English or Hebrew).
+        .accessibilityLabel(MPText.t("Your teammates celebrate together", "חברי הקבוצה חוגגים יחד", MPText.language == "he"))
     }
 }
 
@@ -270,12 +271,12 @@ struct MPXReceptionSettings: View {
     private func tr(_ en: String, _ he: String) -> String { MPText.t(en, he, hebrew) }
     var body: some View {
         VStack(spacing: 8) {
-            // Android 7254ab2: a rounded light-blue +/− expander.
+            // Android 7254ab2: a rounded light-blue +/− expander. Android b58f0d5: 16 pt above it; 6fcb446: its label 18 → 19.
             Button { open.toggle() } label: {
-                Text((open ? "−  " : "+  ") + tr("Ball assistance", "עזרה בקבלת הכדור")).font(.system(size: 18, weight: .semibold)).foregroundStyle(MPXMenu.deepInk)
+                Text((open ? "−  " : "+  ") + tr("Ball assistance", "עזרה בקבלת הכדור")).font(.system(size: 19, weight: .semibold)).foregroundStyle(MPXMenu.deepInk)
                     .multilineTextAlignment(.center).padding(.horizontal, 12).padding(.vertical, 10).frame(maxWidth: .infinity, minHeight: 56)
                     .background(Color(red: 0xc4 / 255, green: 0xe5 / 255, blue: 1), in: RoundedRectangle(cornerRadius: 10))
-            }.buttonStyle(.plain)
+            }.buttonStyle(.plain).padding(.top, MPSpacing.actionTop)
             if open {
                 VStack(alignment: .leading, spacing: 10) {
                     toggle(tr("Zoom in for my return", "מיקוד המצלמה לקראת החבטה שלי"), $zoom) { preferences.receptionZoom = $0 }
@@ -316,12 +317,14 @@ struct MPXReceptionSettings: View {
     func stop() { player?.stop(); player = nil }
 }
 
-/// Colours of `MPXGuideCard` (Android GuideDialog 47ad0c9): ink, the blue title, Back #E91E63 and the light blue Next.
+/// Colours of `MPXGuideCard` (Android GuideDialog 47ad0c9, CrossActivity d0bed3b): ink, the blue title, Back #E91E63, the green
+/// (#58BD8C) Next, and the light blue (#B8D9FF) of Show me and Learn team play.
 enum MPXGuideStyle {
     static let ink = Color(red: 35 / 255, green: 57 / 255, blue: 76 / 255)
     static let heading = Color(red: 29 / 255, green: 112 / 255, blue: 176 / 255)
     static let backFill = Color(red: 233 / 255, green: 30 / 255, blue: 99 / 255)
-    static let nextFill = Color(red: 133 / 255, green: 215 / 255, blue: 1)
+    static let nextFill = Color(red: 0x58 / 255, green: 0xbd / 255, blue: 0x8c / 255)
+    static let blueFill = Color(red: 0xb8 / 255, green: 0xd9 / 255, blue: 1)
 }
 
 /// One button of `MPXGuideCard`.
@@ -334,7 +337,8 @@ struct MPXGuideAction {
 
 /// Android GuideDialog (MinikCrossPong 47ad0c9): a light card with its title, the Minik close (X) artwork at the top end, a
 /// paragraph from the reading edge, full-width secondary actions, and Back / Next in one row at the bottom (mirrored for right
-/// to left). The X closes at once. Help cards have only the X.
+/// to left). The X closes at once. Help cards have only the X. Android d0bed3b `navigationCount`: the bottom row holds only the
+/// navigation that exists (one action fills it) and is left out without any; b58f0d5: 16 pt above it.
 struct MPXGuideCard: View {
     let title: String
     let message: String
@@ -359,7 +363,7 @@ struct MPXGuideCard: View {
                 HStack(spacing: 12) {
                     if let back { button(back) }
                     if let next { button(next) }
-                }.padding(.top, 12)
+                }.padding(.top, MPSpacing.actionTop)
             }
         }
         .padding(.horizontal, 16).padding(.top, 12).padding(.bottom, 16)
@@ -377,7 +381,8 @@ struct MPXGuideCard: View {
     }
     private func button(_ item: MPXGuideAction) -> some View {
         Button(action: item.action) {
-            Text(item.title).font(.system(size: 16, weight: .bold)).foregroundStyle(item.ink).multilineTextAlignment(.center)
+            // Android 6fcb446 PongButton: word labels one size larger (16 → 17).
+            Text(item.title).font(.system(size: 17, weight: .bold)).foregroundStyle(item.ink).multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true).padding(12).frame(maxWidth: .infinity, minHeight: 52)
                 .background(item.fill, in: RoundedRectangle(cornerRadius: 14))
         }.buttonStyle(.plain)

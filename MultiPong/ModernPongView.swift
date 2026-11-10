@@ -81,15 +81,17 @@ import SpriteKit
         ZStack {
             if model.experience == .simple { MPIllustratedBackground().ignoresSafeArea() }
             // Android SunsetTerrace: the integrated menu painting on the home, the evening terrace elsewhere.
-            else { MPXSunsetBackground(menu: model.route == .menu && !creatingSetup).ignoresSafeArea() }
+            else { MPXSunsetBackground(menu: model.route == .menu && !creatingSetup && !model.loadingMatch).ignoresSafeArea() }
             VStack(spacing: 0) {
                 if !ownBar { header }
                 // Android 1dbfe33: a room match's result card shows over its court, which stays the same view.
                 if model.route == .game || roomResult != nil { game }
                 else {
                     switch model.route {
-                    case .menu: if creatingTournament { tournamentOptions } else if creatingFriendly { friendlyOptions } else { menu }
-                    case .lobby: lobby
+                    case .menu:
+                        if model.loadingMatch { matchLoading }
+                        else if creatingTournament { tournamentOptions } else if creatingFriendly { friendlyOptions } else { menu }
+                    case .lobby: if model.loadingMatch { matchLoading } else { lobby }
                     case .guide: guide
                     case .game, .result: result
                     case .cross: crossGame
@@ -99,6 +101,7 @@ import SpriteKit
                 }
             }
             if let room = roomResult { roomResultCard(room.0, room.1) }
+            if let prompt = model.roomExitPrompt { roomExitCard(prompt) }
             if let toast = model.toast {
                 VStack { Spacer(); Text(toast).font(.callout.bold()).foregroundStyle(.white).multilineTextAlignment(.center).padding(12)
                     .background(Color.black.opacity(0.75), in: Capsule()).padding(.bottom, 36) }
@@ -110,11 +113,6 @@ import SpriteKit
             // Android VictoryConfetti: brief and noninteractive; a new celebration restarts it.
             if let celebration = model.celebration { MPVictoryConfetti().id(celebration) }
         }
-        .confirmationDialog(t("Save this tournament?", "לשמור את הטורניר?"), isPresented: $model.tournamentExitPrompt, titleVisibility: .visible) {
-            Button(t("Save", "שמירה")) { model.keepTournament() }
-            Button(t("Don't save", "לא לשמור"), role: .destructive) { model.discardTournament() }
-            Button(t("Cancel", "ביטול"), role: .cancel) {}
-        } message: { Text(tournamentExitMessage) }
         .foregroundStyle(MPStyle.ink).preferredColorScheme(.light)
         .task {
             await model.start(hebrew: he, removeAds: false)
@@ -138,13 +136,56 @@ import SpriteKit
         // Last, so the alert and the sheets read right to left too (Android LocalizedActivity / GuideDialog: `AppText.rtl`).
         .environment(\.layoutDirection, MPText.rtl ? .rightToLeft : .leftToRight)
     }
-    private var tournamentExitMessage: String {
-        guard let s = model.session else { return "" }
-        return MPRules.canDelete(s, actor: model.userID)
-            ? t("Save to continue later. Don't save deletes this tournament and its matches.", "שמרו כדי להמשיך מאוחר יותר. ללא שמירה, הטורניר והמשחקים שלו יימחקו.")
-            : t("Save to continue later. Don't save leaves the tournament; other players can continue.", "שמרו כדי להמשיך מאוחר יותר. ללא שמירה, תעזבו את הטורניר והשחקנים האחרים יוכלו להמשיך.")
+    /// Android 5375378 PlayActivity.showMatchLoading: the page titled "Loading…" (3f13c40, six languages) with a 48 pt spinner
+    /// 24 pt below its bar.
+    private var matchLoading: some View {
+        VStack(spacing: 0) {
+            ProgressView().controlSize(.large).frame(width: 48, height: 48).padding(.top, 24)
+                .accessibilityLabel(t("Loading…", "טוענים…"))
+            Spacer(minLength: 0)
+        }.frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    /// Android 83b050d / 9adf1f1 PlayActivity.confirmRoomExit: a light rounded card (246, 248, 255; corner 22) at most 460 pt wide
+    /// on a dimmed screen, which an outside tap does not close: the bold centred question, the explanation chosen for this room,
+    /// and three full-width actions, green Save and exit, pink Exit without saving, blue Stay. Only "Save and exit" has an Android
+    /// catalog row (Android shows the rest in English in Spanish, Arabic, Hindi and Dutch); iOS translates the rest (MPTextIOS).
+    private func roomExitCard(_ prompt: MPRoomExitPrompt) -> some View {
+        let message: String
+        switch prompt.message {
+        case .keepsEarlierEntry:
+            message = t("Your earlier saved entry will be kept. Shared online play continues; other players' progress is not rolled back.", "הרשומה השמורה הקודמת תישמר. המשחק המקוון המשותף ממשיך; ההתקדמות של שחקנים אחרים לא תבוטל.")
+        case .discardsChanges:
+            message = t("Exit without saving discards only your changes since the last save. Your earlier save will be kept.", "יציאה ללא שמירה תבטל רק את השינויים מאז השמירה האחרונה. השמירה הקודמת תישמר.")
+        case .neverSaved:
+            message = t("This has never been saved. Exit without saving removes it.", "המשחק או הטורניר הזה עדיין לא נשמר. יציאה ללא שמירה תסיר אותו.")
+        }
+        let panel = VStack(spacing: gap) {
+            Text(t("Are you sure you want to delete?", "למחוק את השינויים שלא נשמרו?")).font(.system(size: 22, weight: .bold))
+                .multilineTextAlignment(.center).frame(maxWidth: .infinity)
+            Text(message).font(.system(size: 17)).multilineTextAlignment(.leading).frame(maxWidth: .infinity, alignment: .leading)
+            // Android 63466d8: each action is 16 pt below the text or action above it (the actions keep 12 pt below).
+            action(t("Save and exit", "שמירה ויציאה"), color: FamilyKit.color(0xff83dfad)) { model.roomExitSave() }.padding(.top, MPSpacing.actionTop - gap)
+            action(t("Exit without saving", "יציאה ללא שמירה"), color: MPStyle.pink) { model.roomExitDiscard() }.foregroundStyle(.white).padding(.top, MPSpacing.actionTop)
+            action(t("Stay", "להישאר"), color: MPStyle.blue) { model.roomExitStay() }.padding(.top, MPSpacing.actionTop)
+        }
+        .padding(.horizontal, 22).padding(.vertical, 18)
+        .background(Color(red: 246 / 255, green: 248 / 255, blue: 1), in: RoundedRectangle(cornerRadius: 22))
+        return GeometryReader { geo in
+            ZStack {
+                Color.black.opacity(0.6).ignoresSafeArea()
+                ViewThatFits(in: .vertical) {
+                    panel
+                    ScrollView { panel }
+                }
+                .frame(width: max(0, min(460, geo.size.width - 32)))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .accessibilityAddTraits(.isModal)
     }
     private var caption: String {
+        // Android 5375378 page(tr("Loading…", "טוענים…")).
+        if model.loadingMatch && (model.route == .menu || model.route == .lobby) { return t("Loading…", "טוענים…") }
         switch model.route {
         case .menu:
             if model.experience == .simple { return "MINIK Ping Pong" }
@@ -164,7 +205,7 @@ import SpriteKit
         // Android PlayActivity.page(mainMenu) (18cd99d, a247226): the home title sits on the painted sky, without a bar, on one
         // line above the illustrated players (24 pt, shrinking to 16 pt on narrow screens), with a navy edge so the sunrise
         // cannot wash it out.
-        let home = model.route == .menu && model.experience != .simple && !creatingSetup
+        let home = model.route == .menu && model.experience != .simple && !creatingSetup && !model.loadingMatch
         return ZStack {
             Text(caption).font(.system(size: 24, weight: .bold, design: .rounded)).multilineTextAlignment(.center)
                 .lineLimit(home ? 1 : nil).minimumScaleFactor(home ? 16 / 24 : 1)
@@ -313,9 +354,16 @@ import SpriteKit
         VStack(spacing: 14) {
             formTitle(t("Control difficulty", "רמת השליטה"))
             Picker(t("Control difficulty", "רמת השליטה"), selection: $model.level) {
-                Text(t("Beginner", "מתחילים")).tag(MPLevel.beginner)
-                Text(t("Standard", "רגילה")).tag(MPLevel.easy)
-                Text(t("Pro", "מקצועני")).tag(MPLevel.superHard)
+                if model.experience == .simple {
+                    Text(t("Beginner", "מתחילים")).tag(MPLevel.beginner)
+                    Text(t("Standard", "רגילה")).tag(MPLevel.easy)
+                    Text(t("Pro", "מקצועני")).tag(MPLevel.superHard)
+                } else {
+                    // Android b0cdeb3 PlayActivity `controlValues` 4, 1, 0, 3 with `ControlChoice.title`: Beginner, Starter, Standard, Pro.
+                    ForEach(MPControlChoice.values, id: \.self) { value in
+                        Text(MPControlChoice.title(value, hebrew: he)).tag(MPLevel.control(value))
+                    }
+                }
             }.pickerStyle(.segmented).onChange(of: model.level) { _, _ in model.saveControls() }
             Text(controlHint).font(.callout).multilineTextAlignment(model.experience == .simple ? .center : .leading)
                 .frame(maxWidth: .infinity, alignment: model.experience == .simple ? .center : .leading)
@@ -330,8 +378,9 @@ import SpriteKit
             if model.level.automaticContact { return t("Beginner: move into place for an automatic hit; a small sideways swipe aims it. Opponent skill comes from your chosen house player.", "מתחילים: מזיזים את המחבט למקום לחבטה אוטומטית; החלקה קטנה הצידה מכוונת אותה. יכולת היריב נקבעת לפי שחקן הבית שתבחרו.") }
             return model.level.pro ? t("Pro: precise timing and power. Opponent skill comes from your chosen house player.", "מקצועני: תזמון ועוצמה מדויקים. יכולת היריב נקבעת לפי שחקן הבית שתבחרו.") : t("Standard: tap or swipe; faster swipes add power. Opponent skill comes from your chosen house player.", "רגילה: מקישים או מחליקים; החלקה מהירה מוסיפה עוצמה. יכולת היריב נקבעת לפי שחקן הבית שתבחרו.")
         }
-        // Android 7254ab2 createForm: only the selected level is explained (R.string.control_*_only).
+        // Android 7254ab2 createForm: only the selected level is explained (R.string.control_*_only; b0cdeb3 control_starter_only).
         if model.level.automaticContact { return MPText.issue("Beginner: move your paddle to the ball for an automatic return. Swipe left or right to choose a target.") }
+        if model.level == .medium { return MPText.issue("Starter: move into reach, then tap or swipe to aim. You have a longer window to return the ball.") }
         return model.level.pro ? MPText.issue("Pro: use a well-timed swipe to control direction and power.")
             : MPText.issue("Standard: move into position, then tap or swipe to return. Faster swipes add power.")
     }
@@ -419,13 +468,13 @@ import SpriteKit
                     }.buttonStyle(.plain).accessibilityLabel(avatarName(index))
                 }
             }
-            // Android 7254ab2: 24 pt above Save and 16 pt below it.
+            // Android 63466d8: the shared 16 pt above Save (was 24) and 16 pt below it.
             action(t("Save nickname & avatar", "שמירת הכינוי והדמות"), color: MPStyle.mint) {
                 Task {
                     await model.profile(index: nicknameIndex, avatar: avatarIndex, character: avatarCharacter)
                     if model.error == nil { profileSaved = true }
                 }
-            }.disabled(!model.connected).padding(.top, 24 - gap).padding(.bottom, 16 - gap)
+            }.disabled(!model.connected).padding(.top, MPSpacing.actionTop - gap).padding(.bottom, 16 - gap)
             if profileSaved { Text(t("Nickname and avatar saved", "הכינוי והדמות נשמרו")).font(.callout.bold()) }
         }
     }
@@ -442,7 +491,9 @@ import SpriteKit
             formTitle(t("Room code", "קוד חדר"))
             TextField(t("6-character code", "קוד בן 6 תווים"), text: joinBinding(.tournament)).textInputAutocapitalization(.characters).autocorrectionDisabled()
                 .font(.title3.bold()).multilineTextAlignment(.center).textFieldStyle(.roundedBorder).environment(\.layoutDirection, .leftToRight)
+            // Android 63466d8: no space below the code field, the shared 16 pt above Join room.
             action(t("Join room", "הצטרפות לחדר"), color: MPStyle.blue) { Task { await model.join(.tournament, joinCodes[MPSessionKind.tournament.rawValue] ?? "") } }
+                .padding(.top, MPSpacing.actionTop - gap)
         }
     }
     /// Android 7254ab2 PlayActivity.tournamentOptions: the tournament settings with "Create room", then joining by code. The
@@ -484,6 +535,8 @@ import SpriteKit
                     Text(t("4 players · cross table", "4 שחקנים · שולחן משותף")).tag(4)
                 }
             }.pickerStyle(.menu).font(.headline)
+            // Android bb8acda: two tournament players use the classic table, which cannot be changed until there are more.
+            .disabled(tournament && tournamentTwoPlayers)
             if table > 2 {
                 // Game type: tables of 3 or 4 only (a pair always plays the classic game); a friendly game may also be team play.
                 formTitle(t("Game type", "סוג המשחק"))
@@ -504,12 +557,28 @@ import SpriteKit
             if team {
                 Text(t("Two against one or two against two. Choose the players and your teammate on the next screen.", "שניים מול אחד או שניים מול שניים. במסך הבא בוחרים שחקנים וחבר קבוצה."))
                     .multilineTextAlignment(.leading).frame(maxWidth: .infinity, alignment: .leading)
+                // Android 63466d8: 16 pt above each action.
                 action(t("Play with house players", "משחק עם שחקני בית"), color: MPStyle.mint) { model.openJourney(.teams, players: table) }
+                    .padding(.top, MPSpacing.actionTop - gap)
                 action(t("Create or join an online team game", "יצירה או הצטרפות למשחק קבוצתי ברשת"), color: MPStyle.mint) { model.openTeams(players: table) }
+                    .padding(.top, MPSpacing.actionTop)
             } else {
                 ordinaryForm(kind, table: table, settingsOnly: settingsOnly)
             }
         }
+        .onAppear { if tournament { keepTwoPlayersPaired() } }
+        .onChange(of: tournamentTwoPlayers) { _, _ in if tournament { keepTwoPlayersPaired() } }
+    }
+    /// Android bb8acda showChoices: the tournament's chosen number of players (round robin, or a knockout within its limit).
+    private var tournamentTotal: Int {
+        tournamentFormat == .knockout ? min(knockoutCapacity, tournamentTable == 2 ? MPKnockout.maxPairPlayers : MPKnockout.maxPlayers) : capacity
+    }
+    private var tournamentTwoPlayers: Bool { tournamentTotal == 2 }
+    /// Android bb8acda: choosing two players selects (and remembers) the classic table.
+    private func keepTwoPlayersPaired() {
+        guard tournamentTwoPlayers, tournamentTable != 2 else { return }
+        tournamentTable = 2
+        model.preferences.setTableSize(.tournament, 2)
     }
     /// The form below the game type: everything except team play's two entries.
     @ViewBuilder private func ordinaryForm(_ kind: MPSessionKind, table: Int, settingsOnly: Bool) -> some View {
@@ -529,9 +598,10 @@ import SpriteKit
                      : t("You have three open games. Choose Finish in one of Your games to make room for a new one.", "יש לכם שלושה משחקים פתוחים. בחרו סיום באחד מהמשחקים שלכם כדי לפנות מקום למשחק חדש."))
                     .multilineTextAlignment(.leading).frame(maxWidth: .infinity, alignment: .leading)
             }
-            // Android 7254ab2: a green Create.
+            // Android 7254ab2: a green Create. Android 63466d8: 16 pt above it (after a text, or after the points selector's 8 pt).
             action(tournament ? t("Create room", "יצירת חדר") : t("Create game", "יצירת משחק"), color: MPStyle.mint) { createRoom(kind) }
                 .disabled(!model.connected || model.busy)
+                .padding(.top, MPSpacing.actionTop - gap + (tournament || !model.online || !model.hasSpace(kind) ? 0 : 8))
             if !settingsOnly && !tournament {
                 MPXDivider()
                 formTitle(t("Or join with a code", "או הצטרפו באמצעות קוד"))
@@ -567,6 +637,7 @@ import SpriteKit
             // Android selector "Players" (catalog key) with its value.
             Stepper(t("Players", "שחקנים") + ": \(min(knockoutCapacity, limit))",
                     value: Binding(get: { min(knockoutCapacity, limit) }, set: { knockoutCapacity = $0; model.preferences.knockoutPlayers = $0 }), in: 2...limit).font(.headline)
+            if tournamentTwoPlayers { pairHelp }
             Text(table == 2 ? t("Pairs are drawn each round (a random bye when the number is odd); winners go through.", "בכל סיבוב מוגרלים זוגות (כשהמספר אי־זוגי, מישהו עולה בהגרלה ללא משחק); המנצחים עולים.")
                  : t("Any number of players: every round is split into tables of 4 and 3 (a table of 2 only when there is no other way, like 5 = 3 + 2). The players going through play the next round, until one champion is left.", "כל מספר של שחקנים: כל סיבוב מתחלק לשולחנות של 4 ושל 3 (שולחן של 2 רק כשאין ברירה, כמו 5 = 3 + 2). מי שעולים משחקים בסיבוב הבא, עד שנשאר אלוף אחד."))
                 .font(.footnote).multilineTextAlignment(.leading).frame(maxWidth: .infinity, alignment: .leading)
@@ -581,12 +652,21 @@ import SpriteKit
             }
         } else {
             Stepper(t("Players", "שחקנים") + ": \(capacity)", value: $capacity, in: 2...8).font(.headline)
-            Text(t("Tables of 3 or 4: every two players share at least one table and everyone plays about the same number of tables. Places earn points: 1st 3, 2nd 2, 3rd 1, 4th 0.", "שולחנות של 3 או 4: כל שני שחקנים נפגשים לפחות בשולחן אחד וכולם משחקים כמעט אותו מספר שולחנות. נקודות לפי מקום: ראשון 3, שני 2, שלישי 1, רביעי 0."))
-                .font(.footnote).multilineTextAlignment(.leading).frame(maxWidth: .infinity, alignment: .leading)
+            if tournamentTwoPlayers { pairHelp }
+            // Android bb8acda: the group-table explanation is hidden for pairs.
+            if table != 2 {
+                Text(t("Tables of 3 or 4: every two players share at least one table and everyone plays about the same number of tables. Places earn points: 1st 3, 2nd 2, 3rd 1, 4th 0.", "שולחנות של 3 או 4: כל שני שחקנים נפגשים לפחות בשולחן אחד וכולם משחקים כמעט אותו מספר שולחנות. נקודות לפי מקום: ראשון 3, שני 2, שלישי 1, רביעי 0."))
+                    .font(.footnote).multilineTextAlignment(.leading).frame(maxWidth: .infinity, alignment: .leading)
+            }
             formTitle(t("Play the whole schedule", "משחקים את כל התוכנית"))
             Picker(t("Play the whole schedule", "משחקים את כל התוכנית"), selection: $legs) { Text(t("Once", "פעם אחת")).tag(1); Text(t("Twice", "פעמיים")).tag(2) }.pickerStyle(.segmented)
             Stepper(t("Standings points per win (pairs)", "נקודות בטבלה לכל ניצחון (זוגות)") + ": \(winPoints)", value: $winPoints, in: 1...5).font(.headline)
         }
+    }
+    /// Android bb8acda `tournament-pair-help` (no catalog row: English outside Hebrew on Android; iOS translates it, MPTextIOS).
+    private var pairHelp: some View {
+        Text(t("Two players use the classic table.", "שני שחקנים משחקים בשולחן הקלאסי.")).font(.footnote)
+            .multilineTextAlignment(.leading).frame(maxWidth: .infinity, alignment: .leading)
     }
     private var advanceHelp: String {
         if advance != 2 { return t("Only the table's winner goes through.", "רק המקום הראשון בכל שולחן עולה.") }
@@ -637,9 +717,10 @@ import SpriteKit
             expandHeader(title, open: open, blue: entries.isEmpty, fill: MPXMenu.saved) { if !entries.isEmpty { toggle(key) } }
             if open {
                 ForEach(entries) { s in
+                    // Android 63466d8: every entry is a PlayActivity.button, 16 pt below the header or entry above it.
                     Button { section = nil; model.enter(s) } label: {
                         Text(roomTitle(s)).font(.headline).frame(maxWidth: .infinity, minHeight: 64)
-                    }.buttonStyle(.plain).background(Color.white, in: RoundedRectangle(cornerRadius: 15))
+                    }.buttonStyle(.plain).background(Color.white, in: RoundedRectangle(cornerRadius: 15)).padding(.top, MPSpacing.actionTop)
                 }
             }
         }
@@ -777,13 +858,16 @@ import SpriteKit
         return (s, m)
     }
     /// Android PrivateMatchActivity result (1dbfe33 MatchResultDialog, 47ad0c9) over the court: who won, every player in their
-    /// seat colour with their score in finishing order, the table's final duel, and one pink action: "Back to tournament" for a
-    /// tournament fixture, Menu for a friendly game.
+    /// seat colour with their score in finishing order, the table's final duel, and its actions (5375378): a completed friendly
+    /// game whose other players are all house players offers a green "Play again" with a pink Menu beside it; otherwise one light
+    /// blue action, "Back to tournament" for a tournament fixture, Menu for a friendly game.
     private func roomResultCard(_ s: MPSession, _ fixture: MPFixture) -> some View {
         let m = s.matches[fixture.id] ?? fixture
         func name(_ id: String) -> String { s.participants[id]?.name(hebrew: he) ?? "?" }
-        // Android `placement.ifEmpty { players.sortedByDescending(scoreOf) }`: a stable sort, so equal scores keep seat order.
-        var order = m.placement
+        // Android `placement.ifEmpty { players.sortedByDescending(scoreOf) }`: a stable sort, so equal scores keep seat order. A
+        // final duel lists its whole table, ranked by the duel (Android 1fc4bc2 `tableOf` / `ranking`).
+        let table = MPRules.tableOf(s, m)
+        var order = table.flatMap { MPRules.ranking(s, $0) } ?? m.placement
         if order.isEmpty {
             order = m.players.enumerated().sorted { a, b in
                 let left = m.scoreOf(a.element), right = m.scoreOf(b.element)
@@ -800,10 +884,14 @@ import SpriteKit
         if !m.winner.isEmpty && m.winner == model.userID { title = MPResultWords.youWon() }
         else if let champion = s.participants[m.winner] { title = MPResultWords.winner(champion.name(hebrew: he), houseCharacter: champion.bot?.characterId) }
         else { title = t("Match finished", "המשחק הסתיים") }
+        let again = MPFriendlyRematch.available(s, uid: model.userID)
         return MPXResultCard(title: title,
-                             rows: order.map { MPXResultRow(name: name($0), score: m.scoreOf($0), winner: $0 == m.winner,
+                             rows: order.map { MPXResultRow(name: name($0), score: m.contains($0) ? m.scoreOf($0) : (table?.scoreOf($0) ?? 0), winner: $0 == m.winner,
                                                             color: MPXSeatColor.argb(m.players.firstIndex(of: $0) ?? 0)) },
-                             primary: .init(title: close, color: MPXResultCard.pink) { model.closeResult() }, note: note)
+                             primary: again ? MPXResultCard.Action(title: t("Play again", "לשחק שוב"), color: 0xff83dfad, close: { model.closeResult(replay: true) })
+                                 : MPXResultCard.Action(title: close, color: 0xffa6dcff, close: { model.closeResult() }),
+                             secondary: again ? MPXResultCard.Action(title: close, close: { model.closeResult() }) : nil,
+                             note: note)
     }
 }
 
@@ -822,6 +910,12 @@ enum MPStyle {
     static let rose = Color(red: 1, green: 0x5b / 255, blue: 0xa6 / 255)
     /// Android PongHudText outline (47ad0c9): a navy edge for white text over the bright sunset.
     static let outline = Color(red: 20 / 255, green: 45 / 255, blue: 92 / 255)
+}
+/// Android PongSpacing (63466d8): the fixed gap above a form action on every screen size. Android's room and form buttons keep a
+/// 12 pt bottom margin; with the 12 pt stack spacing standing for it, an action after another action or a card is
+/// `actionTop` below the spacing, and one after a text `actionTop - gap`.
+enum MPSpacing {
+    static let actionTop: CGFloat = 16
 }
 struct MPAvatar: View {
     let character: String; let icon: Int

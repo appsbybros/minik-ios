@@ -11,25 +11,29 @@ final class IssueReportTests: XCTestCase {
                           floored: true, nextServer: 1, winner: nil)
     }
 
-    // Kotlin: faultAtZeroStillFlashesAndDuplicateSnapshotDoesNotRestart
-    func testFaultAtZeroStillFlashesAndDuplicateSnapshotDoesNotRestart() {
+    // Kotlin: faultAtZeroStillHighlightsAndDuplicateSnapshotDoesNotRestart (d376d64, 80fc74e)
+    func testFaultAtZeroStillHighlightsAndDuplicateSnapshotDoesNotRestart() {
         let f = CrossScoreFeedback(), o = fault()
         f.record(o, now: 1.0)
         XCTAssertEqual(.loss, f.change(0, now: 1.0)); XCTAssertNil(f.change(1, now: 1.0))
+        XCTAssertEqual(255, f.alpha(now: 1.0))
         var copy = o; copy.deltas = Array(o.deltas); copy.scoresAfter = Array(o.scoresAfter)
         f.record(copy, now: 2.6)
-        XCTAssertNil(f.change(0, now: 2.8), "the same outcome delivered again must not restart the flash")
+        XCTAssertNil(f.change(0, now: 3.75), "the same outcome delivered again must not restart the highlight")
         f.record(fault(2), now: 3.0); XCTAssertEqual(.loss, f.change(0, now: 3.0))
         f.clear(); XCTAssertNil(f.change(0, now: 3.0))
     }
 
-    // Kotlin: awardedPointAndForgivenMissHaveDifferentOutlines
+    // Kotlin: awardedPointAndForgivenMissHaveDifferentOutlines (d376d64: a steady highlight; 80fc74e: 2.15 s, fading until 2.75 s)
     func testAwardedPointAndForgivenMissHaveDifferentOutlines() {
         let o = CrossRallyOutcome(rallyId: 2, kind: .missed, striker: 1, receiver: 0, faultOwner: nil, deltas: [0, 1, 0, 0], scoresAfter: [0, 1, 0, 0],
                                   floored: true, nextServer: 1, winner: nil)
         let f = CrossScoreFeedback(); f.record(o, now: 0)
         XCTAssertEqual(.loss, f.change(0, now: 0)); XCTAssertEqual(.gain, f.change(1, now: 0)); XCTAssertNil(f.change(2, now: 0))
-        XCTAssertNil(f.change(0, now: 0.230)); XCTAssertEqual(.loss, f.change(0, now: 0.450)); XCTAssertNil(f.change(1, now: 1.8))
+        XCTAssertEqual(.loss, f.change(0, now: 0.230)); XCTAssertEqual(.loss, f.change(0, now: 0.450))
+        XCTAssertEqual(.gain, f.change(1, now: 2.1)); XCTAssertEqual(255, f.alpha(now: 2.1))
+        XCTAssertNotNil(f.color(1, now: 2.5)); XCTAssertEqual(106, f.alpha(now: 2.5))
+        XCTAssertNil(f.color(1, now: 2.75))
     }
 
     // Kotlin: hebrewLocalPossessiveIsNaturalAndOtherNamesStayNamed

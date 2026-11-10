@@ -242,8 +242,26 @@ final class MPEngine {
     private var strategy: MPHouseStrategy, serveReliability = MPServeReliability(), rallyVariation = MPRallyVariation()
     /// Android `tapVelocity`: the fastest finger movement of a Standard tap gesture, converted into pace.
     private var tapVelocity = MPPoint.zero
+    /// Android `lastResolution`: the point just decided (until the next rally or checkpoint); its fault decides how the ball coasts.
+    private(set) var lastResolution: MPResolution?
+    /// Android 5375378/ab089c5: the decided ball's free motion after a point, falling to the floor 2.03 below the table and easing
+    /// to a stop just behind the far end (drawing only; the flight, and so every checkpoint, keeps the deciding state).
+    private var looseBall: MPLooseBall?
+    var postPointBall: Bool { looseBall != nil }
+    var ballVisible: Bool { flight != nil || looseBall != nil }
+    var renderHeight: Double { looseBall?.height ?? flight?.height ?? 0.055 }
+    private func coastBall() {
+        if looseBall != nil { return }
+        guard let f = flight else { return }
+        let velocity = lastResolution?.fault == .net ? MPPoint(f.velocity.x * 0.7, -f.velocity.y * 0.2) : f.velocity
+        looseBall = MPLooseBall(f.position, f.height, velocity, f.lift, floor: -2.03, farEnd: 0)
+    }
     var ball: MPPoint { flight?.position ?? (awaitingServe || pendingServe != nil ? .init(0.5, 0.87) : .init(0.5, 0.13)) }
-    var renderedBall: MPPoint { .init(ball.x + correction.x * correctionAge / 0.12, ball.y + correction.y * correctionAge / 0.12) }
+    /// Android `renderBallPosition`: the loose ball after a point, else the flight, with the network correction blended away.
+    var renderedBall: MPPoint {
+        let at = looseBall?.position ?? ball
+        return .init(at.x + correction.x * correctionAge / 0.12, at.y + correction.y * correctionAge / 0.12)
+    }
     /// `alternateServe` (Android 828c6fc): room fixtures alternate serves for every control level, also against a house player;
     /// the single-player Starter game keeps Minik serving. `suddenDeath`: a tie-break played to its first point.
     init(level: MPLevel = .easy, target: Int = 7, bot: MPBot? = nil, houseControls: Bool = true,
@@ -266,11 +284,12 @@ final class MPEngine {
     }
     func drainEvents() -> [MPEvent] { defer { events.removeAll(keepingCapacity: true) }; return events }
     private func startRally() {
+        looseBall = nil
         pendingFault = nil; trainingResult = nil; trainingTime = 0; tapStart = nil; tapAim = 0
         flight = nil; childReturnOpen = false; attemptedTap = false; rally = 0; release(); childStroke.cancel()
         minikDelay = nil; plan = nil; pointDelay = nil; serveDelay = nil; pendingServe = nil; pendingTap = nil
         previousX = nil; responses = 0; userServed = score.server == .child; returnSpeeds = [nil, nil]; strategy.reset()
-        rallyVariation.reset(); tapVelocity = .zero
+        rallyVariation.reset(); tapVelocity = .zero; lastResolution = nil
         awaitingServe = exercise.map(\.serve) ?? (score.server == .child)
         if awaitingServe { status = level.pro ? "SWIPE_SERVE" : "TAP_SERVE" }
         else {
@@ -327,6 +346,7 @@ final class MPEngine {
             }
         }
         let delta = reception.advance(dt, seat: seat, eta: eta, authority: authoritative); correctionAge = max(0, correctionAge - delta)
+        looseBall?.advance(delta, tuning)
         if let fault = pendingFault {
             faultTime -= delta
             if faultTime <= 0 { pendingFault = nil; resolve(fault, striker: flight?.striker ?? fault.winner) }
@@ -379,10 +399,13 @@ final class MPEngine {
             returnChild(MPContact(point: f.position, timing: 1, spatial: 1, velocity: .zero, direction: tapAim))
             return
         }
-        if !automaticContact && childStroke.contactWindow && childReturnOpen {
+        // Android 5375378: Standard buffers a deliberate tap through the legal bounce and follow-through (contact from 0.04 s to the
+        // stroke's end); the animation wind-up must not demand a second tap. Pro keeps its swept gesture.
+        let tapPrepared = !level.pro && pendingTap != nil && !childStroke.contacted && childStroke.age >= 0.04 && childStroke.age <= childStroke.total
+        if !automaticContact && (tapPrepared || level.pro && childStroke.contactWindow) && childReturnOpen {
             tryReturn(); if flight?.striker == .child { return }
         }
-        if childStroke.age > childStroke.windowEnd && !childStroke.contacted && pendingTap != nil { pendingTap = nil; status = "MISSED" }
+        if childStroke.age > childStroke.total && !childStroke.contacted && pendingTap != nil { pendingTap = nil; status = "MISSED" }
         if let delay = minikDelay {
             let due = delay - delta; minikDelay = due
             if due <= 0.20 && !minikStroke.active, let plan { swing(.minik, plan.point, plan.height, left: plan.left) }
@@ -428,7 +451,9 @@ final class MPEngine {
         if exercise != nil { trainingResult = false; childReturnOpen = false; awaitingServe = false; minikDelay = nil; plan = nil; serveDelay = nil; pendingServe = nil; pendingTap = nil; return }
         // A sudden-death tie-break has no two-point lead: its first point wins.
         guard pointDelay == nil, score.award(result.winner, level: suddenDeath ? .beginner : level, target: target, first: first) else { return }
-        childReturnOpen = false; awaitingServe = false; release(); minikDelay = nil; plan = nil; serveDelay = nil; pendingServe = nil; pendingTap = nil
+        lastResolution = result; childReturnOpen = false; awaitingServe = false
+        coastBall()
+        release(); minikDelay = nil; plan = nil; serveDelay = nil; pendingServe = nil; pendingTap = nil
         events.append(.point(result, striker, score.streak)); if let winner = score.winner { events.append(.victory(winner)) }
         let faultStatus: String
         switch result.fault {
@@ -469,11 +494,16 @@ final class MPEngine {
         if !level.pro {
             // A missed attempt can be retried 0.18 s into its swing; no long animation lock.
             guard down, !(childStroke.active && !childStroke.contacted && childStroke.age < 0.18) else { return }
-            guard awaitingServe || point.strikeZone else { return }
+            // A tap anywhere may aim a serve. During a rally only the child's half may start a paddle swing (Android 5375378).
+            if !awaitingServe && point.y < 0.5 { return }
             tapStart = point; tapAim = 0; tapAge = 0; tapVelocity = .zero
             if awaitingServe { queueServe(MPShots.serve(point, side: .child, tuning: tuning)) }
-            else if childReturnOpen { attemptedTap = true; pendingTap = point; paddle = point; swing(.child, point, flight?.height ?? 0) }
-            else { swing(.child, point) }
+            else if childReturnOpen || flight.map({ !$0.resolved && $0.striker == .minik && $0.position.y >= 0.60 }) == true {
+                // Android 5375378: a tap may prepare shortly before the legal bounce, at a depth of 0.78...0.96; actual contact still
+                // requires the receiver's turn and the normal spatial reach.
+                let target = MPPoint(point.x, point.y.mpClamp(0.78, 0.96))
+                attemptedTap = true; pendingTap = target; paddle = target; swing(.child, target, flight?.height ?? 0)
+            } else { swing(.child, point) } // An early/empty swing is audible, never contact.
             return
         }
         paddle = point.strikeZone ? point : nil
@@ -486,6 +516,26 @@ final class MPEngine {
             if !childStroke.contacted && f.receiver && f.striker == .minik && f.position.strikeZone && movement.y < -0.04 && Self.segmentDistance(previous, point, f.position) <= tuning.swipeCollisionForgiveness,
                let c = MPShots.swipeContact(f.position, ball: f.position, velocity: movement, tuning: tuning) { returnChild(c) }
         }
+    }
+    /// Android fcfd6b2 `moveOnly`: Standard footwork while the ball is away; it never swings.
+    func moveOnly(_ point: MPPoint) {
+        if !playable || awaitingServe || pendingServe != nil || !point.strikeZone { return }
+        restingPaddle = point; restingHeight = 0; paddle = point
+    }
+    /// Android fcfd6b2 `canAimReturn`: Standard (tap control without automatic contact), an incoming ball from depth 0.60 within the
+    /// sideways tap tolerance of the resting paddle: a sideways gesture aims instead of moving the player.
+    func canAimReturn() -> Bool {
+        playable && !level.pro && !automaticContact && !awaitingServe &&
+            flight.map { !$0.resolved && $0.striker == .minik && $0.position.y >= 0.60 && abs(restingPaddle.x - $0.position.x) <= tuning.tapSpatialTolerance } == true
+    }
+    /// Android fcfd6b2 `aimReturn`: binds the return once (a tap at the resting paddle); `displacement` (table widths) aims it and
+    /// the fastest `movement` (table units/s) sets its speed. Aiming never moves the player.
+    @discardableResult func aimReturn(_ displacement: Double, movement: MPPoint, start: Bool) -> Bool {
+        if start { if !canAimReturn() { return false }; touch(restingPaddle) }
+        if pendingTap == nil || childStroke.contacted { return false }
+        if displacement.isFinite { tapAim = (displacement / 0.085).mpClamp(-2, 2) }
+        if hypot(movement.x, movement.y) > hypot(tapVelocity.x, tapVelocity.y) { tapVelocity = movement }
+        return true
     }
     /// Android `updateTapGesture`: a small horizontal move (no forward/vertical gate) aims a Beginner or
     /// Standard return; Standard also keeps the fastest finger movement as its swing speed.
@@ -506,6 +556,9 @@ final class MPEngine {
         if !cancelled && playable && awaitingServe && level.pro && !gestureCommitted && gestureTravel >= 0.025,
            let last = gestureLast, last.distance(.init(0.5, 0.87)) <= tuning.swipeCollisionForgiveness { commitSwipe(last, velocity) }
         gestureStart = nil; gestureLast = nil; gestureTravel = 0
+        // A committed swipe continues through its wind-up after finger-up; CANCEL drops input immediately and never leaves a
+        // delayed contact behind (Android 5375378).
+        if cancelled { pendingTap = nil }
         if cancelled || !childStroke.active { velocity = .zero; paddle = nil }
     }
     func release() { endTouch(cancelled: true); paddle = nil }
@@ -531,7 +584,10 @@ final class MPEngine {
     func restore(_ s: MPState, preserveInput: Bool = false) {
         guard s.valid else { return }
         try? reception.restore(s.reception?.wire ?? [:])
-        let before = ball, samePoint = preserveInput && s.score.rallies == score.rallies && s.score.child == score.child && s.score.minik == score.minik && s.score.winner == nil
+        // Android 5375378/af84f72: measured from the drawn ball (the loose ball after a point).
+        let before = renderedBall
+        let sameFinishedPoint = s.score.rallies == score.rallies && s.score.child == score.child && s.score.minik == score.minik
+        let samePoint = preserveInput && s.score.rallies == score.rallies && s.score.child == score.child && s.score.minik == score.minik && s.score.winner == nil
         // An acknowledgement of the same point, rally and striker must not rewind the locally
         // predicted flight or replay its contact. A fresh reconnect still restores fully.
         if samePoint, s.rally == rally, let acknowledged = s.flight, let local = flight, acknowledged.striker == local.striker,
@@ -540,26 +596,30 @@ final class MPEngine {
         if !samePoint { release(); childStroke.cancel(); pendingServe = nil; pendingTap = nil; rallyVariation.reset() }
         if !preserveInput || !samePoint { minikStroke.cancel() }
         plan = nil; minikDelay = nil; score = s.score; flight = s.flight; rally = s.rally; pointDelay = s.pointDelay
+        // A decided point's checkpoint carries the flight where the point was decided; a repeated checkpoint of the same point keeps
+        // the ball already coasting here (Android 5375378/af84f72).
+        if s.pointDelay != nil || s.score.winner != nil { if !sameFinishedPoint { looseBall = nil }; coastBall() } else { looseBall = nil }
         pendingFault = s.pendingFault; faultTime = s.faultTime; serveDelay = networked ? nil : s.serveDelay
         awaitingServe = flight == nil && pointDelay == nil && serveDelay == nil && score.server == .child && score.winner == nil
         childReturnOpen = flight.map { $0.receiver && !$0.resolved && $0.striker == .minik } ?? false
         status = awaitingServe ? "TAP_SERVE" : childReturnOpen ? "RETURN_BALL" : s.status
-        if !samePoint { attemptedTap = false }; events.removeAll()
+        lastResolution = nil; if !samePoint { attemptedTap = false }; events.removeAll()
         if remoteStrike, let f = flight {
             // The peer already committed any rally variation; only count this return.
             if s.rally > 0 { rallyVariation.hit(f.position, f.velocity, adjust: false) }
             swing(.minik, f.position, f.height); contact(.minik, f.position, f.height); motion.approach(MPProjection.body(f.position, f.height, f.position.x < 0.5), seconds: 0.10, left: f.position.x < 0.5)
         }
         if !networked && flight?.striker == .child { planReturn() }
-        correction = .init(before.x - ball.x, before.y - ball.y); correctionAge = before.distance(ball) < 0.4 ? 0.12 : 0
+        let displayed = looseBall?.position ?? ball
+        correction = .init(before.x - displayed.x, before.y - displayed.y); correctionAge = before.distance(displayed) < 0.4 ? 0.12 : 0
     }
     @discardableResult func remoteStrike(_ f: MPFlight, rallies: Int, hit: Int) -> Bool {
         guard networked, rallies == score.rallies, score.winner == nil, f.valid, f.striker == .minik, !f.resolved else { return false }
         if f.serve != nil { guard score.server == .minik, flight == nil, pointDelay == nil, hit == 0 else { return false } }
         else { guard flight?.striker == .child, hit == rally + 1, (0...0.28).contains(f.position.y), f.position.inside, !f.receiver else { return false } }
-        flight = f; pendingFault = nil; pointDelay = nil; serveDelay = nil; awaitingServe = false; childReturnOpen = false
+        looseBall = nil; flight = f; pendingFault = nil; pointDelay = nil; serveDelay = nil; awaitingServe = false; childReturnOpen = false
         if f.serve == nil { rallyVariation.hit(f.position, f.velocity, adjust: false) }
-        rally = hit; attemptedTap = false; swing(.minik, f.position, f.height); contact(.minik, f.position, f.height)
+        rally = hit; lastResolution = nil; attemptedTap = false; swing(.minik, f.position, f.height); contact(.minik, f.position, f.height)
         motion.approach(MPProjection.body(f.position, f.height, f.position.x < 0.5), seconds: 0.10, left: f.position.x < 0.5)
         status = "MINIK_RETURN"; return true
     }

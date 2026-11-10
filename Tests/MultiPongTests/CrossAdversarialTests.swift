@@ -681,7 +681,7 @@ final class CrossAdversarialTests: XCTestCase {
                         switch control {
                         case .beginner:
                             e.touch(e.ballPosition, down: firstTouch)
-                        case .standard:
+                        case .standard, .starter:
                             e.touch(e.ballPosition)
                             e.endTouch()
                         case .pro:
@@ -747,7 +747,7 @@ final class CrossAdversarialTests: XCTestCase {
                     switch control {
                     case .beginner:
                         e.touch(e.ballPosition, down: tick == 0)
-                    case .standard:
+                    case .standard, .starter:
                         e.touch(e.ballPosition)
                         e.endTouch()
                     case .pro:
@@ -1233,7 +1233,7 @@ final class CrossAdversarialTests: XCTestCase {
         case .beginner:
             e.touch(e.ballPosition)
             e.touch(e.ballPosition, drag: MPPoint(-60, 0), down: false)
-        case .standard:
+        case .standard, .starter:
             e.touch(e.ballPosition)
             e.touch(e.ballPosition, drag: MPPoint(-60, 0), velocity: MPPoint(0, -0.8), down: false)
         case .pro:
@@ -1373,7 +1373,7 @@ final class CrossAdversarialTests: XCTestCase {
         switch control {
         case .beginner:
             at = g.toView(k, e.ballAfter(25))
-        case .standard:
+        case .standard, .starter:
             e.waitForBall(k, depth: 0.84)
             at = g.toView(k, e.ballPosition)
         case .pro:
@@ -1384,7 +1384,7 @@ final class CrossAdversarialTests: XCTestCase {
         case .beginner:
             e.touch(g.fromView(k, at))
             e.touch(g.fromView(k, at), drag: MPPoint(-60, 0), down: false)
-        case .standard:
+        case .standard, .starter:
             e.touch(g.fromView(k, at))
             e.touch(g.fromView(k, at + MPPoint(0.01, 0)), drag: MPPoint(45, 0), velocity: MPPoint(0.1, -0.9), down: false)
         case .pro:

@@ -308,16 +308,19 @@ enum MPGroupTournament {
     }
 }
 
-/// How a room fixture of 3 or 4 players is played on the cross table: the room's game type, the fixture's goal and its target.
-/// Every two-player fixture (pairs, the elimination final duel, two-player tie-breaks) is the classic game.
+/// How a room fixture is played on the cross table: the room's game type, the fixture's goal and its target. Every fixture of 3
+/// or 4 players and (Android b0cdeb3) the elimination final duel use the cross table; other two-player fixtures (pairs,
+/// two-player tie-breaks) are the classic game.
 enum MPCrossFixture {
     static func mode(_ s: MPSession) -> CrossMode { s.gameMode == .elimination ? .elimination : .winnerTakesAll }
-    /// An elimination table always plays until two are left: they go through together, or meet in the classic duel.
+    /// An elimination table always plays until two are left: they go through together, or meet in the final duel, which is won
+    /// outright (Android 1fc4bc2).
     static func goal(_ s: MPSession, _ m: MPFixture) -> CrossGoal {
         if m.goal == .tiebreak { return .tiebreak }
+        if m.players.count == 2 { return .win }
         if s.gameMode == .elimination { return .topTwo }
         return .win
     }
     static func target(_ s: MPSession, _ m: MPFixture) -> Int { MPRules.fixtureTarget(s, m) }
-    static func usesCross(_ m: MPFixture) -> Bool { m.players.count >= 3 }
+    static func usesCross(_ m: MPFixture) -> Bool { m.players.count >= 3 || MPRules.isDuel(m) }
 }

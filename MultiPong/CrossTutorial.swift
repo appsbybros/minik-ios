@@ -75,6 +75,8 @@ final class CrossTutorial {
     }
     private func make() -> CrossEngine { CrossTutorial.make(players: players, control: control, names: names, hebrew: hebrew, lesson: lesson) }
     private var firstPhase: Phase { [Kind.table, .team, .scoring].contains(lesson.kind) ? .info : .explain }
+    /// Android d0bed3b: the last lesson (scoring) has no Next; its card offers Back and closes with its X.
+    var canGoNext: Bool { index < lessons.count - 1 }
     @discardableResult func next() -> Bool {
         if phase != .intro {
             if index == lessons.count - 1 { return false }
@@ -100,6 +102,7 @@ final class CrossTutorial {
     func controlName(_ he: Bool) -> String {
         switch control {
         case .beginner: return MPText.t("Beginner", "מתחילים", he)
+        case .starter: return MPText.t("Starter", "נינוחה", he) // Android b0cdeb3
         case .standard: return MPText.t("Standard", "רגילה", he)
         case .pro: return MPText.t("Pro", "מקצועני", he)
         }
@@ -183,8 +186,10 @@ final class CrossTutorial {
         case .beginner:
             dragHint = tr("Keep your paddle in the ball's path: it hits by itself. To choose the player, swipe a little LEFT or RIGHT any time before the ball reaches you; the 🎯 shows who will get it. No swipe sends it straight ahead.",
                           "השאירו את המחבט במסלול הכדור: החבטה אוטומטית. כדי לבחור שחקן, החליקו מעט שמאלה או ימינה בכל רגע לפני שהכדור מגיע אליכם; ה־🎯 מראה מי יקבל אותו. בלי החלקה הכדור הולך ישר.")
-        case .standard:
-            dragHint = tr("Tap when the ball reaches your paddle. Drag sideways to choose the player; a faster drag hits harder.", "הקישו כשהכדור מגיע למחבט. גררו הצידה כדי לבחור שחקן; גרירה מהירה חזקה יותר.")
+        case .starter: // Android b0cdeb3
+            dragHint = tr("Move into reach, then tap or swipe early to aim. Starter gives you a longer return window.", "זזים אל הכדור, ואז מקישים או מחליקים מוקדם כדי לכוון. בשליטה נינוחה יש יותר זמן להחזרה.")
+        case .standard: // Android d0bed3b: a tap on the other player's court aims there.
+            dragHint = tr("When the ball reaches your paddle, tap the other player’s court to aim there, or swipe sideways. A faster swipe hits harder.", "כשהכדור מגיע למחבט, הקישו על הצד של השחקן שאליו תרצו לכוון, או החליקו הצידה. החלקה מהירה חזקה יותר.")
         case .pro:
             dragHint = tr("Swipe through the ball. The swipe's angle picks the player, its speed sets the power — too wide or too hard goes out.", "החליקו דרך הכדור. זווית ההחלקה בוחרת את השחקן ומהירותה את העוצמה — רחב או חזק מדי יוצא החוצה.")
         }
@@ -215,8 +220,9 @@ final class CrossTutorial {
                     message = tr("Swipe up through the ball. Serve to \(who(lesson.expected)) \(side(lesson.expected, false)): the ball bounces once on your side, then on theirs.",
                                  "החליקו למעלה דרך הכדור. הגישו אל \(who(lesson.expected)) \(side(lesson.expected, true)): הכדור קופץ פעם אחת בצד שלכם ואז אצלם.")
                 } else {
-                    message = tr("Tap your side of the table, then drag sideways toward \(who(lesson.expected)) \(side(lesson.expected, false)) before lifting your finger. The ball bounces once on your side, then on theirs.",
-                                 "הקישו בצד שלכם של השולחן וגררו הצידה לעבר \(who(lesson.expected)) \(side(lesson.expected, true)) לפני שמרימים את האצבע. הכדור קופץ פעם אחת בצד שלכם ואז אצלם.")
+                    // Android d0bed3b: tap the receiver's side to serve there, or tap your side and drag toward them.
+                    message = tr("Tap \(who(lesson.expected))'s side of the table \(side(lesson.expected, false)) to serve there. You can also tap your side and drag toward them. The ball bounces once on your side, then on theirs.",
+                                 "הקישו בצד של \(who(lesson.expected)) \(side(lesson.expected, true)) כדי להגיש לשם. אפשר גם להקיש בצד שלכם ולגרור לכיוונם. הכדור קופץ פעם אחת בצד שלכם ואז אצלם.")
                 }
             } else {
                 title = tr("Return the ball to \(who(lesson.expected))", "החזרה אל \(who(lesson.expected))")

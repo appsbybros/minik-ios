@@ -898,3 +898,26 @@ test('Cross Pong flows cannot write into minikPingPong, and Ping Pong shapes are
   Object.assign(m,{a:'alice',b:'bob',scoreA:0,scoreB:0});await seed(kind,pair);
   await assertFails(change('alice',`${NS}/${kind}/BCDEFG`,s=>s));
 });
+
+test('multi21 rematch creates host room before restoring bot seats',async()=>{
+ const initial=room('friendlyRooms',{code:'REMATC',tableSize:4});const p=`${NS}/friendlyRooms/REMATC`;
+ await reserve('alice','friendlyRooms','REMATC');
+ const full=clone(initial);add(full,'bot_a',3);add(full,'bot_b',2);add(full,'bot_c',1);
+ await assertFails(db('alice').ref(p).set(full));
+ await assertSucceeds(db('alice').ref(p).set(initial));
+ await assertSucceeds(db('alice').ref(p).set(full));
+ await assertSucceeds(change('alice',p,start));
+});
+test('multi21 spectated friendly bot duel waits and plays before its real result',async()=>{
+ const r=room('friendlyRooms',{code:'WATCHA',ids:['alice','bot_a','bot_b'],tableSize:3,gameMode:'ELIMINATION'});start(r);
+ const id=Object.keys(r.matches)[0];r.matches[id].phase='PLAYING';r.matches[id].starts=1;
+ const p=await seed('friendlyRooms',r);
+ await assertSucceeds(change('alice',p,s=>{
+  const m=s.matches[id];m.phase='FINISHED';m.scores=[0,1,1];m.placement=['bot_a','bot_b','alice'];m.winner='bot_a';
+  const d=fixture(s,id+'_D',['bot_a','bot_b']);d.phase='WAITING';d.scores=[0,0];d.winner='';delete d.placement;
+  s.matches[d.id]=d;return s;
+ }));
+ await assertFails(change('outsider',p,s=>{s.matches[id+'_D'].phase='PLAYING';s.matches[id+'_D'].starts=1;return s}));
+ await assertSucceeds(change('alice',p,s=>{s.matches[id+'_D'].phase='PLAYING';s.matches[id+'_D'].starts=1;return s}));
+ await assertSucceeds(change('alice',p,s=>{simulate(s,s.matches[id+'_D']);s.state='FINISHED';return s}));
+});

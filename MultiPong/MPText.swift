@@ -42,7 +42,12 @@ enum MPText {
         if hebrew { return he }
         guard let column = columns.firstIndex(of: current) else { return en }
         if let row = table[en] { return row[column] }
+        // Stage 5 (owner decision): an iOS-only translation of a text Android leaves in English (MPTextIOS), after Android's rows.
+        if let row = iosTable[en] { return row[column] }
         for template in templates {
+            if let filled = template.fill(en, column: column) { return filled }
+        }
+        for template in iosTemplates {
             if let filled = template.fill(en, column: column) { return filled }
         }
         // Preserve a caller's intentional padding when looking up a short label.
@@ -76,8 +81,9 @@ enum MPText {
         "Practice without a limit": ["he": "אימון ללא הגבלה", "es": "Práctica sin límite", "ar": "تدريب بلا حدود", "hi": "बिना सीमा के अभ्यास", "nl": "Oefenen zonder limiet"],
         // R.string.serve_marked_court: the title of the serving stages.
         "Serve to the marked court": ["he": "מגישים לשולחן המסומן", "es": "Saca hacia la zona marcada", "ar": "أرسل إلى الجزء المحدد من الطاولة", "hi": "चिह्नित हिस्से की ओर सर्व करें", "nl": "Serveer naar het gemarkeerde tafelvak"],
-        // R.string.tap_marked_court and R.string.watch_serve_land: the serving practice's instruction before and after the serve.
-        "Tap the highlighted court to serve": ["he": "הקישו על השולחן המודגש כדי להגיש", "es": "Toca la zona resaltada para sacar", "ar": "اضغط على الجزء المضيء للإرسال", "hi": "सर्व करने के लिए चमकते हिस्से पर टैप करें", "nl": "Tik op het gemarkeerde vak om te serveren"],
+        // R.string.tap_marked_court and R.string.watch_serve_land: the serving practice's instruction before and after the serve
+        // (Android d376d64: "the highlighted side" in English; the other languages are unchanged).
+        "Tap the highlighted side to serve": ["he": "הקישו על השולחן המודגש כדי להגיש", "es": "Toca la zona resaltada para sacar", "ar": "اضغط على الجزء المضيء للإرسال", "hi": "सर्व करने के लिए चमकते हिस्से पर टैप करें", "nl": "Tik op het gemarkeerde vak om te serveren"],
         "Watch where your serve lands": ["he": "שימו לב היכן ההגשה נוחתת", "es": "Observa dónde cae tu saque", "ar": "شاهد أين تسقط كرة الإرسال", "hi": "देखें कि आपकी सर्व कहाँ गिरती है", "nl": "Kijk waar je service landt"],
         // R.string.challenge_completed: a won daily practice.
         "Challenge completed!": ["he": "האתגר הושלם!", "es": "¡Reto completado!", "ar": "اكتمل التحدي!", "hi": "चुनौती पूरी हुई!", "nl": "Uitdaging voltooid!"],
@@ -85,6 +91,10 @@ enum MPText {
         "Beginner: move your paddle to the ball for an automatic return. Swipe left or right to choose a target.": ["he": "מתחילים: מזיזים את המחבט לכדור להחזרה אוטומטית. מחליקים שמאלה או ימינה כדי לבחור יעד.", "es": "Principiante: mueve la pala hacia la pelota para devolverla automáticamente. Desliza a izquierda o derecha para elegir un destino.", "ar": "مبتدئ: حرّك المضرب نحو الكرة لإعادتها تلقائيًا. اسحب لليسار أو اليمين لاختيار الهدف.", "hi": "शुरुआती: अपने आप रिटर्न करने के लिए पैडल को गेंद तक ले जाएँ। लक्ष्य चुनने के लिए बाएँ या दाएँ स्वाइप करें।", "nl": "Beginner: beweeg je batje naar de bal voor een automatische return. Veeg naar links of rechts om een doel te kiezen."],
         "Standard: move into position, then tap or swipe to return. Faster swipes add power.": ["he": "רגילה: נעים למקום, ואז מקישים או מחליקים כדי להחזיר. החלקה מהירה מוסיפה עוצמה.", "es": "Estándar: colócate y toca o desliza para devolver. Un deslizamiento más rápido añade potencia.", "ar": "عادي: تحرّك إلى المكان المناسب، ثم انقر أو اسحب لإعادة الكرة. السحب الأسرع يزيد القوة.", "hi": "सामान्य: सही जगह पर जाएँ, फिर रिटर्न करने के लिए टैप या स्वाइप करें। तेज़ स्वाइप से ताकत बढ़ती है।", "nl": "Standaard: ga op de juiste plek staan en tik of veeg om terug te slaan. Sneller vegen geeft meer kracht."],
         "Pro: use a well-timed swipe to control direction and power.": ["he": "מקצועני: מחליקים בתזמון מדויק כדי לשלוט בכיוון ובעוצמה.", "es": "Pro: desliza en el momento preciso para controlar la dirección y la potencia.", "ar": "محترف: اسحب في الوقت المناسب للتحكم في الاتجاه والقوة.", "hi": "प्रो: दिशा और ताकत नियंत्रित करने के लिए सही समय पर स्वाइप करें।", "nl": "Pro: veeg op het juiste moment om richting en kracht te bepalen."],
+        // R.string.control_starter_only (Android b0cdeb3): the Starter level, the fourth control level.
+        "Starter: move into reach, then tap or swipe to aim. You have a longer window to return the ball.": ["he": "נינוחה: נעים אל הכדור, ואז מקישים או מחליקים כדי לכוון. יש יותר זמן להחזיר את הכדור.", "es": "Relajado: acércate a la pelota y toca o desliza para apuntar. Tienes más tiempo para devolverla.", "ar": "مريح: اقترب من الكرة، ثم انقر أو اسحب للتصويب. لديك وقت أطول لإعادة الكرة.", "hi": "आरामदायक: गेंद की पहुँच में आएँ, फिर निशाना लगाने के लिए टैप या स्वाइप करें। गेंद लौटाने के लिए ज़्यादा समय मिलता है।", "nl": "Ontspannen: ga binnen bereik staan en tik of veeg om te richten. Je hebt langer de tijd om de bal terug te slaan."],
+        // R.string.tap_opponent_side_to_serve (Android d376d64): the journey's serve tip outside the serving stages (team match, practices).
+        "Tap an opponent’s side to serve": ["he": "הקישו על צד של יריב כדי להגיש", "es": "Toca el lado de un rival para sacar", "ar": "اضغط على جانب أحد المنافسين للإرسال", "hi": "सर्व करने के लिए किसी विरोधी की तरफ़ टैप करें", "nl": "Tik op de kant van een tegenstander om te serveren"],
         // R.string.optional_landscape_tip: the orientation tip, at most three times for the app's lifetime.
         "You can also play in landscape.": ["he": "אפשר לשחק גם במצב אופקי.", "es": "También puedes jugar en horizontal.", "ar": "يمكنك أيضًا اللعب بالوضع الأفقي.", "hi": "आप लैंडस्केप मोड में भी खेल सकते हैं।", "nl": "Je kunt ook in liggende stand spelen."],
     ]
@@ -105,6 +115,8 @@ enum MPText {
     static var keys: [String] { MPTextCatalog.rows.map { $0.0 } }
 
     private static let table: [String: [String]] = Dictionary(MPTextCatalog.rows, uniquingKeysWith: { _, last in last })
+    private static let iosTable: [String: [String]] = Dictionary(MPTextIOS.rows.filter { !$0.0.contains("{0}") }, uniquingKeysWith: { _, last in last })
+    private static let iosTemplates: [MPTextTemplate] = MPTextIOS.rows.filter { $0.0.contains("{0}") }.compactMap { MPTextTemplate(key: $0.0, values: $0.1) }
     /// Android `templates`: the keys with `{0}`, longest first (catalog order between keys of the same length).
     private static let templates: [MPTextTemplate] = {
         let indexed = MPTextCatalog.rows.enumerated().filter { $0.element.0.contains("{0}") }

@@ -379,6 +379,12 @@ final class GroupTournamentTests: XCTestCase {
             XCTAssertEqual(english, MPCompletionText.headline(s, r.id, hebrew: false))
             let hebrew = i == 0 ? "ניצחתם בטורניר!" : "הטורניר הסתיים. סיימתם במקום ה־\(i + 1)."
             XCTAssertEqual(hebrew, MPCompletionText.headline(s, r.id, hebrew: true))
+            // iOS 2026-11-10: a translation takes the place number, not the English ordinal ("puesto 2", never "puesto 2nd").
+            if i > 0 {
+                MPText.configure("es")
+                XCTAssertEqual("Torneo terminado. Quedaste en el puesto \(i + 1).", MPCompletionText.headline(s, r.id, hebrew: false))
+                MPText.configure("en")
+            }
         }
         // A completed tournament is never kept as an open entry, and a stale cached copy cannot revive it.
         XCTAssertTrue(book.completionKnown(s))

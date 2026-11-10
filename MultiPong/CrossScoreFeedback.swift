@@ -1,10 +1,14 @@
 import UIKit
 
-/// Android cross/CrossScoreFeedback.kt (MinikCrossPong 7254ab2). Point feedback does not depend on the score change: a forgiven
-/// fault at zero still flashes. The losing box flashes pink, an awarded point green, for 1.8 seconds (220 ms on, 220 ms off);
-/// then the original outline returns. The same outcome delivered again (a repeated snapshot) does not restart it.
+/// Android cross/CrossScoreFeedback.kt (MinikCrossPong 7254ab2; d376d64, 80fc74e). Point feedback does not depend on the score
+/// change: a forgiven fault at zero still receives a steady highlight. The losing box gets a pink outline, an awarded point a green
+/// one: fully opaque for 2.15 s, then fading out until 2.75 s (Android d376d64 replaced the 220 ms blinking with this steady
+/// highlight; 80fc74e extended it from 1.8 / 2.4 s). Then the original outline returns. The same outcome delivered again (a
+/// repeated snapshot) does not restart it.
 final class CrossScoreFeedback {
-    static let duration: TimeInterval = 1.8
+    /// Android `HOLD` and `DURATION`, in milliseconds.
+    static let hold = 2150
+    static let duration = 2750
     static let gain = UIColor(red: 0x48 / 255.0, green: 0xd5 / 255.0, blue: 0x97 / 255.0, alpha: 1)
     static let loss = UIColor(red: 0xe9 / 255.0, green: 0x1e / 255.0, blue: 0x63 / 255.0, alpha: 1)
     enum Change: Equatable { case gain, loss }
@@ -24,14 +28,24 @@ final class CrossScoreFeedback {
         if let loser = outcome.loser, loser >= 0, loser < outcome.deltas.count { next[loser] = .loss }
         changes = next
     }
-    /// The flash for a seat at this moment, or nil when its box keeps its usual outline.
+    /// Android `now - since`, in whole milliseconds.
+    private func elapsed(_ now: TimeInterval) -> Int { Int(((now - since) * 1000).rounded()) }
+    /// The highlight of a seat at this moment, or nil when its box keeps its usual outline.
     func change(_ seat: Int, now: TimeInterval) -> Change? {
-        let age = now - since
-        guard age >= 0, age < CrossScoreFeedback.duration, Int(age * 1000) / 220 % 2 == 0 else { return nil }
+        let age = elapsed(now)
+        guard age >= 0, age < CrossScoreFeedback.duration else { return nil }
         return changes[seat]
     }
+    /// Android `color`'s alpha: 255 until `hold`, then (duration − age) × 255 / (duration − hold), in whole numbers.
+    func alpha(now: TimeInterval) -> Int {
+        let age = elapsed(now)
+        if age < CrossScoreFeedback.hold { return 255 }
+        return (CrossScoreFeedback.duration - age) * 255 / (CrossScoreFeedback.duration - CrossScoreFeedback.hold)
+    }
     func color(_ seat: Int, now: TimeInterval) -> UIColor? {
-        change(seat, now: now).map { $0 == .gain ? CrossScoreFeedback.gain : CrossScoreFeedback.loss }
+        guard let kind = change(seat, now: now) else { return nil }
+        let base = kind == .gain ? CrossScoreFeedback.gain : CrossScoreFeedback.loss
+        return base.withAlphaComponent(CGFloat(alpha(now: now)) / 255)
     }
     /// Android Color.luminance: relative luminance of an sRGB colour given as 0–255 components.
     static func luminance(_ c: (Double, Double, Double)) -> Double {

@@ -57,7 +57,9 @@ struct MPXResultRow: Equatable {
 /// Android MatchResultDialog: a translucent result card over the real court, on a dimmed screen (Android also blurs it from
 /// Android 12; here the court is not blurred, so a live SpriteKit view never renders through a filter). Rank, name and score
 /// are separate columns that follow the interface direction. Put it over the whole screen; it takes every touch until one of
-/// its buttons closes it.
+/// its buttons closes it. Android d376d64 (readability): a 50 % white backing with dark, solid lettering and no shadow; the
+/// headline and the names keep their hue but are darkened until they read on the dimmed court (`readable`); 5375378's white
+/// outlines were removed again by d376d64.
 struct MPXResultCard: View {
     /// Android 47ad0c9 MatchResultDialog.Action: light blue by default; the pink (#E91E63) Menu or "Back to tournament" has
     /// white lettering.
@@ -75,8 +77,34 @@ struct MPXResultCard: View {
     var note = ""
     @State private var closed = false
 
-    private static let gold = FamilyKit.color(0xffffe59d)
-    private static let accents: [UInt32] = [0xffffe59d, 0xffa6dcff, 0xffb1eddb, 0xffffb9df]
+    /// Android d376d64: the dark gold heading and rank colours, and the default lettering (#142C42).
+    static let gold: UInt32 = 0xff5b450d
+    static let accents: [UInt32] = [0xff5b450d, 0xff183e62, 0xff104c3b, 0xff632d50]
+    static let ink: UInt32 = 0xff142c42
+
+    /// Android d376d64 `readable`: white at 50 % over the dimmed court can be as dark as #808080, so a colour is blended 15 %
+    /// toward black (ColorUtils.blendARGB, in Float as on Android) until its contrast with #808080 reaches 4.5, at most 12 times.
+    static func readable(_ color: UInt32) -> UInt32 {
+        var c = color
+        for _ in 0..<12 where contrast(c, 0xff808080) < 4.5 { c = blendBlack(c, 0.15) }
+        return c
+    }
+    /// androidx ColorUtils.calculateContrast of two opaque colours.
+    static func contrast(_ a: UInt32, _ b: UInt32) -> Double {
+        let la = luminance(a) + 0.05, lb = luminance(b) + 0.05
+        return max(la, lb) / min(la, lb)
+    }
+    /// androidx ColorUtils.calculateLuminance (sRGB, 0.04045 threshold; 0.2126, 0.7152, 0.0722).
+    static func luminance(_ c: UInt32) -> Double {
+        func linear(_ v: UInt32) -> Double { let x = Double(v) / 255; return x < 0.04045 ? x / 12.92 : pow((x + 0.055) / 1.055, 2.4) }
+        return 0.2126 * linear(c >> 16 & 0xff) + 0.7152 * linear(c >> 8 & 0xff) + 0.0722 * linear(c & 0xff)
+    }
+    /// androidx ColorUtils.blendARGB(color, Color.BLACK, ratio): Float channels, truncated.
+    static func blendBlack(_ c: UInt32, _ ratio: Float) -> UInt32 {
+        let inverse: Float = 1 - ratio
+        func channel(_ shift: UInt32, _ other: Float) -> UInt32 { UInt32(Float(c >> shift & 0xff) * inverse + other * ratio) }
+        return channel(24, 255) << 24 | channel(16, 0) << 16 | channel(8, 0) << 8 | channel(0, 0)
+    }
 
     var body: some View {
         GeometryReader { geo in
@@ -91,9 +119,8 @@ struct MPXResultCard: View {
                 .frame(maxHeight: geo.size.height * 0.84)
                 .background(
                     RoundedRectangle(cornerRadius: 28)
-                        // 0x33 = 20% opacity; the texts and buttons stay fully opaque.
-                        .fill(LinearGradient(colors: [FamilyKit.color(0x33315c8c), FamilyKit.color(0x33263167)],
-                                             startPoint: .topLeading, endPoint: .bottomTrailing))
+                        // Android d376d64: only the backing is translucent (white at 50 %); the texts and buttons stay opaque.
+                        .fill(FamilyKit.color(0x80ffffff))
                         .overlay(RoundedRectangle(cornerRadius: 28).strokeBorder(FamilyKit.color(0xb3b9dfff), lineWidth: 1))
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 28))
@@ -105,15 +132,15 @@ struct MPXResultCard: View {
 
     private func panel(wide: Bool) -> some View {
         VStack(spacing: 0) {
-            line("★  " + MPResultWords.scores(), size: wide ? 14 : 16, color: Self.gold).multilineTextAlignment(.center).frame(maxWidth: .infinity)
-            // Android 47ad0c9: the headline is pink.
-            line(title, size: wide ? 22 : 26, color: FamilyKit.color(0xffff5ba6)).multilineTextAlignment(.center).frame(maxWidth: .infinity)
+            line("★  " + MPResultWords.scores(), size: wide ? 14 : 16, color: FamilyKit.color(Self.gold)).multilineTextAlignment(.center).frame(maxWidth: .infinity)
+            // Android 47ad0c9: the headline is pink; d376d64: darkened until it reads on the dimmed court.
+            line(title, size: wide ? 22 : 26, color: FamilyKit.color(Self.readable(0xffff5ba6))).multilineTextAlignment(.center).frame(maxWidth: .infinity)
                 .padding(.top, 6).padding(.bottom, wide ? 8 : 16)
             ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
                 let accent = FamilyKit.color(Self.accents[index % Self.accents.count])
                 HStack(spacing: 0) {
                     line(Self.number(index + 1), size: 18, color: accent).frame(width: 30)
-                    line(row.name, size: wide ? 18 : 21, color: row.color.map { FamilyKit.color($0) } ?? .white)
+                    line(row.name, size: wide ? 18 : 21, color: FamilyKit.color(Self.readable(row.color ?? Self.ink)))
                         .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 10)
                     line(Self.number(row.score), size: wide ? 22 : 25, color: accent).frame(width: 48)
                 }
@@ -127,23 +154,23 @@ struct MPXResultCard: View {
                 .padding(.bottom, 4)
             }
             if !note.isEmpty {
-                line(note, size: 15, color: FamilyKit.color(0xffd9ecff), bold: false).frame(maxWidth: .infinity, alignment: .leading)
+                line(note, size: 15, color: FamilyKit.color(Self.ink), bold: false).frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 10).padding(.bottom, 4)
             }
-            // Android 47ad0c9: the pink secondary action (Menu) comes first, at the reading edge.
+            // Android 47ad0c9: the pink secondary action (Menu) comes first, at the reading edge. Android b58f0d5: 16 pt above.
             HStack(spacing: 12) {
                 if let secondary { button(secondary, color: MPXResultCard.pink) }
                 button(primary, color: primary.color)
             }
-            .padding(.top, 12)
+            .padding(.top, MPSpacing.actionTop)
         }
         .padding(.horizontal, 20).padding(.vertical, wide ? 12 : 22)
     }
 
-    private func line(_ value: String, size: CGFloat, color: Color = .white, bold: Bool = true) -> some View {
+    /// Android d376d64: solid lettering without a shadow.
+    private func line(_ value: String, size: CGFloat, color: Color = FamilyKit.color(MPXResultCard.ink), bold: Bool = true) -> some View {
         Text(value).font(.system(size: size, weight: bold ? .bold : .regular)).foregroundStyle(color)
             .fixedSize(horizontal: false, vertical: true)
-            .shadow(color: FamilyKit.color(0xaa091c37), radius: 2, x: 0, y: 1)
     }
 
     private func button(_ action: Action, color: UInt32) -> some View {
@@ -152,7 +179,8 @@ struct MPXResultCard: View {
             closed = true
             action.close()
         } label: {
-            Text(action.title).font(.system(size: 18, weight: .bold)).foregroundStyle(color == MPXResultCard.pink ? Color.white : FamilyKit.color(0xff17384d))
+            // Android 6fcb446 PongButton: word labels one size larger (18 → 19).
+            Text(action.title).font(.system(size: 19, weight: .bold)).foregroundStyle(color == MPXResultCard.pink ? Color.white : FamilyKit.color(0xff17384d))
                 .multilineTextAlignment(.center).padding(.horizontal, 12).padding(.vertical, 6)
                 .frame(maxWidth: .infinity, minHeight: 48)
         }

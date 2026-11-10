@@ -20,9 +20,17 @@ struct MPXJourneyResult: Equatable {
     var musicChanged: (() -> Void)?
     @Published private(set) var court: CrossScene?
     @Published private(set) var hud = ""
+    /// The HUD's parts (Android 1fc4bc2 / dd94c09 CrossJourneyActivity.refresh): the title and (practice) the controls and score
+    /// lines are centred; the tip below them follows the reading direction's start edge.
+    @Published private(set) var hudTitle = ""
+    @Published private(set) var hudScore: String?
+    @Published private(set) var hudTip = ""
     @Published private(set) var paused = false
     @Published var result: MPXJourneyResult?
-    @Published var twoOpponents: Bool
+    /// Android 1fc4bc2: switching between one and two opponents remembers the lineup of the old size and restores the new one's.
+    @Published var twoOpponents: Bool {
+        didSet { if twoOpponents != oldValue { rememberTeamRoster(twoOpponents: oldValue); restoreTeamRoster() } }
+    }
     @Published var ids: [String]
     /// A short message (Android Toast).
     @Published var notice: String?
@@ -31,7 +39,8 @@ struct MPXJourneyResult: Equatable {
     @Published private(set) var helpTitle = ""
     @Published var gateOpen = false
     @Published var shareText: String?
-    @Published var actionCamera: Bool { didSet { preferences.crossActionCamera = actionCamera; court?.fullScreen = actionCamera } }
+    /// Android `cross/close_camera` (a9140c3), shared with the other cross courts; off by default.
+    @Published var actionCamera: Bool { didSet { preferences.crossCloseCamera = actionCamera; court?.fullScreen = actionCamera } }
     private(set) var practice: CrossPractice?
     private(set) var match: CrossEngine?
     private var lesson = false, handled = false, matchEndingSince: TimeInterval?, foreground = true
@@ -47,7 +56,8 @@ struct MPXJourneyResult: Equatable {
         let avatar = MPRoster.find(preferences.identity?.characterId ?? "")?.id ?? "miniko"
         ids = Array(([avatar] + MPRoster.all.map { $0.id }.filter { $0 != avatar }).prefix(4))
         twoOpponents = players != 3
-        actionCamera = preferences.crossActionCamera
+        actionCamera = preferences.crossCloseCamera
+        restoreTeamRoster()
         switch page {
         case .teams: teams()
         case .settings: settings()
@@ -69,28 +79,16 @@ struct MPXJourneyResult: Equatable {
     var savedPractice: Bool { preferences.savedPractice != nil }
     var savedMatch: Bool { preferences.savedTeamMatch != nil }
 
-    func role(_ s: CrossStage) -> String {
-        s.cooperative ? tr("Your partner starts with the best qualities for this skill. Later cycles use less precise partners, while every feed stays reachable.",
-                           "השותף מתחיל עם הכישורים הטובים ביותר למיומנות הזאת. במסלולים הבאים השותפים פחות מדויקים, אבל כל מסירה נשארת בהישג יד.")
-            : tr("Start against a gentler opponent. Later cycles increase the qualities that matter for this challenge. Your teammate still helps you.",
-                 "מתחילים מול יריב עדין יותר. במסלולים הבאים מתחזקים הכישורים החשובים לאתגר הזה. חבר הקבוצה עדיין עוזר לכם.")
-    }
     /// Android 7254ab2: a serving stage is titled by its task, "Serve to the marked court".
     func stageTitle(_ s: CrossStage) -> String { s.skill == .serve ? MPText.issue("Serve to the marked court") : tr(s.en, s.he) }
-    func instruction(_ s: CrossStage) -> String {
-        switch s.skill {
-        case .serve: return tr("Tap the golden court to serve there. The ball must bounce on your court first, then on the called court.", "הקישו על השולחן הזהוב כדי להגיש אליו. הכדור חייב לקפוץ קודם בצד שלכם, ואז בשולחן המסומן.")
-        case .returning, .defend: return tr("Drag your paddle to the incoming ball after its bounce. Tap another court to choose your next direction. Each return counts only when it lands safely.", "גררו את המחבט לכדור הנכנס אחרי הקפיצה. הקישו על שולחן אחר כדי לבחור את הכיוון הבא. החזרה נספרת רק כשהכדור נוחת בבטחה.")
-        case .aim: return tr("Tap the golden island to aim, then drag your paddle to the ball. Hit the island with a real return.", "הקישו על האי הזהוב כדי לכוון, ואז גררו את המחבט לכדור. פגעו באי בהחזרה אמיתית.")
-        case .backhand: return tr("The feeder sends to your left. Tap the golden target, then meet the ball on the left of your court for a backhand.", "המוסר שולח לצד שמאל שלכם. הקישו על היעד הזהוב, ואז פגשו את הכדור בצד שמאל לחבטת גב כף היד.")
-        case .forehand: return tr("The feeder sends to your right. Tap the golden target, then meet the ball on the right for a forehand.", "המוסר שולח לצד ימין שלכם. הקישו על היעד הזהוב, ואז פגשו את הכדור בצד ימין לחבטת כף היד.")
-        case .shape: return tr("Paint the shape in order. Tap the next golden circle, then return the ball into it. A painted circle cannot count twice.", "צבעו את הצורה לפי הסדר. הקישו על העיגול הזהוב הבא, ואז החזירו אליו את הכדור. עיגול שכבר נצבע אינו נספר פעמיים.")
-        case .pass: return tr("Tap your teammate's court, then move your paddle to the incoming ball. Send one friendly pass before your team returns to an opponent.", "הקישו על השולחן של חבר הקבוצה, ואז הזיזו את המחבט לכדור הנכנס. מותרת מסירה קבוצתית אחת לפני שמחזירים ליריב.")
-        case .set: return CrossText.setHelp(hebrew)
-        case .smash: return tr("Your teammate raises the ball. After it bounces on your court, swipe through it toward an opponent. A timed swipe makes a faster smash; waiting or tapping is not enough.", "חבר הקבוצה מרים לכם את הכדור. אחרי שהוא קופץ בצד שלכם, החליקו דרכו לכיוון יריב. החלקה בזמן יוצרת הנחתה מהירה; המתנה או הקשה אינן מספיקות.")
-        case .paint: return tr("A 90-second team paint battle. Only rally returns paint; serves never paint. Paint more of the opposing team's courts. Make at least three returns yourself.", "קרב צבע קבוצתי של 90 שניות. רק החזרות במהלך חילופים צובעות; הגשות אינן צובעות. צבעו יותר מהשולחנות של היריבים והחזירו לפחות שלושה כדורים בעצמכם.")
-        }
-    }
+    /// Android c93e760 `controls()`: the journey always plays at Beginner ("Controls: Beginner"), on the brief, the HUD and Help.
+    func controls() -> String { tr("Controls: ", "רמת השליטה: ") + MPControlChoice.title(CrossControl.beginner.choice, hebrew: hebrew) }
+    /// Android c93e760: the instructions describe the assisted practice gestures (CrossPracticeGuide); the partner/opponent
+    /// line of the brief (`role`) is gone.
+    func instruction(_ s: CrossStage) -> String { CrossPracticeGuide.instruction(s, hebrew) }
+    /// Android d376d64 MatchSceneLayout(fixedPortraitStatusLines): in portrait the HUD keeps three lines (team match) or four
+    /// (practice), so a changing hint never resizes and shifts the table.
+    var hudLines: Int { practice == nil ? 3 : 4 }
 
     // ---- practice and team match -----------------------------------------------------------------------------------------
     func startJourney(_ step: Int) { play(CrossPractice(step: step, avatar: ids[0])) }
@@ -120,10 +118,27 @@ struct MPXJourneyResult: Equatable {
             return false
         }
         ids[place] = id
+        rememberTeamRoster()
         return true
     }
+    /// Android 1fc4bc2 CrossJourneyActivity.restoreTeamRoster: the teammate and opponents saved for this size (`teamRoster4` with
+    /// two opponents, `teamRoster3` with one), known characters only, then the roster order; never the player's own character;
+    /// each once; three places.
+    func restoreTeamRoster() {
+        let avatar = ids[0]
+        let saved = preferences.teamRoster(twoOpponents ? 4 : 3).split(separator: ",", omittingEmptySubsequences: false).compactMap { MPRoster.find(String($0))?.id }
+        var candidates: [String] = []
+        for id in saved + MPRoster.all.map({ $0.id }) where id != avatar && !candidates.contains(id) { candidates.append(id) }
+        ids = [avatar] + candidates.prefix(3)
+    }
+    /// Android 1fc4bc2 rememberTeamRoster: places 1–3 (teammate, first and second opponent), for the current size.
+    func rememberTeamRoster(twoOpponents two: Bool? = nil) {
+        preferences.setTeamRoster((two ?? twoOpponents) ? 4 : 3, ids.dropFirst().joined(separator: ","))
+    }
     /// `seed` and `firstServer` are for App Store captures only (MPStoreScreenshot); players get a fresh seed and serve first.
+    /// Android 1fc4bc2 "Start team match" first remembers the lineup.
     func startTeamMatch(seed: Int64? = nil, firstServer: Int = 0) {
+        rememberTeamRoster()
         startMatch(twoOpponents ? [ids[0], ids[2], ids[1], ids[3]] : [ids[0], ids[2], ids[1]], seed: seed, firstServer: firstServer)
     }
     private func startMatch(_ order: [String], seed: Int64? = nil, firstServer: Int = 0) {
@@ -176,11 +191,12 @@ struct MPXJourneyResult: Equatable {
         refresh()
     }
     /// Android 7254ab2: the help card names the stage and explains only it. Android 47ad0c9: it has only its close (X) control.
+    /// Android c93e760: the controls line comes first.
     func showHelp() {
         pause(true)
         let stage = practice?.stage ?? CrossJourney.stages[8]
         helpTitle = stageTitle(stage)
-        help = instruction(stage)
+        help = controls() + "\n\n" + instruction(stage)
     }
     func closeHelp() { help = nil; pause(false) }
     /// Android 47ad0c9 CrossCourt.toggleCamera: no toast any more.
@@ -191,21 +207,32 @@ struct MPXJourneyResult: Equatable {
         let title = p.map { stageTitle($0.stage) } ?? tr("Team match", "משחק קבוצתי")
         let score: String
         if let p {
-            // The endless paint playground has no clock (Android 7254ab2).
+            // The endless paint playground has no clock (Android 7254ab2). Android 651245f: the fraction never breaks (no-break spaces).
             if p.stage.skill == .paint { score = (p.open ? "" : "\(Int(p.remaining))s · ") + "\(Int(p.paint.coverage(0) * 100))% : \(Int(p.paint.coverage(1) * 100))%" }
             else if p.open { score = "★ \(p.successes)" }
-            else { score = "\u{2066}\(p.successes) / \(p.goal)\u{2069} · ♥ \(3 - p.mistakes)" }
+            else { score = "\u{2066}\(p.successes)\u{00a0}/\u{00a0}\(p.goal)\u{2069} · ♥ \(3 - p.mistakes)" }
         } else { score = "\(e.referee.score(0)) : \(e.referee.score(1))" }
         let tip: String
         if p == nil, let outcome = CrossText.teamOutcome(e, local: 0, hebrew) { tip = outcome }
         else if isPaused { tip = tr("Paused", "מושהה") }
-        // Serving practice keeps serving guidance after the serve (Android 7254ab2).
-        else if p?.stage.skill == .serve { tip = MPText.issue(e.referee.mayServe(0) ? "Tap the highlighted court to serve" : "Watch where your serve lands") }
-        else if e.receivingSet { tip = tr("Swipe now to smash!", "החליקו עכשיו להנחתה!") }
-        else if e.referee.mayServe(0) { tip = tr("Tap the called court to serve", "הקישו על השולחן המסומן להגשה") }
+        // Serving practice keeps serving guidance after the serve (Android 7254ab2; d376d64 "the highlighted side").
+        else if p?.stage.skill == .serve { tip = MPText.issue(e.referee.mayServe(0) ? "Tap the highlighted side to serve" : "Watch where your serve lands") }
+        // Android 971e958: wait for the teammate's high pass to bounce, then swipe up through it.
+        else if e.receivingSet { tip = CrossText.receivingSetTip(e, hebrew) }
+        // Android d376d64: R.string.tap_opponent_side_to_serve.
+        else if e.referee.mayServe(0) { tip = MPText.issue("Tap an opponent’s side to serve") }
+        // Android c93e760: a practice explains its own gesture (tap the gold target first in an aiming lesson).
+        else if let p { tip = CrossPracticeGuide.tip(p, hebrew) }
         else { tip = CrossText.setTip(e, hebrew) ?? tr("Choose your target. Move your paddle to the ball.", "בחרו יעד. הזיזו את המחבט לכדור.") }
-        let line = p == nil ? title + "\n" + tip : title + "\n\u{2066}" + score + "\u{2069}\n" + tip
-        if hud != line { hud = line }
+        // Android c93e760: a practice's second line names its controls before the score.
+        let middle: String? = p == nil ? nil : controls() + " · \u{2066}" + score + "\u{2069}"
+        let line = middle.map { title + "\n" + $0 + "\n" + tip } ?? title + "\n" + tip
+        if hud != line {
+            hud = line
+            if hudTitle != title { hudTitle = title }
+            if hudScore != middle { hudScore = middle }
+            if hudTip != tip { hudTip = tip }
+        }
         if paused != isPaused { paused = isPaused }
         let now = ProcessInfo.processInfo.systemUptime
         if e.referee.winner != nil && matchEndingSince == nil { matchEndingSince = now }
@@ -249,7 +276,8 @@ struct MPXJourneyResult: Equatable {
             if p == nil, let e = match { celebrate = e.seats.filter { e.teams?.same($0.index, 0) == true }.map { $0.characterId } }
         }
         let score: String
-        if let p { score = "\(p.successes) / \(p.goal)" }
+        // Android c93e760 / 651245f: an isolated fraction with no-break spaces.
+        if let p { score = "\u{2066}\(p.successes)\u{00a0}/\u{00a0}\(p.goal)\u{2069}" }
         else if let e = match { score = "\(e.referee.score(0)) : \(e.referee.score(1))" } else { score = "" }
         let title = win && p != nil ? MPText.issue("Challenge completed!") : (win ? tr("You won!", "ניצחתם!") : tr("Let's try again", "מנסים שוב"))
         result = MPXJourneyResult(win: win, title: title, score: score, celebrate: celebrate)
@@ -420,11 +448,13 @@ struct MPXJourneyResult: Equatable {
     }
     private func button(_ title: String, primary: Bool = false, fill: Color? = nil, ink: Color = MPXMenu.deepInk, _ action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(title).font(.system(size: 17, weight: .semibold)).foregroundStyle(ink).multilineTextAlignment(.center)
+            // Android 6fcb446 PongButton: word labels one size larger (17 → 18).
+            Text(title).font(.system(size: 18, weight: .semibold)).foregroundStyle(ink).multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity, minHeight: 52).padding(.horizontal, 12)
                 // Android 47ad0c9 PongButton: green and mint actions have the #58BD8C face.
                 .background(fill.map { $0 == MPXJourneyView.green || $0 == MPXMenu.mint ? MPStyle.green : $0 } ?? MPStyle.green, in: RoundedRectangle(cornerRadius: 20))
-        }.buttonStyle(.plain).padding(.top, 9)
+        // Android e7f3f27: PongSpacing.ACTION_TOP_DP (16) above every action, on every screen size (was 9).
+        }.buttonStyle(.plain).padding(.top, MPSpacing.actionTop)
     }
     @ViewBuilder private var brief: some View {
         let n = model.step, s = model.stage, bot = model.briefBot
@@ -434,7 +464,8 @@ struct MPXJourneyResult: Equatable {
         text(model.stageTitle(s), 24, bold: true)
         MPXPortrait(character: bot.id).frame(height: 130)
         text(bot.name(hebrew: model.hebrew), 20, bold: true)
-        text(model.role(s))
+        // Android c93e760: the controls line replaces the partner/opponent line.
+        text(model.controls(), 16, bold: true)
         text(model.instruction(s), 17)
         text(s.skill == .paint ? tr("90 seconds · Capture more area to win", "90 שניות · כובשים יותר שטח כדי לנצח")
              : tr("Goal: \(s.goal(n / 30)) · Three misses before a retry", "מטרה: \(s.goal(n / 30)) · אחרי שלוש החטאות מנסים שוב"), 18, bold: true)
@@ -516,9 +547,7 @@ struct MPXJourneyResult: Equatable {
             MPXTool(symbol: "questionmark", label: tr("Help", "עזרה"), fill: MPXMenu.mint, tint: MPXMenu.deepInk) { model.showHelp() }
             MPXTool(symbol: "camera.viewfinder", label: tr("Switch camera view", "החלפת תצוגת מצלמה"), fill: MPXMenu.mint, tint: MPXMenu.deepInk) { model.toggleCamera() }
         } status: { wide in
-            Text(model.hud).font(.system(size: 16, weight: .bold)).foregroundStyle(.white).multilineTextAlignment(.center).lineLimit(wide ? 12 : 4)
-                .frame(maxWidth: .infinity).padding(.horizontal, 8).padding(.vertical, 6).background(MPXMenu.hud, in: RoundedRectangle(cornerRadius: 14))
-                .padding(.horizontal, 4).accessibilityAddTraits(.updatesFrequently)
+            hudView(wide: wide)
         } court: {
             if let court = model.court {
                 MPXCourt(scene: court, label: tr("Three or four player table tennis court. Your arm of the table is at the bottom. Send the ball to any other player.", "מגרש טניס שולחן לשלושה או ארבעה שחקנים. הזרוע שלכם בשולחן נמצאת למטה. שלחו את הכדור לכל שחקן אחר."))
@@ -526,6 +555,28 @@ struct MPXJourneyResult: Equatable {
                     .background(MPXLandscapeTipProbe(id: ObjectIdentifier(court), active: { true }) { hint = $0 })
             }
         }
+    }
+    /// Android CrossJourneyActivity hud (1fc4bc2, d376d64, dd94c09): white 16 pt bold text on its dark rounded panel. The title and
+    /// the controls/score line are centred, the tip follows the start edge; in portrait the panel is exactly `hudLines` lines tall
+    /// (Android fixedPortraitStatusLines: min = max lines), in landscape at most 12 lines. A team match draws its title 4 pt higher
+    /// (a draw-only shift: the line metrics, the hint's wrapping and the court do not move).
+    private func hudView(wide: Bool) -> some View {
+        let lineHeight = UIFont.systemFont(ofSize: 16, weight: .bold).lineHeight
+        let fixed = CGFloat(model.hudLines) * lineHeight
+        let head = model.hudScore == nil ? 1 : 2
+        return VStack(spacing: 0) {
+            Text(model.hudTitle).multilineTextAlignment(.center).frame(maxWidth: .infinity)
+                .offset(y: model.hudScore == nil ? -4 : 0)
+            if let score = model.hudScore { Text(score).multilineTextAlignment(.center).frame(maxWidth: .infinity) }
+            Text(model.hudTip).multilineTextAlignment(.leading).lineLimit(max(1, (wide ? 12 : model.hudLines) - head))
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .font(.system(size: 16, weight: .bold)).foregroundStyle(.white)
+        .frame(maxWidth: .infinity, minHeight: wide ? nil : fixed, maxHeight: wide ? nil : fixed)
+        // Like Android's TextView, the lines may draw into the panel's padding (the raised title) but not beyond it.
+        .padding(.horizontal, 8).padding(.vertical, 6).clipped().background(MPXMenu.hud, in: RoundedRectangle(cornerRadius: 14))
+        .padding(.horizontal, 4)
+        .accessibilityElement(children: .combine).accessibilityAddTraits(.updatesFrequently)
     }
     /// Android 7254ab2: a rounded, bounded card that scrolls when it does not fit; Back to menu is pink with white text.
     private func resultCard(_ result: MPXJourneyResult) -> some View {

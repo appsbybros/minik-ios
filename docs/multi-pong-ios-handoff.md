@@ -1184,3 +1184,561 @@ unchanged.
 ```text
 c5021724cd052f931ad66db73a6936f1d4403852413ead95d6aaca3217f4621f  app/src/main/java/com/appsbybros/minik/localization/AppText.kt
 ```
+
+## 2026-11-09 stage 1: Starter and the elimination final on the cross table (Android b0cdeb3, 1fc4bc2, 452d82c)
+
+Android `main` is at `dd94c09` (versions 11.0 → 35.0, 35 commits after `47ad0c9`). The port is done in five stages; this first
+stage covers what a mixed iOS/Android room depends on: the fourth control level and the elimination final. `ANDROID_COMMIT` in
+`Scripts/audit-multi-pong.py` stays at `47ad0c9` until the last stage; the new stage-1 checks read the Android sources at
+`dd94c09` (`STAGE1_COMMIT`) with `git show`. Not built on a Mac yet, and not type-checked on Windows.
+
+| Behaviour | Android | iOS |
+| --- | --- | --- |
+| Starter, the fourth control level: wire value 1, Kotlin `entries` order Beginner, Standard, Pro, Starter; `Difficulty.EASY` (iOS `.medium`) | b0cdeb3 `CrossControl.STARTER(1, Difficulty.EASY)` | `CrossEngine.swift` `CrossControl` (`.starter`, `choice`, `level`, `fromChoice`) |
+| Starter's input: `tapSpatialTolerance` 0.28, `tapTimingWindow` 0.80 on top of EASY; stroke 0.10 / 0.85 / 1.10 / 1.50 (Beginner and Standard now end at 0.65); a travelling ball arms a tap from depth 0.25 (Standard 0.55); house players use EASY's input values | b0cdeb3 `CrossEngine.tuning`, `localStroke`, `tap` | `CrossEngine.init`, `localStroke`, `tap` |
+| Starter and Standard share one return path: an early swipe arms when it reaches the receiving window (speed above 0.08 toward the predicted receiver), a pending tap lasts the whole stroke (contact from 0.04 s to the stroke's end), only the sideways distance counts, an early tap no longer animates a swing | b0cdeb3 (with the 5375378 timing and the fcfd6b2 swing gate it builds on) | `CrossEngine.touch`, `tap`, `localContact` |
+| `ControlChoice.normalize`: 0 and 2 Standard, 1 Starter, 3 Pro, else Beginner; `difficulty` the same (a classic pair with value 1 plays EASY); titles "Starter" / "נינוחה" | b0cdeb3 `ControlChoice.kt` | `MPPhysics.swift` `MPLevel.control`; `MPKnockout.swift` `MPControlChoice.title`, `values` |
+| Saved control: `controlDifficulty` read through `normalize`, so a saved 1 is Starter and a saved 2 Standard | b0cdeb3 `PlayActivity.savedControlDifficulty`, `CrossActivity.control` | `MPPreferences.control` (unchanged code; the meaning follows `MPLevel.control`) |
+| Pickers 4, 1, 0, 3 with `ControlChoice.title`; Starter's help `R.string.control_starter_only` in six languages; the cross settings' one-line comparison; the in-game help, status and guide texts for Starter (EN/HE; Android has no catalog rows for them) | b0cdeb3 `PlayActivity`, `CrossActivity`, `CrossText`, `CrossTutorial`, `issue_review.xml` | `ModernPongView.controls`, `controlHint`; `ModernPongRooms.crossSettings`; `MPController.showCrossHelp`; `CrossText.status`; `CrossTutorial.controlName`, `card`; `MPText.issueTexts` |
+| The elimination final duel is played on the cross table (goal WIN, classic scoring) | b0cdeb3 `CrossFixture.usesCross`; 1fc4bc2 `CrossFixture.goal` | `MPGroupMatch.swift` `MPCrossFixture.usesCross`, `goal`; `MPController.launch` |
+| The final keeps the classic two-point lead of its control level (Pro), never in a tie-break; such a checkpoint may hold scores above the target | 1fc4bc2 `CrossMatch.build`, `CrossEngine(classicWinByTwo)`, `CrossReferee(winByTwo)` | `CrossMatch.makeEngine`; `CrossEngine.init`, `restart`; `CrossReferee.init`, `restore`, `resolve` |
+| Elimination checkpoints taken during the announcement (the player who went out is still at the table) and of a finished top-two table reopen | 1fc4bc2 `CrossMatch.restoreState` | `CrossMatch.restoreState` |
+| An older classic (protocol 1) checkpoint of a human final is upgraded by the authority: same points, server and rally count | b0cdeb3 `CrossLink` listener, `legacyDuel`; `ScoreState.read` | `CrossLink.received`, `legacyScore`, `legacyDuel` |
+| A friendly room's house-only final is no longer simulated: the host watches it live ("Watch final duel", "Watching the final duel. "); tournament house finals stay simulated | 1fc4bc2 `PongRules.withDuel`, `spectatedDuel`, `startSpectatedDuel`; `PlayActivity.maybeStart`, `matchControls`; `PrivateMatchActivity` | `MPRules.withDuel`, `spectatedDuel`, `startSpectatedDuel`; `MPController.maybeStart`, `watchDuel`, `crossFrame`; `ModernPongRooms.matchControls` |
+| The nearest seat's player is drawn for a spectator too | 1fc4bc2 `CrossCourt.drawLocalAvatar(viewSeat)` | `CrossScene` player order |
+| A finished table opens its final for its finalists (Ready, then Start, in two transactions) or for the watching host, instead of the table's result | 1fc4bc2, b0cdeb3 `PrivateMatchActivity.updateSession` | `MPController.receive`, `openDuel` |
+| The final's result lists the whole table ranked by the duel, with table scores for the players who were out | 1fc4bc2 `PrivateMatchActivity` result rows | `ModernPongView.roomResultCard` |
+| A finished table whose final is open says "Finalists: "; otherwise the winner the table finally produces (the duel's winner) | b0cdeb3 `PlayActivity.matchRow` | `ModernPongRooms.finishedLine` |
+| The first Back from a final does not open it again; re-entering a saved room does not open a watched final automatically | 452d82c `PrivateMatchActivity.finish` (`returnedMatch`), `PlayActivity` first snapshot | `MPController.openDuel` (the final's ID counts as opened), `receive` |
+| Catalog rows "Watching the final duel." and "Watch final duel" (the group `novemberSix2026`, appended whole) | 1fc4bc2 `AppText.kt` | `MPTextCatalog.swift` `novemberSix2026` |
+
+### Entangled, ported only as far as stage 1 needs
+
+- Starter has no input path of its own on Android: it shares Standard's. Its longer window only works with the 5375378 timing
+  (a pending tap lasts the stroke; contact 0.04 s … stroke end; the 0.55 depth gate) and the fcfd6b2 rule that a tap without a
+  pending contact does not swing, so those lines are ported with b0cdeb3's own changes, and they change Standard as on Android.
+  The rest of 5375378 / fcfd6b2 / d0bed3b (the loose ball after a point, `moveOnly` / `canAimReturn` / `aimReturn` and the
+  court's separate aiming gesture, `tappedAim` court taps, footwork zone, Standard's new help texts) is not ported: on iOS
+  Starter and Standard returns still come through `touch` / `endTouch`, so their aiming differs from Android until the
+  single-tap/aiming stage.
+- 1fc4bc2 `opened.clear()` on a room change: iOS fixture IDs carry the room code, so nothing is needed.
+
+### Left for later stages (not ported now)
+
+Court size and camera, character art and occlusion (b0cdeb3 Flare hands, 1fc4bc2 contact-racket filter), single tap / drag /
+aiming (above), the loose ball after a point, rematches and the Loading screen (1fc4bc2 `FriendlyRematch`, host-only create),
+saved lineups and clockwise seats (1fc4bc2 `rememberFriendlyRoster`, the seat lobby's order and text), Back save / discard /
+stay and the Firebase rollback (452d82c friendly exit dialog and its four catalog rows, 83b050d, 9adf1f1, ce48214), tournament
+table colours, Daily / Learn guidance texts, tutorial navigation, the result card, spacing and button lettering, status-line
+alignment, and the version bumps. The Firebase rules mirror (`Tests/MultiPongFirebase/rules`) still matches `47ad0c9`: the
+1fc4bc2 rule that lets the friendly host create and start a house-only final (`allBots && _D && host`) is deployed from the
+Android repository and is mirrored when `ANDROID_COMMIT` moves.
+
+### Tests and audit
+
+- New `Tests/MultiPongTests/MultiStageOneTests.swift`: `ControlChoice.normalize`, the Starter room's wire round trip (value 1
+  from either platform), the saved control's meaning, Starter titles and help in six languages, the final on the cross table,
+  the watched house final, the two-point lead by control level, Kotlin `EliminationResumeTest` (both tests) and
+  `ScoreState.read`.
+- `CrossControlTests`: four levels, `fromChoice(1)` is Starter, Starter's values, Kotlin
+  `savedClassicFinalKeepsScoresAndCorrectPlayerSeats`, `starterAndStandardOneGestureAtPlayerDepthReturnTheLiveBall`,
+  `starterHasLongerPreparationButStillNeedsAPlayerGesture`, and fcfd6b2's early tap without a swing.
+  `CrossAdversarialTests`: Starter takes Standard's gestures (Kotlin b0cdeb3). `GameModeTournamentTests`: the friendly house
+  final is watched live (Kotlin 1fc4bc2 `GameModeTournamentTest`).
+- `Scripts/audit-multi-pong.py` compares, at `dd94c09`: the control levels, their order, wire values and difficulties;
+  Starter's tolerances, strokes and tap depth; the shared Starter/Standard return rules; `ControlChoice`; both pickers' order;
+  every Starter and final-duel text (EN/HE) and `control_starter_only` in six languages; the `novemberSix2026` catalog rows; and
+  the final-duel rules (fixture, duel creation, spectating, two-point lead, resumable checkpoints, legacy upgrade, Ready then
+  Start, opened finals, spectator avatar). `python -I Scripts/audit-multi-pong.py`: OK.
+
+## 2026-11-09 stage 2: the court, camera and characters (Android 257e058, 9862dc6, 0285385, a9140c3, 3b52d51, 4969038, d376d64, 80fc74e, b0cdeb3, fcfd6b2)
+
+Stage 2 of the `dd94c09` port covers what the player sees on the court. Every number below was read from the Android source at
+`dd94c09`; `Scripts/audit-multi-pong.py` compares them with `git show` (`check_stage2`, same `STAGE1_COMMIT`). Not built on a
+Mac yet, and not type-checked on Windows.
+
+| Behaviour | Android | iOS |
+| --- | --- | --- |
+| One large fixed court for both camera views: tilt 0.52 (landscape) / 1.72 (portrait), fit of the table arms and every player's rest and contact pose at the middle of the reach (u = 0, poses 0 and 2), margin 8 pt, 99 % of the fit, no pan; the close camera never resizes the table | 257e058, 0285385, a9140c3 `layoutFor` | `CrossScene.layoutCourt` |
+| The close camera ("Action camera"): a reversible zoom about the fixed centre of the court area (8 pt inside, below the scoreboard), at most 1.48, eased with 0.65 s (in) / 0.20 s (out), no tracking pan; it keeps the ball (±16 pt) and, while a point starts, a hitter prepares or for 0.42 s after a strike, every player, then the predicted receiver and the hitter until 0.70 s (bodies to 79 % of their height, contact rackets ±16 pt) in view; frozen while a finger is down; reset by a new layout. The old follow pan and the reception-assistance zoom are gone from the cross court | a9140c3, 5375378 `CrossCamera`, `updateCamera` | `CrossCamera`; `CrossScene.updateCamera`, `render`, `viewPoint`, `painted` |
+| The camera preference `cross/close_camera`, default off (the whole court), shared by the local, room, journey and team courts; `action_camera` (default on) and `cross_local/full_screen` are no longer read; switching only eases the zoom | a9140c3 `CrossCourt.fullScreen`, `toggleCamera`, `PrivateMatchActivity` | `MPPreferences.crossCloseCamera`; `MPController.actionCamera`, `launchCross`; `CrossJourneyModel` / `CrossTeamsModel.actionCamera`; `CrossScene.fullScreen` |
+| Grounded players: contact pose 2 for every character; a side player stands at reach + 0.05 with both shoes outside the arm (the innermost floor support of every standing and walking pose); every atlas frame is registered at its pelvis (median alpha-weighted centre, alpha ≥ 128, of the rows 60–68 % down the body); floor supports are the lowest pixel with alpha ≥ 160 of the first and last column in the bottom 16 % | a9140c3 `playerFoot`, `PongPlayerAtlas.hipX`, `floorSupports` | `CrossScene.playerFoot`, `renderPlayer`; `MPXPoseAtlas.character`, `hipX`, `soles`, `floorSupports` |
+| The non-winking Minik art (`minik.png`, `minik-walk.png`, `atlas.json`) | 257e058 | `Resources/MultiPongAssets.xcassets` (see below) |
+| Far players behind the table rim: the body mask of a far (FRONT) player is the table plus its 5 pt round-joined rim; Minik, Mia, Flare and Kyra show only their traced hands, forearms and paddle over it (not while walking) | 4969038, d376d64, 80fc74e, b0cdeb3, fcfd6b2 `drawPlayer`, `draw…FrontHands` | `CrossScene.buildPaths`, `renderPlayer`; `MPXPoseAtlas.frontHands`; `CrossActorNodes.setMasks` |
+| Side players: one connected upper body over the table down to the waist, max(foot − 0.48 h, racket + 1.45 r), inside the table (no round paddle patch) | 0285385, 3b52d51 | `CrossScene.renderPlayer` |
+| The far name badge beside the head: right of it for the central far seat, left of it for a seat left of −0.05 | 9862dc6 `drawTags` | `CrossScene.renderTags` |
+| The ball's contact flight: a committed strike's first flight starts at the drawn contact paddle and joins the simulated path linearly by the first bounce; the incoming anticipation only for the responsible receiver, within 0.20 of the ball; an empty camera rectangle adds nothing (RectF.union) | 3b52d51, 1fc4bc2 `ballPresentationOffset` | `CrossScene.ballOffset`, `renderedBallPoint`; the edge arrow now follows the drawn ball inside the camera |
+| The terrace's foreground foliage over the court (after the camera, before the tags), with the painting's own transform; portrait polygons when the terrace is not wider than tall | 3b52d51 `SunsetTerrace.foreground` | `MPXTerraceFoliage`; `CrossScene.renderForeground` (the window-filling `MPXSunsetBackground`); `MPScene.layoutCourt` (its own backdrop) |
+| Classic court: the arena painting clipped to its authored tabletop (outline, net posts, net band) instead of the faded floor | 3b52d51 `tabletop` | `MPScene.layoutCourt` (`floorCrop`) |
+| Classic court: the far Minik is the atlas FRONT pose standing at table top + 190 × scale, height min(520 × scale, (table top − 8) / 0.82), its contact racket over the engine's racket centre, phases 0/1/2 (< 0.36 s)/3 (< 0.52 s); shadow and body outside the tabletop, only the traced hands and paddle over it | a9140c3, 3b52d51, 4969038 `drawMinik` | `MPScene.renderOpponent` (`farCrop`, `farHandsCrop`) |
+| Classic court: the slim rounded table rim (gradient #d7f4ed → #6ba9af over 8 × scale, light line #f4fff9) | d376d64 `drawCompactFrame` | `MPScene.renderCompactFrame` |
+| Classic court in landscape: the local player's shoes anchored near the bottom, max(254 s, h − 10 − max(1627 s, imageY(0.87) s − racket)) | 3b52d51 `onSizeChanged` | `MPScene.layoutCourt` |
+| Classic court: the reception zoom pivots at (50 %, 62 %) and never pans; the far player is drawn over the ball's shadow and bounce, a ball short of y 1.12 over the far player but under the local player and paddle | 5375378 `ReceptionCamera`, `onDraw` | `CrossReceptionCamera`; `MPScene.update`, `placeCamera`, `render`; the terrace backdrop and foliage are children of the camera (Android draws them outside the zoom) |
+
+Art copied from Android `dd94c09` (byte for byte, checked by the audit):
+
+| Android | iOS | SHA-256 |
+| --- | --- | --- |
+| `app/src/main/assets/pong-poses/minik.png` | `mpx_pose_minik.imageset/mpx_pose_minik.png` | `daa97c34451bb590a378088c69af34c374ba79d76b2eee5f69d342bed870f2cb` |
+| `app/src/main/assets/pong-poses/minik-walk.png` | `mpx_pose_minik_walk.imageset/mpx_pose_minik_walk.png` | `3985983f50cd95820f01ee9e4678a9549110e7312e672bc7f546aaff3f2a0acc` |
+| `app/src/main/assets/pong-poses/atlas.json` (only the two Minik `sha256` fields changed) | `mpx_pose_atlas.dataset/atlas.json` | `279566b09283af06247c6516fc9c6e9b30baec3060cba9b5782f5ab76d06966a` |
+
+No other Android art changed between `47ad0c9` and `dd94c09`. The hash list of `ANDROID_COMMIT` above still describes `47ad0c9`.
+The new `atlas.json` ends with a newline, so `.gitattributes` marks it `-text` (no CRLF conversion on a Windows checkout).
+
+### Entangled, ported only as far as stage 2 needs
+
+- 5375378's loose ball after a point (`postPointBall`, `ballVisible`, `renderHeight`) is not on iOS: the cross court keeps its
+  normal draw order (players, nets, ball), `ballOffset` has no post-point case, and the classic court has no "behind the far
+  player" ball case. The negative-height branch of `lift` is ported (unused until then).
+- 5375378's classic draw order and fixed reception pivot are ported because the far Minik and the camera are drawn here.
+
+### Left for later stages (not ported now)
+
+`CrossPaddlePose` (the paddle's eased return after contact, stage 3); the Daily footwork clamp of the learner's own player
+(`tapTargets` / `localFootworkRight`, c93e760); single tap, drag, court-tap aiming and the Standard gesture (`standardTouch`,
+`practiceDrag`); the team scoreboard's 4 dp bottom padding (dd94c09) and `MatchSceneLayout.fixedPortraitStatusLines`
+(d376d64, spacing, stage 5); point-highlight timing (`CrossScoreFeedback`, d376d64/80fc74e) and the result card (stage 5).
+
+### Known differences
+
+- The arena painting is the existing `mp_ping_pong_arena.png`; Android ships a lossy `ping_pong_arena.webp` (unchanged since
+  `47ad0c9`), so the pixels are not byte-comparable.
+- The foliage pass follows where iOS draws the terrace: `MPXSunsetBackground` fills the window behind every cross court
+  (Android's journey and team screens put their terrace inside the safe area), and the classic court draws its own terrace
+  inside its scene.
+- The classic court still draws no net flash (as before this stage).
+
+### Tests and audit
+
+- New `Tests/MultiPongTests/MultiStageTwoTests.swift`: the stationary whole-court view, the close camera's 1.48 limit, fixed
+  pivot, exact inverse, ease and held-finger freeze, the classic reception pivot, `crossCloseCamera` (default off, remembered),
+  the foliage polygons, and (when the pose art is bundled) the front hands of the four characters and both shoes' floor supports.
+- `Scripts/audit-multi-pong.py` `check_stage2`, at `dd94c09`: the three art files byte for byte; the four characters' hand
+  polygons and both foliage sets number by number; the classic tabletop path; tilt, margin, fit, the reach + 0.05 stance, pelvis
+  and sole thresholds, the camera's limit, easing, pivot and visible-seat timing, the preference, the rim mask, the hands list,
+  the waist, the anticipation filter, the contact flight, the far badge, the foliage order, and the classic court's landscape
+  anchor, far Minik, slim rim, ball order, clipped arena and reception pivot; and that the old values (0.72/1.28, reach + 0.34,
+  margin 14, `crossActionCamera`, `crossFullScreen`, the faded arena) are gone. `python -I Scripts/audit-multi-pong.py`: OK.
+
+## 2026-11-09 stage 3: playing (Android 5375378, fcfd6b2, d0bed3b, 971e958, af84f72, ab089c5, 6fcb446, c93e760)
+
+Stage 3 of the `dd94c09` port covers playing: the single tap, aiming, footwork and the loose ball after a point. Every number
+was read from the Android source at `dd94c09`; `Scripts/audit-multi-pong.py` compares them with `git show` (`check_stage3`,
+124 rules, same `STAGE1_COMMIT`). Not built on a Mac yet, and not type-checked on Windows.
+
+| Behaviour | Android | iOS |
+| --- | --- | --- |
+| The loose ball after a point (`LooseBall`), with the far-end stop: once past `farEnd` it coasts for 0.4 s, speed capped at 0.9, never past farEnd − 0.20 | 5375378, ab089c5 `LooseBall.kt` | new `MultiPong/MPLooseBall.swift` |
+| Cross table loose ball: floor −0.38, net rebound at −0.2 × speed; drawn height, visibility and post-point position | 5375378 `CrossEngine` | `CrossEngine.looseBall`, `beforeBallStep`, `coastBall`, `coast`, `stepBall`, `resolved`, `startRally`, `renderHeight`, `postPointBall`, `ballVisible`, `renderBallPosition` |
+| Classic court loose ball: floor −2.03, farEnd 0, net 0.7 / −0.2 | 5375378 `ModernGame` | `MPEngine.lastResolution`, `coastBall`, `advance`, `resolve`, `startRally`, `renderedBall`, `remoteStrike` |
+| The loose ball between phones: no new wire field. The simulated ball stays frozen where the point was decided, every checkpoint carries that state and each phone rebuilds the same loose ball; a repeated checkpoint of the same rally keeps it, a new rally drops it; corrections are measured from the loose ball | 5375378, af84f72 | `CrossEngine.restoreState`; `MPEngine.restore` (`sameFinishedPoint`) |
+| Drawing after a point: the ball depth-sorted between the players, nets first; no ball before the server's swing or under the tabletop; shadow, net flash, ball, arrow; the negative-height `lift` rule (stage 2) is now used; `ballOffset` adds nothing to the loose ball | 5375378 | `CrossScene.render`, `renderBall`, `ballOffset`, `renderedBallPoint` |
+| Classic court: the ball behind the far player (z 3.1), its visibility and shadow; `screen` no longer clamps negative heights | 5375378 | `MPScene.render`, `screen` |
+| Single tap, Standard and Starter: one tap holds through the whole stroke (Standard 0.65 s on the cross court, Starter 0.62 s on the classic court; cross Starter stroke 0.10 / 0.85 / 1.10 / 1.50); contact 0.04 s to the stroke's end; the tap expires at the stroke's end; a cancel drops it; the new-rally tap gate (child half) and early-tap target depth 0.78–0.96 | 5375378, fcfd6b2, d0bed3b | `MPEngine` (`tapPrepared`, `moveOnly`, `canAimReturn`, `aimReturn`); `CrossEngine.localStroke`, `moveOnly`, `canAimReturn`, `aimReturn(drag:speed:start:target:)`, `otherCourt`, `tappedAim` in `touch`, `endTouch`, `tapServe`, `localContact`, `strike`, `assisted`, `aimTarget` |
+| Aimed returns no longer alternate their side; only the automatic Beginner return does | fcfd6b2 | `CrossEngine` |
+| The separate aiming gesture: a finger that moves 12 pt or less is one tap; on a cross court it aims at the court it lifts on; ball-touch projection uses the ground point | fcfd6b2, d0bed3b, 5375378 | `CrossScene.standardTouch`, `send`; `MPScene.standardTouch` |
+| Paddle recovery: the paddle eases back after contact; `begin` and `contact` no longer move the player's stance | d0bed3b `CrossPaddlePose` | new `MultiPong/CrossPaddlePose.swift`; `CrossScene.renderPaddle`; `CrossEngine.begin`, `contact` |
+| Footwork reach strikeHalf + 0.50 on a learning court whose local player has a character | 6fcb446, 971e958 | `CrossEngine.localFootworkRight`, `inFootworkZone`, `rest`, `touch`; `CrossPractice.makeEngine`; `CrossScene.renderPlayer`; the learners' `practiceDrag` |
+| Double tap and the raised pass: tap pending for 40 substeps (was 34), renewed at finger-up; a second tap within 0.300 s and 56 pt lifts to the teammate, the rest of that touch is not sent, and it counts as the paddle being placed; `raisedPass` time = flight time + 0.55 within 1.65–3.0 s; `SET_DEPTH` 0.88 | 971e958 | `CrossEngine.setTapPending`, `liftToTeammate`; `CrossScene.doubleTapTimeout`; `CrossShots.raisedPass`, `SET_DEPTH` |
+| Aiming lessons wait for a chosen target; `aimTarget` names the chosen court's owner | c93e760 | `CrossPractice.advance` |
+
+### Known differences
+
+- Android reads the system double-tap timeout (`ViewConfiguration`); iOS has none, so it is fixed at Android's default, 300 ms.
+- Finger speed comes from the last 80 ms of touch samples, not Android's `VelocityTracker` (as `CrossScene` already did).
+- The classic court's ball styling and its missing net flash are unchanged.
+- Stage 1 and 2 audit rules that read lines changed by this stage now read the new lines.
+
+### Left for later stages (not ported now)
+
+- Stage 4: 1fc4bc2 `restoreTeamRoster` (saved team lineups); the rematch and Loading parts of 5375378.
+- Stage 5 texts: d0bed3b's Beginner/Standard help in `CrossActivity` (court-tap wording), the tutorial's `canGoBack` /
+  `canGoNext` and GuideDialog `navigationCount`; 971e958's `CrossText.receivingSetTip` and its two AppText rows; c93e760's
+  `CrossPracticeGuide` instructions and tips and the Daily `controls()` line (iOS has no tip yet telling learners to tap the
+  target while a lesson waits).
+
+### Tests and audit
+
+- New `Tests/MultiPongTests/MultiStageThreeTests.swift` ports the Kotlin tests SingleTapAndLooseBall (5), FarEndCoast (3),
+  ClassicAimingRegression (2), CrossSingleTap (4), CrossAimingRegression (3), TutorialTapAndRest (4; its navigation test is
+  stage 5), TeamLearningRegression (4) and CrossPractice's aiming-wait test; plus a checkpoint rebuilding the same loose ball
+  (cross wire and classic JSON), no ball before the serve swing, and the footwork-reach defaults. Classic games use `MPRandom`
+  seeds, so they are different games checked by the same rules.
+- `CrossPracticeTests.drive` handles the aiming wait, as Android's does.
+- `python -I Scripts/audit-multi-pong.py`: OK (stage 1: 22, stage 2: 56, stage 3: 124).
+
+## 2026-11-09 stage 4: rooms (Android 5375378, 3f13c40, 1fc4bc2, 452d82c, 83b050d, 9adf1f1, ce48214, bb8acda)
+
+Stage 4 of the `dd94c09` port covers rooms and room state: Play again and the Loading page, saved lineups and seats, Back's
+Save and exit / Exit without saving / Stay with the Firebase rollback, two-player tournaments and the Firebase rules. Every rule
+and text was read from the Android source at `dd94c09`; `Scripts/audit-multi-pong.py` compares them with `git show`
+(`check_stage4`, 73 values, same `STAGE1_COMMIT`). Not built on a Mac yet, and not type-checked on Windows.
+
+| Behaviour | Android | iOS |
+| --- | --- | --- |
+| Play again: the result of a completed friendly game whose other players are all house players offers a green (#83DFAD) "Play again" with the pink Menu beside it; otherwise one light blue (#A6DCFF) Menu / "Back to tournament" (was pink) | 5375378 `PrivateMatchActivity` result dialog, `FriendlyRematch.available` | `ModernPongView.roomResultCard`; `MPFriendlyRematch.available` (`MPMultiplayerModels.swift`) |
+| The rematch room: the same settings, roster and seats under a new code, hosted by the player, without matches, presence, departures or rounds; created with the host alone, then the house players and seats restored in a second write (the rules accept a new room only with its host); "Loading…" until it opens | 5375378, 1fc4bc2 `FriendlyRematch.create`, `PlayActivity.startReplay` | `MPFriendlyRematch.create`; `MPController.closeResult(replay:)`, `startReplay` |
+| The Loading page: "Loading…" (six languages, 3f13c40) with a 48 pt spinner replaces the room while a friendly table with house players starts (any start/Ready transition), after the classic table's Start with an opponent, and during a rematch; it ends when the match opens, the room detaches or the action fails | 5375378 `showMatchLoading`, `transition`, `detach`, `roomActionFailed` | `MPController.loadingMatch` (`transition`, `change(loading:)`, `addFriendlyHouse`, `launch`, `leaveCourt`, `closeObservers`); `ModernPongView.matchLoading`, `caption` |
+| Saved friendly lineups: starting a friendly table as its only human saves its house characters clockwise from the host (`friendlyRoster<n>`); a new friendly table of that size is filled from it (known characters, each once, at most n − 1, seat n − 1 − i) and waits for the host's Start | 1fc4bc2 `rememberFriendlyRoster`, `restoreFriendlyRoster`, `reviewRestoredRoster` | `MPController.rememberFriendlyRoster`, `restoreFriendlyRoster`, `startRestoredRoster`, `reviewRestoredRoster`; `MPPreferences.friendlyRoster` |
+| Clockwise seats: the seat lobby lists the host's seat first, then seats n − 1, n − 2 …, numbered 1…n, with "You sit nearest the camera. The other seats go clockwise."; the host cannot move ("Sit here" is for guests); "Add house player" takes the highest free seat | 1fc4bc2 `seatLobby` | `ModernPongRooms.seatLobby`, `seatRow`; `MPLobbyAnchor.seat`; `MPController.addFriendlyHouse` |
+| The full-roster pause: when the host's 3/4-seat lobby shows every seat taken it scrolls to the top and starts 700 ms after first drawing it (fenced by the room epoch); a seat freed meanwhile resets it | 1fc4bc2 `renderRoom`, `maybeStart`, `fullRosterSeenAt`, `rosterStartPosted` | `MPController.roomShown`, `maybeStart`, `roomEpoch`; `ModernPongRooms.lobby` (`lobbyScrollTop`) |
+| Saved team lineups: the local team game remembers the teammate and opponents per size (`teamRoster4` / `teamRoster3`), restored on opening and when "Two opponents" switches (the old size is remembered first); never the player's own character | 1fc4bc2 `CrossJourneyActivity.restoreTeamRoster`, `rememberTeamRoster` | `CrossJourneyModel.restoreTeamRoster`, `rememberTeamRoster`, `twoOpponents`, `choose`, `startTeamMatch` (`MPXJourney.swift`); `MPPreferences.teamRoster` |
+| Back from any room (friendly or tournament, open or completed): an explicitly saved room unchanged since its save leaves at once; otherwise "Are you sure you want to delete?" with Save and exit (green #83DFAD), Exit without saving (pink), Stay (blue); its message: never saved / discards only the changes since the last save / (online, no lobby rollback possible) the earlier saved entry is kept. Nothing starts while it is open | 83b050d, 9adf1f1 `navigateBack`, `confirmRoomExit`, `maybeStart` (452d82c's dialog and ce48214's silent discard are superseded) | `MPController.back`, `roomBack`, `confirmRoomExit`, `roomExitSave` / `roomExitDiscard` / `roomExitStay`, `maybeStart`; `MPRoomExitPrompt`; `ModernPongView.roomExitCard` |
+| "Changed": a local room compares its stored room and live checkpoints with its save (`SaveComparison.meaningful`: presence, activity, revision and server/client times ignored, numbers as doubles); an online room compares the room with its save and whether one of its matches was opened and left since the room was opened | 83b050d `LocalPongRepository.hasUnsavedChanges`, `SaveComparison`, `playedSinceRoomOpen` | `MPLocalRepository.hasUnsavedChanges`; `MPSaveComparison`; `MPController.playedSinceRoomOpen` (`enter`, `leaveCourt`, `closeResult`) |
+| Save and exit / Save for later: a local room keeps a separate checkpoint (the room without presence and its matches' live checkpoints); the room is saved explicitly (completion mark cleared) and listed, a completed one too | 83b050d `saveRoomAndExit`, `leaveFriendly(false)`, `saveCheckpoint`, `RoomBook.saveExplicitly`, `remember` | `MPController.saveRoomAndExit`, `saveForLater`, `leaveRoomScreen`; `MPLocalRepository.saveCheckpoint`; `MPPreferences.saveExplicitly`, `explicitSave`, `hasExplicitSave`, `remember`, `removed` |
+| Exit without saving: never saved → Finish (friendly) or leave / delete (tournament); local → the saved checkpoint replaces the room and live state; online lobby before the start with the same host → one transaction restores the saved house players and their seats, keeping peers who joined (refused if another device changed the house players, the room is full or a saved seat is taken); started online play is never rewound and the earlier save is kept. A failure reopens the room with the error | 83b050d, 9adf1f1 `discardRoomChanges`, `restoreSavedCheckpoint`, `SavedLobbyRollback` | `MPController.discardRoomChanges`; `MPLocalRepository.restoreSavedCheckpoint`; `MPSavedLobbyRollback` |
+| Rooms saved before explicit saves become explicit saves once; a completed local room with an explicit save is not cleaned up; Done / Finish / leaving removes the save | 83b050d `migrateExplicitSaves`, `refreshRooms`, `forget`, `LocalPongRepository.remove` | `MPPreferences.migrateExplicitSaves` (from `MPController.init`); `MPLocalRepository.keepCompleted`, `cleanup`, `drop` |
+| Two-player tournaments stay pairs: `create` uses the classic table for two players whatever table was remembered; choosing two players selects (and remembers) the classic table, locks the table picker and shows "Two players use the classic table."; the group-table explanation is hidden for pairs | bb8acda `PongRules.create`, `createForm.showChoices` | `MPSession.init`; `ModernPongView.createForm`, `tournamentChoices`, `keepTwoPlayersPaired`, `pairHelp` |
+| Catalog rows "Loading…" (after "Opening…") and the `novemberSeven2026` group (452d82c; only "Save and exit" is still used) | 3f13c40, 452d82c `AppText.kt` | `MPTextCatalog.swift` |
+
+Texts: the Back question's title, three messages, "Exit without saving", "Stay" and "Two players use the classic table." have no
+Android catalog rows, so Android (and iOS, through the same `MPText.t`) shows them in English in Spanish, Arabic, Hindi and
+Dutch; Hebrew has its own text. "Save and exit", "Play again", "Loading…" and the seat line have rows in all six languages.
+
+### Firebase rules
+
+Only 1fc4bc2 changed the rules in `47ad0c9..dd94c09`: a friendly room's host may create a house-only final duel (`_D`) in
+WAITING (the watched final of stage 1). `Tests/MultiPongFirebase/rules/merged.json` and `crosspong.fragment.json` are now Android's
+`firebase-setup/merged-database-rules.json` and `firebase/crosspong.rules.fragment.json` at `dd94c09` byte for byte (SHA-256
+`017b5b693f09741140394e73e47a8cccd4c188110c6763c2b415a9f39b121a1f` and
+`eccff32a8e0e5636ed0ded761a62c4fc934673814db592a92bf216dbc7aca33d`, LF), and `tests/crosspong.test.cjs` gained Android's two
+`multi21` tests (the rematch room created with its host first; the spectated house final). iOS and Android share one database
+(`minikCrossPong`), so iOS adds no rules of its own; the deployed rules must contain that merged candidate (Android's BUILD_STATUS
+records no deployment of it). Nothing was deployed, and the emulator tests were not run in this stage. The audit now compares
+the mirror with `dd94c09` instead of the `ANDROID_COMMIT` hash recorded above.
+
+Resolved (2026-11-10): the owner confirmed that Android's `dd94c09` rules (`firebase-setup/merged-database-rules.json`, including
+1fc4bc2's house-only final duel rule) are already live on the shared database, so no deployment is needed.
+
+### Known differences
+
+- iOS has no separate match screen to load: the court replaces the room at once, so `launch` ends the Loading page instead of
+  showing it, and Android PrivateMatchActivity's own "Loading…" page (formerly "Connecting to match…") has no iOS counterpart.
+- The full-roster pause counts from the next main-loop turn after the room update (SwiftUI has no pre-draw listener).
+- Android's Back-question dialog dims with the system default; iOS uses 60 % black.
+- `leaveRoomScreen` and the discard do not start a room refresh (`refreshRooms(false)` on Android); the list shows the saved copy.
+
+### Android behaviour ported as it is (reported to the owner)
+
+Both are fixed on iOS since 2026-11-10 (owner decision; see "2026-11-10 iOS-only fixes" at the end of this document).
+
+- A 2-seat friendly game also saves its lineup (`friendlyRoster2`). The next 2-seat friendly game is created with that house
+  player and waits for Start (`reviewRestoredRoster`), but only the 3/4-seat lobby has that Start button: the game cannot be
+  started (Back offers only saving or leaving it), and the wait lasts until a room is created without a saved lineup or a rematch.
+- A friendly table with house players and a second human shows "Loading…" to the host from the start transition until its
+  match opens, but the match needs the host's own Ready, which the Loading page hides; the host must save, leave and reopen it.
+
+### Left for stage 5 (not ported now)
+
+Tournament table colours and "You" on the tournament table card (a6c0b9a), the room's spacing changes (63466d8, a7b47a4,
+d376d64 `match_progress`), the status-line alignment (1fc4bc2 PrivateMatchActivity / CrossOnlineTeamsActivity / CrossJourneyActivity
+hud), the result card's look (d376d64, 5375378 outlines), and the Daily/Learn texts, tutorial navigation, point-highlight timing and
+team score padding listed under stage 3.
+
+### Tests and audit
+
+- New `Tests/MultiPongTests/MultiStageFourTests.swift` ports the Kotlin tests FriendlyRematchTest (2), SavedLobbyRollbackTest (3)
+  and TwoPlayerTournamentTest (2), and checks Play again's conditions, `SaveComparison`, RoomBook's explicit saves and their
+  one-time migration, the local checkpoint (unsaved changes, presence ignored, restore, removal), Back's question through the
+  controller (never saved → Stay → Save and exit → unchanged exit → change → Exit without saving restores the save), the saved
+  friendly lineup's clockwise seats and Start wait, the team lineups per size (NovemberSixRosterDeviceTest's team part) and the
+  texts in every language.
+- `python -I Scripts/audit-multi-pong.py`: OK (stage 1: 22, stage 2: 56, stage 3: 124, stage 4: 73).
+
+## 2026-11-09 stage 5: guidance and polish (Android c93e760, 971e958, d0bed3b, a6c0b9a, d376d64, 80fc74e, 5375378, 63466d8, a7b47a4, e7f3f27, b58f0d5, 651245f, 6fcb446, 1fc4bc2, dd94c09)
+
+Stage 5, the last stage of the `dd94c09` port (done 2026-11-10), covers the guidance texts, tutorial navigation, tournament tables,
+the result card, the point highlight, spacing, status lines and button lettering. Every value and text was read from the Android
+source at `dd94c09`; `Scripts/audit-multi-pong.py` compares them with `git show` (`check_stage5`, 142 values). `ANDROID_COMMIT` is
+now `dd94c09` and the catalog was regenerated from Android's `AppText.kt` at that commit. Not built on a Mac yet, and not
+type-checked on Windows.
+
+| Behaviour | Android | iOS |
+| --- | --- | --- |
+| The catalog groups dailyGuide2026 (17 rows) and courtTap2026 (4), the changed serve-instruction key ("…then on the highlighted side.") and the two receiving-set rows after "Paused"; the stage-1/4 groups are unchanged | c93e760, d0bed3b, d376d64, 971e958 `AppText.kt` | `MPTextCatalog.swift` (regenerated, 996 rows) |
+| `R.string.tap_marked_court` now "Tap the highlighted side to serve" (other languages unchanged); new `tap_opponent_side_to_serve` in six languages | d376d64 `issue_review.xml` | `MPText.issueTexts` |
+| Daily / Learn instructions and the live practice tip describe the assisted gestures (drag the player, tap a court to aim; an aiming lesson asks for the gold target first, then "Target chosen…"; the set practice keeps the double-tap hint) | c93e760 `CrossPracticeGuide` | new `MultiPong/CrossPracticeGuide.swift` (`instruction`, `tip`); `CrossJourneyModel.instruction` |
+| The Daily brief shows "Controls: Beginner" (16 pt bold, centred) instead of the partner/opponent line; Help starts with it; a practice HUD's second line is "Controls: Beginner · score" | c93e760 `controls()`, `brief`, Help, `refresh` | `CrossJourneyModel.controls`, `showHelp`, `refresh`; `MPXJourneyView.brief` |
+| The journey HUD's tip order: team outcome, Paused, serving stage (`tap_marked_court` / `watch_serve_land`), receiving a set (`receivingSetTip`), serving (`tap_opponent_side_to_serve`), the practice's own tip, the set tip; the fraction isolated with no-break spaces in the HUD and the result | c93e760, 971e958, d376d64, 651245f | `CrossJourneyModel.refresh`, `showResult` |
+| HUD layout: title (and the controls/score line) centred, the tip from the reading edge; in portrait exactly 3 lines (team match) or 4 (practice), at most 12 in landscape; a team match draws its title 4 pt higher without moving anything else | 1fc4bc2, d376d64 `MatchSceneLayout.fixedPortraitStatusLines`, dd94c09 baselineShift | `CrossJourneyModel.hudTitle` / `hudScore` / `hudTip` / `hudLines`; `MPXJourneyView.hudView` |
+| `receivingSetTip`: "Your teammate is setting for you. Wait for the bounce." until the high pass bounces, then "Swipe up through the bounced ball to smash" (journey and online team courts) | 971e958 `CrossText`, `CrossOnlineTeamsActivity` | `CrossText.receivingSetTip`; `CrossJourneyModel.refresh`; `CrossTeamsModel.render` |
+| Court-tap wording: the Beginner and Standard help, Standard's return hint and the serve card ("Tap X's side of the table … to serve there. You can also tap your side and drag toward them.") | d0bed3b `CrossActivity.showHelp`, `CrossTutorial.card` | `MPController.showCrossHelp`; `CrossTutorial.card` |
+| Tutorial navigation: `canGoNext`; Back only when there is a card before, Next (green #58BD8C) only when there is a card after, the bottom row only for those (GuideDialog `navigationCount`); Next never ends the guide; the last card marks `guide_seen`; system Back leaves when there is nothing before; Show me and Learn team play light blue #B8D9FF | d0bed3b `CrossTutorial`, `CrossActivity.showGuideCard`, `navigateBack`, `GuideDialog` | `CrossTutorial.canGoNext`; `CrossTourCard.canGoNext`; `MPController.showTourCard`, `tourNext`, `back`; `ModernPongRooms.tourCardView`; `MPXGuideStyle` |
+| GuideDialog: 16 pt (PongSpacing) above the bottom row, no row without navigation; labels 17 pt | b58f0d5, d0bed3b, 6fcb446 | `MPXGuideCard` |
+| Local cross match result: Play again green #83DFAD | 5375378 `CrossActivity.showResult` | `ModernPongRooms.crossResultView` |
+| Result card readability: a 50 % white backing (stroke unchanged), dark lettering #142C42 without shadow, dark gold heading and rank colours (#5B450D, #183E62, #104C3B, #632D50), the headline and names darkened 15 % at a time (Float blend, truncated, at most 12 times) until their contrast with #808080 is 4.5; 5375378's white outlines are gone again; actions 16 pt below, labels 19 pt | d376d64, 5375378, b58f0d5, 6fcb446 `MatchResultDialog` | `MPXResultCard` (`readable`, `contrast`, `luminance`, `blendBlack`) |
+| Point highlight: a steady outline, opaque for 2.15 s, then fading until 2.75 s (no 220 ms blinking) | d376d64, 80fc74e `CrossScoreFeedback` | `CrossScoreFeedback` (`change`, `alpha`, `color`) |
+| Team scoreboard boxes (and their highlight) 4 pt taller at the bottom | dd94c09 `drawTeamScoreboard` | `CrossScene.renderTeamScoreboard` |
+| Tournament tables: light blue (#B8D9FF) round sections; "You" (13 pt, 3 pt below the name) under this player's seat; this player's controls inside their own table card, 8 pt above and below each action | a6c0b9a `groupBracket`, `TournamentTableCard` | `ModernPongRooms.groupRound`, `tableCard`, `matchControls(inTable:)`; `MPXTournamentTable.localId` |
+| Spacing: PongSpacing.ACTION_TOP_DP = 16 pt above every form action (the room exit question's actions, saved games, profile Save (was 24), Join room, team actions, Create, Copy code, Done, Start, Save for later / Finish, Add house player / Add player / Fill, Start tournament, the restored lineup's Start, fixture actions); "In progress" 16 pt above and 18 pt below; journey actions 16 (was 9); team-room actions 16 (was 20), no space below the code field; Ball assistance 16 pt above | 63466d8, a7b47a4, d376d64 `match_progress`, e7f3f27, b58f0d5 | `MPSpacing.actionTop`; `ModernPongView`, `ModernPongRooms`, `MPXJourneyView.button`, `MPXTeamsView`, `MPXReceptionSettings` |
+| Status lines from the reading edge: CrossActivity and the room's cross court (`courtStatus`), the online team hint; the classic court's status stays centred (b0cdeb3) | 1fc4bc2, b0cdeb3 | `ModernPongRooms.courtStatus`; `MPXTeamsView.game` |
+| Button labels one size larger (PongButton +1 sp from 10 to 24 sp): journey 18, team rooms 18, guide 17, result 19, Ball assistance 19 | 6fcb446 `PongButton`, `ExpandButton` | as listed |
+
+### iOS-only translations (owner decision, 2026-11-10)
+
+The owner decided that no stage-5 text may stay in English on iOS where Android falls back to English. Android's translations are
+used wherever Android has them (the catalog, `issue_review.xml`). For the texts below Android has only English and Hebrew (or
+shows them without `AppText`), so iOS has its own Spanish, Arabic, Hindi and Dutch in `MultiPong/MPTextIOS.swift`, written with the
+catalog's existing terms; Hebrew stays Android's. `MPText.t` reads them after Android's exact rows; the audit checks that none is an
+Android key, that none matches an Android template (except "Ball hit the net", see below) and that every language differs from
+English.
+
+- The Learn guide and help: Starter's return hint ("Move into reach, then tap or swipe early to aim. Starter gives you a longer
+  return window.", also the Starter status and help), the team card's title "Team play: set up a smash" and text (`setHelp`, also
+  the team screens' help).
+- The Daily and team-match tips: "Set ready! Meet the ball to lift it to your teammate", "Double-tap near the ball to set up your
+  teammate's smash", and `CrossText.teamOutcome` ("Ball hit the net", "Ball went out", "Serve fault", "Ball returned to the
+  striker's side", "Ball was not returned", "Your team's point", "Other team's point"). Android's `teamOutcome` never passes
+  through `AppText` (EN/HE only), so iOS's "Ball hit the net" deliberately does not take the catalog's "{0} hit the net" template.
+- The tournament tables: "Table {0}", "Tie-break for 2nd place", "(✓ – through)", "Cancelled", "Finish your current match before
+  starting another."
+
+English fallbacks outside the stage-5 screens remain as on Android (for example the online team room's EN/HE-only texts, the cross
+settings' Starter comparison line and the journey's "Choose a player" sheet title); they are left to the separate text fix.
+(Done 2026-11-10: see "2026-11-10 iOS-only fixes".)
+
+### Not ported, and why
+
+- PongButton's lettering offsets (`latinOffsetDp`, `hebrewMenuOffsetDp`, the 1.5 dp shift, `FamilyButtonAlignment`) of b0cdeb3,
+  1fc4bc2, a6c0b9a, a7b47a4 and 6fcb446: Android text measurement of raised faces; SwiftUI centres the labels.
+- The +1 sp of the room screens' `button()` (16 → 17 sp): iOS's `action` already uses the 17 pt headline; ExpandButton's 16 → 17
+  likewise. Remove / Sit here (default 14 → 15 sp) keep iOS's callout.
+- MonetizationActivity's margin (iOS sells nothing), BotPicker's action margin (the iOS character sheet has no Select / Cancel
+  actions), ModernActivity's opponent button margin (the iOS Simple experience has a carousel, no such button), CrossActivity's
+  house-player buttons (the iOS settings stack already has 16 pt between them), ReadingPanel's removed `roomyButtons` (iOS never
+  had them), PongHudText `outlineColor` (only used by 5375378's outlines, removed again by d376d64).
+- AndroidManifest `fullUser` (a9140c3): the iOS screens already follow the device.
+- Store media, QA reports, BUILD_STATUS and version bumps; device and visual-review tests.
+
+### Commit sweep (47ad0c9..dd94c09)
+
+Every app-side change of the 35 commits is now on iOS or listed above as not portable: 257e058, 9862dc6, 0285385, a9140c3,
+3b52d51, 4969038, d376d64 (court parts), 80fc74e (rim) — stage 2; 5375378, fcfd6b2, d0bed3b (input), 971e958 (input), af84f72,
+ab089c5, 6fcb446 (footwork), c93e760 (footwork, aiming wait) — stage 3; 1fc4bc2, 452d82c, 83b050d, 9adf1f1, ce48214, bb8acda,
+3f13c40 and 5375378's rematch — stage 4; b0cdeb3 and 1fc4bc2's finals — stage 1; this stage the rest. 0f8df4e, 8d5a2d0, 81697ab
+and fd19d85 change only tests, BUILD_STATUS and store media.
+
+### Known differences (all five stages)
+
+- The arena painting is the existing PNG (Android ships a lossy WebP); the terrace foliage follows where iOS draws the terrace;
+  the classic court has no net flash and keeps its ball styling (stage 2, 3).
+- The double-tap timeout is fixed at Android's default 300 ms; finger speed comes from the last 80 ms of samples (stage 3).
+- No separate match screen to load (the court replaces the room at once); the full-roster pause counts from the next main-loop
+  turn; the Back question dims with 60 % black; leaving or discarding does not start a room refresh (stage 4).
+- iOS deliberately differs from Android (owner decision, 2026-11-10; see "2026-11-10 iOS-only fixes"): a 2-seat friendly game
+  never saves or restores a lineup (Android's restored 2-seat lineup has no Start button), the restored-lineup wait belongs to its
+  own room, and the host of a friendly table with house players and a second human is not kept on "Loading…" while the match
+  waits for the host's Ready (Android keeps it there).
+- Spacing follows Android's margins on top of iOS's stack spacing (which stands for Android's 12 dp bottom margins); a few screens
+  keep their iOS structure (Save for later / Finish below the friendly card instead of inside it, the friendly join row); the HUD
+  line height is the iOS system font's (stage 5).
+- iOS-only translations wherever Android falls back to English (above, and every other MultiPong text since 2026-11-10), the team
+  room's texts through `MPText`, and the tournament place as a plain number in translations (2026-11-10).
+
+### Tests and audit
+
+- New `Tests/MultiPongTests/MultiStageFiveTests.swift`: Kotlin TutorialTapAndRestTest.navigationHasNoPhantomEndpoints; the guide's
+  cards through the controller (no phantom Back / Next, `guide_seen` on the last card); the court-tap texts in six languages; the
+  Beginner help; every CrossPracticeGuide instruction and tip; the journey's controls line, HUD lines and Help; receivingSetTip
+  before and after the bounce; the serve tips in six languages; the result card's readable colours; the iOS-only translations.
+- `IssueReportTests` follows Kotlin IssueReportTest at dd94c09 (the steady, fading highlight).
+- `Scripts/audit-multi-pong.py`: `check_stage5` (142 values); `ANDROID_COMMIT` = `dd94c09`; with `--android` every Android file is
+  read as committed at `ANDROID_COMMIT` (`git show`), so a working tree that is ahead of it, or checked out with CRLF line endings,
+  changes nothing. `python -I Scripts/audit-multi-pong.py`: OK (stage 1: 22, stage 2: 56, stage 3: 124, stage 4: 73, stage 5:
+  142); with `--android C:\Projects\MinikCrossPong`: OK (996 catalog rows, 396 strings.xml, 5 journey.xml and 55 issue_review.xml
+  texts, 252 committed and 18 compared files at dd94c09).
+
+### Summary
+
+iOS now matches Android `dd94c09` in full, apart from the known differences listed above (platform limits, the two Android bugs
+fixed on iOS only, and the owner's iOS-only translations).
+
+### SHA-256 of the Android files used at dd94c09
+
+`git show dd94c09:<path> | sha256sum`: the listed files that changed since `47ad0c9` (every other committed hash above is unchanged
+at `dd94c09`), then the app files added or first used since then.
+
+```text
+b537c79f18b5a072585506e0dce5c7b4440e093ec6f0e26d4837693a50c17d58  BUILD_STATUS.md
+5db78de8582444461e860cee749be9efbdb17c89d7585153eff1ae09313ec732  app/build.gradle.kts
+2d202ee993e60dc5a0b86bd38cc4bc40f341baf3c3bde951a23bfe46ed1a5142  app/src/main/AndroidManifest.xml
+279566b09283af06247c6516fc9c6e9b30baec3060cba9b5782f5ab76d06966a  app/src/main/assets/pong-poses/atlas.json
+3985983f50cd95820f01ee9e4678a9549110e7312e672bc7f546aaff3f2a0acc  app/src/main/assets/pong-poses/minik-walk.png
+daa97c34451bb590a378088c69af34c374ba79d76b2eee5f69d342bed870f2cb  app/src/main/assets/pong-poses/minik.png
+03b302fd2f4f296c25bee19d85094467181491fb2553c52d7a8a1e45686fcb11  app/src/main/java/com/appsbybros/minik/localization/AppText.kt
+3948b356b2008f8762ccc9bb4e3162f4a3dc62a011001e2003f4e6b3863148ff  app/src/main/java/com/appsbybros/minik/monetization/MonetizationActivity.java
+c3e6e77069a77f3250538e034bbe254ddfbf8d2bd4e7b87d526e4731766806ae  app/src/main/java/com/appsbybros/minik/pingpong/BotPicker.kt
+01c9e60e906af79fb5522d0b2c52555005ebea8c77dc86305fed16a2c62d08a1  app/src/main/java/com/appsbybros/minik/pingpong/GuideDialog.kt
+c9b7810aa4bfd5862b16c987448eeb342185999d2115e82acb9de50c6151fc74  app/src/main/java/com/appsbybros/minik/pingpong/MatchResultDialog.kt
+1254ef041aca2c4365e7d51c6fad80a97223f966e90f343c7e2a5c06ef73cc61  app/src/main/java/com/appsbybros/minik/pingpong/MatchSceneLayout.kt
+0ad2e5a300cc1b4a846424470985764dbdefd97d949ebfb1b2c4fd0c600a7664  app/src/main/java/com/appsbybros/minik/pingpong/ModernActivity.kt
+f1caaf478e9559ed6c2ba6e758978752ffa438dd35b1d9697b6131b615dee9c8  app/src/main/java/com/appsbybros/minik/pingpong/ModernCourt.kt
+04adba627fcdc22cbd47f42b8f0e9c0c0891910c692389f4c5244d83b343fe4e  app/src/main/java/com/appsbybros/minik/pingpong/ModernGame.kt
+475aa00f8941e60317b9199c307b5280f9e5983720550529f4cf13b00b36b1be  app/src/main/java/com/appsbybros/minik/pingpong/PongButton.kt
+1336913dc830fe356180681233b8e7395ad46355825ab9fa4c77535cb559d495  app/src/main/java/com/appsbybros/minik/pingpong/PongPlayerAtlas.kt
+f4b3700a9682a8ff766633890e7e098028627c1ffbbe0a543d02e8f7d035d0bc  app/src/main/java/com/appsbybros/minik/pingpong/ReadingPanel.kt
+0203928b60f287759e0932b351e5b404db50d2660dd6d22c806753982c8395c6  app/src/main/java/com/appsbybros/minik/pingpong/ReceptionCamera.kt
+85ea9fee5bc29991437818207e9f51665ee0dc658df83705f76ccfb5e3edfd10  app/src/main/java/com/appsbybros/minik/pingpong/TournamentTableCard.kt
+ee8c72da08d3c45d79d55f10d6403285decadbc8b241124d63d75cf64500a291  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossActivity.kt
+06d10123bf588e06f51a935f64803b37e52ed016b50bbd1cf731471276fbce2b  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossCourt.kt
+c149001d11718edeafb6edcc0f5a12b73945362c418ba5662888cdcf41936738  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossEngine.kt
+a0ed1c46c843eeb368e9733895d74829bfa066ce3c94e72bb5a5f26c933e0130  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossJourneyActivity.kt
+51247384e539acebbbd01c44120c49bfdfd38229ae133c608ff1978187e3f0a3  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossLink.kt
+b02108a23ccbe19280f4df966336a5a72ddd600673d137741c51ded424260f74  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossMatch.kt
+b362831deb9dfbd6126a95f4bbb0077a6ea03d89a5d439206e865272ecc51b57  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossOnlineTeamsActivity.kt
+ce084517494377db6643d5c357e9e98877df80648122dac4eb072b3fffdbd28b  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossPractice.kt
+c9279b1dea70fba4a586762121eaa3ccbc5b525533307e7f7f453709f90144ba  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossReferee.kt
+23b6e990b3eadcedb92391b1a04435464dd84a8bf4b0af142d95f9ac3a8cd65a  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossScoreFeedback.kt
+052350615e7c7b2d64382a0f0282a85524097e23a0a459eb4525b9cb3a4c4646  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossShots.kt
+a34ab7d49ed2b9a3fbd4145310ec4235b392a94b47226e0b7a2ca0ee699ab2f2  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossText.kt
+ffeeef7190e62fc9e15f1eed28ed5a901c02ec36048a67ba291e86dccc8bca8b  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossTutorial.kt
+732b97e2046de5da3edd38a109ea23ffcb9f62deeb96ea35496156c040694ad7  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/ControlChoice.kt
+3c6da9c3a1cf6027cddf3daaf1a31f96c37e860257b59423f5fa19f8306cf3b7  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/CrossFixture.kt
+ffe49a26931df88711deae401300f757a0da01dc6c9cb0e91d09ac2bf97537fb  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/ExpandButton.kt
+6f90edc84eb389865e3ba28b85b7b9ab5ca10031d75202d5a1c79e085df2d39f  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/PlayActivity.kt
+6b7cef657187ef2d1ec7c461797689f40296d70050f8fe3147ff9580fb09de56  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/PongModels.kt
+42e8eb60f33256a64f2b209d5f55c55cab6a6cd125fbdf3fb1a40f499a8f3042  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/PongRepository.kt
+1e470641b6f50755060c8a8b6ce02dbc20d131a7af62c4ff9f3690acdc6f3c25  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/PrivateMatchActivity.kt
+14d116f912eb7ab2b9150cf8b49dd6b145adcff557f8c6a08f73c889eab27d14  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/RoomBook.kt
+1e3daf70684d10957ffeb778a3535cd183904a052eac25ea29d351c281a479e5  app/src/test/java/com/appsbybros/minik/pingpong/GameModeTournamentTest.kt
+15fe7212b506f02b9724889f4c0d49a90cf7b503e1d604310a931605d19a04ac  app/src/test/java/com/appsbybros/minik/pingpong/cross/CrossAdversarialTest.kt
+951e52add73296313280f47fd8cc2c85bc6f713e742e05297bcd2c738ec7cd7c  app/src/test/java/com/appsbybros/minik/pingpong/cross/CrossControlTest.kt
+6d8966b956f2a0685337e6b08f2fdb4bcf0b1ced02291b864c56789773b27b46  app/src/test/java/com/appsbybros/minik/pingpong/cross/CrossPracticeTest.kt
+39dcafe18b78d8aaba5dfff722761208123d0d586f36917fd1c8b261edf8b54e  app/src/test/java/com/appsbybros/minik/pingpong/cross/IssueReportTest.kt
+017b5b693f09741140394e73e47a8cccd4c188110c6763c2b415a9f39b121a1f  firebase-setup/merged-database-rules.json
+eccff32a8e0e5636ed0ded761a62c4fc934673814db592a92bf216dbc7aca33d  firebase/crosspong.rules.fragment.json
+2a5b508a32c51837ebcbb4677fbf8489b22deb547065c81978c35226957d8fdf  firebase/generate-rules.cjs
+c43872e1630059bb40a4291958801a483e576552254123f24615ae501b0133bf  firebase/tests/crosspong.test.cjs
+0ed4bc775c4ed5c72a50c1e1f736ebf78485ef0cff6e62af897683e92454efc2  app/src/main/java/com/appsbybros/minik/pingpong/LooseBall.kt
+88ff1d47d0c1990f783838571a9602bf3fd995fe5747acf69a108592bc6ec9d5  app/src/main/java/com/appsbybros/minik/pingpong/PongHudText.kt
+27d19e7d2f83d716c7403fd211f64cdd47175049353e7227fea7ee460ef6fae7  app/src/main/java/com/appsbybros/minik/pingpong/PongSpacing.kt
+353dd4f9a74382dd8890c83150174949cc481f86ece93df8c5316199307e7046  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossCamera.kt
+a8e753bc6c187b141b5dc7b0473f08d9e8bd49a76adafc66483b015b5185e3e9  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossPaddlePose.kt
+4f1a6d320ba58353cdc6e160db47e32f2ad8c403c4495560c3d905aa621edabc  app/src/main/java/com/appsbybros/minik/pingpong/cross/CrossPracticeGuide.kt
+b6cac20ac04a755d390f935597dbc98ca29f229ecec19662a23f90b9c9eaf247  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/FriendlyRematch.kt
+8f000aea2761760a454446da802f9f1fb4b44427d23b2ba78ac551a9fce73f69  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/SaveComparison.kt
+6a3d335f9c7dd0c8f3c3678d1720c1165f68cb0550ccc003c2d16c696e13d7ca  app/src/main/java/com/appsbybros/minik/pingpong/multiplayer/SavedLobbyRollback.kt
+```
+
+### SHA-256 of the Android working-tree files used (2026-11-10, read as committed at dd94c09)
+
+The files the audit compares (the catalog source, `strings.xml`, `journey.xml`, `issue_review.xml`). From this stage the audit reads
+them with `git show dd94c09:<path>`, so these are the committed blobs (LF), not the CRLF files of a Windows checkout.
+
+```text
+03b302fd2f4f296c25bee19d85094467181491fb2553c52d7a8a1e45686fcb11  app/src/main/java/com/appsbybros/minik/localization/AppText.kt
+92bfe96bd805c44cf7c1a15f698e35ef0525568d8fc667dced7f9acbb955fe4e  app/src/main/res/values-ar/issue_review.xml
+af0bd24eed1b55296e27b86b4995ff0ab7ace178ef469fca9f43fffb420112a6  app/src/main/res/values-ar/journey.xml
+4bb329f4df53ed0283dffb53d3b2f645990b6f3a27ddfa7716b7afce1bcd9030  app/src/main/res/values-ar/strings.xml
+17dcc34de5c5296c1ab094c8dbf16c70e7519ea3c80695286e5e6b1b421faae8  app/src/main/res/values-es/issue_review.xml
+9c2df7652815e63e930900712eb34802c10d53500c9d978cd4d077537bf2f783  app/src/main/res/values-es/journey.xml
+18383d07348fa27fc1a4eb5ed53cd67a480ce1cbf80ae24b6096b663df513662  app/src/main/res/values-es/strings.xml
+6ce0eb06ed4c3ebeb4daa7a3e8c1a4723cbf69fa34c0af0f265e5a0657f0127d  app/src/main/res/values-hi/issue_review.xml
+527eebe33f86df6d043ed61bc62e4fea929d5d1d12f9cebd26f267a00bc4d469  app/src/main/res/values-hi/journey.xml
+62bb4dff10e41742ce4e35d889d633bc08b8dc52f40cdcd80356c8edd621ff2c  app/src/main/res/values-hi/strings.xml
+58822b184e19a84d937f035726a6a7e32891d106b14036f42c1cfe110cdd093a  app/src/main/res/values-iw/issue_review.xml
+6f01d1cbeea8f2ab24bdce84e7116a882244df24e7d1a11a022f785c488895f1  app/src/main/res/values-iw/journey.xml
+bc0d4f0ccb023461e9c5d1c63c5f266496b705bbfbf949f5b14731beb3acb351  app/src/main/res/values-nl/issue_review.xml
+65f206fb094df4a5aad1eb363f0bf69c22008beb9eb629c18395f1bd389ca0fa  app/src/main/res/values-nl/journey.xml
+dcbbc1c3d0c3b7f20a224f7157ac29d2f71d0fbb514d18319161e5bea8fb7d43  app/src/main/res/values-nl/strings.xml
+3bd1fa1f7379a7b94973c9f74367baca5a383d122de99dcc29ee4d4dbb9e82de  app/src/main/res/values/issue_review.xml
+58a9ff2ecf8e42f76c784aba5fba7bfa1db58883afcf63a9958c578f507bce83  app/src/main/res/values/journey.xml
+23bd961ecd0545937beacf91435cea97969289da90cf35fdf6bd5555ef8d2680  app/src/main/res/values/strings.xml
+```
+
+## 2026-11-10 iOS-only fixes (owner decision)
+
+The owner decided that the two Android bugs reported in stage 4 "must be fixed in iOS" (Android is fixed separately) and that no
+text may stay in English: "Translate for IOS (only) of course." iOS therefore now deliberately differs from Android `dd94c09` in the
+places below. The Firebase wire format, paths and rules are unchanged, so iOS and Android phones still share rooms. Not built on a
+Mac yet, and not type-checked on Windows.
+
+### Fix 1: a 2-seat friendly game could never start
+
+- Android (`PlayActivity` 1fc4bc2): `rememberFriendlyRoster` saves `friendlyRoster<n>` for every table size, 2 included. The next
+  friendly game of that size is created with the saved house player and `reviewRestoredRoster`, so `maybeStart` waits for the seat
+  lobby's Start, but the seat lobby (and its Start) exists only for 3/4 seats. A 2-seat game with a restored house player never
+  starts. The flag is also one per screen, so a room opened afterwards (a saved game) inherits the wait.
+- iOS: `MPController.rememberFriendlyRoster` saves only 3/4-seat tables; `restoreFriendlyRoster` never fills a 2-seat table and
+  clears a stale `friendlyRoster2` (saved by the old rule); the wait is stored as the room it belongs to (`reviewRestoredRoom`,
+  `reviewRestoredRoster` is true only while that room is shown), so no other room waits for a Start it cannot show.
+- Why: the 2-seat table already has its own opponent picker and Start (the house player is chosen there), so a restored lineup has
+  nothing to add; keeping the review only where its Start exists leaves 3/4-seat behaviour exactly as on Android.
+
+### Fix 2: the host stayed on "Loading…" while the match needed the host's Ready
+
+- Confirmed on iOS by tracing the code: in a friendly table with house players and a second human, the host's `maybeStart` runs
+  `transition(start)`, which set `loadingMatch` (Android 5375378 `showMatchLoading`); `ModernPongView` then shows `matchLoading`
+  instead of the room. After the start, `MPRules.friendlyHouseReady` does nothing because another human sits at the table, and
+  `startReady` needs every human's Ready, so nothing opens the match; `loadingMatch` ended only in `launch`, on a failure or when
+  the room closed. The host's Ready button is in the hidden room: the host could only save, leave and reopen.
+- iOS: `MPController.awaitsOwnReady` (a started friendly room where this player's fixture is neither playing nor over, lacks their
+  Ready, and Start's house-player Ready does not apply). `transition` does not show the Loading page when the change it makes leaves
+  the player's own Ready to choose, and after the transaction it ends a Loading page if the room as it now stands still needs that
+  Ready. The room is shown with its Ready button; the Loading page still covers a start that opens the match by itself (the host's
+  house-player Start, the last Ready, a rematch, the classic table's Start).
+- Why: the intended flow (`friendlyHouseReady`) is that every human chooses Ready when another human sits at the table. Marking the
+  host Ready inside the start transaction would change what a start writes to the room (Android phones never write that),
+  so iOS keeps the room data identical and only stops hiding the button.
+
+### Fix 3: every text in every language
+
+`MultiPong/MPTextIOS.swift` gained 85 rows after the 17 stage-5 rows (Spanish, Arabic, Hindi, Dutch; Hebrew stays at the call site,
+Android's where Android has it). `MPText.t` reads them after Android's exact rows; three keys come before an Android `{0}` template
+that would fill them with English words ("Fit all players" took "{0} players" → "Fit all jugadores", "Playing now" took
+"Playing {0}" → "Jugando contra now", and stage 5's "Ball hit the net"). Call sites changed:
+
+- `CrossTeamsModel.tr` (the online team room) now goes through `MPText.t` (Android `tr` is English/Hebrew only), so its texts also
+  take the Android catalog rows that exist ("Team match", "Copy code", "Help", …); its player sheet follows `MPText.rtl` (Arabic).
+- `MPKnockout.advanceText` ("You reached the final!" …) through `MPText.t`; the tournament place is a plain number in a catalog
+  language ("Quedaste en el puesto 2", not "2nd"; `MPCompletionText` placed).
+- The reception warning (`MPController.crossIssue(.reception)`, Android passes CrossLink's English) with new Hebrew; the team
+  celebration's accessibility label (`MPXUI`); the team scoreboard's joining word (`CrossScene`, " and " / " ו־").
+
+The translated texts (85), by screen:
+
+- The Back question and the pair help (ModernPongView) (7): "Are you sure you want to delete?", "Your earlier saved entry will be kept. Shared online play continues; other players' progress is not rolled back.", "Exit without saving discards only your changes since the last save. Your earlier save will be kept.", "This has never been saved. Exit without saving removes it.", "Exit without saving", "Stay", "Two players use the classic table.".
+- ModernPongView: alert, titles, retry, busy spinner, menu state, nickname arrows (10): "OK", "Tournament match", "Ping Pong", "Match result", "Retry online connection", "Loading", "Expanded", "Collapsed", "Previous nickname", "Next nickname".
+- ModernPongRooms: leaving a tournament, players card, finalists, camera, Starter comparison line (5): "Your completed results stay. Your unfinished matches are cancelled.", "{0} players · Skills out of 10", "Finalists: ", "Action camera", "Starter gives you more time to tap or swipe than Standard. Beginner hits automatically when in reach. Pro uses a directed swipe.".
+- Template leaks (cross toolbar, knockout bracket) (2): "Fit all players", "Playing now".
+- The cross court's connection warnings (MPController) (3): "This match needs the same app version on every phone.", "Connection interrupted. Reopen this match to resume.", "Ball assistance could not be shared. The match uses normal speed until it connects.".
+- Knockout advance texts and bracket (9): "You reached the final!", "You reached the semifinal tables!", "You advanced to the next round!", "You reached the semifinals!", "You reached the quarterfinals!", "Knockout bracket. Swipe sideways to see every round.", "Bye · advances", "🏆 Winner!", "Who will win?".
+- The character sheet title (journey and team room) (1): "Choose a player".
+- The online team room (MPXTeams) (44): "Connection interrupted. The table waits while you reconnect.", "Enter the six characters your friend shared.", "We couldn’t find that room. Check the code with your friend.", "This match has already started. Ask your friend to create a new table for you.", "All friend places are occupied. Ask someone to leave the room before joining.", "Update the app to join this table.", "Check your connection and try again. Your existing room can be reopened using its code.", "This room was cancelled", "Match complete", "Waiting for every player to return", "Tap another court to serve", "Tap to choose", "Waiting for the host", "Room code copied", "Join my Multiplayer Ping Pong team table! Open the app, choose Online team game, then enter room code: {0}", "Could not cancel. Check your connection and try again.", "Leave the table?", "Keep playing", "The match waits for you. Use the room code to return; a bot will not replace you.", "Let’s find your table", "Choose your teams", "Finding your table…", "Back to team rooms", "This match has started with the selected players.", "Team size", "Two against two", "Two against one", "Create team room", "Join team room", "Room code: ", "Invite a friend", "This older room keeps its original places. Create a new room to arrange the teams.", "Choose yourself for a place before starting.", "Start match", "Choose every player and wait for selected friends to connect", "Reconnecting…", ". Tap to change player", "Your team", "Other team", "Tap a player to change", "The host arranges the teams", "Connected friends", "Leave this place empty", "Pause / Continue".
+- Team celebration label, reception switch, scoreboard joining word, set-up button (4): "Your teammates celebrate together", "Zoom in for another player's return (not bots)", " and ", "Set up teammate".
+
+Kept in English on purpose (listed in the audit): the app name "Multiplayer Ping Pong" (Android keeps it in every catalog
+translation, e.g. "¡Juguemos a Multiplayer Ping Pong!") and the feedback e-mail subject "Multiplayer Ping Pong feedback" (sent to the
+developers). The Simple experience's texts (ModernPongView's classic single-player menu, guide, help, game settings and status;
+`MPTutorial`) stay as on Android: the Multi Ping Pong app opens only the full experience (`PingPongOnlyRootView`) and Minik Math Plus
+uses `Sources/ModernPong`, so they never show. Internal error strings (`CrossStateError`, `MPError` raw values, CrossTeamRoom's
+failure keys) are never shown: the screens show their own translated explanations. Names (house players, nickname words) are not
+translated, as on Android.
+
+Translation notes: Android's catalog names both Beginner and Starter "مبتدئ" in Arabic and "शुरुआती" in Hindi, so the cross settings'
+level line names the levels there by position ("the second level", "the first level") rather than by those identical names; the
+Android rows themselves are unchanged (they win), which the owner may want fixed on Android.
+
+### Tests and audit
+
+- New `Tests/MultiPongTests/MultiPongIOSFixesTests.swift`: a 2-seat friendly game with a stale `friendlyRoster2` holds only its
+  host, clears the lineup and starts as soon as its house player is chosen (and saves no lineup); a 4-seat lineup still fills the
+  table and waits for Start, and the next room does not inherit the wait; `awaitsOwnReady` for mixed, house-only, readied and
+  waiting tables; the full flow (a 3-seat table with a guest and a house player starts after its pause, the host sees the room with
+  no Loading page and its Ready reaches the room); every MPTextIOS row in every language; the named screens (Back question, team
+  room, knockout, template leaks, the joining word).
+- Updated: `MultiStageFourTests.testLoadingAndExitTextsInEveryLanguage` (the Back question is now translated),
+  `MultiStageOneTests` ("Finalists: " → "Finalistas: "), `GroupTournamentTests` (the Spanish place number).
+- `Scripts/audit-multi-pong.py`: `check_ios_fixes` checks the 85 new rows (not Android keys, not taken by an Android template unless
+  it would leak English, translated in every language, Arabic in Arabic letters, Hindi in Devanagari, no bidi controls, placeholders
+  kept, used); that no MultiPong interface literal falls back to English (every English literal a person can read, found
+  statically in `MultiPong/*.swift`, resolves to an Android row, an MPTextIOS row or an issue/journey resource text, with
+  `MPText.t`'s lookup order and no template filled with the literal's own English words), apart from the listed Simple-only and
+  kept-English texts; that no call site chooses between English and Hebrew alone (an EN/HE-only `tr`, a Hebrew/English literal
+  ternary, an `if he { return "…" }` branch not followed by `MPText.t`); and the fixes' code. A text built at run time from a
+  variable (not a literal) cannot be checked statically; the sweep of every literal covers the texts in the sources. `check_stage5`
+  keeps checking the first 17 rows and stage 4's Loading rule now reads the changed condition.
+- `python -I Scripts/audit-multi-pong.py`: OK (stage 1: 22, stage 2: 56, stage 3: 124, stage 4: 73, stage 5: 142, iOS-only fixes:
+  767); with `--android C:\Projects\MinikCrossPong`: OK (996 catalog rows, 396 strings.xml, 5 journey.xml and 55
+  issue_review.xml texts, 252 committed and 18 compared files at dd94c09).

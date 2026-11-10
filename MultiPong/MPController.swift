@@ -8,6 +8,8 @@ enum MPRoute { case menu, lobby, game, guide, result, cross, journey, teams }
 /// A card of the cross guide (Android CrossActivity.showGuideCard).
 struct CrossTourCard: Equatable {
     var title: String; var message: String; var phase: CrossTutorial.Phase; var canGoBack: Bool
+    /// Android d0bed3b: the last card has no Next (`canGoNext`); the bottom row shows only the navigation that exists.
+    var canGoNext = true
     /// The team and scoring cards offer the team game (Android 5c1aa4d, R.string.guide_team_practice).
     var teamPractice = false
 }
@@ -15,6 +17,14 @@ struct CrossTourCard: Equatable {
 struct CrossLocalResult: Equatable { var title: String; var rows: [MPXResultRow]; var won: Bool }
 /// Android 47ad0c9 CrossActivity.showHelp: the help for the current lesson or control level, closed with its X.
 struct CrossHelpCard: Equatable { var title: String; var message: String; var resume: Bool }
+/// Android 83b050d / 9adf1f1 `confirmRoomExit`: the room the question is about and which explanation it shows (chosen when it
+/// opens): the room was never saved; Exit without saving discards only the changes since the save; or (an online room whose
+/// save cannot be restored by a lobby rollback) the earlier saved entry is kept while shared play continues.
+struct MPRoomExitPrompt: Equatable {
+    enum Message: Equatable { case neverSaved, discardsChanges, keepsEarlierEntry }
+    var roomId: String
+    var message: Message
+}
 
 /// Multi Ping Pong's screen state and flows: Android PlayActivity (home, forms, rooms, tournaments), PrivateMatchActivity (a
 /// room fixture on the classic or the cross table) and CrossActivity (the local cross match and its guide), MinikCrossPong
@@ -27,8 +37,19 @@ struct CrossHelpCard: Equatable { var title: String; var message: String; var re
     @Published var teams: CrossTeamsModel?
     /// A short message (Android Toast).
     @Published var toast: String?
-    /// Back from an unfinished tournament asks whether to keep it (Android confirmTournamentExit).
-    @Published var tournamentExitPrompt = false
+    /// Android 83b050d / 9adf1f1 `confirmRoomExit`: Back from a room that was never saved, or changed since its save, asks Save and
+    /// exit / Exit without saving / Stay. Its message is chosen when it opens.
+    @Published var roomExitPrompt: MPRoomExitPrompt?
+    /// Android 5375378 `showMatchLoading` / `launchingMatch`: the "Loading…" page replaces the room (or the menu, during a
+    /// rematch) until the match opens or the room screen detaches.
+    @Published var loadingMatch = false
+    /// Android 1fc4bc2 `reviewRestoredRoster`: a new friendly room filled from the saved lineup waits for the host's Start.
+    /// iOS fix (2026-11-10): the wait belongs to the room the lineup was restored into (`reviewRestoredRoom`), so it never holds
+    /// back another room opened afterwards (Android keeps one flag for the screen).
+    var reviewRestoredRoster: Bool { reviewRestoredRoom != nil && reviewRestoredRoom == session?.id }
+    @Published private var reviewRestoredRoom: String?
+    /// Android 1fc4bc2: the seat lobby scrolls to its top when its last seat is taken (a new value each time).
+    @Published var lobbyScrollTop: UUID?
     private var journeyReturn = MPRoute.menu, teamsReturn = MPRoute.menu
     /// Android PongMenuMusic: the quiet menu remix on the home and room screens.
     private let menuMusic = MPXMenuMusic()
@@ -66,8 +87,8 @@ struct CrossHelpCard: Equatable { var title: String; var message: String; var re
     @Published var crossStatus = ""
     @Published var crossHeader = ""
     @Published var crossPaused = false
-    /// Android `cross/action_camera` (5c1aa4d): the landscape action camera of the local cross court, remembered.
-    @Published var actionCamera: Bool { didSet { preferences.crossActionCamera = actionCamera; if crossMatch == nil { crossScene?.fullScreen = actionCamera } } }
+    /// Android `cross/close_camera` (a9140c3): the close camera ("Action camera") of the local cross court, remembered; off by default.
+    @Published var actionCamera: Bool { didSet { preferences.crossCloseCamera = actionCamera; if crossMatch == nil { crossScene?.fullScreen = actionCamera } } }
     @Published var tourCard: CrossTourCard?
     @Published var crossHelp: CrossHelpCard?
     @Published var crossResult: CrossLocalResult?
@@ -86,6 +107,13 @@ struct CrossHelpCard: Equatable { var title: String; var message: String; var re
     private var completion: (ModernPongResult?) -> Void
     private var crossMatch: CrossMatch?, crossLink: CrossLink?, crossSounds: CrossSoundPolicy?, crossOutcome: CrossRallyOutcome?
     private var crossStage: ObjectIdentifier?, crossWarning = "", crossAudioOn = false
+    /// Android PrivateMatchActivity `openingDuel` (1fc4bc2, b0cdeb3): a finished table is opening its final duel.
+    private var openingDuel = false
+    /// Android PlayActivity `roomEpoch` (incremented by `detach`, iOS `closeObservers`), `exiting`, and 83b050d
+    /// `playedSinceRoomOpen` (a match of this room was opened and left since the room was opened).
+    private var roomEpoch = 0, exiting = false, playedSinceRoomOpen = false
+    /// Android 1fc4bc2 `fullRosterSeenAt` (uptime ms; 0 until a full seat lobby is shown) and `rosterStartPosted`.
+    private var fullRosterSeenAt: Int64 = 0, rosterStartPosted = false
     /// The local cross match's engine, or the guide's engine while a lesson plays.
     private var localCross: CrossEngine?
     private var tour: CrossTutorial?, savedGame: CrossEngine?, finishedShown = false
@@ -99,7 +127,7 @@ struct CrossHelpCard: Equatable { var title: String; var message: String; var re
         MPStoreScreenshot.prepare()
         self.experience = experience; self.preferences = preferences; completion = onClose; ads = .init(preferences: preferences, experience: experience)
         level = preferences.control; target = preferences.control.target(preferences.target); skipGuide = preferences.skipGuide; identity = preferences.identity
-        actionCamera = preferences.crossActionCamera
+        actionCamera = preferences.crossCloseCamera
         // Android's local level defaults to Beginner (ModernActivity getInt("difficulty", 4)).
         let savedPractice = preferences.defaults.object(forKey: MPController.practiceLevelKey) as? Int
         practiceLevel = savedPractice.flatMap { MPLevel(rawValue: $0) } ?? .beginner
@@ -116,6 +144,11 @@ struct CrossHelpCard: Equatable { var title: String; var message: String; var re
         }
         // Android 47ad0c9 ModernAudio / LobbyAudio: "Game sounds" off silences every cue and stops the one that is playing.
         audio.soundsEnabled = { [preferences] in preferences.journeySound }
+        // Android 83b050d PlayActivity.onCreate: the rooms saved automatically before explicit saves become explicit saves, once;
+        // a completed local room with an explicit save is kept by the refresh.
+        let local = repo as? MPLocalRepository
+        local?.keepCompleted = { [preferences] in preferences.hasExplicitSave($0) }
+        preferences.migrateExplicitSaves(local)
     }
     var online: Bool { repo.online }
     var selectedPlayer: MPHousePlayer { MPRoster.all[playerIndex % MPRoster.all.count] }
@@ -190,9 +223,60 @@ struct CrossHelpCard: Equatable { var title: String; var message: String; var re
             let s = MPSession(code: MPRules.code(), kind: kind, host: identity, capacity: capacity, legs: legs, winPoints: winPoints,
                               difficulty: self.level.rawValue, target: target, format: format, tableSize: tableSize, gameMode: gameMode, advance: advance)
             let created = try await self.repo.create(s)
-            self.enter(created)
+            // Android 1fc4bc2: a new friendly table is filled from the lineup saved for its size, then waits for Start.
+            let ready = try await self.restoreFriendlyRoster(created)
+            self.enter(ready)
         }
     }
+    /// Android 1fc4bc2 `rememberFriendlyRoster`: when this host (the only human) starts a friendly table, its house characters are
+    /// saved for tables of that size, clockwise from the host (seats tableSize − 1, tableSize − 2, …).
+    /// iOS fix (2026-11-10): only 3/4-seat tables. Android also saves `friendlyRoster2`, but a restored lineup waits for the seat
+    /// lobby's Start, which the 2-seat table does not have (it chooses its opponent and starts with its own Start).
+    private func rememberFriendlyRoster(_ s: MPSession) {
+        guard s.kind == .friendly, s.host == repo.uid, s.participants.values.filter({ $0.bot == nil }).count == 1, s.tableSize >= 3 else { return }
+        let seats = s.seating()
+        let order = (1..<s.tableSize).compactMap { n -> String? in
+            let seat = (s.tableSize - n) % s.tableSize
+            return seats.first(where: { $0.value == seat }).flatMap { s.participants[$0.key]?.bot?.characterId }
+        }
+        preferences.setFriendlyRoster(s.tableSize, order.joined(separator: ","))
+    }
+    /// Android 1fc4bc2 `restoreFriendlyRoster`: the saved characters (known ones, each once, at most tableSize − 1) take the seats
+    /// clockwise from the host in one transaction; the room then waits for the host's Start (`reviewRestoredRoster`).
+    /// iOS fix (2026-11-10): a 2-seat table is never filled from a lineup (it has no seat lobby, so nothing could start it), and a
+    /// `friendlyRoster2` that Android's rule saved earlier is cleared.
+    private func restoreFriendlyRoster(_ s: MPSession) async throws -> MPSession {
+        reviewRestoredRoom = nil
+        guard s.kind == .friendly else { return s }
+        if s.tableSize < 3 {
+            if !preferences.friendlyRoster(s.tableSize).isEmpty { preferences.setFriendlyRoster(s.tableSize, "") }
+            return s
+        }
+        var seen = Set<String>()
+        let saved = preferences.friendlyRoster(s.tableSize).split(separator: ",", omittingEmptySubsequences: false)
+            .compactMap { MPRoster.find(String($0)) }.filter { seen.insert($0.id).inserted }
+        let players = Array(saved.prefix(max(0, s.tableSize - 1)))
+        if players.isEmpty { return s }
+        let uid = repo.uid, size = s.tableSize
+        let ready = try await repo.mutate(s.kind, s.code) { old in
+            var next = old
+            for (i, player) in players.enumerated() {
+                next = try MPRules.addFriendlyHousePlayer(next, actor: uid, bot: MPRules.housePlayer(player), seat: (size - i - 1) % size)
+            }
+            return next
+        }
+        reviewRestoredRoom = ready.id
+        return ready
+    }
+    /// Android 1fc4bc2 seat lobby "Start" under a restored lineup: the review ends and the table starts at once.
+    func startRestoredRoster() {
+        guard let s = session else { return }
+        reviewRestoredRoom = nil
+        fullRosterSeenAt = MPController.uptime - 700
+        maybeStart(s)
+    }
+    /// Android `SystemClock.uptimeMillis()`.
+    static var uptime: Int64 { Int64(ProcessInfo.processInfo.systemUptime * 1000) }
     /// Android PlayActivity.join: a code of the form's room type; online rooms only.
     func join(_ kind: MPSessionKind, _ raw: String) async {
         guard online else {
@@ -213,6 +297,8 @@ struct CrossHelpCard: Equatable { var title: String; var message: String; var re
         }
     }
     func enter(_ s: MPSession) {
+        // Android openRoom: another room starts without its played flag (83b050d); `detach` clears the roster pause.
+        if session?.id != s.id { playedSinceRoomOpen = false }
         closeObservers(); closing = false
         firstSnapshot = true; lobbyPrevious = nil; gatePending = false; gateLatest = nil
         session = s; route = .lobby; result = nil; fixture = nil; scene = nil; clearCross(); celebration = nil
@@ -270,8 +356,8 @@ struct CrossHelpCard: Equatable { var title: String; var message: String; var re
         let cues = lobbyCues(s)
         if cues.join { audio.play("connected") }; if cues.ready { audio.play("player_ready") }
         if firstSnapshot {
-            // Re-entering a saved game opens its controls, not the court automatically.
-            for m in s.matches.values where m.contains(uid) && m.phase == .playing { opened.insert(m.id) }
+            // Re-entering a saved game opens its controls, not the court automatically (Android 452d82c: a watched final too).
+            for m in s.matches.values where (m.contains(uid) || MPRules.spectatedDuel(s, m, uid: uid)) && m.phase == .playing { opened.insert(m.id) }
             firstSnapshot = false
         }
         session = s; link?.update(s); crossLink?.update(s); preferences.remember(s); rooms = preferences.rooms
@@ -279,6 +365,13 @@ struct CrossHelpCard: Equatable { var title: String; var message: String; var re
         if route == .lobby { celebrateCompletion(s) }
         if route == .game, let current = fixture, let m = s.matches[current.id] {
             if m.phase == .finished {
+                // Android 1fc4bc2 / b0cdeb3 PrivateMatchActivity.updateSession: a finished table whose final duel this player plays
+                // (or, as the friendly host, watches) opens that duel instead of the table's result.
+                if let duel = MPRules.duelOf(s, m), !duel.terminal, duel.contains(uid) || MPRules.spectatedDuel(s, duel, uid: uid) {
+                    crossMatch?.paused = true; crossScene?.setActive(false)
+                    openDuel(s, table: m.id, duel)
+                    return
+                }
                 fixture = m
                 let points = m.a == uid ? (m.scoreA, m.scoreB) : (m.scoreB, m.scoreA)
                 finish(id: m.id, value: .init(playerPoints: points.0, opponentPoints: points.1, won: m.winner == uid))
@@ -288,19 +381,49 @@ struct CrossHelpCard: Equatable { var title: String; var message: String; var re
             if m.phase != .playing { leaveCourt() }
         }
         if route == .lobby { maybeStart(s) }
+        // Android renderRoom runs after maybeStart unless a match is loading or launching.
+        if route == .lobby && !loadingMatch, let latest = session { roomShown(latest) }
         if route != .game && foreground, let latest = session { syncLobbyPresence(latest) }
+    }
+    /// Android 1fc4bc2 renderRoom: once the host's 3/4-seat lobby shows every seat taken (and no restored lineup waits for
+    /// Start), it scrolls to the top and the full table stays visible for 700 ms (counted from its first drawing) before the
+    /// game starts; the timer is fenced by the room epoch, so a closed room never starts.
+    private func roomShown(_ s: MPSession) {
+        guard s.kind == .friendly, s.state == "WAITING", s.tableSize >= 3, s.freeSeats().isEmpty, s.host == repo.uid,
+              !reviewRestoredRoster, fullRosterSeenAt == 0, !rosterStartPosted else { return }
+        rosterStartPosted = true
+        let epoch = roomEpoch
+        lobbyScrollTop = UUID()
+        Task { @MainActor [weak self] in
+            // The next main-loop turn, after SwiftUI has drawn this roster (Android OnPreDrawListener).
+            await Task.yield()
+            guard let self, self.foreground, self.roomEpoch == epoch else { return }
+            self.fullRosterSeenAt = MPController.uptime
+            try? await Task.sleep(nanoseconds: 700_000_000)
+            guard self.foreground, self.roomEpoch == epoch else { return }
+            self.rosterStartPosted = false
+            if let room = self.session { self.maybeStart(room) }
+        }
     }
     /// Android PlayActivity.maybeStart: a full friendly room starts; a newly PLAYING fixture of this player opens its court once;
     /// the host of a house-player friendly table is Ready by pressing Start; a fixture whose humans are all Ready starts.
     private func maybeStart(_ s: MPSession) {
-        guard foreground, !closing, route == .lobby, session?.id == s.id else { return }
+        // Android 83b050d: nothing starts while the room's exit question is open.
+        guard foreground, !closing, !exiting, roomExitPrompt == nil, route == .lobby, session?.id == s.id else { return }
         let uid = repo.uid
         gateLatest = s
         if s.kind == .friendly && s.state == "WAITING" && s.participants.count == s.capacity && s.host == uid && !gatePending {
+            // Android 1fc4bc2: a restored lineup waits for Start; a full 3/4-seat table is shown for 700 ms first.
+            if reviewRestoredRoster { return }
+            if s.tableSize >= 3 && (fullRosterSeenAt == 0 || MPController.uptime - fullRosterSeenAt < 700) { return }
+            rememberFriendlyRoster(s)
             transition(s) { try MPRules.start($0, actor: uid) }
             return
         }
-        if let playable = s.matches.values.sorted(by: { $0.id < $1.id }).first(where: { $0.contains(uid) && $0.phase == .playing }), !opened.contains(playable.id) {
+        if s.participants.count < s.capacity { fullRosterSeenAt = 0 }
+        // Android 1fc4bc2: the friendly host's watched final opens like the host's own fixture.
+        if let playable = s.matches.values.sorted(by: { $0.id < $1.id }).first(where: { ($0.contains(uid) || MPRules.spectatedDuel(s, $0, uid: uid)) && $0.phase == .playing }),
+           !opened.contains(playable.id) {
             opened.insert(playable.id); launch(s, playable); return
         }
         if gatePending { return }
@@ -310,7 +433,51 @@ struct CrossHelpCard: Equatable { var title: String; var message: String; var re
             transition(s) { MPRules.startReady($0, match: id) }
         }
     }
+    /// Android PrivateMatchActivity.updateSession (1fc4bc2, b0cdeb3): the watching host starts the house players' duel; a player
+    /// of the duel is Ready first and then starts it, in two transactions (Ready must exist on the server before Start validates
+    /// it; combining both in one transaction removes Ready and is correctly denied by the rules). The duel's court then replaces
+    /// the table's; its ID counts as opened, so Back from it does not open it again (Android 452d82c `returnedMatch`).
+    private func openDuel(_ s: MPSession, table: String, _ duel: MPFixture) {
+        guard !openingDuel, foreground else { return }
+        openingDuel = true
+        let uid = repo.uid, id = duel.id, kind = s.kind, code = s.code
+        let watching = MPRules.spectatedDuel(s, duel, uid: uid)
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let updated: MPSession
+                if watching {
+                    updated = try await self.repo.mutate(kind, code) { MPRules.startSpectatedDuel($0, id: id, actor: uid) }
+                } else {
+                    _ = try await self.repo.mutate(kind, code) { try MPRules.ready($0, match: id, uid: uid, value: true) }
+                    guard self.foreground, self.route == .game, self.fixture?.id == table else { self.openingDuel = false; return }
+                    updated = try await self.repo.mutate(kind, code) { MPRules.startReady($0, match: id) }
+                }
+                self.openingDuel = false
+                guard self.foreground, self.route == .game, self.fixture?.id == table, let started = updated.matches[id], started.phase == .playing else { return }
+                self.opened.insert(id)
+                self.launch(updated, started)
+            } catch {
+                self.openingDuel = false
+                self.crossIssue(.failed(error.localizedDescription))
+            }
+        }
+    }
+    /// iOS fix (2026-11-10): this player must still choose Ready themselves in a started friendly room: a fixture of theirs that is
+    /// neither playing nor over lacks their Ready, and Start's house-player Ready (`friendlyHouseReady`) does not give it, because
+    /// another human sits at the table (or the fixture was started before). Android 5375378 keeps "Loading…" over the room then,
+    /// so its host could only save, leave and reopen the room.
+    func awaitsOwnReady(_ s: MPSession) -> Bool {
+        let uid = repo.uid
+        guard s.kind == .friendly, s.state == "ACTIVE", MPRules.friendlyHouseReady(s, actor: uid) == s else { return false }
+        return s.matches.values.contains { $0.contains(uid) && !$0.terminal && $0.phase != .playing && $0.ready[uid] != true }
+    }
     private func transition(_ s: MPSession, _ change: @escaping (MPSession) throws -> MPSession) {
+        // Android 5375378: a friendly table with house players shows "Loading…" while it starts.
+        // iOS fix (2026-11-10): not when the change leaves this player's own Ready still to choose (another human sits at the
+        // table): the Loading page would hide the room's Ready button until the match opens, and the match needs that Ready.
+        if s.kind == .friendly && s.participants.values.contains(where: { $0.bot != nil }),
+           !((try? change(s)).map { awaitsOwnReady($0) } ?? false) { loadingMatch = true }
         gatePending = true; gateLatest = nil
         let kind = s.kind, code = s.code
         Task { [weak self] in
@@ -318,27 +485,48 @@ struct CrossHelpCard: Equatable { var title: String; var message: String; var re
             var updated: MPSession?
             do { updated = try await self.repo.mutate(kind, code, change) }
             catch {
-                // Android roomActionFailed: only the room still shown is affected.
+                // Android roomActionFailed: only the room still shown is affected; it is drawn again with the error.
                 if self.session?.code == code {
-                    if error as? MPError == .missing { self.roomGone(s) } else if !self.closing { self.show(error) }
+                    if error as? MPError == .missing { self.roomGone(s) }
+                    else if !self.closing && !self.exiting {
+                        self.loadingMatch = false
+                        if let room = self.session, self.route == .lobby { self.roomShown(room) }
+                        self.show(error)
+                    }
                 }
             }
             self.gatePending = false
             let latest = self.gateLatest
             self.gateLatest = nil
+            // iOS fix (2026-11-10): the room as it now stands still needs this player's own Ready (the transaction met a newer room
+            // than the one predicted above): the Loading page ends, so the room and its Ready button show again.
+            if updated != nil, self.loadingMatch, self.session?.code == code, let room = latest ?? updated, self.awaitsOwnReady(room) {
+                self.loadingMatch = false
+            }
             // Firebase may notify observers before completing the transaction: after a success, revisit the newest observed room.
             if updated != nil, let next = latest ?? updated, self.foreground, !self.closing, self.session?.code == code { self.maybeStart(next) }
         }
     }
-    private func change(_ action: @escaping (MPSession) throws -> MPSession) async {
+    /// Android PlayActivity.change; `loading` first shows "Loading…" (5375378 showMatchLoading). A failure in the room still shown
+    /// ends the loading page (Android roomActionFailed).
+    private func change(loading: Bool = false, _ action: @escaping (MPSession) throws -> MPSession) async {
         guard let s = session else { return }
-        await perform { _ = try await self.repo.mutate(s.kind, s.code, action) }
+        await perform {
+            if loading { self.loadingMatch = true }
+            do { _ = try await self.repo.mutate(s.kind, s.code, action) }
+            catch {
+                if self.session?.id == s.id { self.loadingMatch = false }
+                throw error
+            }
+        }
     }
-    /// A friendly table's house player (Android "Start" with a chosen opponent, or "Add house player" on a seat).
+    /// A friendly table's house player: Android "Start" with a chosen opponent at a classic table (it shows "Loading…" at once,
+    /// 5375378), or "Add house player" on the highest free seat (1fc4bc2 `freeSeats().maxOrNull()`).
     func addFriendlyHouse(_ player: MPHousePlayer, seat: Int? = nil) async {
         let uid = repo.uid, bot = MPRules.housePlayer(player)
-        await change { room in
-            let free = seat ?? room.freeSeats().first
+        let table = session?.tableSize ?? 2
+        await change(loading: table <= 2) { room in
+            let free = seat ?? room.freeSeats().max()
             return try MPRules.addFriendlyHousePlayer(room, actor: uid, bot: bot, seat: room.tableSize > 2 ? free : nil)
         }
     }
@@ -357,6 +545,11 @@ struct CrossHelpCard: Equatable { var title: String; var message: String; var re
             if room.state != "WAITING" || room.host != uid { return room }
             return try MPRules.fillWithBots(room, actor: uid)
         }
+    }
+    /// Android 1fc4bc2 "Watch final duel": the friendly host starts the house players' final duel and watches it live.
+    func watchDuel(_ match: MPFixture) async {
+        let uid = repo.uid
+        await change { MPRules.startSpectatedDuel($0, id: match.id, actor: uid) }
     }
     /// Android 5c1aa4d: a fixture whose only human is this player starts with "Start" (Ready on its own).
     func startHouseMatch(_ match: MPFixture) async {
@@ -386,15 +579,98 @@ struct CrossHelpCard: Equatable { var title: String; var message: String; var re
         if match.phase == .playing { opened.insert(match.id); launch(s, match); return }
         await change { try MPRules.ready($0, match: match.id, uid: uid, value: match.ready[uid] != true) }
     }
-    /// Android leaveFriendly(delete = false): back home, the room stays in Your games.
+    /// Android leaveFriendly(delete = false), "Save for later": since 83b050d the explicit save of `saveRoomAndExit`.
     func saveForLater() {
         guard let s = session else { return }
-        closing = true; closeObservers(); preferences.remember(s)
-        session = nil; scene = nil; clearCross(); fixture = nil; rooms = preferences.rooms; route = .menu
+        saveRoomAndExit(s)
+    }
+    /// Android 83b050d navigateBack from a room: an explicitly saved room that has not changed since its save is left at once;
+    /// otherwise Back asks Save and exit / Exit without saving / Stay. A local room compares its stored state and live
+    /// checkpoints with its save; an online room compares the room (`SaveComparison.same`) and whether one of its matches was
+    /// played since the room was opened.
+    private func roomBack(_ s: MPSession) {
+        if exiting { return }
+        let previous = preferences.explicitSave(s)
+        let changed: Bool
+        if let local = repo as? MPLocalRepository { changed = local.hasUnsavedChanges(s) }
+        else if let previous { changed = !MPSaveComparison.same(previous, s) || playedSinceRoomOpen }
+        else { changed = true }
+        if previous != nil && !changed { leaveRoomScreen() } else { confirmRoomExit(s) }
+    }
+    /// Android 83b050d leaveRoomScreen: back home; a completed room without an explicit save is dismissed (and a local copy
+    /// removed).
+    private func leaveRoomScreen() {
+        let finished = session.flatMap { $0.complete && !preferences.hasExplicitSave($0) ? $0 : nil }
+        closing = true; closeObservers()
+        if let finished { preferences.dismissResult(finished); (repo as? MPLocalRepository)?.remove(finished) }
+        celebration = nil; session = nil; scene = nil; clearCross(); fixture = nil; result = nil; rooms = preferences.rooms; route = .menu
         closing = false
     }
+    /// Android 83b050d / 9adf1f1 confirmRoomExit: the question opens once, with the explanation for this room.
+    private func confirmRoomExit(_ s: MPSession) {
+        guard roomExitPrompt == nil else { return }
+        let message: MPRoomExitPrompt.Message
+        if let previous = preferences.explicitSave(s) {
+            message = online && !MPSavedLobbyRollback.available(previous, s, uid: repo.uid) ? .keepsEarlierEntry : .discardsChanges
+        } else { message = .neverSaved }
+        roomExitPrompt = MPRoomExitPrompt(roomId: s.id, message: message)
+    }
+    /// The question's three actions act only on the room it was asked about, as it is now (Android `room ?: s`).
+    func roomExitSave() {
+        guard let prompt = roomExitPrompt else { return }
+        roomExitPrompt = nil
+        if let s = session, s.id == prompt.roomId { saveRoomAndExit(s) }
+    }
+    func roomExitDiscard() {
+        guard let prompt = roomExitPrompt else { return }
+        roomExitPrompt = nil
+        if let s = session, s.id == prompt.roomId { discardRoomChanges(s) }
+    }
+    func roomExitStay() { roomExitPrompt = nil }
+    /// Android 83b050d saveRoomAndExit: a local room keeps a separate checkpoint (its room and live match states), then the room
+    /// is saved explicitly and the screen closes.
+    private func saveRoomAndExit(_ s: MPSession) {
+        if exiting { return }
+        do {
+            try (repo as? MPLocalRepository)?.saveCheckpoint(s)
+            try preferences.saveExplicitly(s)
+            leaveRoomScreen()
+        } catch { show(error) }
+    }
+    /// Android 83b050d / 9adf1f1 discardRoomChanges: a room never saved is finished (friendly) or left / deleted (tournament);
+    /// a local room returns to its saved checkpoint; an online lobby edited only by its host before the start gets its saved
+    /// house players back in one transaction (peers who joined meanwhile stay); started online play is never rewound, and the
+    /// earlier save is kept. A failure reopens the room and explains.
+    private func discardRoomChanges(_ s: MPSession) {
+        if exiting { return }
+        guard let previous = preferences.explicitSave(s) else {
+            let delete = s.kind == .friendly ? true : MPRules.canDelete(s, actor: repo.uid)
+            Task { await leave(delete: delete) }
+            return
+        }
+        let local = repo as? MPLocalRepository, uid = repo.uid
+        exiting = true; closing = true; closeObservers()
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let restored: MPSession
+                if let local { restored = try local.restoreSavedCheckpoint(s) }
+                else if MPSavedLobbyRollback.available(previous, s, uid: uid) {
+                    restored = try await self.repo.mutate(s.kind, s.code) { try MPSavedLobbyRollback.restore(previous, edited: s, latest: $0, uid: uid) }
+                } else { restored = previous }
+                try self.preferences.saveExplicitly(restored)
+                self.exiting = false; self.closing = false
+                self.celebration = nil; self.session = nil; self.scene = nil; self.clearCross(); self.fixture = nil; self.result = nil
+                self.rooms = self.preferences.rooms; self.route = .menu
+            } catch {
+                self.exiting = false
+                self.enter(s)
+                self.show(error)
+            }
+        }
+    }
     func leave(delete: Bool) async {
-        guard let s = session else { return }
+        guard let s = session, !exiting else { return }
         await perform {
             self.closing = true; self.closeObservers()
             do { try await self.repo.leave(s, delete: delete); self.preferences.closed(s); self.rooms = self.preferences.rooms; self.session = nil; self.scene = nil; self.clearCross(); self.route = .menu }
@@ -425,15 +701,54 @@ struct CrossHelpCard: Equatable { var title: String; var message: String; var re
     }
     /// Android PrivateMatchActivity result dialog (47ad0c9): a completed friendly room is dismissed; a tournament fixture goes
     /// "Back to tournament", whose screen shows the next round or, once complete, "Tournament finished" with its winner.
-    func closeResult() {
+    /// Android 5375378: "Play again" (`replay`) on a completed friendly game whose other players are all house players starts the
+    /// rematch (`startReplay`).
+    func closeResult(replay: Bool = false) {
         celebration = nil
         guard let s = session else { result = nil; route = .menu; return }
-        if s.complete && s.kind == .friendly { dismissCompleted(); return }
+        if s.complete && s.kind == .friendly {
+            dismissCompleted()
+            if replay { startReplay(s) }
+            return
+        }
+        // Android 83b050d onActivityResult: a match of this room was played since it was opened.
+        playedSinceRoomOpen = true
         scene = nil; clearCross(); fixture = nil; result = nil
         route = .lobby
+        loadingMatch = false
         celebrateCompletion(s)
         maybeStart(s)
+        if route == .lobby && !loadingMatch, let latest = session { roomShown(latest) }
         if foreground { syncLobbyPresence(s) }
+    }
+    /// Android 5375378 / 1fc4bc2 PlayActivity.startReplay: "Loading…", then the same settings, players and seats in a new room
+    /// under a new code. The room is created with its host alone and the house players are restored in a second write (the
+    /// Firebase rules accept a new room only with its host), then it opens like any room.
+    private func startReplay(_ old: MPSession) {
+        reviewRestoredRoom = nil
+        loadingMatch = true
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let uid = try await self.repo.connect()
+                guard MPFriendlyRematch.available(old, uid: uid) else { self.loadingMatch = false; return }
+                let fresh = try MPFriendlyRematch.create(old, uid: uid, code: MPRules.code(), now: MPClock.now)
+                var hostOnly = fresh
+                hostOnly.participants = fresh.participants.filter { $0.key == uid }
+                hostOnly.seats = fresh.seats.filter { $0.key == uid }
+                let created = try await self.repo.create(hostOnly)
+                let restored = try await self.repo.mutate(created.kind, created.code) { room in
+                    var next = room
+                    next.participants = fresh.participants; next.seats = fresh.seats
+                    return next
+                }
+                self.loadingMatch = false
+                self.enter(restored)
+            } catch {
+                self.loadingMatch = false
+                self.show(error)
+            }
+        }
     }
     /// Android PlayActivity.completed / tournament (47ad0c9): a completed room won by this player celebrates once, while its
     /// screen is shown; a finished tournament adds the applause.
@@ -443,10 +758,13 @@ struct CrossHelpCard: Equatable { var title: String; var message: String; var re
         if s.kind == .tournament { audio.play(CrossCue.applause.sound) }
     }
     private func launch(_ s: MPSession, _ match: MPFixture) {
+        // Android 5375378 launch shows "Loading…" until its match screen covers the room; here the court replaces the room at
+        // once, and the room returns without it (Android: returning reopens the room, whose `detach` ends the loading page).
+        loadingMatch = false
         link?.close(); link = nil; crossLink?.close(); crossLink = nil
         practice = false; paused = false; fixture = match; liveID = match.id; celebration = nil; crossWarning = ""
         acquirePresence(s)
-        if MPCrossFixture.usesCross(match) { launchCross(s, match); return }
+        if MPCrossFixture.usesCross(match) || MPRules.spectatedDuel(s, match, uid: repo.uid) { launchCross(s, match); return }
         clearCross()
         let opponent = s.participants[match.a == repo.uid ? match.b : match.a], networked = opponent?.bot == nil
         // Android PrivateMatchActivity (828c6fc): the authority serves first; a house-player fixture alternates serves; a
@@ -474,8 +792,8 @@ struct CrossHelpCard: Equatable { var title: String; var message: String; var re
         }
         court.onFrame = { [weak self] in self?.crossFrame() }
         court.preferences = preferences
-        // Android PrivateMatchActivity reads the old `cross_local/full_screen` (default off) and offers no camera button.
-        court.fullScreen = preferences.crossFullScreen
+        // Android a9140c3 PrivateMatchActivity reads `cross/close_camera` (default off) and offers no camera button.
+        court.fullScreen = preferences.crossCloseCamera
         crossMatch = match; crossScene = court; crossStage = nil; crossOutcome = nil; crossAudioOn = false
         localCross = nil; tour = nil; tourCard = nil; crossResult = nil
         syncStage(s, m)
@@ -494,8 +812,9 @@ struct CrossHelpCard: Equatable { var title: String; var message: String; var re
         case .version: crossWarning = text("This match needs the same app version on every phone.", "המשחק הזה צריך את אותה גרסת אפליקציה בכל הטלפונים.")
         case .interrupted: crossWarning = text("Connection interrupted. Reopen this match to resume.", "החיבור נקטע. פתחו שוב את המשחק כדי להמשיך.")
         case .failed: crossWarning = text("Connection interrupted. Reopen this match to resume.", "החיבור נקטע. פתחו שוב את המשחק כדי להמשיך.")
-        // Android passes the link's English message through unchanged.
-        case .reception: crossWarning = "Ball assistance could not be shared. The match uses normal speed until it connects."
+        // Android passes the link's English message through unchanged; iOS (2026-11-10, owner decision) translates it.
+        case .reception: crossWarning = text("Ball assistance could not be shared. The match uses normal speed until it connects.",
+                                             "לא ניתן היה לשתף את העזרה בקבלת הכדור. המשחק נמשך במהירות רגילה עד שהחיבור יחזור.")
         }
     }
     /// Names in fixture (roster) order.
@@ -545,7 +864,11 @@ struct CrossHelpCard: Equatable { var title: String; var message: String; var re
             crossStatus = text("Waiting for every player to connect. Everyone must keep the match open.", "ממתינים שכל השחקנים יתחברו. כולם צריכים להשאיר את המשחק פתוח.")
         } else if !crossWarning.isEmpty { crossStatus = crossWarning }
         else if match.finished { crossStatus = text("Saving result…", "שומרים תוצאה…") }
-        else { crossStatus = CrossText.matchStatus(match, names: crossNames(s, m), last: crossOutcome, hebrew: hebrew) }
+        else {
+            // Android 1fc4bc2: the watching host is told it is the final duel.
+            let watching = MPRules.spectatedDuel(s, m, uid: repo.uid) ? text("Watching the final duel. ", "צופים בקרב הגמר. ") : ""
+            crossStatus = watching + CrossText.matchStatus(match, names: crossNames(s, m), last: crossOutcome, hebrew: hebrew)
+        }
     }
     private func updateCrossPause() {
         guard let match = crossMatch else { return }
@@ -559,6 +882,9 @@ struct CrossHelpCard: Equatable { var title: String; var message: String; var re
     private func leaveCourt() {
         link?.close(); link = nil; crossLink?.close(); crossLink = nil
         scene?.setActive(false); scene = nil; clearCross()
+        // Android 83b050d onActivityResult (`returnedMatch`): a match of this room was played since it was opened.
+        playedSinceRoomOpen = true
+        loadingMatch = false
         route = .lobby
         releasePresence()
         if let s = session { syncLobbyPresence(s) }
@@ -647,13 +973,9 @@ struct CrossHelpCard: Equatable { var title: String; var message: String; var re
             goHome()
         case .lobby:
             audio.stop()
-            if let s = session, s.kind == .tournament, !s.complete, s.human(repo.uid) {
-                // Android 7254ab2: ordinary Back keeps an unfinished tournament for later, without a question. Leaving or deleting
-                // it stays an explicit action of the tournament screen.
-                saveForLater()
-                return
-            }
-            if let s = session, s.complete { dismissCompleted(); return }
+            // Android 83b050d navigateBack: every room (friendly or tournament, open or completed) leaves at once only when its
+            // explicit save is unchanged; otherwise Back asks Save and exit / Exit without saving / Stay.
+            if let s = session { roomBack(s); return }
             goHome()
         case .game:
             audio.stop(); scene?.setActive(false)
@@ -661,9 +983,10 @@ struct CrossHelpCard: Equatable { var title: String; var message: String; var re
             goHome()
         case .cross:
             // Android 47ad0c9 navigateBack: a lesson's demonstration or practice returns to its card; a card's Back leaves the
-            // guide (its dialog's cancel); a match opened from "Learn how to play" returns to the guide.
+            // guide (its dialog's cancel); a match opened from "Learn how to play" returns to the guide. Android d0bed3b: only
+            // when there is a card before (`canGoBack`); otherwise the learning screen closes.
             if let t = tour {
-                if tourCard == nil { t.back(); showTourCard() } else { exitLearning() }
+                if tourCard == nil && t.canGoBack { t.back(); showTourCard() } else { exitLearning() }
                 return
             }
             if crossLearn { startTour(); return }
@@ -749,7 +1072,10 @@ struct CrossHelpCard: Equatable { var title: String; var message: String; var re
         guard route != .game else { return }
         if s.needsLobbyPresence(repo.uid) { acquirePresence(s) } else { releasePresence() }
     }
+    /// Android PlayActivity.detach: also ends the loading page, starts a new room epoch and clears the full-roster pause
+    /// (5375378, 1fc4bc2).
     private func closeObservers() {
+        loadingMatch = false; roomEpoch &+= 1; fullRosterSeenAt = 0; rosterStartPosted = false
         link?.close(); link = nil; crossLink?.close(); crossLink = nil
         let current = subscriptions
         subscriptions = []
@@ -817,18 +1143,9 @@ struct CrossHelpCard: Equatable { var title: String; var message: String; var re
         endTour()
         openJourney(.teams)
     }
-    /// Android toggleCamera on the local court (47ad0c9): the action camera or every player in view, in either orientation. The
+    /// Android toggleCamera on the local court (47ad0c9, a9140c3): the close camera or the whole court, in either orientation. The
     /// button shows the next camera instead of a toast.
     func toggleActionCamera() { actionCamera.toggle() }
-    /// Android confirmTournamentExit: Save keeps the tournament for later; Don't save deletes it (no other connected player) or
-    /// leaves it.
-    func keepTournament() { tournamentExitPrompt = false; saveForLater() }
-    func discardTournament() {
-        tournamentExitPrompt = false
-        guard let s = session else { return }
-        let delete = MPRules.canDelete(s, actor: repo.uid)
-        Task { await leave(delete: delete) }
-    }
 
     // ---- local cross match and its guide (Android CrossActivity) ------------------------------------------------------------
     var crossControl: CrossControl { CrossControl.fromChoice(preferences.control.rawValue) }
@@ -977,8 +1294,10 @@ struct CrossHelpCard: Equatable { var title: String; var message: String; var re
         if t.phase == .demo || t.phase == .attempt { tourCard = nil; useTourEngine(); return }
         crossScene?.setActive(false)
         let card = t.card(hebrew)
-        tourCard = CrossTourCard(title: card.title, message: card.message, phase: t.phase, canGoBack: t.canGoBack,
+        tourCard = CrossTourCard(title: card.title, message: card.message, phase: t.phase, canGoBack: t.canGoBack, canGoNext: t.canGoNext,
                                  teamPractice: t.phase == .info && (t.lesson.kind == .team || t.lesson.kind == .scoring))
+        // Android d0bed3b: reaching the last card (no Next) marks the guide as seen (`guide_seen`).
+        if !t.canGoNext { preferences.crossGuideSeen = true }
         crossStatus = t.statusText(hebrew)
     }
     private func useTourEngine() {
@@ -990,11 +1309,13 @@ struct CrossHelpCard: Equatable { var title: String; var message: String; var re
         court.setActive(foreground)
         crossStatus = t.statusText(hebrew)
     }
+    /// Android d0bed3b: Next is offered only while there is a next card, so it never ends the guide.
     func tourNext() {
         guard let t = tour else { return }
-        if t.next() { showTourCard() } else { endTour() }
+        if t.next() { showTourCard() }
     }
-    /// Android 47ad0c9: Back on the first card leaves the guide, like its close (X) control.
+    /// Android 47ad0c9: Back on the first card leaves the guide, like its close (X) control. Android d0bed3b: the card offers Back
+    /// only when there is a card before it.
     func tourBack() {
         guard let t = tour else { return }
         if t.canGoBack { t.back(); showTourCard() } else { exitLearning() }
@@ -1014,10 +1335,14 @@ struct CrossHelpCard: Equatable { var title: String; var message: String; var re
         else {
             let level: String
             switch crossControl {
-            case .beginner: level = text("Serve: tap your side, drag left or right to aim, then lift. Return: move your paddle into the ball's path; it hits automatically.",
-                                         "הגשה: הקישו בצד שלכם, גררו לשמאל או לימין כדי לכוון והרימו את האצבע. החזרה: הזיזו את המחבט למסלול הכדור; החבטה אוטומטית.")
-            case .standard: level = text("Serve: tap your side, drag sideways to aim, then lift. Return: tap as the ball reaches your paddle; drag sideways to choose the other player.",
-                                         "הגשה: הקישו בצד שלכם, גררו לצד כדי לכוון והרימו את האצבע. החזרה: הקישו כשהכדור מגיע למחבט וגררו לצד כדי לבחור שחקן.")
+            // Android d0bed3b: a serve may also tap another player's court (courtTap2026 in the catalog).
+            case .beginner: level = text("Serve: tap another player’s court to aim there, or tap your side and drag left or right. Return: move your paddle into the ball's path; it hits automatically.",
+                                         "הגשה: הקישו בצד של שחקן אחר כדי לכוון לשם, או הקישו בצד שלכם וגררו לשמאל או לימין. החזרה: הזיזו את המחבט למסלול הכדור; החבטה אוטומטית.")
+            // Android b0cdeb3: the Starter level's help.
+            case .starter: level = text("Move into reach, then tap or swipe early to aim. Starter gives you a longer return window.",
+                                        "זזים אל הכדור, ואז מקישים או מחליקים מוקדם כדי לכוון. בשליטה נינוחה יש יותר זמן להחזרה.")
+            case .standard: level = text("Serve: tap another player’s court, or tap your side and swipe to aim. Return: when the ball reaches your paddle, tap the target court or swipe sideways.",
+                                         "הגשה: הקישו בצד של שחקן אחר, או הקישו בצד שלכם והחליקו כדי לכוון. החזרה: כשהכדור מגיע למחבט, הקישו בצד שאליו תרצו לכוון או החליקו הצידה.")
             case .pro: level = text("Swipe up through the ball. Aim with the swipe direction; a faster swipe adds power.",
                                     "החליקו למעלה דרך הכדור. כיוון ההחלקה מכוון את החבטה ומהירותה קובעת את העוצמה.")
             }
