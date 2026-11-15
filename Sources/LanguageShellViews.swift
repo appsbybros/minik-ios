@@ -56,14 +56,19 @@ struct LanguageIntroView: View {
                 .zIndex(1)
             }
         }
-        // Apple's Kids rules: a grown-up check comes before any purchase.
+        // Apple's Kids rules: a grown-up check comes before any purchase. In Minik Plus the
+        // free-week chip asks for it, and the buy screen follows.
         .sheet(isPresented: $removeAdsGateIsPresented) {
             ParentalGateView(
                 onCancel: { removeAdsGateIsPresented = false },
                 onUnlock: {
                     removeAdsGateIsPresented = false
-                    removeAdsWasRequested = true
-                    Task { await commerceController.purchaseRemoveAds() }
+                    if commerceController.isPaywallConfigured {
+                        commerceController.requestPaywall()
+                    } else {
+                        removeAdsWasRequested = true
+                        Task { await commerceController.purchaseRemoveAds() }
+                    }
                 }
             )
         }
@@ -184,13 +189,23 @@ struct LanguageIntroView: View {
                     fontSize: metrics.buttonTextSize * textScale,
                     minHeight: metrics.buttonHeight
                 ))
-                LanguageIntroRemoveAdsButton(
-                    commerce: commerceController,
-                    fontSize: metrics.removeAdsTextSize * textScale,
-                    minHeight: metrics.removeAdsHeight,
-                    showsPurchaseOutcome: removeAdsWasRequested,
-                    onRemoveAds: { removeAdsGateIsPresented = true }
-                )
+                if commerceController.isPaywallConfigured {
+                    // Minik Plus sells no Remove Ads: during the free week a small chip says how
+                    // many days are left and opens the buy screen after the grown-up check.
+                    MinikPlusFreeWeekChip(
+                        commerce: commerceController,
+                        fontSize: metrics.removeAdsTextSize * textScale * 0.85,
+                        onTap: { removeAdsGateIsPresented = true }
+                    )
+                } else {
+                    LanguageIntroRemoveAdsButton(
+                        commerce: commerceController,
+                        fontSize: metrics.removeAdsTextSize * textScale,
+                        minHeight: metrics.removeAdsHeight,
+                        showsPurchaseOutcome: removeAdsWasRequested,
+                        onRemoveAds: { removeAdsGateIsPresented = true }
+                    )
+                }
             }
             .frame(maxWidth: metrics.introColumnMaxWidth)
             .padding(.horizontal, metrics.introContentMargin)

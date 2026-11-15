@@ -19,7 +19,9 @@ Require-Pattern 'Sources/MinikCommerce.swift' 'refreshEntitlements\(\)' 'entitle
 Require-Pattern 'Sources/MinikCommerce.swift' 'restorePurchases\(\)' 'explicit restore missing'
 Require-Pattern 'Sources/RootView.swift' 'commerceController\.start\(\)' 'commerce does not start with the app root'
 Require-Pattern 'Sources/RootView.swift' 'newPhase == \.active[\s\S]*commerceController\.refreshEntitlements\(\)' 'foreground entitlement refresh missing'
-Require-Pattern 'Sources/ParentAreaView.swift' 'ParentalGateView[\s\S]*purchaseRemoveAds\(\)[\s\S]*restorePurchases\(\)' 'gated Parent purchase/restore flow missing'
+# The grown-up check opens the Parent Area (owner, 15 November 2026) and covers its purchase and restore.
+Require-Pattern 'Sources/MinikActivityHubView.swift' 'parentAreaVisit\.grownUpCheckPassed\(\)\s*route = \.parentArea\s*\}\s*\}\) \{\s*ParentalGateView\(' 'the Parent Area does not open behind the grown-up gate'
+Require-Pattern 'Sources/ParentAreaView.swift' 'perform\(\.purchase\)[\s\S]*perform\(\.restore\)[\s\S]*purchaseRemoveAds\(\)[\s\S]*restorePurchases\(\)' 'Parent purchase/restore flow missing'
 Require-Pattern 'Tests/ProductConfigurationTests/MinikCommerceIntegrationTests.swift' 'testTransactionUpdateAndRestoreReconcileAuthoritativeState' 'transaction/restore regression missing'
 
 $project = [IO.File]::ReadAllText((Join-Path $root 'project.yml'), [Text.Encoding]::UTF8)

@@ -1,7 +1,7 @@
 class_name MazeProfile
 extends RefCounted
 
-var data:Dictionary={"mode_chosen":false,"played":false,"game_mode":"child","child_subjects":["math","en"],"explorer_subjects":["general_knowledge","science","arithmetic"],"question_language":"en","word_auto":true,"word_tier":0,"word_levels":{},"prompt_language":"","lesson_mode":"mixed","question_auto":true,"question_manual_levels":{},"question_progress":{},"schema":1,"bests":{},"unlocked":1,"ui":"en","learning":"en","sound":true,"comfort":false,"large_controls":false,"quality":"balanced","nickname":"","skills":{"math":0.0,"words":0.0,"maze":0.0,"enemies":0.0},"attempts":0,"receipts":[],"active":""}
+var data:Dictionary={"quick_intro_seen":false,"quick_intro_complete":false,"mode_chosen":false,"played":false,"game_mode":"child","child_subjects":["math","en"],"explorer_subjects":["general_knowledge","science","arithmetic"],"question_language":"en","word_auto":true,"word_tier":0,"word_levels":{},"prompt_language":"","lesson_mode":"mixed","question_auto":true,"question_manual_levels":{},"question_progress":{},"schema":1,"bests":{},"unlocked":1,"ui":"en","learning":"en","sound":true,"comfort":false,"large_controls":false,"quality":"balanced","nickname":"","skills":{"math":0.0,"words":0.0,"maze":0.0,"enemies":0.0},"attempts":0,"receipts":[],"active":""}
 var path:="user://progress.json"
 func _init(file_path:String="user://progress.json",primary_locale:String="") ->void:
 	path=file_path

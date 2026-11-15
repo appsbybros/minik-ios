@@ -37,6 +37,8 @@ struct MinikActivityHubView: View {
     /// The grown-up check before the Parent Area, and whether it was passed.
     @State private var parentAreaGateIsPresented = false
     @State private var parentAreaGatePassed = false
+    /// One grown-up check opens the Parent Area for one visit, its own pages included.
+    @State private var parentAreaVisit = ParentAreaVisit()
     @State private var languageMenuIsPresented = false
     @State private var hasShownLanguageOpening = false
     /// The Top 20 opened by itself over the intro (RecordsAutoShowPolicy).
@@ -279,11 +281,14 @@ struct MinikActivityHubView: View {
         // iOS only (owner, 2 November 2026): the Parent Area opens after the grown-up check,
         // so its settings are parental controls (App Store age rating: Parental Controls = Yes).
         // Android's Parent Area opens without one; keep this gate when porting from Android.
-        // The Parent Area opens once the check's sheet has gone, as one sheet cannot open
-        // while another is closing.
+        // Every app that shows ParentAreaView opens it only here (owner, 15 November 2026: the
+        // App Review reply for Minik Plus), and the check covers the whole visit: the actions
+        // inside run without asking again. The Parent Area opens once the check's sheet has
+        // gone, as one sheet cannot open while another is closing.
         .sheet(isPresented: $parentAreaGateIsPresented, onDismiss: {
             if parentAreaGatePassed {
                 parentAreaGatePassed = false
+                parentAreaVisit.grownUpCheckPassed()
                 route = .parentArea
             }
         }) {
@@ -316,6 +321,10 @@ struct MinikActivityHubView: View {
         }
         .onChange(of: practiceIsOnScreen, initial: true) { _, onScreen in
             practiceClock.setRunning(onScreen)
+        }
+        // Leaving the Parent Area and its pages ends the visit: the next one asks again.
+        .onChange(of: routeBelongsToParentAreaVisit) { _, belongs in
+            if !belongs { parentAreaVisit.leave() }
         }
         .onChange(of: hasShownLanguageOpening) { _, hasShown in
             if hasShown {
@@ -367,6 +376,8 @@ struct MinikActivityHubView: View {
         } else if scene == "progress" {
             route = .progress
         } else if scene == "parents" {
+            // App Store screenshot captures only.
+            parentAreaVisit.grownUpCheckPassed()
             route = .parentArea
         } else if scene == "menu" || scene == "menu.games" {
             // The Language activity menu; "menu.games" scrolls it to its end
@@ -444,19 +455,25 @@ struct MinikActivityHubView: View {
         case .progress:
             ProgressStatisticsView(
                 model: progressReadModel,
-                onBack: { route = .parentArea }
+                onBack: returnFromParentAreaPage
             )
         case .mathLearningProgress:
             MathLearningProgressView(
                 records: MathPracticeHistoryRepository().load(),
                 levelID: selectedMathLevelID,
                 onPractice: startMathPractice,
-                onBack: { route = .parentArea }
+                onBack: returnFromParentAreaPage
             )
         case .records(let returnToParentArea):
             RecordsStreaksView(
                 model: recordsReadModel,
-                onBack: { route = returnToParentArea ? .parentArea : nil }
+                onBack: {
+                    if returnToParentArea {
+                        returnFromParentAreaPage()
+                    } else {
+                        route = nil
+                    }
+                }
             )
         case .recordsLeaderboard(let highlightedPlacements):
             RecordsLeaderboardView(
@@ -465,6 +482,24 @@ struct MinikActivityHubView: View {
                 onClose: returnToHub
             )
         }
+    }
+
+    /// The Parent Area or one of its own pages (Progress, Records, Learning progress) is open.
+    private var routeBelongsToParentAreaVisit: Bool {
+        switch route {
+        case .parentArea, .progress, .mathLearningProgress:
+            return true
+        case .records(let returnToParentArea):
+            return returnToParentArea
+        default:
+            return false
+        }
+    }
+
+    /// Back from a Parent Area page: to the Parent Area within the visit the grown-up check
+    /// opened, else to the hub, never into the Parent Area without the check.
+    private func returnFromParentAreaPage() {
+        route = parentAreaVisit.backFromPageOpensParentArea ? .parentArea : nil
     }
 
     /// A practice or game screen is open and the app is active: practice time runs.
@@ -509,7 +544,10 @@ struct MinikActivityHubView: View {
                 childProfiles: childProfiles,
                 commerceController: commerceController,
                 onLearnerChanged: learnerDidChange,
-                onPractice: { languageMenuIsPresented = true },
+                onPractice: {
+                    guard activitiesAreUnlocked() else { return }
+                    languageMenuIsPresented = true
+                },
                 onParentArea: { parentAreaGateIsPresented = true }
             )
         }
@@ -578,7 +616,14 @@ struct MinikActivityHubView: View {
         }
     }
 
+    /// Minik Plus: no activity, game or practice opens while the free week has not started or is
+    /// over; the welcome screen or the wall (RootView) shows instead. The other apps are never locked.
+    private func activitiesAreUnlocked() -> Bool {
+        !commerceController.evaluateAccess()
+    }
+
     private func launchLanguageActivity(_ activity: LanguageActivityKind) {
+        guard activitiesAreUnlocked() else { return }
         languageActivitySessionID = ActivitySessionID()
         try? wordRewardService.beginSession(languageActivitySessionID, product: configuration.variant)
         languageWordBonusRun = wordRewardService.cleanWordRun
@@ -1591,6 +1636,8 @@ struct MinikActivityHubView: View {
             }
         }
         route = nil
+        // Minik Plus: a free week that ended during the activity brings the wall up now.
+        commerceController.evaluateAccess()
     }
 
     private func submitLanguageRewardRecordCandidate() {

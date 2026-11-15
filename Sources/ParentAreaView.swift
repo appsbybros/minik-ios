@@ -31,10 +31,6 @@ struct ParentAreaView: View {
     @State private var languageExtra: LanguageParentExtra?
     @State private var showsPublicAliasChoices = false
     @State private var publicAliasChoices: [PublicLeaderboardAlias] = []
-    @State private var gatedParentAction: GatedParentAction?
-    /// Rate, share or feedback, unlocked by the grown-up check and run once the check's
-    /// sheet has gone, so the share sheet or the rating prompt can appear.
-    @State private var pendingKeepInTouch: MinikKeepInTouchAction?
     @State private var shareRequest: MinikShareText?
     /// Android's "No suitable app is installed" toast, shown under the buttons instead.
     @State private var keepInTouchProblem: String?
@@ -90,15 +86,8 @@ struct ParentAreaView: View {
                 standardBody
             }
         }
-        .sheet(item: $gatedParentAction, onDismiss: runPendingKeepInTouch) { action in
-            ParentalGateView(
-                onCancel: { gatedParentAction = nil },
-                onUnlock: {
-                    gatedParentAction = nil
-                    performGatedAction(action)
-                }
-            )
-        }
+        // The grown-up check came before the Parent Area opened (MinikActivityHubView,
+        // ParentAreaVisit), so its actions run at once: one check covers the whole visit.
         .sheet(item: $shareRequest) { request in
             MinikShareSheet(text: request.text)
         }
@@ -978,7 +967,7 @@ struct ParentAreaView: View {
             Toggle(isOn: Binding(
                 get: { publicLeaderboardController.participationEnabled },
                 set: { enabled in
-                    gatedParentAction = .leaderboardParticipation(enabled)
+                    perform(.leaderboardParticipation(enabled))
                 }
             )) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -1060,7 +1049,7 @@ struct ParentAreaView: View {
 
             if !publicLeaderboardController.participationEnabled {
                 Button("Delete public leaderboard records") {
-                    gatedParentAction = .deletePublicRecords
+                    perform(.deletePublicRecords)
                 }
                 .buttonStyle(ParentAreaActionButtonStyle(look: MinikPretty.PillLook.white))
                 .disabled(publicLeaderboardController.isWorking)
@@ -1106,7 +1095,9 @@ struct ParentAreaView: View {
                 settingsHeading("Purchases")
             }
 
-            if commerceController.isRemoveAdsActive {
+            if commerceController.isPaywallConfigured {
+                plusAccessContent
+            } else if commerceController.isRemoveAdsActive {
                 Label("Ads removed", systemImage: "checkmark.seal.fill")
                     .font(.headline)
                     .foregroundStyle(Color(red: 0.10, green: 0.52, blue: 0.32))
@@ -1121,24 +1112,22 @@ struct ParentAreaView: View {
                 .font(.headline)
 
                 Button("Remove Ads") {
-                    gatedParentAction = .purchase
+                    perform(.purchase)
                 }
                 .buttonStyle(ParentAreaActionButtonStyle())
                 .disabled(commerceController.isBusy)
-                .accessibilityHint("Opens a grown-up check before contacting the App Store")
             } else if commerceController.status == .unconfigured {
                 Text("Purchases are not configured for this build.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
 
-            if commerceController.configuration.removeAdsProductID != nil {
+            if commerceController.configuration.removeAdsProductID != nil || commerceController.isPaywallConfigured {
                 Button("Restore Purchases") {
-                    gatedParentAction = .restore
+                    perform(.restore)
                 }
                 .buttonStyle(ParentAreaActionButtonStyle(look: MinikPretty.PillLook.white))
                 .disabled(commerceController.isBusy)
-                .accessibilityHint("Opens a grown-up check before restoring App Store purchases")
             }
 
             if commerceController.isBusy {
@@ -1149,6 +1138,55 @@ struct ParentAreaView: View {
                     .foregroundStyle(commerceController.status == .failed ? .red : .secondary)
             }
         }
+    }
+
+    /// Minik Plus and Minik Plus English: the free week or full access, and Buy, in the interface
+    /// language. The grown-up check before the Parent Area covers the purchase.
+    @ViewBuilder
+    private var plusAccessContent: some View {
+        let interfaceLocale = interfaceLocaleController.selectedLocale
+        switch commerceController.plusAccess {
+        case .fullAccess:
+            Label {
+                Text(verbatim: interfaceLocale.text("Full access"))
+            } icon: {
+                Image(systemName: "checkmark.seal.fill")
+            }
+            .font(.headline)
+            .foregroundStyle(Color(red: 0.10, green: 0.52, blue: 0.32))
+            Text(verbatim: interfaceLocale.text("Everything in the app is unlocked."))
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        case .trial(let daysLeft):
+            Text(verbatim: MinikPlusPaywallText.daysLeft(daysLeft, locale: interfaceLocale))
+                .font(.headline)
+            plusUnlockButton
+        case .trialNotStarted:
+            Text(verbatim: String(
+                format: interfaceLocale.text("Try %@ free for 7 days"),
+                MinikPlusPaywallText.brandName(configuration.variant, locale: interfaceLocale)
+            ))
+            .font(.headline)
+            plusUnlockButton
+        case .trialEnded:
+            Text(verbatim: interfaceLocale.text("Your free week is over"))
+                .font(.headline)
+            plusUnlockButton
+        }
+    }
+
+    private var plusUnlockButton: some View {
+        Button {
+            perform(.unlockEverything)
+        } label: {
+            Text(verbatim: MinikPlusPaywallText.unlockButton(
+                price: commerceController.fullAccessProduct?.displayPrice,
+                locale: interfaceLocaleController.selectedLocale
+            ))
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(ParentAreaActionButtonStyle())
+        .disabled(commerceController.isBusy)
     }
 
     private var commerceStatusMessage: String? {
@@ -1180,7 +1218,7 @@ struct ParentAreaView: View {
             // apps use Apple's standard EULA) is left out rather than shown disabled.
             ForEach(MinikExternalDestination.allCases.filter { releaseInformation.url(for: $0) != nil }) { destination in
                 Button {
-                    gatedParentAction = .external(destination)
+                    perform(.external(destination))
                 } label: {
                     HStack {
                         Text(externalDestinationTitle(destination))
@@ -1191,7 +1229,6 @@ struct ParentAreaView: View {
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(ParentAreaActionButtonStyle(look: MinikPretty.PillLook.white))
-                .accessibilityHint(String(localized: "Opens a grown-up check before leaving the app"))
             }
 
             if !releaseInformation.hasExternalDestinations {
@@ -1223,11 +1260,16 @@ struct ParentAreaView: View {
         }
     }
 
-    private func performGatedAction(_ action: GatedParentAction) {
+    /// Runs a grown-up action at once: the Parent Area opened only after the grown-up check.
+    private func perform(_ action: ParentAreaAction) {
         switch action {
         case .purchase:
             Task {
                 await commerceController.purchaseRemoveAds()
+            }
+        case .unlockEverything:
+            Task {
+                await commerceController.purchaseFullAccess()
             }
         case .restore:
             Task {
@@ -1242,8 +1284,7 @@ struct ParentAreaView: View {
         case .deletePublicRecords:
             Task { await publicLeaderboardController.deletePublicRecords() }
         case .keepInTouch(let keepInTouchAction):
-            // Run once the grown-up check's sheet has gone (runPendingKeepInTouch).
-            pendingKeepInTouch = keepInTouchAction
+            runKeepInTouch(keepInTouchAction)
         }
     }
 
@@ -1292,14 +1333,11 @@ struct ParentAreaView: View {
 
     private func requestKeepInTouch(_ action: MinikKeepInTouchAction) {
         keepInTouchProblem = nil
-        gatedParentAction = .keepInTouch(action)
+        perform(.keepInTouch(action))
     }
 
-    /// The grown-up check's sheet has gone: the unlocked action runs now, so the share sheet
-    /// or the App Store's rating prompt can appear.
-    private func runPendingKeepInTouch() {
-        guard let action = pendingKeepInTouch else { return }
-        pendingKeepInTouch = nil
+    /// Opens the share sheet, the App Store's rating prompt or the feedback mail.
+    private func runKeepInTouch(_ action: MinikKeepInTouchAction) {
         let product = configuration.variant
         switch action {
         case .rate:
@@ -1402,10 +1440,13 @@ struct ParentAreaView: View {
     }
 }
 
-/// Grown-up-only actions. The public leaderboard switch and record deletion are
-/// gated per the 2026-09-13 public leaderboard privacy decision.
-private enum GatedParentAction: Identifiable {
+/// Grown-up-only actions (the 2026-09-13 public leaderboard privacy decision, Apple's Kids rules
+/// for purchases and links that leave the app). Since 15 November 2026 the grown-up check comes
+/// once, before the Parent Area opens, and covers them all.
+private enum ParentAreaAction: Identifiable {
     case purchase
+    /// Minik Plus: the one-time full-access purchase.
+    case unlockEverything
     case restore
     case external(MinikExternalDestination)
     case leaderboardParticipation(Bool)
@@ -1416,6 +1457,7 @@ private enum GatedParentAction: Identifiable {
     var id: String {
         switch self {
         case .purchase: return "purchase"
+        case .unlockEverything: return "unlockEverything"
         case .restore: return "restore"
         case .external(let destination): return "external.\(destination.rawValue)"
         case .leaderboardParticipation(let enabled): return "leaderboard.\(enabled)"

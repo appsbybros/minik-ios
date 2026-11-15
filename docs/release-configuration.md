@@ -112,7 +112,14 @@ covered by its local and native-host tests. One app-root startup creates one
 controller/update listener; foreground refresh and explicit restore reconcile
 the authoritative entitlement, and unavailable StoreKit fails safely.
 
-MinikPlus, MinikPlusEnglish and MinikMathPlus expose purchase/restore in Parent
+MinikPlus and MinikPlusEnglish (1.8.0) sell no Remove Ads and show no ads: a free
+week (the free Non-Consumable "7-day Trial"), then the whole app is locked until the
+one-time full-access purchase. Each target names its products in
+`MINIK_FULL_ACCESS_PRODUCT_IDENTIFIER`, `MINIK_FREE_WEEK_PRODUCT_IDENTIFIER` and
+`MINIK_LEGACY_REMOVE_ADS_PRODUCT_IDENTIFIER` (the earlier Remove Ads, which grants full
+access forever); see `docs/minik-plus-paywall-ios.md`.
+
+MinikMathPlus exposes purchase/restore in Parent
 Area behind the grown-up gate. MinikMathPlus can show ads only through its included
 Ping Pong activity, so Remove Ads remains meaningful if that placement is
 enabled. MinikMath exposes purchase/restore (`remove_ads_math`) on its parents page
@@ -141,8 +148,10 @@ audit reject Google's known sample/test publisher and example-ad identifiers,
 so a Release build supplied with them remains unconfigured rather than showing
 test inventory.
 
-If ads are approved, MinikPlus and MinikPlusEnglish each need an iOS AdMob app
-ID and interstitial unit ID for Language placements. MinikMath uses the iOS Minik
+MinikPlus and MinikPlusEnglish have no ads (owner, 12 November 2026): they do not
+link Google Mobile Ads, do not take the `MinikAdSupportedApplication` Info.plist keys
+(`GADApplicationIdentifier`, the Remove Ads product) and compile with `MINIK_NO_ADS`,
+which keeps every Google Mobile Ads code path out of their binaries. MinikMath uses the iOS Minik
 Math AdMob app (`ca-app-pub-6728099379581161~7244879780`), since it now owns the
 Minik Math App Store record; MinikMathPlus uses its own iOS AdMob app
 (`ca-app-pub-6728099379581161~4538162680`, interstitial

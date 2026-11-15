@@ -154,7 +154,9 @@ class Metadata(unittest.TestCase):
 
     def test_versions(self):
         versions = m.app_versions()
-        self.assertEqual(versions["MinikPlus"], "1.7.9")
+        # Minik Plus and Minik Plus English: 1.8.0 (free week and buy wall); the other apps keep 1.7.9.
+        self.assertEqual(versions["MinikPlus"], "1.8.0")
+        self.assertEqual(versions["MinikPlusEnglish"], "1.8.0")
         self.assertEqual(versions["MinikMathPlus"], "1.7.9")
         self.assertEqual(versions["MinikAmudu"], "1.0")
         self.assertRegex(versions["MinikMaze"], r"^\d+\.\d+(\.\d+)?$")
@@ -384,7 +386,7 @@ class CommandLine(unittest.TestCase):
         self.assertEqual(code, 0, text)
         self.assertEqual([call for call in connect.calls if call[0] != "GET"], [])
         self.assertIn("DRY RUN", text)
-        self.assertIn("would rename the editable version 1.0 to 1.7.9", text)
+        self.assertIn("would rename the editable version 1.0 to 1.8.0", text)
         self.assertIn("Nothing was submitted for review.", text)
 
     def test_unknown_app(self):

@@ -72,10 +72,52 @@ foreach ($match in $hardcodedProviderIDs) {
 }
 
 $project = $projectText
-foreach ($target in @('MinikPlus', 'MinikPlusEnglish', 'MinikMathPlus', 'MinikMath', 'MinikPingPong')) {
+# The apps with ads link the SDK and take the ad Info.plist keys (GADApplicationIdentifier and the
+# Remove Ads product) from the MinikAdSupportedApplication template.
+foreach ($target in @('MinikMathPlus', 'MinikMath', 'MinikPingPong', 'MinikRetroPingPong', 'MinikMultiPingPong')) {
     $match = [regex]::Match($project, "(?ms)^  ${target}:(?<body>[\s\S]*?)(?=^  [A-Za-z][A-Za-z0-9]+:|\z)")
     if (-not $match.Success -or $match.Groups['body'].Value -notmatch 'package: GoogleMobileAds') {
         $errors.Add("$target does not link the production Google Mobile Ads adapter.")
+    }
+    if (-not $match.Success -or $match.Groups['body'].Value -notmatch 'templates: \[MinikApplication, MinikAdSupportedApplication\]') {
+        $errors.Add("$target does not take the ad Info.plist keys (MinikAdSupportedApplication).")
+    }
+}
+# Minik Plus and Minik Plus English (owner, 12 November 2026): no ads and no ad SDK in the binary;
+# a free week, then a one-time purchase (docs/minik-plus-paywall-ios.md).
+foreach ($target in @('MinikPlus', 'MinikPlusEnglish')) {
+    $match = [regex]::Match($project, "(?ms)^  ${target}:(?<body>[\s\S]*?)(?=^  [A-Za-z][A-Za-z0-9]+:|\z)")
+    if (-not $match.Success) {
+        $errors.Add("project.yml is missing $target.")
+        continue
+    }
+    $body = $match.Groups['body'].Value
+    if ($body -match 'GoogleMobileAds|MinikAdSupportedApplication|MINIK_ADS_|MINIK_INTERSTITIAL|GADApplicationIdentifier|ca-app-pub|SKAdNetwork|NSUserTrackingUsageDescription') {
+        $errors.Add("$target must have no ads: no Google Mobile Ads package, ad IDs or ad Info.plist keys.")
+    }
+    if ($body -notmatch 'templates: \[MinikApplication\]\s') {
+        $errors.Add("$target must use only the MinikApplication template.")
+    }
+    if ($body -notmatch 'SWIFT_ACTIVE_COMPILATION_CONDITIONS: "\$\(inherited\) [A-Z_ ]*MINIK_NO_ADS"') {
+        $errors.Add("$target must compile with MINIK_NO_ADS.")
+    }
+    foreach ($key in @('MinikFullAccessProductIdentifier', 'MinikFreeWeekProductIdentifier', 'MinikLegacyRemoveAdsProductIdentifier')) {
+        if ($body -notmatch "$key`: \$\(") {
+            $errors.Add("$target does not name its $key.")
+        }
+    }
+}
+$templateBody = [regex]::Match($project, '(?ms)^  MinikApplication:(?<body>[\s\S]*?)(?=^  [A-Za-z#]|^targets:)').Groups['body'].Value
+if ($templateBody -match 'GADApplicationIdentifier|MinikAdsEnabled|MinikRemoveAdsProductIdentifier') {
+    $errors.Add('The shared MinikApplication template must not give every app the ad Info.plist keys.')
+}
+foreach ($adapter in @('Sources/GoogleMobileAdsInterstitialService.swift', 'Sources/ModernPong/MPAds.swift')) {
+    $adapterText = Get-Content -Raw -LiteralPath (Join-Path $RepositoryRoot $adapter)
+    $conditions = [regex]::Matches($adapterText, '(?m)^\s*#if canImport\(GoogleMobileAds\)[^\r\n]*')
+    foreach ($condition in $conditions) {
+        if ($condition.Value -notmatch '!MINIK_NO_ADS') {
+            $errors.Add("${adapter}: Google Mobile Ads code must stay out of MINIK_NO_ADS builds ($($condition.Value.Trim())).")
+        }
     }
 }
 

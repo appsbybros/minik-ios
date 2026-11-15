@@ -1,12 +1,12 @@
 {
  "android": {
   "repository": "MinikMaze",
-  "commit": "2fdac59cbd1e3432e61e26ec12f869a3784e3daa",
+  "commit": "6b48d1beeb8e9514a2957c33762d198b083a938f",
   "path": "app/src/main/assets/"
  },
  "family": {
   "repository": "MinikFamilyServices",
-  "commit": "6a27708707e153235383dc2494253cc72a39a265",
+  "commit": "a557f03416d9a871535f563e603fea5945ddcd15",
   "path": "android/src/main/assets/minik-family/"
  },
  "ios_changes": [
@@ -115,6 +115,7 @@
   "export_manifest.gd.uid": "32f0fbecfdecdee2f7ebc702bd5679015485a37f03acdb499294ae98ed57e8d4",
   "fixtures.gd": "6d6b78f1514e5d988dac72eb95ff3f492a60bb53dbbe2ad9f8bf72fd8a58a9e7",
   "fixtures.gd.uid": "2e79f2d8efaa999bab287a39a788bc3824f78d115a02ae17bf02a773f3f39562",
+  "intro-copy.json": "ba8306145d755841b927ed2e5f5b314a4d782083030e5aec33abc94ea03373cf",
   "journey.gd": "887827a54669f939298e03fc055650fa87009720ba923435c1fed02165439a12",
   "journey.gd.uid": "56e65e8e632369af426b8e4729dfdc88d8e10bf8f1954a682c826da3bd0400e5",
   "joystick.gd": "b9c8dabf89589ffc697805f654e2c59a77049269a37afb0525b4df6b73e9431d",
@@ -190,9 +191,10 @@
   "privacy/he.html": "106cf377e6821d603bad90dc8d152449d709baa285290980ce4baaa1edb78a78",
   "privacy/hi.html": "5c3822a93005ec1afbf9a6bbfd1f55f7b3b722e20fc9b99519364975d1fe02c8",
   "privacy/nl.html": "85b91d56d1cc6cf791d322ace1fff006f6b1e7b4d349ce2145e695d7513cdd13",
-  "profile.gd": "056496c5647edf9904451951f7cbe4ac22e96491c533479c721e579547db7ba5",
+  "profile.gd": "340fa55bb6f197caecedecde7c0b0ed1bf60ae776c14da1dc65d65a728a0665d",
   "profile.gd.uid": "3152e6dcd9b58b3229bfe89eebc28174887a61d276395b6743462e8463e040af",
   "project.godot": "05d5b8c126399a2fec81c4cc89aef089d8289d0ff6e47ae8d906186ad68d8187",
+  "quick_intro.gd": "d4e330d36b37f0a3a812a562610e30bc690ef98c38f7571a7d4d6fb719be5c49",
   "reference_agent.gd": "2f04638f5f82aedc445d4f0701f92b79fc1d90ba3feaf0c9cd74d13ed208aacf",
   "reference_agent.gd.uid": "56568102b8fa3f744e325c98ee5df4a09009fae4e170f68f2775d855f6b926fc",
   "run.gd": "61fd6849a1c37b5323d6fc8c8a719384bcba980cec7fc4816926b34b25614faf",
@@ -201,7 +203,7 @@
   "sky_ui.gd.uid": "2d1614959989cbc59f288e315c0939b0d337adec571f160742a902fbed8cbb6f",
   "swipe.gd": "75421a1fd28b2063184e9f0381052ca14a1a60975286dbbf66904d5fc1571c10",
   "swipe.gd.uid": "8f1b7a64b3483f815a618736da31d7027cf4222b0bce81d08a5f10f01ae8d289",
-  "text.gd": "4b4a92349b74d22bed00079382dca2839e07ac8c4a78a0bbf4beb4d68e8d048a",
+  "text.gd": "8296ed471d9669d37826061efdda30bc7e9e163219eaf66de687dc7a3713e482",
   "text.gd.uid": "e655b5dc6558d2b27560128850383201a8ec6cd9001d0464d0e1a6f783cca5c2",
   "ui-languages.json": "8b206f654af5d0dd9c15917d70d74b61c130a13d4fed25e742a6cd35df756e51",
   "validate.gd": "2dd973f5179d6b962951186db241d126b0a02f019f8836cb4d699a2bbf920a47",
@@ -214,6 +216,7 @@
   "validate_adventure.gd.uid": "839f5555c1c7c19486f02e57b73ae93e2ff56cdda8349bfeaebd6a8ca09238d5",
   "validate_forks.gd": "39f1144b2b723672724182de76375f817990868082cd8bca50296206d5be53ef",
   "validate_forks.gd.uid": "67aeec1acda8b00ea20eebeee239180b1bfa61142ed5932fe9cf66e338ab07a9",
+  "validate_intro.gd": "6a42f6af777be7177f3ddfea95678a589e18d5a2dcb7dca4b6a5e8e62361e68c",
   "validate_journeys.gd": "d5b6b50224eedf1129ea6d70f4ef04e8e01a0588149616a0464b144edfd1c931",
   "validate_journeys.gd.uid": "f924b6f662b962efbcf72dde82f85fac91da6063817044fe64f4c37ba0292f07",
   "validate_laugh.gd": "83920c6b58586d525885e968a7becd5c94e5671f64b4503470e20b7868bc7e03",
@@ -228,7 +231,7 @@
   "validate_variants.gd.uid": "72a9b8bbccf30e7da537cae6ca6d42a409b1312aefe090375844e451e2b12f9c",
   "words.gd": "313a64af785bdcf95180ffaccf9d2bc531a0629171dd58c42ed3a6426905bf10",
   "words.gd.uid": "19505223c3885a2f0178a0fec172a480754d9575848988bfd9026745c3bb1085",
-  "world.gd": "6d3ab944e9cf561b16f07c50f51593b7e0626a8f181f10c4c8b535095f10572b",
+  "world.gd": "303f994474945478959b983b486bd3d307cea56242333b6b6c3f57dc4e94b7f9",
   "world.gd.uid": "85f0b149e1fa2dafc82312c8a20a9f074b6a73476991d8645bf92f8ba7107fc0"
  }
 }

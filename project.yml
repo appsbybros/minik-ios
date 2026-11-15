@@ -69,12 +69,6 @@ targetTemplates:
         # XcodeGen otherwise writes 1.0 (1), ignoring the version build settings.
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
-        MinikRemoveAdsProductIdentifier: $(MINIK_REMOVE_ADS_PRODUCT_IDENTIFIER)
-        MinikAdsEnabled: $(MINIK_ADS_ENABLED)
-        MinikAdsPolicyApproved: $(MINIK_ADS_POLICY_APPROVED)
-        MinikAdsApplicationIdentifier: $(MINIK_ADS_APPLICATION_IDENTIFIER)
-        GADApplicationIdentifier: $(MINIK_ADS_APPLICATION_IDENTIFIER)
-        MinikInterstitialAdUnitIdentifier: $(MINIK_INTERSTITIAL_AD_UNIT_IDENTIFIER)
         MinikPrivacyPolicyURL: $(MINIK_PRIVACY_POLICY_URL)
         MinikTermsOfUseURL: $(MINIK_TERMS_OF_USE_URL)
         MinikSupportURL: $(MINIK_SUPPORT_URL)
@@ -92,6 +86,20 @@ targetTemplates:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
+
+  # The Info.plist keys of the apps that sell Remove Ads and may show ads (Google Mobile Ads
+  # reads GADApplicationIdentifier). Every MinikApplication target lists this template after
+  # MinikApplication except MinikPlus and MinikPlusEnglish, which have no ads and no ad SDK
+  # (a free week, then a one-time purchase: docs/minik-plus-paywall-ios.md).
+  MinikAdSupportedApplication:
+    info:
+      properties:
+        MinikRemoveAdsProductIdentifier: $(MINIK_REMOVE_ADS_PRODUCT_IDENTIFIER)
+        MinikAdsEnabled: $(MINIK_ADS_ENABLED)
+        MinikAdsPolicyApproved: $(MINIK_ADS_POLICY_APPROVED)
+        MinikAdsApplicationIdentifier: $(MINIK_ADS_APPLICATION_IDENTIFIER)
+        GADApplicationIdentifier: $(MINIK_ADS_APPLICATION_IDENTIFIER)
+        MinikInterstitialAdUnitIdentifier: $(MINIK_INTERSTITIAL_AD_UNIT_IDENTIFIER)
 
 targets:
   MinikPlus:
@@ -140,28 +148,31 @@ targets:
         UISupportedInterfaceOrientations~ipad:REPLACE:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationPortraitUpsideDown
+        # No ads (owner, 12 November 2026): a free week, then a one-time purchase
+        # (Sources/MinikPlusAccess.swift, docs/minik-plus-paywall-ios.md).
+        MinikFullAccessProductIdentifier: $(MINIK_FULL_ACCESS_PRODUCT_IDENTIFIER)
+        MinikFreeWeekProductIdentifier: $(MINIK_FREE_WEEK_PRODUCT_IDENTIFIER)
+        MinikLegacyRemoveAdsProductIdentifier: $(MINIK_LEGACY_REMOVE_ADS_PRODUCT_IDENTIFIER)
     settings:
       base:
         MINIK_APP_ICON_NAME: MinikPlusAppIcon
         MINIK_PLUS_BUNDLE_IDENTIFIER: com.appsbybros.minik.plus
         PRODUCT_BUNDLE_IDENTIFIER: $(MINIK_PLUS_BUNDLE_IDENTIFIER)
-        # App Store product IDs are unique per developer account.
-        MINIK_REMOVE_ADS_PRODUCT_IDENTIFIER: remove_ads_minik
+        # Minik Plus and Minik Plus English only; the other apps keep the shared version.
+        MINIK_MARKETING_VERSION: "1.8.0"
+        # App Store product IDs are unique per developer account. The free week is the free
+        # Non-Consumable "7-day Trial" (App Review 3.1.1). Whoever bought the earlier Remove Ads
+        # (remove_ads_minik) has full access forever; it is no longer sold.
+        MINIK_FULL_ACCESS_PRODUCT_IDENTIFIER: minik_plus_full_access
+        MINIK_FREE_WEEK_PRODUCT_IDENTIFIER: minik_plus_free_week
+        MINIK_LEGACY_REMOVE_ADS_PRODUCT_IDENTIFIER: remove_ads_minik
         CODE_SIGN_ENTITLEMENTS: Resources/Entitlements/MinikLanguage.entitlements
         MINIK_FIREBASE_PLIST_PATH: "$(SRCROOT)/Config/Firebase/MinikPlus/GoogleService-Info.plist"
         PRODUCT_NAME: MinikPlus
-        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) MINIK_PLUS"
+        # MINIK_NO_ADS: no Google Mobile Ads code is compiled (the SDK is not linked).
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) MINIK_PLUS MINIK_NO_ADS"
+        # Firebase's Objective-C categories.
         OTHER_LDFLAGS: "$(inherited) -ObjC"
-        # Release shows child-directed, non-personalized interstitials; Debug keeps
-        # Google's sample app ID, which MinikAdsConfiguration treats as ads off.
-        MINIK_ADS_ENABLED: YES
-        MINIK_ADS_POLICY_APPROVED: YES
-        MINIK_ADS_APPLICATION_IDENTIFIER: "ca-app-pub-6728099379581161~3837875403"
-        MINIK_INTERSTITIAL_AD_UNIT_IDENTIFIER: "ca-app-pub-6728099379581161/7520211955"
-      configs:
-        Debug:
-          MINIK_ADS_APPLICATION_IDENTIFIER: "ca-app-pub-3940256099942544~1458002511"
-          MINIK_INTERSTITIAL_AD_UNIT_IDENTIFIER: ""
     preBuildScripts:
       - name: Copy configured Firebase plist
         script: |
@@ -195,8 +206,6 @@ targets:
         product: FirebaseFirestore
       - package: FirebaseApple
         product: FirebaseAppCheck
-      - package: GoogleMobileAds
-        product: GoogleMobileAds
 
   MinikPlusEnglish:
     templates: [MinikApplication]
@@ -240,6 +249,11 @@ targets:
         UISupportedInterfaceOrientations~ipad:REPLACE:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationPortraitUpsideDown
+        # No ads (owner, 12 November 2026): a free week, then a one-time purchase
+        # (Sources/MinikPlusAccess.swift, docs/minik-plus-paywall-ios.md).
+        MinikFullAccessProductIdentifier: $(MINIK_FULL_ACCESS_PRODUCT_IDENTIFIER)
+        MinikFreeWeekProductIdentifier: $(MINIK_FREE_WEEK_PRODUCT_IDENTIFIER)
+        MinikLegacyRemoveAdsProductIdentifier: $(MINIK_LEGACY_REMOVE_ADS_PRODUCT_IDENTIFIER)
     settings:
       base:
         # The same rainbow icon as Minik Plus (owner, 2 November 2026); the set holds a byte copy of
@@ -247,23 +261,21 @@ targets:
         MINIK_APP_ICON_NAME: MinikPlusEnglishAppIcon
         MINIK_PLUS_ENGLISH_BUNDLE_IDENTIFIER: com.appsbybros.minik.plus.english
         PRODUCT_BUNDLE_IDENTIFIER: $(MINIK_PLUS_ENGLISH_BUNDLE_IDENTIFIER)
-        # App Store product IDs are unique per developer account.
-        MINIK_REMOVE_ADS_PRODUCT_IDENTIFIER: remove_ads_minik_english
+        # Minik Plus and Minik Plus English only; the other apps keep the shared version.
+        MINIK_MARKETING_VERSION: "1.8.0"
+        # App Store product IDs are unique per developer account. The free week is the free
+        # Non-Consumable "7-day Trial" (App Review 3.1.1). Whoever bought the earlier Remove Ads
+        # (remove_ads_minik_english) has full access forever; it is no longer sold.
+        MINIK_FULL_ACCESS_PRODUCT_IDENTIFIER: minik_english_full_access
+        MINIK_FREE_WEEK_PRODUCT_IDENTIFIER: minik_english_free_week
+        MINIK_LEGACY_REMOVE_ADS_PRODUCT_IDENTIFIER: remove_ads_minik_english
         CODE_SIGN_ENTITLEMENTS: Resources/Entitlements/MinikLanguage.entitlements
         MINIK_FIREBASE_PLIST_PATH: "$(SRCROOT)/Config/Firebase/MinikPlusEnglish/GoogleService-Info.plist"
         PRODUCT_NAME: MinikPlusEnglish
-        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) MINIK_PLUS_ENGLISH"
+        # MINIK_NO_ADS: no Google Mobile Ads code is compiled (the SDK is not linked).
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) MINIK_PLUS_ENGLISH MINIK_NO_ADS"
+        # Firebase's Objective-C categories.
         OTHER_LDFLAGS: "$(inherited) -ObjC"
-        # Release shows child-directed, non-personalized interstitials; Debug keeps
-        # Google's sample app ID, which MinikAdsConfiguration treats as ads off.
-        MINIK_ADS_ENABLED: YES
-        MINIK_ADS_POLICY_APPROVED: YES
-        MINIK_ADS_APPLICATION_IDENTIFIER: "ca-app-pub-6728099379581161~9104756369"
-        MINIK_INTERSTITIAL_AD_UNIT_IDENTIFIER: "ca-app-pub-6728099379581161/7791674692"
-      configs:
-        Debug:
-          MINIK_ADS_APPLICATION_IDENTIFIER: "ca-app-pub-3940256099942544~1458002511"
-          MINIK_INTERSTITIAL_AD_UNIT_IDENTIFIER: ""
     preBuildScripts:
       - name: Copy configured Firebase plist
         script: |
@@ -297,14 +309,12 @@ targets:
         product: FirebaseFirestore
       - package: FirebaseApple
         product: FirebaseAppCheck
-      - package: GoogleMobileAds
-        product: GoogleMobileAds
 
   MinikMathPlus:
     # The original, larger iOS math app, renamed Minik Math Plus as its Android twin
     # (C:/Projects/MinikMathPlus, com.appsbybros.minik.math.plus). Its Swift code keeps the
     # MINIK_MATH condition and the minikMath product variant.
-    templates: [MinikApplication]
+    templates: [MinikApplication, MinikAdSupportedApplication]
     sources:
       # Recorded Hebrew speech (HebrewRecordedSpeech.swift, tools/hebrew-speech --app mathplus).
       - path: Resources/HebrewSpeechMath/HebrewSpeech
@@ -380,7 +390,7 @@ targets:
     # app/src/main/assets/www copied byte for byte into Resources/MinikMathWeb, in a native
     # host that does what Android's MainActivity and monetization package do
     # (Sources/MinikMathWeb, docs/minik-math-ios.md).
-    templates: [MinikApplication]
+    templates: [MinikApplication, MinikAdSupportedApplication]
     sources:
       - path: Resources/MinikMathWeb
         type: folder
@@ -434,7 +444,7 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
 
   MinikPingPong:
-    templates: [MinikApplication]
+    templates: [MinikApplication, MinikAdSupportedApplication]
     sources:
       - path: Resources/ModernPongAssets.xcassets
         buildPhase: resources
@@ -498,7 +508,7 @@ targets:
         product: GoogleMobileAds
 
   MinikRetroPingPong:
-    templates: [MinikApplication]
+    templates: [MinikApplication, MinikAdSupportedApplication]
     sources:
       - path: Resources/RetroPong
         type: folder
@@ -544,7 +554,7 @@ targets:
         product: GoogleMobileAds
 
   MinikMultiPingPong:
-    templates: [MinikApplication]
+    templates: [MinikApplication, MinikAdSupportedApplication]
     # Multi Ping Pong (3/4 players, Android MinikCrossPong) runs its own copy of
     # Modern Ping Pong in MultiPong/; Sources/ModernPong stays the two-player game.
     sources:REPLACE:

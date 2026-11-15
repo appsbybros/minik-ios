@@ -70,6 +70,10 @@ func more_apps()->void:show_more_apps()
 func show_privacy()->void:show_privacy_page()
 func report_concern()->void:
 	gate(func():open_link("mailto:%s?subject=Minik%%20Maze%%20record%%20report"%SUPPORT))
+## Android send_feedback: the link is only in the grown-up menu (already gated); the parent writes and sends the mail.
+func send_feedback()->void:
+	if OS.shell_open("mailto:%s?subject=Minik%%20Maze%%20feedback&body=%s"%[SUPPORT,"Minik Maze (iOS)\n\n".uri_encode()])!=OK:
+		notice(t("No email app found. You can write to:")+"\n\n"+SUPPORT)
 
 func configure(locale:String,strings:String)->void:
 	language=locale

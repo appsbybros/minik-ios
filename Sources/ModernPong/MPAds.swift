@@ -1,6 +1,6 @@
 import Foundation
 import UIKit
-#if canImport(GoogleMobileAds)
+#if canImport(GoogleMobileAds) && !MINIK_NO_ADS
 @preconcurrency import GoogleMobileAds
 #endif
 
@@ -41,7 +41,7 @@ struct MPAdPolicy: Codable {
     private var loading = false, presenting = false, providerStarted = false
     private var eligible = true
     private var loadedAt: Int64 = 0, retryAt: Int64 = 0
-    #if canImport(GoogleMobileAds)
+    #if canImport(GoogleMobileAds) && !MINIK_NO_ADS
     private var interstitial: InterstitialAd?
     #endif
     /// True when this build and experience may request interstitials at all.
@@ -69,14 +69,14 @@ struct MPAdPolicy: Codable {
     func removeAds(_ active: Bool) {
         eligible = !active
         if active {
-            #if canImport(GoogleMobileAds)
+            #if canImport(GoogleMobileAds) && !MINIK_NO_ADS
             interstitial = nil
             #endif
         } else { startProvider() }
     }
     private func startProvider() {
         guard eligible, !providerStarted, unit != nil else { return }
-        #if canImport(GoogleMobileAds)
+        #if canImport(GoogleMobileAds) && !MINIK_NO_ADS
         providerStarted = true
         let config = MobileAds.shared.requestConfiguration
         config.ageRestrictedTreatment = .child; config.maxAdContentRating = GADMaxAdContentRating.general
@@ -90,7 +90,7 @@ struct MPAdPolicy: Codable {
         // Android AdCoordinator also returns while a family message is up, so no ad opens over it.
         guard fresh, eligible, !presenting, !FamilyMessages.shared.isShowing, policy.due(now: MPClock.now),
               UIApplication.shared.applicationState == .active else { then(); return }
-        #if canImport(GoogleMobileAds)
+        #if canImport(GoogleMobileAds) && !MINIK_NO_ADS
         // Android AdCoordinator: an interstitial loaded 55 minutes ago or more is discarded, never shown.
         guard let ad = interstitial, MPClock.now - loadedAt < 3_300_000 else { interstitial = nil; preload(); then(); return }
         do { try ad.canPresent(from: nil) } catch { interstitial = nil; preload(); then(); return }
@@ -106,7 +106,7 @@ struct MPAdPolicy: Codable {
         #endif
     }
     private func preload() {
-        #if canImport(GoogleMobileAds)
+        #if canImport(GoogleMobileAds) && !MINIK_NO_ADS
         guard eligible, providerStarted, !loading, interstitial == nil, let unit, MPClock.now >= retryAt else { return }
         loading = true
         Task {
@@ -124,7 +124,7 @@ struct MPAdPolicy: Codable {
     }
     private func finished() { presenting = false; let callback = continuation; continuation = nil; callback?(); preload() }
 }
-#if canImport(GoogleMobileAds)
+#if canImport(GoogleMobileAds) && !MINIK_NO_ADS
 extension MPAds: FullScreenContentDelegate {
     func adWillPresentFullScreenContent(_ ad: FullScreenPresentingAd) { willPresent?(); policy.shown(now: MPClock.now); preferences.save("ads", policy) }
     func adDidDismissFullScreenContent(_ ad: FullScreenPresentingAd) { interstitial = nil; finished() }

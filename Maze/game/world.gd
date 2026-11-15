@@ -81,9 +81,14 @@ var onboarding_mode:="child"
 var onboarding_subjects:Array=[]
 var onboarding_first:=false
 var onboarding_language:="en"
+var quick_intro:MazeQuickIntro
+var intro_original:MazeProfile
+var intro_from_help:=false
+var qa_capture_id:=""
+var qa_capture_tick:=-1
 var glue_model:MeshInstance3D
 const FREE_LEVELS:=12
-const PLATFORM_COPY:=["Learning settings","Report a concern","For a grown-up","More Minik apps","Remove ads","Restore purchases","Privacy policy","Privacy choices","Purchase unavailable. Please try again later.","Share your best scores","Choose 1–3 letters or numbers. Only this alias and your level bests are shared. Do not use your real name.","Use 1–3 letters or numbers.","Share","Cancel","Close"]
+const PLATFORM_COPY:=["Send feedback","No email app found. You can write to:","Learning settings","Report a concern","For a grown-up","More Minik apps","Remove ads","Restore purchases","Privacy policy","Privacy choices","Purchase unavailable. Please try again later.","Share your best scores","Choose 1–3 letters or numbers. Only this alias and your level bests are shared. Do not use your real name.","Use 1–3 letters or numbers.","Share","Cancel","Close"]
 
 func _ready()->void:
 	Engine.max_fps=60
@@ -168,11 +173,18 @@ func _ready()->void:
 		for arg in OS.get_cmdline_user_args():
 			if arg.begins_with("--screen="):
 				match arg.split("=")[1]:
+					"intro":intro_offer(true)
+					"practice":start_quick_intro()
 					"mode":mode_screen(true)
 					"parent":parent_screen()
 					"settings":settings()
+					"question-settings":question_settings()
 					"unlock":unlock_screen()
 					"map":map_panel.show()
+		# Freeze a replayed QA snapshot for a reproducible store still. The frame
+		# uses ordinary game geometry, actors and HUD; release ignores QA extras.
+		if not fixture.is_empty() and OS.get_cmdline_user_args().has("--store-capture"):
+			paused=true;message_until=0
 
 func load_level(number:int,saved:Dictionary={},start_playing:bool=true)->void:
 	if start_playing and not can_play(number):unlock_screen();return
@@ -186,8 +198,9 @@ func load_level(number:int,saved:Dictionary={},start_playing:bool=true)->void:
 	run=MazeRun.new(stage,str(saved.get("language",profile.data.learning)),saved.get("adventure",{}).get("settings",MazeLessons.options(profile.data)))
 	run.enemy_factor=.85+float(profile.data.skills.enemies)*.25
 	if not saved.is_empty():run.restore(saved)
-	session_live=start_playing;saved_at=run.age
-	if start_playing:profile.data.played=true;profile.save()
+	if quick_intro!=null:quick_intro.prepare(run)
+	session_live=start_playing and quick_intro==null;saved_at=run.age
+	if session_live:profile.data.played=true;profile.save()
 	pickup_models.clear();letter_models.clear();gate_models.clear();gate_text.clear();learning_revision=-1;bot_models.clear();shot_models.clear()
 	effects.clear();splash_marks.clear()
 	var color:Color=theme_colors[stage.theme]
@@ -247,7 +260,7 @@ func load_level(number:int,saved:Dictionary={},start_playing:bool=true)->void:
 			MazeArt.box(root,Vector3(0,2.3,0),Vector3(4.5,.26,.35),Color("e8b25b"))
 			var answer_sign:=label3d(str(g.display_prompt) if g.get("lesson","")=="wall" else MazeLessons.answer_text(g,int(values[i])),root,Vector3(0,3.0,0),30)
 			gate_text[g.id].answers.append(answer_sign)
-			answer_sign.text_direction=TextServer.DIRECTION_AUTO;answer_sign.width=210;answer_sign.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;answer_sign.pixel_size=minf(.018,1.5/maxf(36,ceilf(answer_sign.text.length()/12.0)*36))
+			answer_sign.text_direction=TextServer.DIRECTION_AUTO;fit_answer_sign(answer_sign)
 			if not g.get("walk_choice",false):
 				var door:=MazeArt.box(root,Vector3(0,1,0),Vector3(4,1.9,.12),color.lightened(.35));door.name="Door"
 	for p in stage.pickups:
@@ -288,13 +301,27 @@ func load_level(number:int,saved:Dictionary={},start_playing:bool=true)->void:
 	if number==1:message(text.t("Drag anywhere in the maze to move, or use the circle."),12)
 	elif number==3:message(text.t("Follow the answer into its path. You can always turn back."),12)
 	elif stage.race:message(text.t("Race to the exit! The fox can choose wrong answers too. Think before following!"),10)
-	if start_playing and saved.is_empty():adventure_intro()
+	if start_playing and saved.is_empty() and quick_intro==null:adventure_intro()
 
 func label3d(value:String,parent:Node3D,at:Vector3,font_size:int)->Label3D:
 	var label:=Label3D.new();label.text=value;label.position=at;label.font_size=font_size;label.pixel_size=.018
 	label.modulate=Color("183754");label.outline_modulate=Color("fff7e8");label.outline_size=9
 	label.billboard=BaseMaterial3D.BILLBOARD_ENABLED;label.no_depth_test=false
 	parent.add_child(label);return label
+
+## Answer signs on the floor: a long word (e.g. "Photosynthesis") must never break in the middle.
+## Lines break only between words, and the font shrinks until the longest word fits the sign.
+func fit_answer_sign(sign:Label3D)->void:
+	sign.width=210;sign.autowrap_mode=TextServer.AUTOWRAP_WORD
+	var font:Font=sign.font if sign.font!=null else ThemeDB.fallback_font
+	var words:=sign.text.split(" ",false);var size:=30
+	while size>14:
+		var longest:=0.0
+		for word in words:longest=maxf(longest,font.get_string_size(word,HORIZONTAL_ALIGNMENT_LEFT,-1,size).x)
+		if longest+2*sign.outline_size<=sign.width:break
+		size-=1
+	sign.font_size=size
+	sign.pixel_size=minf(.018,1.5/maxf(36,ceilf(sign.text.length()/12.0)*36))
 
 func _physics_process(dt:float)->void:
 	if is_instance_valid(home_more) and is_instance_valid(home_scroll):
@@ -321,6 +348,7 @@ func _physics_process(dt:float)->void:
 		for g in stage.gates:
 			if run.at.distance_to(stage.pos(g.a))<18 and camera.is_position_in_frustum(stage.pos(g.a)+Vector3(0,1,0)):MazeLearning.mark_seen(run,int(g.id))
 		run.step(dt,direction)
+		if quick_intro!=null:quick_intro.observe(run)
 		if not run.learning.is_empty() and int(run.learning.revision)!=learning_revision:
 			learning_revision=int(run.learning.revision);refresh_question_art()
 			if session_live:profile.checkpoint(run)
@@ -417,6 +445,8 @@ func _physics_process(dt:float)->void:
 		var difference:=profile.finish(run)
 		get_tree().create_timer(.9).timeout.connect(func():result(difference))
 	if (qa or test_mode) and int(time*10)!=qa_stamp:qa_stamp=int(time*10);write_qa()
+	if qa and OS.get_cmdline_user_args().has("--store-capture") and int(time*2)!=qa_capture_tick:
+		qa_capture_tick=int(time*2);read_capture_request()
 
 func style(color:Color,border:Color=Color("b2dfff"))->StyleBox:
 	return MazeSkyUI.surface(MazeSkyUI.palette(color))
@@ -461,6 +491,8 @@ func screen()->VBoxContainer:
 	layout()
 	return box
 func home()->void:
+	if quick_intro!=null:
+		leave_quick_intro(false);return
 	if session_live and run.state=="playing":profile.checkpoint(run)
 	var box:=screen();menu.name="HomeScreen"
 	box.add_child(label("מיניק במבוך" if text.language=="he" else "MINIK MAZE",36))
@@ -478,6 +510,8 @@ func home()->void:
 	box.add_child(label(lesson_copy("Questions and answers were created with AI. AI can make mistakes."),16))
 	layout()
 func continue_adventure()->void:
+	if not profile.data.quick_intro_seen and not profile.data.played:
+		intro_offer(false);return
 	var saved:=profile.active_run()
 	if not saved.is_empty() and int(saved.get("layout_version",0)) in [5,6]:
 		clear_menu();load_level(int(saved.number),saved)
@@ -549,7 +583,8 @@ func records()->void:
 		if profile.data.bests.has(str(id)):box.add_child(label(text.t("Level")+" "+str(id)+"   ·   "+str(profile.data.bests[str(id)]),24))
 	box.add_child(button(text.t("Back"),parent_screen))
 func help_screen()->void:
-	var box:=screen();box.add_child(label(text.t("Help"),32))
+	var box:=screen();menu.name="HelpScreen";box.add_child(label(text.t("Help"),32))
+	box.add_child(button(text.t("Try the quick practice"),func():intro_offer(true),MazeSkyUI.MINT))
 	box.add_child(label(text.t("Explore the maze. Read the question on each square and walk through the answer you choose."),25))
 	box.add_child(label(text.t("A wrong answer traps you in colorful glue for 5 seconds and costs one life. The rival keeps exploring!" if profile.data.game_mode=="child" else "Find your own route. Wrong answers lead to dead ends; turn around and try another path."),25))
 	box.add_child(label(text.t("Try again starts this level from the beginning. In a race, both players restart together."),25))
@@ -558,6 +593,8 @@ func help_screen()->void:
 	box.add_child(button(text.t("Back"),home))
 
 func pause_screen()->void:
+	if quick_intro!=null:
+		intro_pause();return
 	swipe.reset()
 	if session_live:profile.checkpoint(run)
 	var box:=screen();box.add_child(label(text.t("Adventure menu"),36));box.add_child(button(text.t("Help"),gate_help));box.add_child(button(text.t("Resume"),func():clear_menu();paused=false));box.add_child(button(text.t("Try again"),func():clear_menu();load_level(stage.number)));box.add_child(button(text.t("Home"),home))
@@ -617,8 +654,8 @@ func make_hud()->void:
 	word_scroll=ScrollContainer.new();word_scroll.name="WordTray";word_scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;hud.add_child(word_scroll)
 	word_tray=HBoxContainer.new();word_tray.add_theme_constant_override("separation",8);word_scroll.add_child(word_tray);tray_key=""
 	message_label=label("",24);message_label.name="Message";message_label.add_theme_stylebox_override("normal",style(Color(.98,.96,.87,.96)));hud.add_child(message_label)
-	joystick=MazeJoystick.new();joystick.name="Joystick";joystick.throw_requested.connect(func():run.throw_water());hud.add_child(joystick)
-	throw_button=button(text.t("Throw"),func():run.throw_water(),Color("8be1f1"));throw_button.name="Throw";throw_button.visible=false;hud.add_child(throw_button)
+	joystick=MazeJoystick.new();joystick.name="Joystick";joystick.throw_requested.connect(throw_water);hud.add_child(joystick)
+	throw_button=button(text.t("Throw"),throw_water,Color("8be1f1"));throw_button.name="Throw";throw_button.visible=false;hud.add_child(throw_button)
 	map_button=button(text.t("Map"),toggle_map,MazeSkyUI.BLUE);map_button.name="MapButton";hud.add_child(map_button)
 	var q:=VBoxContainer.new();q.name="Question";q.add_theme_constant_override("separation",18);hud.add_child(q)
 	question_label=label("",32);q.add_child(question_label)
@@ -627,11 +664,11 @@ func make_hud()->void:
 	question_row=HBoxContainer.new();question_row.alignment=BoxContainer.ALIGNMENT_CENTER;question_row.add_theme_constant_override("separation",20);q.add_child(question_row)
 	q.minimum_size_changed.connect(layout_question)
 	map_panel=PanelContainer.new();map_panel.name="MapPanel";map_panel.visible=false;map_panel.mouse_filter=Control.MOUSE_FILTER_IGNORE
-	var glass:=StyleBoxFlat.new();glass.bg_color=Color(.88,.96,1,.30);glass.set_corner_radius_all(20);glass.set_content_margin_all(14);glass.border_color=Color(1,1,1,.4);glass.set_border_width_all(1);map_panel.add_theme_stylebox_override("panel",glass);hud.add_child(map_panel)
+	var glass:=StyleBoxFlat.new();glass.bg_color=Color(.88,.96,1,.90);glass.set_corner_radius_all(20);glass.set_content_margin_all(14);glass.border_color=Color(1,1,1,.4);glass.set_border_width_all(1);map_panel.add_theme_stylebox_override("panel",glass);hud.add_child(map_panel)
 	var map_box:=VBoxContainer.new();map_box.mouse_filter=Control.MOUSE_FILTER_IGNORE;map_panel.add_child(map_box)
 	var heading:=HBoxContainer.new();heading.mouse_filter=Control.MOUSE_FILTER_IGNORE;map_box.add_child(heading)
 	var title:=label(text.t("Map"),28);title.autowrap_mode=TextServer.AUTOWRAP_OFF;title.size_flags_horizontal=Control.SIZE_EXPAND_FILL;title.mouse_filter=Control.MOUSE_FILTER_IGNORE;heading.add_child(title)
-	var close:=TextureButton.new();close.name="CloseMap";close.texture_normal=ImageTexture.create_from_image(Image.load_from_file("res://art/ui/minik_close_button.webp"));close.ignore_texture_size=true;close.stretch_mode=TextureButton.STRETCH_KEEP_ASPECT_CENTERED;close.custom_minimum_size=Vector2(52,52);close.pressed.connect(func():map_panel.visible=false);heading.add_child(close)
+	var close:=TextureButton.new();close.name="CloseMap";close.texture_normal=ImageTexture.create_from_image(Image.load_from_file("res://art/ui/minik_close_button.webp"));close.ignore_texture_size=true;close.stretch_mode=TextureButton.STRETCH_KEEP_ASPECT_CENTERED;close.custom_minimum_size=Vector2(52,52);close.pressed.connect(close_map);heading.add_child(close)
 	map_drawing=Control.new();map_drawing.mouse_filter=Control.MOUSE_FILTER_IGNORE;map_drawing.custom_minimum_size=Vector2(240,210);map_drawing.draw.connect(draw_map);map_box.add_child(map_drawing)
 	map_caption=label("",22);map_caption.visible=false;map_box.add_child(map_caption)
 	layout()
@@ -671,9 +708,23 @@ func update_hud()->void:
 				var b:=button(MazeLessons.answer_text(g,value),func():run.answer(id,value),Color("ffdf8d"));b.custom_minimum_size=Vector2(110,72);question_row.add_child(b)
 		question_row.visible=question_row.get_child_count()>0
 		layout_question()
+	if quick_intro!=null:
+		score_label.text=text.t("Quick practice")+" · \u2066"+str(mini(4,quick_intro.step_index+1))+" / 4\u2069"
+		health_label.visible=false
+		message_label.text=text.t(quick_intro.instruction());message_label.visible=true
+		message_until=time+2
+		layout_learning_hud()
 	if map_panel.visible:map_drawing.queue_redraw()
+func throw_water()->void:
+	var success:=run.throw_water()
+	if quick_intro!=null:quick_intro.thrown(success)
+func close_map()->void:
+	map_panel.visible=false
+	if quick_intro!=null and quick_intro.map_changed(false):intro_finished()
 func toggle_map()->void:
-	map_panel.visible=not map_panel.visible
+	if map_panel.visible:close_map();return
+	map_panel.visible=true
+	if quick_intro!=null:quick_intro.map_changed(true)
 	if map_panel.visible:call_deferred("layout")
 func draw_map()->void:
 	var rect:=Rect2(Vector2(14,14),map_drawing.size-Vector2(28,28))
@@ -696,6 +747,10 @@ func layout()->void:
 		var card:=menu.get_node("Card") as Control
 		var w:=minf(size.x-40,740);var h:=minf(size.y-50,940)
 		card.position=(size-Vector2(w,h))/2;card.size=Vector2(w,h)
+		if str(menu.name).begins_with("QuickIntro"):
+			var contents:=card.get_node("Surface").get_child(0).get_child(0) as VBoxContainer
+			card.size.y=minf(size.y-50,maxf(240,contents.get_combined_minimum_size().y+40))
+			card.position=(size-card.size)/2
 		if menu.name=="HomeScreen":
 			card.size=Vector2(minf(size.x-32,850),size.y-32);card.position=(size-card.size)/2
 			if is_instance_valid(journey):journey.custom_minimum_size.y=clampf(minf(minf(size.x-72,810)*.47,size.y-540),150,380)
@@ -771,7 +826,7 @@ func _unhandled_input(event:InputEvent)->void:
 		if event is InputEventScreenTouch and event.pressed:swipe.begin(event.index,event.position,joystick.size.x*.32)
 		elif event is InputEventMouseButton and event.button_index==MOUSE_BUTTON_LEFT and event.pressed:swipe.begin(-2,event.position,joystick.size.x*.32)
 	if event is InputEventKey and event.pressed:
-		if event.physical_keycode==KEY_SPACE and not paused:run.throw_water()
+		if event.physical_keycode==KEY_SPACE and not paused:throw_water()
 		if event.physical_keycode==KEY_ESCAPE:pause_screen() if not paused else home()
 func _notification(what:int)->void:
 	if what==NOTIFICATION_APPLICATION_PAUSED or what==NOTIFICATION_APPLICATION_FOCUS_OUT:jelly_audio.stop()
@@ -790,7 +845,7 @@ func refresh_question_art()->void:
 			if not image_path.is_empty():nodes.picture.texture=learning_texture(image_path);nodes.picture.pixel_size=1.8/maxi(1,nodes.picture.texture.get_height())
 		var values:=stage.branch_values(g)
 		for i in values.size():
-			var sign:Label3D=nodes.answers[i];sign.text=MazeLessons.answer_text(g,int(values[i]));sign.pixel_size=minf(.018,1.5/maxf(36,ceilf(sign.text.length()/12.0)*36))
+			var sign:Label3D=nodes.answers[i];sign.text=MazeLessons.answer_text(g,int(values[i]));fit_answer_sign(sign)
 	shown_gate=-2
 
 func make_sounds()->void:
@@ -831,6 +886,8 @@ func write_qa()->void:
 	state["jellySoundsPlayed"]=jelly_sounds;state["jellySoundPlaying"]=jelly_audio.playing;state["jellySoundLength"]=jelly_audio.stream.get_length()
 	state["rivalLaughsPlayed"]=rival_laughs;state["rivalLaughPlaying"]=rival_audio.playing;state["soundEnabled"]=profile.data.sound
 	state["learning"]=run.learning;state["questionAuto"]=profile.data.question_auto;state["questionManualLevels"]=profile.data.question_manual_levels
+	state["introStep"]=quick_intro.step_index if quick_intro!=null else -1
+	state["captureId"]=qa_capture_id
 	state["testMode"]=test_mode;state["profilePath"]=profile.path
 	if run.adventure!=null:
 		state["adventure"]={"kind":run.adventure.kind,"tier":run.adventure.tier,"complete":run.adventure.complete,"errors":run.adventure.letter_errors,"tray":run.adventure.tray,"target":run.units,"helperState":run.adventure.helper.state,"carrierState":run.adventure.carrier.state,"flare":run.adventure.flash_left,"letters":[]}
@@ -858,7 +915,7 @@ func write_qa()->void:
 func qa_buttons(node:Node)->Array:
 	var found:Array=[]
 	for child in node.get_children():
-		if child is Button and child.is_visible_in_tree():
+		if (child is Button or child is LinkButton) and child.is_visible_in_tree():
 			var p:Vector2=child.global_position+child.size/2
 			found.append({"text":child.text,"at":[p.x,p.y],"size":[child.size.x,child.size.y],"disabled":child.disabled})
 		found.append_array(qa_buttons(child))
@@ -903,7 +960,7 @@ func lesson_copy(key:String)->String:
 func lesson_prompt(g:Dictionary)->String:
 	var kind:=str(g.get("lesson","math"))
 	if kind=="knowledge":return str(g.display_prompt)
-	if kind=="math":return g.prompt+" = ?"
+	if kind=="math":return str(g.get("display_prompt",g.prompt+" = ?"))
 	if kind=="wall":return lesson_copy("Build the word on the wall")+"\n"+g.display_prompt
 	return lesson_copy("Choose the first letter" if kind in ["first_picture","first_word"] else "Choose the matching word")+" · "+lesson_copy(str(MazeWords.NAMES.get(g.get("answer_language",run.language_code),run.language_code)))+"\n"+str(g.get("display_prompt",""))
 func request_learning_settings()->void:
@@ -1078,6 +1135,10 @@ func parent_screen()->void:
 	if platform!=null:
 		box.add_child(button(text.t("Restore purchases"),func():platform.restore_full_game()))
 		box.add_child(button(text.t("Privacy policy"),func():platform.show_privacy()))
+		var feedback:=LinkButton.new();feedback.text=text.t("Send feedback");feedback.custom_minimum_size.y=60
+		feedback.add_theme_font_override("font",MazeSkyUI.font(true));feedback.add_theme_font_size_override("font_size",26)
+		feedback.add_theme_color_override("font_color",MazeSkyUI.INK);feedback.add_theme_color_override("font_hover_color",Color("175d9d"))
+		feedback.size_flags_horizontal=Control.SIZE_SHRINK_CENTER;feedback.pressed.connect(func():platform.send_feedback());box.add_child(feedback)
 		box.add_child(button(text.t("More Minik apps"),func():platform.more_apps()))
 	box.add_child(button(text.t("Reset completed levels to 0"),confirm_reset,MazeSkyUI.PINK))
 	if test_tools:box.add_child(button(test_copy("Test a level (1–100)","בדיקת שלב (1–100)"),func():platform.choose_test_level(stage.number,text.language)))
@@ -1170,3 +1231,82 @@ func animate_lost_heart()->void:
 	var heart:=label("♥",54);heart.add_theme_color_override("font_color",Color("ef397a"));ui.add_child(heart);heart.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	heart.position=health_label.global_position;heart.size=Vector2(64,64)
 	var tween:=create_tween();tween.set_parallel(true);tween.tween_property(heart,"position",Vector2(get_viewport().get_visible_rect().size.x+80,heart.position.y+180),1.4).set_trans(Tween.TRANS_QUAD);tween.tween_property(heart,"modulate:a",0.0,1.4);tween.chain().tween_callback(heart.queue_free)
+
+
+func intro_offer(from_help:bool)->void:
+	intro_from_help=from_help
+	var box:=screen();menu.name="QuickIntroOffer"
+	box.add_child(label(text.t("A little practice, a big adventure!"),34))
+	box.add_child(label(text.t("Try moving, choosing a gate, throwing a balloon and opening the map. No race, no timer, and your adventure stays safe."),25))
+	box.add_child(button(text.t("Start practice"),start_quick_intro,MazeSkyUI.MINT))
+	box.add_child(button(text.t("Skip for now"),func():
+		profile.data.quick_intro_seen=true;profile.save()
+		help_screen() if intro_from_help else continue_adventure(),MazeSkyUI.PINK))
+	box.add_child(label(text.t("You can repeat this practice from Help anytime."),22))
+	call_deferred("layout")
+
+func start_quick_intro()->void:
+	if session_live and run.state=="playing":profile.checkpoint(run)
+	intro_original=profile
+	intro_original.data.quick_intro_seen=true;intro_original.save()
+	profile=MazeProfile.new("user://quick-practice.json",primary_language)
+	profile.data=intro_original.data.duplicate(true)
+	profile.data.game_mode="child";profile.data.child_subjects=["math"]
+	profile.data.question_auto=false;profile.data.question_manual_levels={"math":1}
+	quick_intro=MazeQuickIntro.new()
+	clear_menu();load_level(1,{},false);paused=false
+
+func intro_pause()->void:
+	swipe.reset()
+	var box:=screen();menu.name="QuickIntroPause"
+	box.add_child(label(text.t("Quick practice"),34))
+	box.add_child(label(text.t(quick_intro.instruction()),25))
+	box.add_child(button(text.t("Resume"),func():clear_menu();paused=false,MazeSkyUI.MINT))
+	box.add_child(button(text.t("Finish practice"),func():leave_quick_intro(false),MazeSkyUI.PINK))
+	call_deferred("layout")
+
+func intro_finished()->void:
+	swipe.reset()
+	intro_original.data.quick_intro_complete=true;intro_original.save()
+	var box:=screen();menu.name="QuickIntroComplete"
+	box.add_child(label(text.t("Ready for adventure!"),36))
+	box.add_child(label(text.t(quick_intro.instruction()),26))
+	box.add_child(button(text.t("Continue adventure"),func():leave_quick_intro(true),MazeSkyUI.MINT))
+	box.add_child(button(text.t("Home"),func():leave_quick_intro(false),MazeSkyUI.PINK))
+	call_deferred("layout")
+
+func leave_quick_intro(play:bool)->void:
+	quick_intro=null;session_live=false
+	profile=intro_original;intro_original=null
+	clear_menu();load_level(int(profile.data.unlocked),{},false)
+	if play:continue_adventure()
+	else:home()
+
+# Local debug-only capture control. Reuses the ordinary renderer and saved-run
+# loader, avoiding hundreds of cold starts. Release Android ignores QA flags.
+func read_capture_request()->void:
+	if not FileAccess.file_exists("user://qa-capture-request.json"):return
+	var request=JSON.parse_string(FileAccess.get_file_as_string("user://qa-capture-request.json"))
+	if not request is Dictionary or str(request.get("id","")) in ["",qa_capture_id]:return
+	var locale:=str(request.get("locale","en"))
+	var number:=int(request.get("level",1))
+	if locale not in ["en","he","es","fr","nl","hi","ar"] or number<1 or number>100:return
+	if quick_intro!=null:return
+	qa_capture_id=str(request.id);session_live=false
+	text.language=locale;profile.data.ui=locale
+	profile.data.game_mode="explorer" if request.get("mode","")=="explorer" else "child"
+	profile.data.question_language="he" if locale=="he" else "en"
+	ui.layout_direction=Control.LAYOUT_DIRECTION_RTL if text.rtl() else Control.LAYOUT_DIRECTION_LTR
+	configure_platform()
+	var fixture:Dictionary={}
+	if FileAccess.file_exists("user://qa-actor-fixture.bin"):
+		var value=FileAccess.open("user://qa-actor-fixture.bin",FileAccess.READ).get_var()
+		if value is Dictionary:fixture=value
+	clear_menu();load_level(number,fixture,false)
+	match str(request.get("screen","")):
+		"map":map_panel.show()
+		"question-settings":question_settings()
+		"intro":intro_offer(true)
+		"parent":parent_screen()
+	paused=true;message_until=0
+	call_deferred("layout")

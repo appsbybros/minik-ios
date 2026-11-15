@@ -23,6 +23,11 @@ appsbybros.dev@gmail.com. Hebrew and Arabic pages use `dir="rtl"`.
 
 Each page is `appstore/privacy/<App>/<Language>/privacy.html`. `appstore/privacy/index.html` links all 30 pages.
 
+**14 November 2026 (Minik and Minik English 1.8.0):** the `Minik/` and `MinikEnglish/` pages no longer describe
+ads: "Ads and children" became "No ads", "Purchases" became "Free week and purchase" (the free 7-day Trial, then a
+one-time purchase; earlier Remove Ads buyers keep full access), and AdMob left the providers and the links. The
+facts below about ads and Remove Ads no longer apply to these two apps (`docs/minik-plus-paywall-ios.md`).
+
 ## How the pages were made
 
 ### Multi Ping Pong, Spud, Minik Splash (six languages)

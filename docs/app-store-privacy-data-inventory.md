@@ -6,8 +6,8 @@ Status: source-derived factual input for App Store Connect. The owner is respons
 
 | Product | Firebase features | Ads in source | Remove Ads surface | Local reminders |
 | --- | --- | --- | --- | --- |
-| MinikPlus | Optional after curated alias selection | Language completion opportunities; disabled by default | Parent Area purchase and restore behind grown-up gate | Parent opt-in, local only |
-| MinikPlusEnglish | Same as MinikPlus, with separate score collection and shared streak collection | Same Language opportunities; disabled by default | Parent Area purchase and restore behind grown-up gate | Parent opt-in, local only |
+| MinikPlus | Optional after curated alias selection | None from 1.8.0: no ads and no Google Mobile Ads SDK | No Remove Ads: a free week, then a one-time full-access purchase; start, buy and restore behind the grown-up gate (`docs/minik-plus-paywall-ios.md`) | Parent opt-in, local only |
+| MinikPlusEnglish | Same as MinikPlus, with separate score collection and shared streak collection | None from 1.8.0, as MinikPlus | As MinikPlus | Parent opt-in, local only |
 | MinikMathPlus | None; Firebase SDK/config absent | Only the included Ping Pong activity can report an opportunity; disabled by default | Parent Area purchase and restore behind grown-up gate | Parent opt-in, local only |
 | MinikMath | None; Firebase SDK/config absent | Interstitial after a finished round or Ping Pong game on Android Minik Math's schedule (never the first two rounds, at least two minutes apart) | Parents page purchase and restore behind grown-up gate | No reminders |
 | MinikPingPong | Anonymous Auth and private RTDB friendly games/tournaments in `minikswish/minikPingPong`; no leaderboard | Modern completed-match cadence; Debug test ads only, Release disabled | Native StoreKit purchase, restore and Apple offer-code redemption | No reminders |

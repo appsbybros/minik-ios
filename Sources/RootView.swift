@@ -10,6 +10,8 @@ struct RootView: View {
     @StateObject private var removeAdsReminderController: RemoveAdsReminderController
     private let adCoordinator: MinikAdCoordinator
     private let pingPongHostServices: MinikPingPongHostServices
+    /// Minik Plus: the thank-you note after full access was bought or restored.
+    @State private var showsUnlockThanks = false
 
     @MainActor
     init(
@@ -70,6 +72,28 @@ struct RootView: View {
                 )
             }
         }
+        // Minik Plus and Minik Plus English: the welcome screen before the free week and the wall
+        // after it cover every activity (and VoiceOver's view of them) until the app is unlocked.
+        .accessibilityHidden(commerceController.showsPaywall)
+        .overlay {
+            if commerceController.showsPaywall {
+                MinikPlusPaywallView(
+                    commerce: commerceController,
+                    variant: configuration.variant
+                )
+                .transition(.opacity)
+            }
+        }
+        .overlay(alignment: .top) {
+            if showsUnlockThanks {
+                MinikPlusUnlockThanks()
+                    .padding(.top, 12)
+                    .padding(.horizontal, 16)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.easeOut(duration: 0.2), value: commerceController.showsPaywall)
+        .animation(.easeOut(duration: 0.25), value: showsUnlockThanks)
         // ISSUE-004: iPadOS 26 draws the portrait-only language apps between black bars
         // on an iPad held in landscape; the notice asks to turn the iPad upright. It is
         // applied inside the locale and layout-direction environment below.
@@ -84,17 +108,21 @@ struct RootView: View {
         .environment(\.locale, effectiveInterfaceLocale.locale)
         .environment(\.layoutDirection, effectiveLayoutDirection)
         .task {
+            // Minik Plus: the free week is checked at launch, before the App Store answers.
+            commerceController.evaluateAccess()
             await learningReminderController.synchronize(locale: interfaceLocaleController.selectedLocale)
             await commerceController.start()
             // Modern Ping Pong runs its own match-based ads (MPAds); the shared coordinator
-            // would only preload an interstitial it never shows.
-            if configuration.launchExperience != .pingPong {
+            // would only preload an interstitial it never shows. Minik Plus has no ads.
+            if configuration.launchExperience != .pingPong && !commerceController.isPaywallConfigured {
                 await adCoordinator.start(isRemoveAdsActive: commerceController.isRemoveAdsActive)
             }
             await evaluateRemoveAdsReminder()
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
+                // Minik Plus: back in the app, the free week is checked again, even offline.
+                commerceController.evaluateAccess()
                 Task {
                     await learningReminderController.synchronize(locale: interfaceLocaleController.selectedLocale)
                     await commerceController.refreshEntitlements()
@@ -109,6 +137,15 @@ struct RootView: View {
             applyFamilyLanguage()
         }
         .onAppear { applyFamilyLanguage() }
+        .onChange(of: commerceController.plusAccess) { oldAccess, newAccess in
+            guard commerceController.isPaywallConfigured,
+                  newAccess == .fullAccess, oldAccess != .fullAccess else { return }
+            showsUnlockThanks = true
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(3))
+                showsUnlockThanks = false
+            }
+        }
         .sheet(isPresented: Binding(
             get: { removeAdsReminderController.isPresented },
             set: { isPresented in
@@ -163,6 +200,8 @@ struct RootView: View {
 
     @MainActor
     private func evaluateRemoveAdsReminder() async {
+        // Minik Plus sells no Remove Ads and shows no ads.
+        guard !commerceController.isPaywallConfigured else { return }
         let providerIsReady = await adCoordinator.isProviderReady()
         let adsAreActive = providerIsReady && !commerceController.isRemoveAdsActive
         removeAdsReminderController.evaluate(

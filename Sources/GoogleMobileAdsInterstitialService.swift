@@ -1,6 +1,8 @@
 import Foundation
 
-#if canImport(GoogleMobileAds) && canImport(UIKit)
+// MINIK_NO_ADS (Minik Plus and Minik Plus English) never links the Google Mobile Ads SDK. The
+// condition also keeps a module that another app left in a shared DerivedData out of their binaries.
+#if canImport(GoogleMobileAds) && canImport(UIKit) && !MINIK_NO_ADS
 @preconcurrency import GoogleMobileAds
 import UIKit
 
@@ -158,7 +160,7 @@ private final class GoogleMobileAdsInterstitialDriver: NSObject, FullScreenConte
 
 enum ProductionMinikInterstitialAdServiceFactory {
     static func make() -> any MinikInterstitialAdService {
-        #if canImport(GoogleMobileAds) && canImport(UIKit)
+        #if canImport(GoogleMobileAds) && canImport(UIKit) && !MINIK_NO_ADS
         return GoogleMobileAdsInterstitialAdService()
         #else
         return UnconfiguredMinikInterstitialAdService()
