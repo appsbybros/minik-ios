@@ -174,7 +174,8 @@ struct LanguageChoicePage: View {
                 .padding(sizes.promptImageInset)
                 .frame(width: sizes.promptSide, height: sizes.promptSide)
         case .learningText(let value):
-            LanguageChoiceText(value: value, font: .custom("Fredoka-Medium", fixedSize: sizes.promptFontSize),
+            LanguageChoiceText(value: value, fontSize: sizes.promptFontSize,
+                               font: { .custom("Fredoka-Medium", fixedSize: $0) },
                                grows: sizes.accessible)
                 .foregroundStyle(LanguagePracticePalette.ink)
                 .languageFakeBold(LanguagePracticePalette.ink, spread: sizes.promptBoldSpread)
@@ -287,7 +288,8 @@ struct LanguageChoicePage: View {
             Image(asset.rawValue).resizable().scaledToFit()
         case .learningText(let value):
             // The design's Fredoka Bold, navy on the white tile.
-            LanguageChoiceText(value: value, font: MinikPretty.titleFont(sizes.answerFontSize),
+            LanguageChoiceText(value: value, fontSize: sizes.answerFontSize,
+                               font: { MinikPretty.titleFont($0) },
                                grows: sizes.accessible)
         default:
             LanguagePracticeRepresentation(representation: representation, fontSize: sizes.answerFontSize)
@@ -565,21 +567,25 @@ private enum LanguageTypeRamp {
     }
 }
 
-/// Learned-language text in a prompt or an answer. In a fixed row it keeps to the row and
-/// shrinks long words; when the row may grow (accessibility sizes) it wraps instead.
+/// Learned-language text in a prompt or an answer. A word is never broken: a single word keeps
+/// one line and shrinks to fit; a phrase wraps only between words, at most two lines in a fixed
+/// row, and as many as it needs when the row may grow (accessibility sizes).
 private struct LanguageChoiceText: View {
     let value: LearningTextRepresentation
-    let font: Font
+    let fontSize: CGFloat
+    let font: (CGFloat) -> Font
     let grows: Bool
 
     var body: some View {
-        Text(value.text)
-            .font(font)
-            .multilineTextAlignment(.center)
-            .lineLimit(grows ? nil : 2)
-            .minimumScaleFactor(0.5)
-            .fixedSize(horizontal: false, vertical: grows)
-            .environment(\.layoutDirection, value.language == .hebrew ? .rightToLeft : .leftToRight)
+        LanguageWholeWordsText(
+            text: value.text,
+            fontSize: fontSize,
+            font: font,
+            maxLines: grows ? nil : 2,
+            growsVertically: grows,
+            minimumScaleFactor: 0.3
+        )
+        .environment(\.layoutDirection, value.language == .hebrew ? .rightToLeft : .leftToRight)
     }
 }
 
@@ -610,13 +616,16 @@ struct LanguagePracticeRepresentation: View {
         case .imageAsset(let asset):
             Image(asset.rawValue).resizable().scaledToFit()
         case .learningText(let value):
-            Text(value.text)
-                .font(.custom("Fredoka-Medium", size: fontSize, relativeTo: .title))
-                .multilineTextAlignment(.center)
-                .minimumScaleFactor(0.55)
-                .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
-                .fixedSize(horizontal: false, vertical: true)
-                .environment(\.layoutDirection, value.language == .hebrew ? .rightToLeft : .leftToRight)
+            // Words stay whole: a single word shrinks on one line, a phrase wraps between words.
+            LanguageWholeWordsText(
+                text: value.text,
+                fontSize: fontSize,
+                font: { .custom("Fredoka-Medium", size: $0, relativeTo: .title) },
+                maxLines: dynamicTypeSize.isAccessibilitySize ? nil : 2,
+                growsVertically: true,
+                minimumScaleFactor: 0.3
+            )
+            .environment(\.layoutDirection, value.language == .hebrew ? .rightToLeft : .leftToRight)
         default:
             RepresentationView(representation: representation, context: .multipleChoicePrompt)
         }

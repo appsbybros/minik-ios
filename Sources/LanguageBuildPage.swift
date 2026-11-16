@@ -37,9 +37,7 @@ struct LanguageBuildPage: View {
     var body: some View {
         // fragment_drag's card is bg_glass_panel_strong, like the other WriteScreen pages.
         LanguageActivityScreen(panelStyle: .rounded, minimumContentHeight: minimumHeight) { layout in
-            let roomy = metrics(width: layout.width, wide: layout.wide, tight: false)
-            let sizes = roomy.accessible || roomy.height + 8 <= layout.height
-                ? roomy : metrics(width: layout.width, wide: layout.wide, tight: true)
+            let sizes = boardMetrics(layout)
             // At least the panel's height, so the spacer keeps the statistics at the
             // bottom; taller when the rows need more, and the panel then scrolls.
             let boardLayout = BuildBoardFillLayout(minimumHeight: layout.height)
@@ -116,10 +114,35 @@ struct LanguageBuildPage: View {
     }
 
     private func minimumHeight(width: CGFloat, wide: Bool) -> CGFloat {
-        metrics(width: width, wide: wide, tight: !dynamicTypeSize.isAccessibilitySize).height
+        if dynamicTypeSize.isAccessibilitySize {
+            return metrics(width: width, wide: wide, tight: false, compactLetters: false).height
+        }
+        return smallestMetrics(width: width, wide: wide).height
     }
 
-    private func metrics(width: CGFloat, wide: Bool, tight: Bool) -> BuildBoardMetrics {
+    /// The roomy board when it fits the panel, else the tight one; when that does not fit either,
+    /// the tight one with smaller letter circles if they save a row (`smallestMetrics`).
+    private func boardMetrics(_ layout: LanguageActivityLayout) -> BuildBoardMetrics {
+        let roomy = metrics(width: layout.width, wide: layout.wide, tight: false, compactLetters: false)
+        if roomy.accessible || roomy.height + 8 <= layout.height {
+            return roomy
+        }
+        let tight = metrics(width: layout.width, wide: layout.wide, tight: true, compactLetters: false)
+        if tight.height <= layout.height {
+            return tight
+        }
+        return smallestMetrics(width: layout.width, wide: layout.wide)
+    }
+
+    /// Owner QA, 16 November 2026 (issue 12): a long word needs more rows of letter circles, which
+    /// pushed the statistics down. Smaller, closer circles are used when they need fewer rows.
+    private func smallestMetrics(width: CGFloat, wide: Bool) -> BuildBoardMetrics {
+        let tight = metrics(width: width, wide: wide, tight: true, compactLetters: false)
+        let compact = metrics(width: width, wide: wide, tight: true, compactLetters: true)
+        return compact.letterRowCount < tight.letterRowCount ? compact : tight
+    }
+
+    private func metrics(width: CGFloat, wide: Bool, tight: Bool, compactLetters: Bool) -> BuildBoardMetrics {
         let growth = BuildTextGrowth(
             instruction: (wide ? wideInstructionPercent : instructionPercent) / 100,
             clue: cluePercent / 100,
@@ -130,7 +153,7 @@ struct LanguageBuildPage: View {
         )
         let instructionString = interfaceLocaleID.text("Tap the letters in the right order to form the word")
         return BuildBoardMetrics(
-            width: width, wide: wide, tight: tight,
+            width: width, wide: wide, tight: tight, compactLetters: compactLetters,
             accessible: dynamicTypeSize.isAccessibilitySize, growth: growth,
             instructionText: instructionString, clueWord: clue.text?.text,
             clueIsHebrew: clue.text?.language == .hebrew,
@@ -190,22 +213,27 @@ struct LanguageBuildPage: View {
     }
 
     private func clueText(_ word: LearningTextRepresentation, sizes: BuildBoardMetrics) -> some View {
-        // A single word stays whole: it shrinks rather than wrapping letter by letter.
-        Text(word.text)
-            .font(Self.displayFont(size: sizes.clueFontSize))
-            .foregroundStyle(LanguagePracticePalette.ink)
-            .buildWordFakeBold(LanguagePracticePalette.ink, spread: sizes.clueBoldSpread)
-            .multilineTextAlignment(.center)
-            .lineLimit(sizes.clueLines)
-            .minimumScaleFactor(0.55)
-            .padding(.horizontal, sizes.clueInset)
-            .environment(\.layoutDirection, word.language == .hebrew ? .rightToLeft : .leftToRight)
-            .frame(height: sizes.clueHeight)
+        // Words stay whole: a single word shrinks on one line rather than wrapping letter by
+        // letter, and a phrase wraps only between words.
+        LanguageWholeWordsText(
+            text: word.text,
+            fontSize: sizes.clueFontSize,
+            font: { Self.displayFont(size: $0) },
+            maxLines: sizes.clueLines,
+            minimumScaleFactor: 0.3
+        )
+        .foregroundStyle(LanguagePracticePalette.ink)
+        .buildWordFakeBold(LanguagePracticePalette.ink, spread: sizes.clueBoldSpread)
+        .padding(.horizontal, sizes.clueInset)
+        .environment(\.layoutDirection, word.language == .hebrew ? .rightToLeft : .leftToRight)
+        .frame(height: sizes.clueHeight)
     }
 
     /// The answer frame as the design's white field (bg_pretty_field: a lavender rim
     /// on white) keeps one height, so adding letters never moves the board. As on
     /// Android the text rests on the frame's 8 dp bottom padding and has none at the top.
+    /// The word built so far keeps one line, phrases too, and shrinks to the frame's width
+    /// (owner QA, 16 November 2026, issue 13: a long word wrapped onto a second line).
     private func builtWord(_ sizes: BuildBoardMetrics) -> some View {
         let field = RoundedRectangle(cornerRadius: 18, style: .continuous)
         return Text(session.builtDisplayText ?? "")
@@ -213,8 +241,8 @@ struct LanguageBuildPage: View {
             .foregroundStyle(LanguagePracticePalette.ink)
             .buildWordFakeBold(LanguagePracticePalette.ink, spread: sizes.wordBoldSpread)
             .multilineTextAlignment(.center)
-            .lineLimit(targetHasSpace ? 2 : 1)
-            .minimumScaleFactor(0.4)
+            .lineLimit(1)
+            .minimumScaleFactor(0.25)
             .padding(.horizontal, 12)
             .padding(.bottom, 8)
             .frame(width: sizes.wordBoxWidth, height: sizes.wordBoxHeight)
@@ -285,14 +313,6 @@ struct LanguageBuildPage: View {
 
     private var learnedDirection: LayoutDirection {
         session.currentChallenge.languageWordContent?.targetText.direction == .rightToLeft ? .rightToLeft : .leftToRight
-    }
-
-    private var targetHasSpace: Bool {
-        Self.hasSpace(session.currentChallenge.languageWordContent?.targetText.text ?? "")
-    }
-
-    private static func hasSpace(_ text: String) -> Bool {
-        text.contains(where: { $0.isWhitespace })
     }
 
     /// Android draws the clue and the built word in Fredoka Medium, Hebrew included (the
@@ -408,6 +428,8 @@ private struct BuildBoardMetrics {
     let diameter: CGFloat
     let letterFontSize: CGFloat
     let perRow: Int
+    /// Rows of letter circles the word needs.
+    let letterRowCount: Int
     let tileSpacing: CGFloat
     let rowSpacing: CGFloat
     let nextGap: CGFloat
@@ -422,7 +444,7 @@ private struct BuildBoardMetrics {
     /// The whole board with its spacer at the minimum length.
     let height: CGFloat
 
-    init(width: CGFloat, wide: Bool, tight: Bool, accessible: Bool, growth: BuildTextGrowth,
+    init(width: CGFloat, wide: Bool, tight: Bool, compactLetters: Bool, accessible: Bool, growth: BuildTextGrowth,
          instructionText: String, clueWord: String?, clueIsHebrew: Bool, hasClueImage: Bool,
          tokenCount: Int) {
         let scale: CGFloat = wide ? min(1.25, max(1, width / 642)) : 1
@@ -486,11 +508,15 @@ private struct BuildBoardMetrics {
         // grows it less, so more circles share a row.
         let letterCap: CGFloat = accessible ? 1.6 : (tight ? 1.15 : 1.35)
         let letterGrowth: CGFloat = min(max(1, growth.letter), letterCap)
-        let phoneDiameter: CGFloat = accessible ? 48 * letterGrowth : 48
-        let diameter: CGFloat = wide ? 84 * scale * letterGrowth : phoneDiameter
-        let letterFontSize: CGFloat = (wide ? 55 * scale : 24) * letterGrowth
-        let tileSpacing: CGFloat = 12
-        let rowSpacing: CGFloat = tight ? 10 : 16
+        // Long words (issue 12): when even the tight board is taller than the panel and it
+        // saves a row, the circles shrink to 40 points on phones (80 percent on iPad) with
+        // 8 points between them, so more share a row. Not at the accessibility sizes.
+        let compact = compactLetters && !accessible
+        let phoneDiameter: CGFloat = accessible ? 48 * letterGrowth : (compact ? 40 : 48)
+        let diameter: CGFloat = wide ? 84 * scale * letterGrowth * (compact ? 0.8 : 1) : phoneDiameter
+        let letterFontSize: CGFloat = (wide ? 55 * scale : 24) * letterGrowth * (compact ? 0.85 : 1)
+        let tileSpacing: CGFloat = compact ? 8 : 12
+        let rowSpacing: CGFloat = compact ? 8 : (tight ? 10 : 16)
         // Android's FlexboxLayout spans the card with 8 dp padding and gives each
         // circle 6 dp margins on both sides, so a phone row holds (card - 16) / 60
         // circles: (width + 12) / 60 here. Rows fill up first and the last one
@@ -579,6 +605,7 @@ private struct BuildBoardMetrics {
         self.diameter = diameter
         self.letterFontSize = letterFontSize
         self.perRow = perRow
+        self.letterRowCount = rowCount
         self.tileSpacing = tileSpacing
         self.rowSpacing = rowSpacing
         self.nextGap = nextGap

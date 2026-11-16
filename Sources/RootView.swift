@@ -108,8 +108,9 @@ struct RootView: View {
         .environment(\.locale, effectiveInterfaceLocale.locale)
         .environment(\.layoutDirection, effectiveLayoutDirection)
         .task {
-            // Minik Plus: the free week is checked at launch, before the App Store answers.
-            commerceController.evaluateAccess()
+            // Minik Plus: the free week is checked at launch, before the App Store answers. During
+            // the week the window opens by itself the first time the app is used each day.
+            commerceController.evaluateAccessOnBecomingActive()
             await learningReminderController.synchronize(locale: interfaceLocaleController.selectedLocale)
             await commerceController.start()
             // Modern Ping Pong runs its own match-based ads (MPAds); the shared coordinator
@@ -121,8 +122,9 @@ struct RootView: View {
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
-                // Minik Plus: back in the app, the free week is checked again, even offline.
-                commerceController.evaluateAccess()
+                // Minik Plus: back in the app, the free week is checked again, even offline, and
+                // the daily window opens if the app was not used yet today.
+                commerceController.evaluateAccessOnBecomingActive()
                 Task {
                     await learningReminderController.synchronize(locale: interfaceLocaleController.selectedLocale)
                     await commerceController.refreshEntitlements()

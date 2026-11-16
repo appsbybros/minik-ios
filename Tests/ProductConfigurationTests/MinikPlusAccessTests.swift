@@ -274,6 +274,307 @@ final class MinikPlusAccessTests: XCTestCase {
         XCTAssertFalse(controller.evaluateAccess())
     }
 
+    // MARK: - The window once a day during the free week (owner, 16 November 2026)
+
+    func testDailyWindowDayFollowsTheDevicesLocalDate() {
+        let jerusalem = calendar("Asia/Jerusalem")
+        let morning = localDate(2026, 11, 16, 8, 0, in: jerusalem)
+        let lateEvening = localDate(2026, 11, 16, 23, 59, in: jerusalem)
+        let afterMidnight = localDate(2026, 11, 17, 0, 1, in: jerusalem)
+        XCTAssertEqual(dayKey(morning, jerusalem), dayKey(lateEvening, jerusalem))
+        XCTAssertNotEqual(dayKey(lateEvening, jerusalem), dayKey(afterMidnight, jerusalem))
+        XCTAssertEqual(afterMidnight.timeIntervalSince(lateEvening), 120)
+
+        // The same moment is another day in another time zone: 23:30 in London on 16 November is
+        // already the 17th in Jerusalem.
+        let london = calendar("Europe/London")
+        let instant = localDate(2026, 11, 16, 23, 30, in: london)
+        XCTAssertEqual(dayKey(instant, london), "1-2026-11-16")
+        XCTAssertEqual(dayKey(instant, jerusalem), "1-2026-11-17")
+    }
+
+    func testDailyWindowOpensOnlyDuringTheFreeWeekAndOncePerDay() {
+        let jerusalem = calendar("Asia/Jerusalem")
+        let now = localDate(2026, 11, 16, 9, 0, in: jerusalem)
+        let today = dayKey(now, jerusalem)
+        let yesterday = dayKey(localDate(2026, 11, 15, 23, 50, in: jerusalem), jerusalem)
+        let tomorrow = dayKey(localDate(2026, 11, 17, 0, 10, in: jerusalem), jerusalem)
+
+        // During the free week: the first time today, not again today.
+        XCTAssertTrue(opensByItself(.trial(daysLeft: 5), lastShownDay: nil, now: now, jerusalem))
+        XCTAssertTrue(opensByItself(.trial(daysLeft: 5), lastShownDay: yesterday, now: now, jerusalem))
+        XCTAssertTrue(opensByItself(.trial(daysLeft: 1), lastShownDay: yesterday, now: now, jerusalem))
+        XCTAssertFalse(opensByItself(.trial(daysLeft: 5), lastShownDay: today, now: now, jerusalem))
+        // A clock set back to an earlier day is another day: once more, then not again that day.
+        XCTAssertTrue(opensByItself(.trial(daysLeft: 5), lastShownDay: tomorrow, now: now, jerusalem))
+
+        // Full access never; before and after the week the window is up anyway (not this rule).
+        for access in [MinikPlusAccess.fullAccess, .trialNotStarted, .trialEnded] {
+            XCTAssertFalse(opensByItself(access, lastShownDay: nil, now: now, jerusalem), "\(access)")
+            XCTAssertFalse(opensByItself(access, lastShownDay: yesterday, now: now, jerusalem), "\(access)")
+        }
+    }
+
+    func testRecordsSavedBeforeTheDailyWindowStillLoad() throws {
+        let defaults = makeDefaults()
+        let repository = MinikPlusAccessRepository(userDefaults: defaults)
+        // A record as 1.8.0 (2021) saved it, without windowShownDay.
+        struct EarlierRecord: Codable {
+            var ownsFullAccess: Bool
+            var freeWeekStartedAt: Date?
+            var latestSeenAt: Date?
+        }
+        let earlier = EarlierRecord(ownsFullAccess: false, freeWeekStartedAt: start, latestSeenAt: start)
+        defaults.set(try JSONEncoder().encode(earlier), forKey: "minik.plus-access.v1.\(ProductVariant.minikPlus.rawValue)")
+
+        let record = repository.load(for: .minikPlus)
+        XCTAssertEqual(record.freeWeekStartedAt, start)
+        XCTAssertEqual(record.latestSeenAt, start)
+        XCTAssertNil(record.windowShownDay)
+    }
+
+    @MainActor
+    func testDuringTheFreeWeekTheWindowOpensByItselfOnceEachDay() async {
+        let jerusalem = calendar("Asia/Jerusalem")
+        let weekStart = localDate(2026, 11, 16, 9, 0, in: jerusalem)
+        let clock = TestClock(weekStart.addingTimeInterval(3600))
+        let accessDefaults = makeDefaults()
+        let store = InMemoryCommerceStore(
+            products: products(),
+            entitlementState: EntitlementState(activeEntitlementIDs: [.minikPlusFreeWeek])
+        )
+        let controller = makeController(
+            store: store,
+            clock: clock,
+            reader: FixedFreeWeekStartReader(start: weekStart),
+            calendar: jerusalem,
+            accessDefaults: accessDefaults
+        )
+        await controller.start()
+        XCTAssertEqual(controller.plusAccess, .trial(daysLeft: 7))
+
+        // The first time the app becomes active today: the window, with the days left; it closes.
+        XCTAssertFalse(controller.evaluateAccessOnBecomingActive())
+        XCTAssertTrue(controller.showsPaywall)
+        controller.dismissRequestedPaywall()
+        XCTAssertFalse(controller.showsPaywall)
+
+        // Again the same day, also late in the evening: nothing.
+        clock.now = localDate(2026, 11, 16, 23, 55, in: jerusalem)
+        XCTAssertFalse(controller.evaluateAccessOnBecomingActive())
+        XCTAssertFalse(controller.showsPaywall)
+
+        // Past midnight, starting an activity (not becoming active) does not open it.
+        clock.now = localDate(2026, 11, 17, 0, 5, in: jerusalem)
+        XCTAssertFalse(controller.evaluateAccess())
+        XCTAssertFalse(controller.showsPaywall)
+
+        // The first time the app becomes active on the next day: the window again.
+        clock.now = localDate(2026, 11, 17, 7, 30, in: jerusalem)
+        XCTAssertFalse(controller.evaluateAccessOnBecomingActive())
+        XCTAssertTrue(controller.showsPaywall)
+        XCTAssertEqual(controller.plusAccess, .trial(daysLeft: 7))
+        controller.dismissRequestedPaywall()
+
+        // A relaunch the same day remembers it was shown.
+        let relaunched = makeController(
+            store: store,
+            clock: clock,
+            reader: FixedFreeWeekStartReader(start: weekStart),
+            calendar: jerusalem,
+            accessDefaults: accessDefaults
+        )
+        clock.now = localDate(2026, 11, 17, 18, 0, in: jerusalem)
+        XCTAssertFalse(relaunched.evaluateAccessOnBecomingActive())
+        XCTAssertFalse(relaunched.showsPaywall)
+        XCTAssertEqual(relaunched.plusAccess, .trial(daysLeft: 6))
+
+        // After the week the wall is up and cannot be closed.
+        clock.now = weekStart.addingTimeInterval(7 * day)
+        XCTAssertTrue(relaunched.evaluateAccessOnBecomingActive())
+        XCTAssertEqual(relaunched.plusAccess, .trialEnded)
+        relaunched.dismissRequestedPaywall()
+        XCTAssertTrue(relaunched.showsPaywall)
+        await store.finishUpdates()
+    }
+
+    @MainActor
+    func testTheDayTheWeekStartsTheWelcomeCountsAsThatDaysWindow() async {
+        let jerusalem = calendar("Asia/Jerusalem")
+        let clock = TestClock(localDate(2026, 11, 16, 10, 0, in: jerusalem))
+        let store = InMemoryCommerceStore(
+            products: products(),
+            outcomeByProductID: [
+                freeWeekID: .purchased(EntitlementState(activeEntitlementIDs: [.minikPlusFreeWeek]))
+            ]
+        )
+        let controller = makeController(store: store, clock: clock, reader: TestFreeWeekLedger(), calendar: jerusalem)
+        // Before the week: the welcome at every launch, and it cannot be closed.
+        XCTAssertTrue(controller.evaluateAccessOnBecomingActive())
+        await controller.start()
+        XCTAssertEqual(controller.plusAccess, .trialNotStarted)
+        controller.dismissRequestedPaywall()
+        XCTAssertTrue(controller.showsPaywall)
+
+        await controller.startFreeWeek()
+        XCTAssertEqual(controller.plusAccess, .trial(daysLeft: 7))
+        XCTAssertFalse(controller.showsPaywall)
+
+        clock.now = localDate(2026, 11, 16, 20, 0, in: jerusalem)
+        XCTAssertFalse(controller.evaluateAccessOnBecomingActive())
+        XCTAssertFalse(controller.showsPaywall)
+
+        clock.now = localDate(2026, 11, 17, 8, 0, in: jerusalem)
+        XCTAssertFalse(controller.evaluateAccessOnBecomingActive())
+        XCTAssertTrue(controller.showsPaywall)
+        await store.finishUpdates()
+    }
+
+    @MainActor
+    func testFullAccessNeverOpensTheDailyWindow() async {
+        let jerusalem = calendar("Asia/Jerusalem")
+        let clock = TestClock(localDate(2026, 11, 16, 10, 0, in: jerusalem))
+        let store = InMemoryCommerceStore(
+            products: products(),
+            entitlementState: EntitlementState(activeEntitlementIDs: [.minikPlusFreeWeek, .minikPlusFullAccess])
+        )
+        let controller = makeController(
+            store: store,
+            clock: clock,
+            reader: FixedFreeWeekStartReader(start: start),
+            calendar: jerusalem
+        )
+        await controller.start()
+        for dayOffset in 0..<10 {
+            clock.now = localDate(2026, 11, 16 + dayOffset, 9, 0, in: jerusalem)
+            XCTAssertFalse(controller.evaluateAccessOnBecomingActive())
+            XCTAssertFalse(controller.showsPaywall)
+        }
+        await store.finishUpdates()
+    }
+
+    // MARK: - When the App Store does not answer (1.8.0 (2021) on a real iPhone)
+
+    @MainActor
+    func testWithoutTheProductsTheWindowStopsWaitingAndStartFreeWeekStillLetsTheChildIn() async {
+        let accessDefaults = makeDefaults()
+        let clock = TestClock(start)
+        // The App Store answers, but without the products (not yet ready in App Store Connect).
+        let store = ScriptedCommerceStore(products: [])
+        let controller = makeController(store: store, clock: clock, accessDefaults: accessDefaults)
+        await controller.start()
+        XCTAssertEqual(controller.status, .failed)
+        XCTAssertFalse(controller.isBusy)
+        XCTAssertNil(controller.fullAccessProduct)
+        XCTAssertEqual(controller.plusAccess, .trialNotStarted)
+
+        await controller.startFreeWeek()
+        XCTAssertEqual(controller.plusAccess, .trial(daysLeft: 7))
+        XCTAssertFalse(controller.showsPaywall)
+        XCTAssertFalse(controller.isBusy)
+
+        // The week counts from that moment on this device, also after a relaunch.
+        clock.now = start.addingTimeInterval(7 * day)
+        let relaunched = makeController(store: store, clock: clock, accessDefaults: accessDefaults)
+        XCTAssertEqual(relaunched.plusAccess, .trialEnded)
+    }
+
+    @MainActor
+    func testAStoreThatNeverAnswersTimesOutAndTheFreeWeekStillStarts() async {
+        let store = ScriptedCommerceStore(products: products(), answersProductRequests: false)
+        let controller = makeController(store: store, storeRequestTimeout: .milliseconds(200))
+        await controller.start()
+        XCTAssertEqual(controller.status, .failed)
+        XCTAssertFalse(controller.isBusy)
+        XCTAssertNil(controller.fullAccessProduct)
+
+        await controller.startFreeWeek()
+        XCTAssertEqual(controller.plusAccess, .trial(daysLeft: 7))
+        XCTAssertFalse(controller.showsPaywall)
+    }
+
+    @MainActor
+    func testALaterTryAgainFillsInThePrice() async {
+        let store = ScriptedCommerceStore(products: [])
+        let controller = makeController(store: store)
+        await controller.start()
+        XCTAssertEqual(controller.status, .failed)
+
+        await store.setProducts(products())
+        await controller.reloadStore()
+        XCTAssertEqual(controller.status, .ready)
+        XCTAssertEqual(controller.fullAccessProduct?.displayPrice, "$9.99")
+        XCTAssertEqual(controller.freeWeekProduct?.id, freeWeekID)
+    }
+
+    @MainActor
+    func testAFreeWeekPurchaseThatFailsOrWaitsStartsTheWeekOnTheDevice() async {
+        // The product loads, but taking it fails (here: no outcome configured, so it throws).
+        let failing = InMemoryCommerceStore(products: products())
+        let failingController = makeController(store: failing)
+        await failingController.start()
+        await failingController.startFreeWeek()
+        XCTAssertEqual(failingController.plusAccess, .trial(daysLeft: 7))
+        XCTAssertEqual(failingController.status, .ready)
+        await failing.finishUpdates()
+
+        // Ask to Buy: the approval waits; the child is not kept waiting.
+        let pending = InMemoryCommerceStore(products: products(), outcomeByProductID: [freeWeekID: .pending])
+        let pendingController = makeController(store: pending)
+        await pendingController.start()
+        await pendingController.startFreeWeek()
+        XCTAssertEqual(pendingController.plusAccess, .trial(daysLeft: 7))
+        await pending.finishUpdates()
+    }
+
+    @MainActor
+    func testCancellingTheFreeWeekKeepsTheWelcome() async {
+        let store = InMemoryCommerceStore(products: products(), outcomeByProductID: [freeWeekID: .userCancelled])
+        let controller = makeController(store: store)
+        await controller.start()
+        await controller.startFreeWeek()
+        XCTAssertEqual(controller.status, .cancelled)
+        XCTAssertEqual(controller.plusAccess, .trialNotStarted)
+        XCTAssertTrue(controller.showsPaywall)
+        await store.finishUpdates()
+    }
+
+    @MainActor
+    func testBuyingFullAccessStillNeedsTheStore() async {
+        let store = ScriptedCommerceStore(products: [])
+        let controller = makeController(store: store)
+        await controller.start()
+        await controller.purchaseFullAccess()
+        XCTAssertEqual(controller.status, .failed)
+        XCTAssertEqual(controller.plusAccess, .trialNotStarted)
+    }
+
+    func testStoreDeadlinePassesAnswersAndErrorsAndStopsWaiting() async throws {
+        let value = try await MinikStoreDeadline.value(within: .seconds(5)) { 42 }
+        XCTAssertEqual(value, 42)
+
+        do {
+            _ = try await MinikStoreDeadline.value(within: .seconds(5)) { () async throws -> Int in
+                throw CommerceError.verificationFailed
+            }
+            XCTFail("The error should pass through.")
+        } catch {
+            XCTAssertEqual(error as? CommerceError, .verificationFailed)
+        }
+
+        let began = Date()
+        do {
+            _ = try await MinikStoreDeadline.value(within: .milliseconds(100)) { () async throws -> Int in
+                try await Task.sleep(for: .seconds(60))
+                return 0
+            }
+            XCTFail("The deadline should end the wait.")
+        } catch {
+            XCTAssertTrue(error is MinikStoreDeadline.Expired)
+        }
+        XCTAssertLessThan(Date().timeIntervalSince(began), 10)
+    }
+
     // MARK: - Per-target configuration
 
     /// The test host is the MinikPlus app: its Info.plist names the free week and full access, and
@@ -376,19 +677,59 @@ final class MinikPlusAccessTests: XCTestCase {
 
     @MainActor
     private func makeController(
-        store: InMemoryCommerceStore,
+        store: any CommerceStore,
         clock: TestClock? = nil,
-        reader: (any MinikFreeWeekStartReading)? = nil
+        reader: (any MinikFreeWeekStartReading)? = nil,
+        calendar: Calendar? = nil,
+        accessDefaults: UserDefaults? = nil,
+        storeRequestTimeout: Duration = .seconds(12)
     ) -> MinikCommerceController {
         let resolvedClock = clock ?? TestClock(start)
         return MinikCommerceController(
             configuration: paywallConfiguration(),
             store: store,
             repository: MinikCommerceEntitlementRepository(userDefaults: makeDefaults()),
-            accessRepository: MinikPlusAccessRepository(userDefaults: makeDefaults()),
+            accessRepository: MinikPlusAccessRepository(userDefaults: accessDefaults ?? makeDefaults()),
             freeWeekStartReader: reader,
             clock: { resolvedClock.now },
+            calendar: calendar ?? self.calendar("Asia/Jerusalem"),
+            storeRequestTimeout: storeRequestTimeout,
             isStoreScreenshotCapture: false
+        )
+    }
+
+    private func calendar(_ timeZoneIdentifier: String) -> Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: timeZoneIdentifier)!
+        return calendar
+    }
+
+    private func localDate(
+        _ year: Int,
+        _ month: Int,
+        _ day: Int,
+        _ hour: Int,
+        _ minute: Int,
+        in calendar: Calendar
+    ) -> Date {
+        calendar.date(from: DateComponents(year: year, month: month, day: day, hour: hour, minute: minute))!
+    }
+
+    private func dayKey(_ date: Date, _ calendar: Calendar) -> String {
+        MinikPlusDailyWindowPolicy.dayKey(for: date, calendar: calendar)
+    }
+
+    private func opensByItself(
+        _ access: MinikPlusAccess,
+        lastShownDay: String?,
+        now: Date,
+        _ calendar: Calendar
+    ) -> Bool {
+        MinikPlusDailyWindowPolicy.opensByItself(
+            access: access,
+            lastShownDay: lastShownDay,
+            now: now,
+            calendar: calendar
         )
     }
 
@@ -418,5 +759,49 @@ private struct FixedFreeWeekStartReader: MinikFreeWeekStartReading {
 
     func freeWeekStart(for productID: CommerceProductID) async -> Date? {
         start
+    }
+}
+
+/// A store whose product request can come back empty or never answer, like StoreKit before the
+/// products are ready in App Store Connect, or on a network that does not answer.
+private actor ScriptedCommerceStore: CommerceStore {
+    private var products: [CommerceProduct]
+    private let answersProductRequests: Bool
+
+    init(products: [CommerceProduct], answersProductRequests: Bool = true) {
+        self.products = products
+        self.answersProductRequests = answersProductRequests
+    }
+
+    func setProducts(_ products: [CommerceProduct]) {
+        self.products = products
+    }
+
+    func loadProducts() async throws -> [CommerceProduct] {
+        if !answersProductRequests {
+            try await Task.sleep(for: .seconds(60))
+        }
+        return products
+    }
+
+    func purchase(productID: CommerceProductID) async throws -> PurchaseOutcome {
+        guard answersProductRequests, products.contains(where: { $0.id == productID }) else {
+            throw CommerceError.productNotFound(productID)
+        }
+        return .userCancelled
+    }
+
+    func refreshEntitlements() async throws -> EntitlementState {
+        EntitlementState()
+    }
+
+    func restorePurchases() async throws -> EntitlementState {
+        EntitlementState()
+    }
+
+    func transactionUpdates() async -> AsyncStream<CommerceTransactionUpdate> {
+        AsyncStream { continuation in
+            continuation.finish()
+        }
     }
 }

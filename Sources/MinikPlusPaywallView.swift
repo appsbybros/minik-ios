@@ -73,11 +73,12 @@ struct MinikPlusPaywallView: View {
                 }
             )
         }
-        // Offline at launch: the App Store is asked again while the wall is up.
+        // Offline at launch, or the product not available yet: the App Store is asked again while
+        // the window is up, and a later answer fills in the price.
         .task {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(15))
-                if commerce.fullAccessProduct == nil, commerce.status == .failed {
+                if commerce.fullAccessProduct == nil, !commerce.isBusy {
                     await commerce.reloadStore()
                 }
             }
@@ -166,6 +167,7 @@ struct MinikPlusPaywallView: View {
                     fontSize: 22 * textScale,
                     minHeight: 58
                 ))
+                .disabled(commerce.isBusy)
                 .accessibilityHint(Text(verbatim: interfaceLocale.text("Opens a grown-up check before contacting the App Store")))
             }
 
@@ -177,7 +179,10 @@ struct MinikPlusPaywallView: View {
                         price: commerce.fullAccessProduct?.displayPrice,
                         locale: interfaceLocale
                     ))
-                    if commerce.fullAccessProduct == nil {
+                    // Only while the App Store is being asked. When it did not answer (or has no
+                    // such product yet) the button stays without a price, unavailable, and the
+                    // message below offers Try again.
+                    if isLoadingPrice {
                         ProgressView()
                             .tint(.white)
                     }
@@ -189,7 +194,26 @@ struct MinikPlusPaywallView: View {
                 fontSize: 22 * textScale,
                 minHeight: 58
             ))
+            .disabled(commerce.isBusy || commerce.fullAccessProduct == nil)
+            .opacity(isUnlockUnavailable ? 0.55 : 1)
             .accessibilityHint(Text(verbatim: interfaceLocale.text("Opens a grown-up check before contacting the App Store")))
+
+            if canClose {
+                // During the free week (the daily window or the chip): back to the app. Leaving
+                // the window buys nothing, so it needs no grown-up check, and it works while the
+                // App Store is still being asked.
+                Button {
+                    commerce.dismissRequestedPaywall()
+                } label: {
+                    Text(verbatim: interfaceLocale.text("Continue"))
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(MinikPretty.HeroButtonStyle(
+                    look: MinikPretty.PillLook.blue,
+                    fontSize: 20 * textScale,
+                    minHeight: 54
+                ))
+            }
 
             Button {
                 request(.restore)
@@ -202,9 +226,9 @@ struct MinikPlusPaywallView: View {
                 fontSize: 18 * textScale,
                 minHeight: 50
             ))
+            .disabled(commerce.isBusy)
             .accessibilityHint(Text(verbatim: interfaceLocale.text("Opens a grown-up check before restoring App Store purchases")))
         }
-        .disabled(commerce.isBusy)
     }
 
     @ViewBuilder
@@ -215,30 +239,51 @@ struct MinikPlusPaywallView: View {
                     .font(MinikPretty.bodyFont(15 * textScale))
                     .foregroundStyle(MinikPretty.softInk)
             }
-        } else if commerce.status == .failed {
+        } else if outcomeMessage != nil || isUnlockUnavailable || commerce.status == .failed {
             VStack(spacing: 8) {
-                Text(verbatim: interfaceLocale.text("Can't reach the store right now. Check the internet and try again."))
-                    .font(MinikPretty.bodyFont(15 * textScale))
-                    .foregroundStyle(MinikPretty.color(0xC2416E))
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                Button {
-                    Task { await commerce.reloadStore() }
-                } label: {
-                    Text(verbatim: interfaceLocale.text("Try again"))
-                        .font(MinikPretty.titleFont(16 * textScale))
-                        .foregroundStyle(MinikPretty.purple)
-                        .frame(minHeight: 44)
+                if let outcome = outcomeMessage {
+                    Text(verbatim: outcome)
+                        .font(MinikPretty.bodyFont(15 * textScale))
+                        .foregroundStyle(MinikPretty.softInk)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                .buttonStyle(.plain)
+                if isUnlockUnavailable || commerce.status == .failed {
+                    storeUnavailableMessage
+                }
             }
-        } else if let outcome = outcomeMessage {
-            Text(verbatim: outcome)
+        }
+    }
+
+    /// The App Store did not answer, or it has no full-access product yet: Unlock everything waits
+    /// without a price, and Try again asks once more (the window also asks every 15 s).
+    private var storeUnavailableMessage: some View {
+        VStack(spacing: 8) {
+            Text(verbatim: interfaceLocale.text("Can't reach the store right now. Check the internet and try again."))
                 .font(MinikPretty.bodyFont(15 * textScale))
-                .foregroundStyle(MinikPretty.softInk)
+                .foregroundStyle(MinikPretty.color(0xC2416E))
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
+            Button {
+                Task { await commerce.reloadStore() }
+            } label: {
+                Text(verbatim: interfaceLocale.text("Try again"))
+                    .font(MinikPretty.titleFont(16 * textScale))
+                    .foregroundStyle(MinikPretty.purple)
+                    .frame(minHeight: 44)
+            }
+            .buttonStyle(.plain)
         }
+    }
+
+    /// The App Store is being asked for the price (at launch or Try again).
+    private var isLoadingPrice: Bool {
+        commerce.fullAccessProduct == nil && commerce.status == .loading
+    }
+
+    /// Unlock everything has no product to sell: the App Store did not answer, or has none yet.
+    private var isUnlockUnavailable: Bool {
+        commerce.fullAccessProduct == nil && commerce.status != .loading
     }
 
     /// Privacy Policy and Support, small, each behind the grown-up check.

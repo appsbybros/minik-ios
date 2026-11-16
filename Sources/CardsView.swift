@@ -240,21 +240,24 @@ struct CardsView: View {
             Group {
                 if let text = displayedText {
                     // Words stay whole at every size: a single word shrinks to one line
-                    // instead of wrapping letter by letter.
-                    Text(verbatim: text.text)
-                        .font(.system(size: wide ? 119 : 76))
-                        .foregroundStyle(LinearGradient(colors: [
-                            Color(red: 0.094, green: 0.467, blue: 0.949),
-                            Color(red: 0, green: 0.749, blue: 0.847),
-                            Color(red: 0.086, green: 0.651, blue: 0.416)
-                        ], startPoint: UnitPoint(x: 0, y: 0.5), endPoint: UnitPoint(x: 1, y: 0.5)))
-                        .environment(\.layoutDirection, text.direction == .rightToLeft ? .rightToLeft : .leftToRight)
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(wordLineSpacing)
-                        .lineLimit(isSingleWord ? 1 : 3)
-                        .minimumScaleFactor(largeText ? 0.4 : 18.0 / 76)
-                        .fixedSize(horizontal: false, vertical: largeText)
-                        .offset(y: wordOffset)
+                    // instead of wrapping letter by letter, and a phrase wraps only between
+                    // words (LanguageWholeWordsText, owner QA 16 November 2026).
+                    LanguageWholeWordsText(
+                        text: text.text,
+                        fontSize: wide ? 119 : 76,
+                        font: { .system(size: $0) },
+                        maxLines: isSingleWord ? 1 : 3,
+                        growsVertically: largeText,
+                        minimumScaleFactor: largeText ? 0.4 : 18.0 / 76
+                    )
+                    .foregroundStyle(LinearGradient(colors: [
+                        Color(red: 0.094, green: 0.467, blue: 0.949),
+                        Color(red: 0, green: 0.749, blue: 0.847),
+                        Color(red: 0.086, green: 0.651, blue: 0.416)
+                    ], startPoint: UnitPoint(x: 0, y: 0.5), endPoint: UnitPoint(x: 1, y: 0.5)))
+                    .environment(\.layoutDirection, text.direction == .rightToLeft ? .rightToLeft : .leftToRight)
+                    .lineSpacing(wordLineSpacing)
+                    .offset(y: wordOffset)
                 } else {
                     VStack(spacing: 12) {
                         ForEach(Array(session.currentCard.representations.enumerated()), id: \.offset) { _, representation in

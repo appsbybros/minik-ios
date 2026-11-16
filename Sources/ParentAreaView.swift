@@ -1186,7 +1186,8 @@ struct ParentAreaView: View {
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(ParentAreaActionButtonStyle())
-        .disabled(commerceController.isBusy)
+        // Without the App Store's product (offline, or not available yet) there is nothing to buy.
+        .disabled(commerceController.isBusy || commerceController.fullAccessProduct == nil)
     }
 
     private var commerceStatusMessage: String? {

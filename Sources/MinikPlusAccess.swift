@@ -55,12 +55,43 @@ enum MinikPlusAccessPolicy {
     }
 }
 
+/// Owner, 16 November 2026 (the same on Android): during the free week the window opens by itself
+/// the first time the app becomes active on each calendar day of the device, showing the days left,
+/// Unlock everything and Continue. Opening the app again that day shows nothing. Before the week
+/// and after it the window is always up anyway, and with full access it never opens.
+enum MinikPlusDailyWindowPolicy {
+    /// The device-local calendar day of `date`, such as "1-2026-11-16" (era, year, month, day).
+    static func dayKey(for date: Date, calendar: Calendar) -> String {
+        let parts = calendar.dateComponents([.era, .year, .month, .day], from: date)
+        return "\(parts.era ?? 0)-\(parts.year ?? 0)-\(parts.month ?? 0)-\(parts.day ?? 0)"
+    }
+
+    /// - Parameters:
+    ///   - access: what the app may open now.
+    ///   - lastShownDay: the `dayKey` of the last day the window was up, if any.
+    ///   - now: the device clock.
+    ///   - calendar: the device's calendar and time zone.
+    /// - Returns: true when the window should open by itself now.
+    static func opensByItself(
+        access: MinikPlusAccess,
+        lastShownDay: String?,
+        now: Date,
+        calendar: Calendar
+    ) -> Bool {
+        guard case .trial = access else { return false }
+        return lastShownDay != dayKey(for: now, calendar: calendar)
+    }
+}
+
 /// What the device remembers between launches, so a purchase the App Store verified earlier and
 /// the free week's start hold offline.
 struct MinikPlusAccessRecord: Codable, Equatable, Sendable {
     var ownsFullAccess = false
     var freeWeekStartedAt: Date?
     var latestSeenAt: Date?
+    /// `MinikPlusDailyWindowPolicy.dayKey` of the last day the window was up. Records saved by
+    /// earlier builds have no such field and decode it as nil.
+    var windowShownDay: String?
 
     /// The free week's start only ever moves earlier: a later report (a restore, another device,
     /// a reinstall) never gives a new week.
