@@ -16,6 +16,51 @@ struct LanguageFirstLetterPictureContentProvider: Sendable {
         for request: ChallengeRequest,
         learnedLanguage: LanguageIdentifier
     ) -> Challenge? {
+        guard let content = choiceContent(for: request, learnedLanguage: learnedLanguage),
+              let correctItem = content.eligibleItems.randomElement() else {
+            return nil
+        }
+        return challenge(
+            for: request,
+            learnedLanguage: learnedLanguage,
+            content: content,
+            correctItem: correctItem
+        )
+    }
+
+    /// Android WriteScreen's word list for the level: one page for each eligible word,
+    /// each word once, in a shuffled order, with the same answers as `challenge(for:)`.
+    func challenges(
+        for request: ChallengeRequest,
+        learnedLanguage: LanguageIdentifier
+    ) -> [Challenge] {
+        guard let content = choiceContent(for: request, learnedLanguage: learnedLanguage) else {
+            return []
+        }
+        var seen = Set<ContentItemID>()
+        return content.eligibleItems
+            .filter { seen.insert($0.id).inserted }
+            .shuffled()
+            .compactMap { item in
+                challenge(
+                    for: request,
+                    learnedLanguage: learnedLanguage,
+                    content: content,
+                    correctItem: item
+                )
+            }
+    }
+
+    private struct ChoiceContent {
+        let levelContent: LanguageWordLevelContent
+        let choiceCount: Int
+        let eligibleItems: [LanguageWordCatalogItem]
+    }
+
+    private func choiceContent(
+        for request: ChallengeRequest,
+        learnedLanguage: LanguageIdentifier
+    ) -> ChoiceContent? {
         guard configuration.contentDomain == .language,
               configuration.allowsLearnedLanguage(learnedLanguage),
               request.activityType == .chooseRepresentation,
@@ -40,10 +85,21 @@ struct LanguageFirstLetterPictureContentProvider: Sendable {
                 ).count >= choiceCount
             }
         )
-        guard let correctItem = eligibleItems.randomElement() else {
-            return nil
-        }
+        return ChoiceContent(
+            levelContent: levelContent,
+            choiceCount: choiceCount,
+            eligibleItems: eligibleItems
+        )
+    }
 
+    private func challenge(
+        for request: ChallengeRequest,
+        learnedLanguage: LanguageIdentifier,
+        content: ChoiceContent,
+        correctItem: LanguageWordCatalogItem
+    ) -> Challenge? {
+        let levelContent = content.levelContent
+        let choiceCount = content.choiceCount
         let categoryItems = levelContent.items(
             constrainedTo: correctItem.categoryID,
             including: { $0.isImageReady }
@@ -139,7 +195,8 @@ struct LanguageFirstLetterPictureContentProvider: Sendable {
             primarySkill: request.primarySkill,
             secondarySkills: [],
             curriculumStage: request.curriculumStage,
-            difficulty: request.difficulty
+            difficulty: request.difficulty,
+            languageContentItemID: correctItem.id
         )
     }
 

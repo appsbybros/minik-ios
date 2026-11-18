@@ -48,6 +48,8 @@ struct MinikActivityHubView: View {
     @State private var pingPongCompletedMatchCount = 0
     @State private var languageLevelSettings: LanguageParentLevelSettings
     @State private var languageAutoState: LanguageAutoProgressionState
+    /// Android LevelUpDialogFragment while it is open.
+    @State private var languageLevelUp: LanguageLevelUpAnnouncement?
     @State private var publicAliasPromptIsPresented = false
     @State private var publicAliasChoices: [PublicLeaderboardAlias] = []
     @State private var publicAliasIsSaving = false
@@ -254,6 +256,17 @@ struct MinikActivityHubView: View {
                     Color.black.opacity(0.18).ignoresSafeArea()
                     parentAreaContent
                 }
+            }
+        }
+        .overlay {
+            if let levelUp = languageLevelUp {
+                LanguageLevelUpView(announcement: levelUp) {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        languageLevelUp = nil
+                    }
+                }
+                .id(levelUp.id)
+                .transition(.opacity)
             }
         }
         .overlay {
@@ -1233,13 +1246,22 @@ struct MinikActivityHubView: View {
                 unavailableActivityView(title: activity.title)
             }
         case .firstLetterChoices:
-            if let session = languageFactory.makeFirstLetterChoicesSession(for: language) {
+            // Android WriteScreen: the whole level word list, checked for a level up at
+            // its end, then the next list.
+            if let session = languageFactory.makeFirstLetterChoicesLevelListSession(for: language) {
                 MultipleChoiceView(
                     session: session,
                     progressActivityFamily: .multipleChoice,
                     presentation: .firstLetterPictureToLetter,
                     onAttempt: { recordLanguageAttempt($0, activity: activity) },
-                    makeNextSession: { languageFactory.makeFirstLetterChoicesSession(for: language) },
+                    languageAutoEvaluationLevel: languageLevelSettings.wordLevel,
+                    onLanguagePoolExhausted: recordLanguagePoolBoundary,
+                    nextLanguageAutoEvaluationLevel: {
+                        languageLevelRepository.load(for: configuration.variant).wordLevel
+                    },
+                    makeNextSession: {
+                        reloadedLanguageFactory.makeFirstLetterChoicesLevelListSession(for: language)
+                    },
                     onComplete: returnToHub,
                     onExit: returnToHub
                 )
@@ -1247,13 +1269,20 @@ struct MinikActivityHubView: View {
                 unavailableActivityView(title: activity.title)
             }
         case .firstLetterPictures:
-            if let session = languageFactory.makeFirstLetterPicturesSession(for: language) {
+            if let session = languageFactory.makeFirstLetterPicturesLevelListSession(for: language) {
                 MultipleChoiceView(
                     session: session,
                     progressActivityFamily: .multipleChoice,
                     presentation: .firstLetterLetterToPicture,
                     onAttempt: { recordLanguageAttempt($0, activity: activity) },
-                    makeNextSession: { languageFactory.makeFirstLetterPicturesSession(for: language) },
+                    languageAutoEvaluationLevel: languageLevelSettings.wordLevel,
+                    onLanguagePoolExhausted: recordLanguagePoolBoundary,
+                    nextLanguageAutoEvaluationLevel: {
+                        languageLevelRepository.load(for: configuration.variant).wordLevel
+                    },
+                    makeNextSession: {
+                        reloadedLanguageFactory.makeFirstLetterPicturesLevelListSession(for: language)
+                    },
                     onComplete: returnToHub,
                     onExit: returnToHub
                 )
@@ -1337,13 +1366,22 @@ struct MinikActivityHubView: View {
                 unavailableActivityView(title: activity.title)
             }
         case .imageToWord:
-            if let session = languageFactory.makeImageToWordSession(for: language) {
+            // Android WriteScreen: the whole level word list, checked for a level up at
+            // its end, then the next list.
+            if let session = languageFactory.makeImageToWordLevelListSession(for: language) {
                 MultipleChoiceView(
                     session: session,
                     progressActivityFamily: .multipleChoice,
                     presentation: .pictureToWord,
                     onAttempt: { recordLanguageAttempt($0, activity: activity) },
-                    makeNextSession: { languageFactory.makeImageToWordSession(for: language) },
+                    languageAutoEvaluationLevel: languageLevelSettings.wordLevel,
+                    onLanguagePoolExhausted: recordLanguagePoolBoundary,
+                    nextLanguageAutoEvaluationLevel: {
+                        languageLevelRepository.load(for: configuration.variant).wordLevel
+                    },
+                    makeNextSession: {
+                        reloadedLanguageFactory.makeImageToWordLevelListSession(for: language)
+                    },
                     onComplete: returnToHub,
                     onAdvance: { recordLanguageAdOpportunity(.languageWriteScreen) },
                     onExit: returnToHub
@@ -1352,13 +1390,20 @@ struct MinikActivityHubView: View {
                 unavailableActivityView(title: activity.title)
             }
         case .wordToImage:
-            if let session = languageFactory.makeWordToImageSession(for: language) {
+            if let session = languageFactory.makeWordToImageLevelListSession(for: language) {
                 MultipleChoiceView(
                     session: session,
                     progressActivityFamily: .multipleChoice,
                     presentation: .wordToPicture,
                     onAttempt: { recordLanguageAttempt($0, activity: activity) },
-                    makeNextSession: { languageFactory.makeWordToImageSession(for: language) },
+                    languageAutoEvaluationLevel: languageLevelSettings.wordLevel,
+                    onLanguagePoolExhausted: recordLanguagePoolBoundary,
+                    nextLanguageAutoEvaluationLevel: {
+                        languageLevelRepository.load(for: configuration.variant).wordLevel
+                    },
+                    makeNextSession: {
+                        reloadedLanguageFactory.makeWordToImageLevelListSession(for: language)
+                    },
                     onComplete: returnToHub,
                     onAdvance: { recordLanguageAdOpportunity(.languageWriteScreen) },
                     onExit: returnToHub
@@ -1399,9 +1444,11 @@ struct MinikActivityHubView: View {
                 LanguageMixedPracticeView(
                     session: session,
                     sessionFactory: languageFactory,
+                    makeSessionFactory: { reloadedLanguageFactory },
                     learnedLanguage: language,
                     onAttempt: { recordLanguageAttempt($0, activity: activity) },
                     onWordCompleted: { recordLanguageWordCompletion($0, activity: activity) },
+                    onLanguagePoolExhausted: recordLanguagePoolBoundary,
                     onAdOpportunity: {
                         recordLanguageAdOpportunity(.languageWriteScreen)
                     },
@@ -2115,6 +2162,13 @@ struct MinikActivityHubView: View {
             languageLevelRepository.save(updatedSettings, for: configuration.variant)
         }
         languageAutoRepository.save(languageAutoState)
+        // Android LevelUpDialogFragment, over whichever game reached the level up; the
+        // game goes on with the new level's words.
+        if let announcement = LanguageLevelUpAnnouncement(evaluation: evaluation) {
+            withAnimation(.easeOut(duration: 0.2)) {
+                languageLevelUp = announcement
+            }
+        }
     }
 
     private func recordLanguageTowerCompletion(_ completion: LanguageTowerCompletion) {

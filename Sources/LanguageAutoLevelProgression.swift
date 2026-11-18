@@ -21,19 +21,25 @@ enum LanguageAutoActivity: String, Codable, Hashable, Sendable {
 }
 
 enum LanguageAutoEvidenceRouting {
+    /// Android WriteScreen counts every tap on a choice for the word the page asks
+    /// about (choose the word, choose the picture, the first-letter pages and those
+    /// pages inside mixed practice). Only attempts that carry the word count: letter
+    /// taps in a built word carry none here, as Android counts only the finished word.
     static func attemptActivity(for family: ActivityFamily) -> LanguageAutoActivity? {
         switch family {
         case .tower:
             return .tower
         case .soccer:
             return .soccer
+        case .multipleChoice, .mixed:
+            return .write
         default:
             return nil
         }
     }
 
     static func completionActivity(for activity: LanguageActivityKind) -> LanguageAutoActivity? {
-        activity == .wordBuild ? .write : nil
+        activity == .wordBuild || activity == .mixed ? .write : nil
     }
 }
 
@@ -51,6 +57,19 @@ struct LanguageAutoScope: Codable, Hashable, Sendable {
 struct LanguageAutoPoolItem: Codable, Hashable, Sendable {
     let contentItemID: ContentItemID
     let vocabularyLevel: LanguageVocabularyLevel
+}
+
+extension LanguageAutoPoolItem {
+    /// The word a Language word page asks about and its level, for which Android
+    /// WriteScreen counts each answer. Nil on a page without a level word (the
+    /// alphabet pages, Math).
+    init?(languageWordOf challenge: Challenge) {
+        guard let contentItemID = challenge.languageContentItemID,
+              let level = LanguageVocabularyLevel(
+                  curriculumStageID: challenge.curriculumStage
+              ) else { return nil }
+        self.init(contentItemID: contentItemID, vocabularyLevel: level)
+    }
 }
 
 struct LanguageAutoPoolBoundary: Codable, Hashable, Sendable {
@@ -104,6 +123,23 @@ struct LanguageAutoPoolTracker: Sendable {
             items: items
         )
     }
+
+    /// The Write check over a choice practice's whole word list (Android WriteScreen):
+    /// every page's word and level. Nil without a level, or when a page has no word,
+    /// as such a list is not a level word list.
+    static func writeChoices(
+        evaluatedLevel: LanguageVocabularyLevel?,
+        challenges: [Challenge]
+    ) -> LanguageAutoPoolTracker? {
+        guard let evaluatedLevel else { return nil }
+        let items = challenges.compactMap { LanguageAutoPoolItem(languageWordOf: $0) }
+        guard items.count == challenges.count else { return nil }
+        return LanguageAutoPoolTracker(
+            activity: .write,
+            evaluatedLevel: evaluatedLevel,
+            items: items
+        )
+    }
 }
 
 struct LanguageAutoAttemptEvidence: Codable, Hashable, Sendable {
@@ -151,7 +187,61 @@ enum LanguageAutoPoolEvaluation: Equatable, Sendable {
     case ignored
     case failed(attempts: Int, accuracyPercent: Int)
     case passedOnce(attempts: Int, accuracyPercent: Int)
-    case promoted(from: LanguageVocabularyLevel, to: LanguageVocabularyLevel)
+    /// The accuracy is the passing check's, which Android's "Level up!" window shows.
+    case promoted(
+        from: LanguageVocabularyLevel,
+        to: LanguageVocabularyLevel,
+        accuracyPercent: Int
+    )
+}
+
+/// Android LevelUpDialogFragment's message: the passing check's accuracy and the new
+/// level, named as in Android getLevelLabel ("Easy - B").
+struct LanguageLevelUpAnnouncement: Identifiable, Equatable, Sendable {
+    let id: UUID
+    let level: LanguageVocabularyLevel
+    let accuracyPercent: Int
+
+    init?(evaluation: LanguageAutoPoolEvaluation, id: UUID = UUID()) {
+        guard case .promoted(_, let level, let accuracyPercent) = evaluation else {
+            return nil
+        }
+        self.id = id
+        self.level = level
+        self.accuracyPercent = accuracyPercent
+    }
+
+    static var titleKey: String.LocalizationValue { "Level up!" }
+
+    /// Android level_up_text.
+    static var messageKey: String.LocalizationValue {
+        "Awesome! %lld%% correct!\nYou're moving up a level (%@)!"
+    }
+
+    /// Android level_name_a ... level_name_e.
+    static func levelNameKey(for level: LanguageVocabularyLevel) -> String.LocalizationValue {
+        switch level {
+        case .a: return "Beginner"
+        case .b: return "Easy"
+        case .c: return "Medium"
+        case .d: return "Hard"
+        case .e: return "Very Hard"
+        }
+    }
+
+    /// Android getLevelLabel: the level's name, a dash and its letter.
+    static func levelLabel(name: String, level: LanguageVocabularyLevel) -> String {
+        "\(name) - \(level.rawValue)"
+    }
+
+    /// Android level_up_text with the accuracy and the level label filled in.
+    func message(format: String, levelName: String) -> String {
+        String(
+            format: format,
+            Int64(accuracyPercent),
+            Self.levelLabel(name: levelName, level: level)
+        )
+    }
 }
 
 struct LanguageAutoProgressionState: Codable, Equatable, Sendable {
@@ -241,7 +331,11 @@ struct LanguageAutoProgressionState: Codable, Equatable, Sendable {
         currentLevel = nextLevel
         consecutivePasses[nextLevel] = 0
         ramp = 90
-        return .promoted(from: boundary.evaluatedLevel, to: nextLevel)
+        return .promoted(
+            from: boundary.evaluatedLevel,
+            to: nextLevel,
+            accuracyPercent: accuracy
+        )
     }
 
     mutating func evaluate(
@@ -253,7 +347,7 @@ struct LanguageAutoProgressionState: Codable, Equatable, Sendable {
             mode: settings.mode,
             persistedLevel: settings.wordLevel
         )
-        if case .promoted(_, let level) = result {
+        if case .promoted(_, let level, _) = result {
             settings.wordLevel = level
         }
         return result

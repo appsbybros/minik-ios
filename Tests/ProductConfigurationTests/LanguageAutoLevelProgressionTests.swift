@@ -112,7 +112,7 @@ final class LanguageAutoLevelProgressionTests: XCTestCase {
         _ = state.evaluate(boundary(.write, level: .a), settings: &settings)
         XCTAssertEqual(
             state.evaluate(boundary(.write, level: .a), settings: &settings),
-            .promoted(from: .a, to: .b)
+            .promoted(from: .a, to: .b, accuracyPercent: 100)
         )
         XCTAssertEqual(settings.wordLevel, .b)
     }
@@ -229,7 +229,7 @@ final class LanguageAutoLevelProgressionTests: XCTestCase {
         XCTAssertEqual(state.consecutivePasses[.a], 1)
         XCTAssertEqual(
             state.evaluate(boundary(.write, level: .a), mode: .automatic, persistedLevel: .a),
-            .promoted(from: .a, to: .b)
+            .promoted(from: .a, to: .b, accuracyPercent: 100)
         )
     }
 
@@ -328,8 +328,13 @@ final class LanguageAutoLevelProgressionTests: XCTestCase {
             LanguageAutoEvidenceRouting.attemptActivity(for: .soccer),
             .soccer
         )
-        XCTAssertNil(LanguageAutoEvidenceRouting.completionActivity(for: .mixed))
-        XCTAssertNil(LanguageAutoEvidenceRouting.attemptActivity(for: .mixed))
+        // Android WriteScreen: choice taps (also inside mixed practice) and the words
+        // built in mixed practice count for the Write check.
+        XCTAssertEqual(LanguageAutoEvidenceRouting.attemptActivity(for: .multipleChoice), .write)
+        XCTAssertEqual(LanguageAutoEvidenceRouting.attemptActivity(for: .mixed), .write)
+        XCTAssertEqual(LanguageAutoEvidenceRouting.completionActivity(for: .mixed), .write)
+        XCTAssertNil(LanguageAutoEvidenceRouting.completionActivity(for: .imageToWord))
+        XCTAssertNil(LanguageAutoEvidenceRouting.completionActivity(for: .build))
 
         for family in ActivityFamily.allCasesForLanguageAutoExclusionTest {
             XCTAssertNil(LanguageAutoEvidenceRouting.attemptActivity(for: family))
@@ -423,8 +428,8 @@ final class LanguageAutoLevelProgressionTests: XCTestCase {
 
 private extension ActivityFamily {
     static let allCasesForLanguageAutoExclusionTest: [ActivityFamily] = [
-        .learn, .multipleChoice, .buildNumber, .buildQuantity, .buildMath,
-        .buildWord, .mixed, .cards, .pairs, .memory, .ticTacToe, .pingPong
+        .learn, .buildNumber, .buildQuantity, .buildMath,
+        .buildWord, .cards, .pairs, .memory, .ticTacToe, .pingPong
     ]
 }
 

@@ -69,6 +69,11 @@ struct MultipleChoiceView: View {
     private let presentation: MultipleChoicePresentation
     private let onAttempt: (ActivityAttemptData) -> Void
     private let makeNextSession: (() -> MultipleChoiceSession?)?
+    /// Android WriteScreen's level check at the end of a Language word list; Math and
+    /// every page without a level pass none.
+    @State private var languagePoolTracker: LanguageAutoPoolTracker?
+    private let onLanguagePoolExhausted: (LanguageAutoPoolBoundary) -> Void
+    private let nextLanguageAutoEvaluationLevel: () -> LanguageVocabularyLevel?
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.scenePhase) private var scenePhase
 
@@ -79,6 +84,9 @@ struct MultipleChoiceView: View {
         progressActivityFamily: ActivityFamily? = nil,
         presentation: MultipleChoicePresentation = .standard,
         onAttempt: @escaping (ActivityAttemptData) -> Void = { _ in },
+        languageAutoEvaluationLevel: LanguageVocabularyLevel? = nil,
+        onLanguagePoolExhausted: @escaping (LanguageAutoPoolBoundary) -> Void = { _ in },
+        nextLanguageAutoEvaluationLevel: @escaping () -> LanguageVocabularyLevel? = { nil },
         makeNextSession: (() -> MultipleChoiceSession?)? = nil,
         onComplete: @escaping () -> Void = {},
         onAdvance: @escaping () -> Void = {},
@@ -86,11 +94,19 @@ struct MultipleChoiceView: View {
     ) {
         _session = State(initialValue: session)
         _speechPlayer = StateObject(wrappedValue: LearningSpeechPlayer())
+        _languagePoolTracker = State(initialValue: mathActivityFamily == nil
+            ? LanguageAutoPoolTracker.writeChoices(
+                evaluatedLevel: languageAutoEvaluationLevel,
+                challenges: session.challenges
+            )
+            : nil)
         self.mathActivityFamily = mathActivityFamily
         self.mathLevelID = mathLevelID
         self.progressActivityFamily = progressActivityFamily ?? mathActivityFamily
         self.presentation = presentation
         self.onAttempt = onAttempt
+        self.onLanguagePoolExhausted = onLanguagePoolExhausted
+        self.nextLanguageAutoEvaluationLevel = nextLanguageAutoEvaluationLevel
         self.makeNextSession = makeNextSession
         self.onComplete = onComplete
         self.onAdvance = onAdvance
@@ -380,7 +396,24 @@ struct MultipleChoiceView: View {
             onAdvance()
         }
         if didComplete {
-            if let nextSession = makeNextSession?() { session = nextSession; return }
+            // Android WriteScreen checks for a level up at the end of the word list,
+            // then goes on with the next list (the new level's after a level up).
+            if var tracker = languagePoolTracker,
+               let boundary = tracker.takeBoundary(isExhausted: true) {
+                languagePoolTracker = tracker
+                onLanguagePoolExhausted(boundary)
+            }
+            if let nextSession = makeNextSession?() {
+                session = nextSession
+                if mathActivityFamily == nil {
+                    languagePoolTracker = LanguageAutoPoolTracker.writeChoices(
+                        evaluatedLevel: nextLanguageAutoEvaluationLevel()
+                            ?? languagePoolTracker?.evaluatedLevel,
+                        challenges: nextSession.challenges
+                    )
+                }
+                return
+            }
             onComplete()
         }
     }
@@ -443,6 +476,10 @@ struct MultipleChoiceView: View {
             }
         }
         attemptIndex += 1
+        // Android WriteScreen counts each tap, right or wrong, for the page's word.
+        let languageWord: LanguageAutoPoolItem? = mathActivityFamily == nil
+            ? LanguageAutoPoolItem(languageWordOf: challenge)
+            : nil
         guard let family = progressActivityFamily,
               let attempt = ActivityAttemptData(
                   itemID: MultipleChoiceAttemptIdentity.itemID(
@@ -454,7 +491,9 @@ struct MultipleChoiceView: View {
                   responseDurationSeconds: Date().timeIntervalSince(challengeStartedAt),
                   activityFamily: family,
                   mathLevelID: mathActivityFamily == nil ? nil : mathLevelID,
-                  skillID: challenge.primarySkill
+                  skillID: challenge.primarySkill,
+                  languageContentItemID: languageWord?.contentItemID,
+                  languageVocabularyLevel: languageWord?.vocabularyLevel
               ) else { return }
         onAttempt(attempt)
     }

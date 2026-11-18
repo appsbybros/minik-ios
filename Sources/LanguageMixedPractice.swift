@@ -118,15 +118,20 @@ struct LanguageMixedChildActivity: Identifiable, Sendable {
     let id: UUID
     let mode: LanguageMixedPracticeMode
     let session: LanguageMixedChildSession
+    /// The word level the child's list was made for: the end of the list checks it
+    /// for a level up. Nil makes no check.
+    let vocabularyLevel: LanguageVocabularyLevel?
 
     init(
         id: UUID = UUID(),
         mode: LanguageMixedPracticeMode,
-        session: LanguageMixedChildSession
+        session: LanguageMixedChildSession,
+        vocabularyLevel: LanguageVocabularyLevel? = nil
     ) {
         self.id = id
         self.mode = mode
         self.session = session
+        self.vocabularyLevel = vocabularyLevel
     }
 }
 

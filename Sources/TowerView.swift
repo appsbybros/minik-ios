@@ -1852,8 +1852,9 @@ struct TowerView: View {
 
 /// ConfettiRectView.start(3f): about 120 small amber rectangles a second for three
 /// seconds from just above the card, each spinning, drifting and falling under
-/// gravity, growing a little toward the bottom and fading out.
-private struct LanguageTowerConfettiView: View {
+/// gravity, growing a little toward the bottom and fading out. The "Level up!" window
+/// (LanguageLevelUpView) shows the same confetti over the whole screen.
+struct LanguageTowerConfettiView: View {
     /// The last pieces fall out of the card about 2.2 s after the three seconds of
     /// emitting.
     static let visibleDuration: TimeInterval = 5.5
@@ -1862,6 +1863,11 @@ private struct LanguageTowerConfettiView: View {
     let startedAt: Date
     @State private var seed = Int.random(in: 1 ... 1_000_000)
     @Environment(\.scenePhase) private var scenePhase
+
+    init(reduceMotion: Bool, startedAt: Date) {
+        self.reduceMotion = reduceMotion
+        self.startedAt = startedAt
+    }
 
     private static let palette: [Color] = [
         Color(red: 1.0, green: 0.757, blue: 0.027),

@@ -283,4 +283,8 @@ struct Challenge: Hashable, Sendable {
     let secondarySkills: Set<SkillID>
     let curriculumStage: CurriculumStageID
     let difficulty: Difficulty
+    /// The vocabulary word a Language word page asks about (the correct picture or word,
+    /// or the word whose first letter is asked); Android WriteScreen counts each answer
+    /// for that word. Nil on every other page, Math included.
+    var languageContentItemID: ContentItemID? = nil
 }

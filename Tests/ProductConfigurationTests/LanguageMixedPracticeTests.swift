@@ -88,7 +88,10 @@ final class LanguageMixedPracticeTests: XCTestCase {
         guard case .multipleChoice(let childSession) = session.currentChildActivity.session else {
             return XCTFail("Expected the replacement to use MultipleChoiceSession.")
         }
-        XCTAssertEqual(childSession.challengeCount, 10)
+        // Android loadWords on the page change: the level's whole word list again.
+        let levelList = try XCTUnwrap(factory.makeImageToWordLevelListSession(for: .english))
+        XCTAssertEqual(childSession.challengeCount, levelList.challengeCount)
+        XCTAssertEqual(session.currentChildActivity.vocabularyLevel, .a)
     }
 
     func testFailedModeTransitionDoesNotAdvanceOrDuplicateProgress() throws {
@@ -215,7 +218,11 @@ final class LanguageMixedPracticeTests: XCTestCase {
         guard case .build(let buildSession) = wordBuild.session else {
             return XCTFail("Expected Mixed Word Build to use BuildSession.")
         }
-        XCTAssertEqual(buildSession.challengeCount, LanguageMixedPracticeMode.wordBuild.advanceThreshold)
+        // Android loadWords: the level's whole word list, not just the five words built
+        // before the page changes.
+        let levelList = try XCTUnwrap(factory.makeWordBuildSession(for: .english))
+        XCTAssertEqual(buildSession.challengeCount, levelList.challengeCount)
+        XCTAssertEqual(wordBuild.vocabularyLevel, .a)
         for challenge in buildSession.challenges {
             XCTAssertEqual(challenge.primarySkill, LanguageSkillIDs.wordConstruction)
             XCTAssertEqual(challenge.validationMode, .immediatePrefix)
@@ -317,12 +324,11 @@ final class LanguageMixedPracticeTests: XCTestCase {
         guard case .multipleChoice(let choiceSession) = activity.session else {
             return XCTFail("Expected Mixed choice mode to use MultipleChoiceSession.", file: file, line: line)
         }
-        XCTAssertEqual(
-            choiceSession.challengeCount,
-            expectedMode.advanceThreshold,
-            file: file,
-            line: line
-        )
+        // The level's whole word list, each word once (Android loadWords).
+        let words = choiceSession.challenges.compactMap(\.languageContentItemID)
+        XCTAssertEqual(words.count, choiceSession.challengeCount, file: file, line: line)
+        XCTAssertEqual(Set(words).count, words.count, file: file, line: line)
+        XCTAssertEqual(activity.vocabularyLevel, .a, file: file, line: line)
 
         for challenge in choiceSession.challenges {
             XCTAssertEqual(challenge.primarySkill, expectedSkill, file: file, line: line)

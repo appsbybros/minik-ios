@@ -79,6 +79,62 @@ struct LanguageActivitySessionFactory: Sendable {
         )
     }
 
+    /// Android WriteScreen's level word list for the first-letter page with the
+    /// picture: every word of the level once, with previous-level words by the ramp.
+    func makeFirstLetterChoicesLevelListSession(
+        for language: LanguageIdentifier,
+        categoryID: LanguageWordCategoryID? = nil
+    ) -> MultipleChoiceSession? {
+        makeInitialLetterLevelListSession(
+            for: language,
+            provider: LanguageFirstLetterChoiceContentProvider(
+                configuration: configuration,
+                categoryID: categoryID
+            )
+        )
+    }
+
+    /// Android WriteScreen's level word list for the first-letter page with the
+    /// pictures: every word of the level once, with previous-level words by the ramp.
+    func makeFirstLetterPicturesLevelListSession(
+        for language: LanguageIdentifier,
+        categoryID: LanguageWordCategoryID? = nil
+    ) -> MultipleChoiceSession? {
+        makeInitialLetterLevelListSession(
+            for: language,
+            provider: LanguageFirstLetterPictureContentProvider(
+                configuration: configuration,
+                categoryID: categoryID
+            )
+        )
+    }
+
+    /// Android WriteScreen's level word list for "choose the word for the picture":
+    /// every word of the level once, with previous-level words by the ramp.
+    func makeImageToWordLevelListSession(
+        for language: LanguageIdentifier,
+        categoryID: LanguageWordCategoryID? = nil
+    ) -> MultipleChoiceSession? {
+        makeWordChoiceLevelListSession(
+            for: language,
+            categoryID: categoryID,
+            skill: LanguageSkillIDs.wordRecognition
+        )
+    }
+
+    /// Android WriteScreen's level word list for "choose the picture for the word":
+    /// every word of the level once, with previous-level words by the ramp.
+    func makeWordToImageLevelListSession(
+        for language: LanguageIdentifier,
+        categoryID: LanguageWordCategoryID? = nil
+    ) -> MultipleChoiceSession? {
+        makeWordChoiceLevelListSession(
+            for: language,
+            categoryID: categoryID,
+            skill: LanguageSkillIDs.wordImageAssociation
+        )
+    }
+
     func makeBuildSession(for language: LanguageIdentifier) -> BuildSession? {
         guard let difficulty = Difficulty(0.5) else {
             return nil
@@ -231,86 +287,45 @@ struct LanguageActivitySessionFactory: Sendable {
         )
     }
 
+    /// Android WriteScreen in mixed mode loads the level's whole word list again
+    /// (loadWords) each time the page kind changes, so every child walks the whole
+    /// list, with previous-level words by the ramp, until the mode changes after its
+    /// 20, 10 or 5 words. A list that ends first is checked for a level up.
     func makeMixedChildActivity(
         for mode: LanguageMixedPracticeMode,
         language: LanguageIdentifier
     ) -> LanguageMixedChildActivity? {
         switch mode {
         case .wordToPicture:
-            guard let session = makeWordChoiceSession(
-                for: language,
-                categoryID: nil,
-                skill: LanguageSkillIDs.wordImageAssociation,
-                challengeCount: mode.advanceThreshold
-            ) else {
+            guard let session = makeWordToImageLevelListSession(for: language) else {
                 return nil
             }
             return LanguageMixedChildActivity(
                 mode: mode,
-                session: .multipleChoice(session)
+                session: .multipleChoice(session),
+                vocabularyLevel: vocabularyLevel
             )
 
         case .pictureToWord:
-            guard let session = makeWordChoiceSession(
-                for: language,
-                categoryID: nil,
-                skill: LanguageSkillIDs.wordRecognition,
-                challengeCount: mode.advanceThreshold
-            ) else {
+            guard let session = makeImageToWordLevelListSession(for: language) else {
                 return nil
             }
             return LanguageMixedChildActivity(
                 mode: mode,
-                session: .multipleChoice(session)
+                session: .multipleChoice(session),
+                vocabularyLevel: vocabularyLevel
             )
 
         case .wordBuild:
-            guard let session = makeWordBuildSession(
-                for: language,
-                categoryID: nil,
-                challengeCount: mode.advanceThreshold
-            ) else {
+            guard let session = makeWordBuildSession(for: language) else {
                 return nil
             }
             return LanguageMixedChildActivity(
                 mode: mode,
-                session: .build(session)
+                session: .build(session),
+                vocabularyLevel: vocabularyLevel
             )
         }
-    }
-
-    private func makeWordBuildSession(
-        for language: LanguageIdentifier,
-        categoryID: LanguageWordCategoryID?,
-        challengeCount: Int
-    ) -> BuildSession? {
-        guard let difficulty = Difficulty(0.5) else {
-            return nil
-        }
-
-        let request = ChallengeRequest(
-            activityType: .build,
-            curriculumStage: vocabularyStage,
-            primarySkill: LanguageSkillIDs.wordConstruction,
-            difficulty: difficulty,
-            interaction: .orderedTokens,
-            countRequirement: nil
-        )
-        let provider = LanguageWordBuildContentProvider(
-            configuration: configuration,
-            categoryID: categoryID
-        )
-
-        guard let challenges = makeBuildChallenges(
-            count: challengeCount,
-            build: {
-                provider.buildChallenge(for: request, learnedLanguage: language)
-            }
-        ) else {
-            return nil
-        }
-
-        return BuildSession(challenges: challenges)
     }
 
     func makePairsSession(for language: LanguageIdentifier) -> PairsSession? {
@@ -540,6 +555,82 @@ struct LanguageActivitySessionFactory: Sendable {
         )
     }
 
+    private func makeInitialLetterLevelListSession<Provider: InitialLetterChoiceProviding>(
+        for language: LanguageIdentifier,
+        provider: Provider
+    ) -> MultipleChoiceSession? {
+        guard let difficulty = Difficulty(0.5) else {
+            return nil
+        }
+
+        let current = provider.challenges(
+            for: choiceRequest(
+                skill: LanguageSkillIDs.initialLetterAssociation,
+                level: vocabularyLevel,
+                difficulty: difficulty
+            ),
+            learnedLanguage: language
+        )
+        let previous = vocabularyLevel.previous.map { previousLevel in
+            provider.challenges(
+                for: choiceRequest(
+                    skill: LanguageSkillIDs.initialLetterAssociation,
+                    level: previousLevel,
+                    difficulty: difficulty
+                ),
+                learnedLanguage: language
+            )
+        } ?? []
+        return MultipleChoiceSession(
+            challenges: mixedPool(previous: previous, current: current),
+            progressionPolicy: .retryUntilCorrect
+        )
+    }
+
+    private func makeWordChoiceLevelListSession(
+        for language: LanguageIdentifier,
+        categoryID: LanguageWordCategoryID?,
+        skill: SkillID
+    ) -> MultipleChoiceSession? {
+        guard let difficulty = Difficulty(0.5) else {
+            return nil
+        }
+
+        let provider = LanguageWordContentProvider(
+            configuration: configuration,
+            categoryID: categoryID
+        )
+        let current = provider.challenges(
+            for: choiceRequest(skill: skill, level: vocabularyLevel, difficulty: difficulty),
+            learnedLanguage: language
+        )
+        let previous = vocabularyLevel.previous.map { previousLevel in
+            provider.challenges(
+                for: choiceRequest(skill: skill, level: previousLevel, difficulty: difficulty),
+                learnedLanguage: language
+            )
+        } ?? []
+        return MultipleChoiceSession(
+            challenges: mixedPool(previous: previous, current: current),
+            progressionPolicy: .retryUntilCorrect
+        )
+    }
+
+    private func choiceRequest(
+        skill: SkillID,
+        level: LanguageVocabularyLevel,
+        difficulty: Difficulty
+    ) -> ChallengeRequest {
+        ChallengeRequest(
+            activityType: .chooseRepresentation,
+            curriculumStage: level.curriculumStageID,
+            primarySkill: skill,
+            difficulty: difficulty,
+            interaction: .singleChoice,
+            countRequirement: nil
+        )
+    }
+
     private func makeChallenges(
         count: Int,
         build: () -> Challenge?
@@ -603,6 +694,11 @@ private protocol InitialLetterChoiceProviding: Sendable {
         for request: ChallengeRequest,
         learnedLanguage: LanguageIdentifier
     ) -> Challenge?
+
+    func challenges(
+        for request: ChallengeRequest,
+        learnedLanguage: LanguageIdentifier
+    ) -> [Challenge]
 }
 
 extension LanguageFirstLetterChoiceContentProvider: InitialLetterChoiceProviding {}

@@ -4,26 +4,35 @@ struct LanguageMixedPracticeView: View {
     @State private var session: LanguageMixedPracticeSession
 
     private let sessionFactory: LanguageActivitySessionFactory
+    private let makeSessionFactory: (() -> LanguageActivitySessionFactory)?
     private let learnedLanguage: LanguageIdentifier
     private let onAttempt: (ActivityAttemptData) -> Void
     private let onWordCompleted: (LanguageWordCompletion) -> Void
+    private let onLanguagePoolExhausted: (LanguageAutoPoolBoundary) -> Void
     private let onAdOpportunity: () -> Void
     private let onExit: () -> Void
 
+    /// `makeSessionFactory` gives the factory for each new child, so a child made after
+    /// a level up uses the new level and ramp; without it every child uses
+    /// `sessionFactory`.
     init(
         session: LanguageMixedPracticeSession,
         sessionFactory: LanguageActivitySessionFactory,
+        makeSessionFactory: (() -> LanguageActivitySessionFactory)? = nil,
         learnedLanguage: LanguageIdentifier,
         onAttempt: @escaping (ActivityAttemptData) -> Void = { _ in },
         onWordCompleted: @escaping (LanguageWordCompletion) -> Void = { _ in },
+        onLanguagePoolExhausted: @escaping (LanguageAutoPoolBoundary) -> Void = { _ in },
         onAdOpportunity: @escaping () -> Void = {},
         onExit: @escaping () -> Void = {}
     ) {
         _session = State(initialValue: session)
         self.sessionFactory = sessionFactory
+        self.makeSessionFactory = makeSessionFactory
         self.learnedLanguage = learnedLanguage
         self.onAttempt = onAttempt
         self.onWordCompleted = onWordCompleted
+        self.onLanguagePoolExhausted = onLanguagePoolExhausted
         self.onAdOpportunity = onAdOpportunity
         self.onExit = onExit
     }
@@ -38,7 +47,9 @@ struct LanguageMixedPracticeView: View {
                 session: childSession,
                 progressActivityFamily: .mixed,
                 presentation: choicePresentation(for: childActivity.mode),
-                onAttempt: mixedAttempt,
+                onAttempt: mixedChoiceAttempt,
+                languageAutoEvaluationLevel: childActivity.vocabularyLevel,
+                onLanguagePoolExhausted: onLanguagePoolExhausted,
                 onComplete: {
                     replaceCompletedChild(withID: childActivity.id)
                 },
@@ -56,6 +67,8 @@ struct LanguageMixedPracticeView: View {
                 presentation: .word,
                 onAttempt: mixedAttempt,
                 onWordCompleted: onWordCompleted,
+                languageAutoEvaluationLevel: childActivity.vocabularyLevel,
+                onLanguagePoolExhausted: onLanguagePoolExhausted,
                 onComplete: {
                     replaceCompletedChild(withID: childActivity.id)
                 },
@@ -66,6 +79,10 @@ struct LanguageMixedPracticeView: View {
             )
             .id(childActivity.id)
         }
+    }
+
+    private var currentSessionFactory: LanguageActivitySessionFactory {
+        makeSessionFactory?() ?? sessionFactory
     }
 
     private func choicePresentation(
@@ -82,8 +99,9 @@ struct LanguageMixedPracticeView: View {
     }
 
     private func recordAdvance(fromChildWithID childID: UUID) {
+        let factory = currentSessionFactory
         let result = session.record(.advancedCurrentWord, fromChildWithID: childID) { mode in
-            sessionFactory.makeMixedChildActivity(
+            factory.makeMixedChildActivity(
                 for: mode,
                 language: learnedLanguage
             )
@@ -94,14 +112,32 @@ struct LanguageMixedPracticeView: View {
     }
 
     private func replaceCompletedChild(withID childID: UUID) {
+        let factory = currentSessionFactory
         session.replaceCompletedChild(withID: childID) { mode in
-            sessionFactory.makeMixedChildActivity(
+            factory.makeMixedChildActivity(
                 for: mode,
                 language: learnedLanguage
             )
         }
     }
 
+    /// A choice page's tap keeps its word, which Android WriteScreen counts.
+    private func mixedChoiceAttempt(_ attempt: ActivityAttemptData) {
+        guard let mixed = ActivityAttemptData(
+            itemID: attempt.itemID,
+            attemptIndex: attempt.attemptIndex,
+            result: attempt.result,
+            responseDurationSeconds: attempt.responseDurationSeconds,
+            activityFamily: .mixed,
+            skillID: attempt.skillID,
+            languageContentItemID: attempt.languageContentItemID,
+            languageVocabularyLevel: attempt.languageVocabularyLevel
+        ) else { return }
+        onAttempt(mixed)
+    }
+
+    /// A letter tap in a built word carries no word: Android counts only the finished
+    /// word (onWordCompleted).
     private func mixedAttempt(_ attempt: ActivityAttemptData) {
         guard let mixed = ActivityAttemptData(
             itemID: attempt.itemID,
