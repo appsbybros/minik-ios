@@ -86,14 +86,26 @@ final class ProtocolTests: XCTestCase {
 
     func testMemberAndConfigFieldsMatchTheRules() throws {
         let member = AmuduCodec.member(Member("alice", "kyra", "Alice", bot: false, hebrew: true))
-        XCTAssertEqual(Set(["id", "character", "name", "bot", "hebrew", "ready", "connected"]), Set(member.keys))
+        // Android 2026-11: `points` (null when unknown), `motionProtocol` (MotionState.VERSION) and `gameProtocol` 2.
+        XCTAssertEqual(Set(["id", "character", "name", "bot", "hebrew", "points", "ready", "connected", "motionProtocol", "gameProtocol"]),
+                       Set(member.keys))
         XCTAssertEqual(false, member["ready"] as? Bool)
         XCTAssertEqual(true, member["connected"] as? Bool)
+        XCTAssertTrue(member["points"] is NSNull)
+        XCTAssertEqual(2, member["gameProtocol"] as? Int)
+        XCTAssertEqual(7, AmuduCodec.member(Member("p", "kyra", "P", points: 7))["points"] as? Int)
         let config = AmuduCodec.config(try GameConfig(scene: .andromeda, ball: .tennis, freezeRule: .honor, participants: 10, turns: 50,
                                                       daylight: .night, throwMode: .easy, wind: .fast))
-        XCTAssertEqual(Set(["challengeStep", "width", "depth", "stepLengthFraction", "scene", "ball", "freeze", "participants", "turns",
-                            "huddleSeconds", "daylight", "throwMode", "wind", "rules", "requireCall", "stepsAfterCall", "actionSeconds"]),
+        XCTAssertEqual(Set(["callWindFactor", "curriculumRevision", "controlsRevision", "allowGroundHit", "nicknameAnswer", "challengeStep",
+                            "width", "depth", "stepLengthFraction", "scene", "ball", "freeze", "participants", "turns", "huddleSeconds",
+                            "daylight", "throwMode", "wind", "rules", "requireCall", "stepsAfterCall", "actionSeconds"]),
                        Set(config.keys))
+        XCTAssertEqual("CHOICES", config["nicknameAnswer"] as? String)
+        XCTAssertEqual(false, config["allowGroundHit"] as? Bool)
+        XCTAssertEqual(2, config["curriculumRevision"] as? Int)
+        XCTAssertEqual(2, config["controlsRevision"] as? Int)
+        // Only a learning lesson writes `practiceLesson`.
+        XCTAssertEqual("paint", AmuduCodec.config(try GameConfig(practiceLesson: "paint"))["practiceLesson"] as? String)
         XCTAssertEqual("ANDROMEDA", config["scene"] as? String)
         XCTAssertEqual("TENNIS", config["ball"] as? String)
         XCTAssertEqual("HONOR", config["freeze"] as? String)
@@ -105,18 +117,26 @@ final class ProtocolTests: XCTestCase {
 
     func testEnumWireNamesMatchAndroid() {
         XCTAssertEqual(["PARK", "BEACH", "ANDROMEDA"], ArenaScene.allCases.map { $0.rawValue })
-        XCTAssertEqual(["FOAM", "BEACH", "NEON", "TENNIS"], BallKind.allCases.map { $0.rawValue })
+        XCTAssertEqual(["FOAM", "BEACH", "NEON", "TENNIS", "PAINT"], BallKind.allCases.map { $0.rawValue })
         XCTAssertEqual(["MORNING", "NOON", "EVENING", "NIGHT"], Daylight.allCases.map { $0.rawValue })
         XCTAssertEqual(["NONE", "SLOW", "FAST"], Wind.allCases.map { $0.rawValue })
-        XCTAssertEqual(["EASY", "STANDARD"], ThrowMode.allCases.map { $0.rawValue })
+        // STANDARD keeps its saved/network identifier for the original swipe control (now "Pro").
+        XCTAssertEqual(["EASY", "TARGET", "STANDARD"], ThrowMode.allCases.map { $0.rawValue })
+        XCTAssertEqual(["CHOICES", "AUTOMATIC", "TYPED"], NicknameAnswer.allCases.map { $0.rawValue })
         XCTAssertEqual(["FREEZE", "HONOR"], FreezeRule.allCases.map { $0.rawValue })
-        XCTAssertEqual(["CIRCLE", "AIR", "RETRIEVE", "SHOUT", "AIM", "FLIGHT", "RESOLVE", "HUDDLE", "FINISHED"], Phase.allCases.map { $0.rawValue })
+        XCTAssertEqual(["CIRCLE", "AIR", "RETRIEVE", "SHOUT", "AIM", "FLIGHT", "RESOLVE", "HUDDLE", "RETURN_VOTE", "WAITING", "FINISHED"],
+                       Phase.allCases.map { $0.rawValue })
     }
 
     func testCommandTypesMatchTheRules() {
         let types = [GameCommand.move(V(1, 0)), .aim(V(0, 1)), .select(target: "x"), .toss(power: 0.2, drift: 0), .catchBall, .duck, .shout,
-                     .throwBall(power: 0.5), .end, .say(index: 1)].map { AmuduCodec.command($0)["type"] as? String ?? "" }
-        XCTAssertEqual(["move", "aim", "select", "toss", "catch", "duck", "shout", "throw", "end", "say"], types)
+                     .throwBall(power: 0.5), .end, .say(index: 1), .pointThrow(point: V(3, 4), height: 1.2)]
+            .map { AmuduCodec.command($0)["type"] as? String ?? "" }
+        XCTAssertEqual(["move", "aim", "select", "toss", "catch", "duck", "shout", "throw", "end", "say", "pointThrow"], types)
+        // A house player's `botVz` never goes on the wire.
+        XCTAssertNil(AmuduCodec.command(.throwBall(power: 0.5, botVz: 3.0))["botVz"])
+        let point = AmuduCodec.command(.pointThrow(point: V(3, 4), height: 1.2))
+        XCTAssertEqual(1.2, point["height"] as? Double ?? 0, accuracy: 1e-9)
         let select = AmuduCodec.command(.select(target: "p1", typedName: "frog"))
         XCTAssertEqual("p1", select["target"] as? String)
         XCTAssertEqual("frog", select["name"] as? String)

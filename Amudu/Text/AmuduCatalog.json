@@ -357,11 +357,11 @@
 "1 · Kies en gooi"
 ],
 [
-"Start in a circle. Tap a player, then swipe upward from your held ball. Faster means higher; the ball travels toward the circle center. Names are spoken aloud. After a successful catch, everyone stays where they are: call someone even far away.",
-"Empieza en círculo. Toca un jugador y desliza hacia arriba desde tu pelota. Más rápido significa más alto; siempre va hacia el centro. Se dice el nombre en voz alta. Tras una buena recepción, todos conservan su posición, aunque estén lejos.",
-"ابدأ في دائرة. المس لاعبًا واسحب لأعلى من الكرة؛ السحب الأسرع يرفعها أكثر باتجاه المركز. يُنطق الاسم بصوت. بعد الإمساك الناجح يبقى الجميع في أماكنهم، ويمكن نداء البعيد أيضًا.",
-"गोले से शुरू करें। खिलाड़ी चुनें और गेंद से ऊपर स्वाइप करें। तेज़ स्वाइप ऊँचा उछालेगा, गेंद केंद्र की ओर जाएगी। नाम बोला जाएगा। कैच होने पर सब अपनी जगह रहेंगे; दूर खड़े खिलाड़ी को भी पुकार सकते हैं।",
-"Begin in een kring. Tik op een speler en veeg omhoog vanaf je bal. Sneller is hoger; de bal gaat naar het midden. De naam wordt uitgesproken. Na een geslaagde vangst blijft iedereen staan waar die is, ook ver weg."
+"Start in a circle. Tap a player, then swipe upward from your held ball. Faster means higher; the ball travels toward the circle center. Names are spoken aloud. After catching a name call before the bounce, everyone stays where they are: call someone even far away. After a penalty, the penalized player starts the next round unless eliminated.",
+"Empieza en círculo. Toca a un jugador y desliza hacia arriba desde la pelota que sostienes. Cuanto más rápido, más alto: la pelota va hacia el centro del círculo. Los nombres se dicen en voz alta. Si atrapas la pelota al oír tu nombre antes de que bote, todos se quedan donde están: puedes llamar incluso a alguien lejano. Tras una penalización, quien la recibe inicia la siguiente ronda, salvo que haya quedado eliminado.",
+"ابدؤوا في دائرة. اضغط على لاعب ثم اسحب للأعلى من الكرة التي تحملها. السحب الأسرع يرفع الكرة أكثر نحو وسط الدائرة. تُنطق الأسماء بصوت عالٍ. إذا أمسكت الكرة عند نداء اسمك قبل أن ترتد، يبقى الجميع في أماكنهم ويمكنك نداء لاعب بعيد. بعد نقطة الجزاء، يبدأ اللاعب الذي حصل عليها الجولة التالية، ما لم يكن قد خرج من اللعبة.",
+"गोले में शुरू करें। किसी खिलाड़ी पर टैप करें, फिर हाथ में पकड़ी गेंद से ऊपर स्वाइप करें। तेज़ स्वाइप से गेंद ऊँची जाएगी और गोले के बीच की ओर आएगी। नाम ज़ोर से बोले जाते हैं। अपना नाम पुकारे जाने पर गेंद को उछलने से पहले पकड़ लें तो सब अपनी जगह रहते हैं; आप दूर के खिलाड़ी को भी पुकार सकते हैं। पेनल्टी पाने वाला खिलाड़ी अगला दौर शुरू करता है, जब तक वह खेल से बाहर न हो गया हो।",
+"Begin in een kring. Tik op een speler en veeg omhoog vanaf de bal in je hand. Sneller betekent hoger; de bal gaat naar het midden van de kring. Namen worden hardop geroepen. Vang je de bal na de naamroep vóór de stuit, dan blijft iedereen staan: je mag ook iemand ver weg roepen. Na een strafpunt begint de speler die het kreeg de volgende ronde, tenzij die is uitgeschakeld."
 ],
 [
 "2 · Run and catch",
@@ -831,6 +831,13 @@
 "عادي · دون لمس الأرض قبل الإصابة",
 "सामान्य · लगने से पहले ज़मीन छूना मना",
 "Standaard · eerst een speler raken, niet de grond"
+],
+[
+"Exit",
+"Salir",
+"خروج",
+"बाहर निकलें",
+"Afsluiten"
 ],
 [
 "Back",
@@ -1394,10 +1401,10 @@
 ],
 [
 "Type the nickname",
-"Escribe el apodo",
-"اكتب اللقب",
+"Escribir el apodo",
+"كتابة اللقب",
 "उपनाम लिखें",
-"Typ de bijnaam"
+"De bijnaam typen"
 ],
 [
 "Choose a funny nickname",
@@ -1527,9 +1534,9 @@
 ],
 [
 "Try again",
-"Intentar de nuevo",
+"Repetir",
 "حاول مجددًا",
-"फिर कोशिश करें",
+"फिर आज़माएँ",
 "Opnieuw proberen"
 ],
 [
@@ -1913,9 +1920,9 @@
 [
 "Control difficulty",
 "Dificultad de control",
-"صعوبة التحكم",
-"कंट्रोल की कठिनाई",
-"Moeilijkheid bediening"
+"مستوى التحكم",
+"नियंत्रण का स्तर",
+"Besturingsniveau"
 ],
 [
 "Control level",
@@ -3500,7 +3507,7 @@
 "Oeps, gladde vingers!"
 ],
 [
-"That was cosmic!",
+"Cool game dudes",
 "¡Eso fue cósmico!",
 "كان ذلك كونيًا!",
 "वह तो कमाल था!",
@@ -6027,6 +6034,13 @@
 "Geen aankoop gevonden voor dit Google Play-account."
 ],
 [
+"Tap or hold to catch as the ball arrives. Catch it before it touches the ground.",
+"Toca o mantén pulsado para atrapar la pelota cuando llegue. Atrápala antes de que toque el suelo.",
+"اضغط أو اضغط باستمرار لالتقاط الكرة عند وصولها، قبل أن تلمس الأرض.",
+"गेंद पास आने पर पकड़ने के लिए टैप करें या दबाकर रखें। ज़मीन छूने से पहले उसे पकड़ें।",
+"Tik of houd ingedrukt om de bal te vangen wanneer hij aankomt. Vang hem voordat hij de grond raakt."
+],
+[
 "Restore finds a previous remove-ads purchase on the same Google Play account.",
 "Restaurar busca una compra anterior de eliminación de anuncios en la misma cuenta de Google Play.",
 "تبحث الاستعادة عن شراء سابق لإزالة الإعلانات في حساب Google Play نفسه.",
@@ -6151,6 +6165,34 @@
 "متابعة التقريب للاعب بشري آخر",
 "दूसरे मानव खिलाड़ी के पास आती गेंद पर ज़ूम करें",
 "Volg de zoom bij een andere menselijke speler"
+],
+[
+"Challenge map",
+"Mapa de retos",
+"خريطة التحديات",
+"चुनौतियों का नक्शा",
+"Uitdagingenkaart"
+],
+[
+"Practice partner: {0}",
+"Compañero de práctica: {0}",
+"شريك التدريب: {0}",
+"अभ्यास साथी: {0}",
+"Oefenpartner: {0}"
+],
+[
+"Practice opponent: {0}",
+"Rival de práctica: {0}",
+"خصم التدريب: {0}",
+"अभ्यास प्रतिद्वंद्वी: {0}",
+"Oefentegenstander: {0}"
+],
+[
+"Practice guide: {0}",
+"Guía de práctica: {0}",
+"دليل التدريب: {0}",
+"अभ्यास मार्गदर्शक: {0}",
+"Oefengids: {0}"
 ],
 [
 "Your first catch",
@@ -6370,11 +6412,11 @@
 "Dagelijks vaardigheidsavontuur"
 ],
 [
-"Challenge {0} of 30 · Cycle {1}",
-"Reto {0} de 30 · Ciclo {1}",
-"التحدي {0} من 30 · المسار {1}",
-"चुनौती {0}/30 · चक्र {1}",
-"Uitdaging {0} van 30 · Ronde {1}"
+"Challenge {0} of 40 · Cycle {1}",
+"Reto {0} de 40 · Ciclo {1}",
+"التحدي {0} من 40 · المسار {1}",
+"चुनौती {0}/40 · चक्र {1}",
+"Uitdaging {0} van 40 · Ronde {1}"
 ],
 [
 "Goal: {0} successes · three hearts · no countdown",
@@ -6711,5 +6753,1244 @@
 "أصوات اللعبة",
 "खेल की आवाज़ें",
 "Spelgeluiden"
+],
+[
+"Watch where your throw goes. Adjust your next throw.",
+"Mira adónde va la pelota y ajusta el próximo lanzamiento.",
+"راقب مسار الكرة وعدّل رميتك التالية.",
+"देखें गेंद कहाँ जाती है और अगला थ्रो सुधारें।",
+"Kijk waar je worp terechtkomt en pas je volgende worp aan."
+],
+[
+"Drag to the landing marker, then tap or hold to catch",
+"Arrastra hasta la marca; toca o mantén pulsado para atrapar.",
+"اسحب نحو علامة الهبوط ثم انقر أو اضغط مطولاً للإمساك.",
+"उतरने के निशान तक खींचें, फिर पकड़ने के लिए टैप करें या दबाए रखें।",
+"Sleep naar de landingsmarkering en tik of houd vast om te vangen."
+],
+[
+"Easy controls",
+"Controles fáciles",
+"تحكم سهل",
+"आसान नियंत्रण",
+"Eenvoudige besturing"
+],
+[
+"Standard controls",
+"Controles normales",
+"تحكم عادي",
+"सामान्य नियंत्रण",
+"Standaardbesturing"
+],
+[
+"Color: ",
+"Color: ",
+"اللون: ",
+"रंग: ",
+"Kleur: "
+],
+[
+"Your challenge is paused.",
+"Tu reto está en pausa.",
+"التحدي متوقف مؤقتًا.",
+"आपकी चुनौती रुकी हुई है।",
+"Je uitdaging is gepauzeerd."
+],
+[
+"Finish challenge",
+"Terminar el reto",
+"إنهاء التحدي",
+"चुनौती समाप्त करें",
+"Uitdaging beëindigen"
+],
+[
+"You can move and throw from anywhere.",
+"Puedes moverte y lanzar desde cualquier lugar.",
+"يمكنك التحرك والرمي من أي مكان.",
+"आप कहीं भी जाकर गेंद फेंक सकते हैं।",
+"Je kunt bewegen en overal vandaan gooien."
+],
+[
+"The ball is sent to a marker beside you. Drag to reach it, then tap to catch as it arrives.",
+"La pelota irá a una marca a tu lado. Arrastra para llegar y toca para atraparla cuando llegue.",
+"ستُرمى الكرة نحو علامة بجانبك. اسحب للوصول إليها ثم المس لالتقاط الكرة عند وصولها.",
+"गेंद आपके पास बने निशान की ओर जाएगी। वहाँ पहुँचने के लिए खींचें और गेंद आने पर कैच के लिए टैप करें।",
+"De bal gaat naar een markering naast je. Sleep erheen en tik om de bal te vangen zodra hij aankomt."
+],
+[
+"Hit the tree trunk before the ball touches the ground.",
+"Golpea el tronco antes de que la pelota toque el suelo.",
+"أصب جذع الشجرة قبل أن تلمس الكرة الأرض.",
+"गेंद जमीन पर गिरने से पहले तने पर लगाएँ।",
+"Raak de boomstam voordat de bal de grond raakt."
+],
+[
+"Hit the trunk and catch the rebound before it lands.",
+"Golpea el tronco y atrapa el rebote antes de que caiga.",
+"أصب الجذع والتقط الكرة المرتدة قبل أن تسقط.",
+"तने पर गेंद मारें और लौटती गेंद जमीन पर गिरने से पहले पकड़ें।",
+"Raak de stam en vang de terugkaatsende bal voordat hij landt."
+],
+[
+"The ball must pass through the ring in the air.",
+"La pelota debe atravesar el aro por el aire.",
+"يجب أن تمر الكرة عبر الحلقة في الهواء.",
+"गेंद को हवा में छल्ले के अंदर से जाना चाहिए।",
+"De bal moet door de ring vliegen."
+],
+[
+"The first ground contact must be on the golden island.",
+"El primer bote debe caer en la isla dorada.",
+"يجب أن تلامس الكرة الأرض لأول مرة على الجزيرة الذهبية.",
+"गेंद पहली बार सुनहरे द्वीप पर जमीन छुए।",
+"De eerste stuit moet op het gouden eiland zijn."
+],
+[
+"Pass to your partner, then catch their return.",
+"Pasa a tu compañero y atrapa la devolución.",
+"مرّر الكرة لشريكك ثم التقط تمريرته.",
+"साथी को पास दें, फिर उसकी लौटती गेंद पकड़ें।",
+"Gooi naar je partner en vang de terugworp."
+],
+[
+"Aim by tapping a player or their name label.\nFlick from your ball to throw.",
+"Apunta tocando a un jugador o su nombre.\nDesliza desde tu pelota para lanzar.",
+"صوّب بلمس اللاعب أو اسمه.\nاسحب من الكرة لرميها.",
+"खिलाड़ी या उसके नाम पर टैप करके निशाना लगाएँ।\nगेंद से स्वाइप करके फेंकें।",
+"Richt door op een speler of naam te tikken.\nVeeg vanaf je bal om te gooien."
+],
+[
+"Tap the tree to aim. Swipe from your ball to set the power.",
+"Toca el árbol para apuntar. Desliza desde tu pelota para ajustar la fuerza.",
+"المس الشجرة للتصويب. اسحب من الكرة لتحديد القوة.",
+"पेड़ पर टैप करके निशाना लगाएँ। ताकत चुनने के लिए गेंद से स्वाइप करें।",
+"Tik op de boom om te richten. Veeg vanaf je bal om de kracht te bepalen."
+],
+[
+"Swipe from your ball toward the tree. Swipe speed sets power and height.",
+"Desliza desde tu pelota hacia el árbol. La velocidad determina fuerza y altura.",
+"اسحب من الكرة باتجاه الشجرة. تحدد سرعة السحب القوة والارتفاع.",
+"अपनी गेंद से पेड़ की ओर स्वाइप करें। स्वाइप की गति ताकत और ऊँचाई तय करती है।",
+"Veeg vanaf je bal naar de boom. De veegsnelheid bepaalt kracht en hoogte."
+],
+[
+"Tap the ring to aim. Swipe from your ball to set the power.",
+"Toca el aro para apuntar. Desliza desde tu pelota para ajustar la fuerza.",
+"المس الحلقة للتصويب. اسحب من الكرة لتحديد القوة.",
+"छल्ले पर टैप करके निशाना लगाएँ। ताकत चुनने के लिए गेंद से स्वाइप करें।",
+"Tik op de ring om te richten. Veeg vanaf je bal om de kracht te bepalen."
+],
+[
+"Swipe from your ball toward the ring. Swipe speed sets power and height.",
+"Desliza desde tu pelota hacia el aro. La velocidad determina fuerza y altura.",
+"اسحب من الكرة باتجاه الحلقة. تحدد سرعة السحب القوة والارتفاع.",
+"अपनी गेंद से छल्ले की ओर स्वाइप करें। स्वाइप की गति ताकत और ऊँचाई तय करती है।",
+"Veeg vanaf je bal naar de ring. De veegsnelheid bepaalt kracht en hoogte."
+],
+[
+"Tap the golden island to aim. Swipe from your ball to set the power.",
+"Toca la isla dorada para apuntar. Desliza desde tu pelota para ajustar la fuerza.",
+"المس الجزيرة الذهبية للتصويب. اسحب من الكرة لتحديد القوة.",
+"सुनहरे द्वीप पर टैप करके निशाना लगाएँ। ताकत चुनने के लिए गेंद से स्वाइप करें।",
+"Tik op het gouden eiland om te richten. Veeg vanaf je bal om de kracht te bepalen."
+],
+[
+"Swipe from your ball toward the golden island. Swipe speed sets power and height.",
+"Desliza desde tu pelota hacia la isla dorada. La velocidad determina fuerza y altura.",
+"اسحب من الكرة باتجاه الجزيرة الذهبية. تحدد سرعة السحب القوة والارتفاع.",
+"अपनी गेंद से सुनहरे द्वीप की ओर स्वाइप करें। स्वाइप की गति ताकत और ऊँचाई तय करती है।",
+"Veeg vanaf je bal naar het gouden eiland. De veegsnelheid bepaalt kracht en hoogte."
+],
+[
+"Tap the marked partner or their name label to aim. Swipe from your ball to set the power.",
+"Toca el compañero marcado o su nombre para apuntar. Desliza desde tu pelota para ajustar la fuerza.",
+"المس الشريك المحدد أو اسمه للتصويب. اسحب من الكرة لتحديد القوة.",
+"चिह्नित साथी या उसके नाम पर टैप करके निशाना लगाएँ। ताकत चुनने के लिए गेंद से स्वाइप करें।",
+"Tik op de gemarkeerde partner of diens naam om te richten. Veeg vanaf je bal om de kracht te bepalen."
+],
+[
+"Swipe from your ball toward the marked partner or their name label. Swipe speed sets power and height.",
+"Desliza desde tu pelota hacia el compañero marcado o su nombre. La velocidad determina fuerza y altura.",
+"اسحب من الكرة باتجاه الشريك المحدد أو اسمه. تحدد سرعة السحب القوة والارتفاع.",
+"अपनी गेंद से चिह्नित साथी या उसके नाम की ओर स्वाइप करें। स्वाइप की गति ताकत और ऊँचाई तय करती है।",
+"Veeg vanaf je bal naar de gemarkeerde partner of diens naam. De veegsnelheid bepaalt kracht en hoogte."
+],
+[
+"Ad-free play",
+"Jugar sin anuncios",
+"اللعب بلا إعلانات",
+"बिना विज्ञापन खेलें",
+"Advertentievrij spelen"
+],
+[
+"Remind me later",
+"Recordármelo más tarde",
+"ذكّرني لاحقًا",
+"बाद में याद दिलाएँ",
+"Herinner me later"
+],
+[
+"Your first 3 days are ad-free. Afterwards, occasional ads appear only after completed games. Lessons and Daily Challenge stay free of ads.",
+"Los primeros 3 días no tienen anuncios. Después, aparecerán de vez en cuando al terminar una partida. Las lecciones y el desafío diario seguirán sin anuncios.",
+"الأيام الثلاثة الأولى بلا إعلانات. بعد ذلك، تظهر إعلانات أحيانًا بعد انتهاء المباريات فقط. تبقى الدروس والتحديات اليومية بلا إعلانات.",
+"पहले 3 दिन विज्ञापन नहीं दिखेंगे। उसके बाद कभी-कभी पूरी बाज़ी के बाद विज्ञापन आएँगे। पाठ और दैनिक चुनौती में विज्ञापन नहीं होंगे।",
+"De eerste 3 dagen zijn advertentievrij. Daarna verschijnen af en toe advertenties na een afgelopen wedstrijd. Lessen en de dagelijkse uitdaging blijven advertentievrij."
+],
+[
+"One purchase removes ads permanently. Restore it using the same Google Play account. An access code can remove ads for a limited period or permanently.",
+"Una compra elimina los anuncios para siempre. Restáurala con la misma cuenta de Google Play. Un código puede eliminarlos por un tiempo o para siempre.",
+"تزيل عملية شراء واحدة الإعلانات نهائيًا. استعدها باستخدام حساب Google Play نفسه. يمكن للكود إزالة الإعلانات لمدة محددة أو نهائيًا.",
+"एक बार खरीदने पर विज्ञापन हमेशा के लिए हटेंगे। उसी Google Play खाते से खरीद बहाल करें। कोड से विज्ञापन कुछ समय के लिए या हमेशा के लिए हट सकते हैं।",
+"Eén aankoop verwijdert advertenties permanent. Herstel de aankoop met hetzelfde Google Play-account. Een code kan advertenties tijdelijk of permanent verwijderen."
+],
+[
+"Ads are removed permanently.",
+"Los anuncios se han eliminado para siempre.",
+"أُزيلت الإعلانات نهائيًا.",
+"विज्ञापन हमेशा के लिए हटा दिए गए हैं।",
+"Advertenties zijn permanent verwijderd."
+],
+[
+"Ads removed until {0}",
+"Sin anuncios hasta {0}",
+"بلا إعلانات حتى {0}",
+"{0} तक विज्ञापन नहीं दिखेंगे",
+"Advertentievrij tot {0}"
+],
+[
+"Ad-free welcome: {0} days remaining",
+"Bienvenida sin anuncios: quedan {0} días",
+"فترة الترحيب بلا إعلانات: بقي {0} أيام",
+"बिना विज्ञापन के स्वागत समय में {0} दिन बाकी",
+"Advertentievrije kennismaking: nog {0} dagen"
+],
+[
+"Ads may appear after completed games.",
+"Pueden aparecer anuncios al terminar una partida.",
+"قد تظهر إعلانات بعد انتهاء المباريات.",
+"पूरी बाज़ी के बाद विज्ञापन आ सकते हैं।",
+"Na afgelopen wedstrijden kunnen advertenties verschijnen."
+],
+[
+"Checking Google Play…",
+"Consultando Google Play…",
+"جارٍ التحقق من Google Play…",
+"Google Play से जाँच हो रही है…",
+"Google Play controleren…"
+],
+[
+"Purchase restored or completed. Ads are removed.",
+"Compra restaurada o completada. Ya no hay anuncios.",
+"اكتملت عملية الشراء أو استعادتها. أُزيلت الإعلانات.",
+"खरीद पूरी या बहाल हो गई। विज्ञापन हटा दिए गए हैं।",
+"Aankoop hersteld of voltooid. Advertenties zijn verwijderd."
+],
+[
+"Payment is pending. Ads will be removed when Google Play confirms it.",
+"El pago está pendiente. Los anuncios se eliminarán cuando Google Play lo confirme.",
+"الدفع قيد الانتظار. ستُزال الإعلانات بعد تأكيد Google Play.",
+"भुगतान लंबित है। Google Play की पुष्टि के बाद विज्ञापन हटेंगे।",
+"De betaling is in behandeling. Advertenties verdwijnen zodra Google Play de betaling bevestigt."
+],
+[
+"Purchase canceled. Nothing changed.",
+"Compra cancelada. No se ha cambiado nada.",
+"أُلغيت عملية الشراء. لم يتغير شيء.",
+"खरीद रद्द हुई। कोई बदलाव नहीं हुआ।",
+"Aankoop geannuleerd. Er is niets gewijzigd."
+],
+[
+"Google Play purchase is unavailable right now. Check your connection and Play account, then tap Restore purchase to retry. Codes can still be entered.",
+"La compra en Google Play no está disponible ahora. Revisa la conexión y tu cuenta, y pulsa Restaurar compra para reintentarlo. Aún puedes introducir códigos.",
+"الشراء عبر Google Play غير متاح الآن. تحقق من الاتصال والحساب، ثم اضغط استعادة الشراء للمحاولة مجددًا. ما زال بإمكانك إدخال كود.",
+"Google Play से खरीद अभी उपलब्ध नहीं है। कनेक्शन और खाते की जाँच करें, फिर खरीद बहाल करें दबाएँ। कोड अभी भी दर्ज कर सकते हैं।",
+"Kopen via Google Play is nu niet beschikbaar. Controleer je verbinding en account en tik op Aankoop herstellen om opnieuw te proberen. Je kunt wel een code invoeren."
+],
+[
+"The purchase could not be saved. Tap Restore purchase to retry.",
+"No se pudo guardar la compra. Pulsa Restaurar compra para reintentarlo.",
+"تعذر حفظ الشراء. اضغط استعادة الشراء للمحاولة مجددًا.",
+"खरीद सहेजी नहीं जा सकी। फिर कोशिश करने के लिए खरीद बहाल करें दबाएँ।",
+"De aankoop kon niet worden opgeslagen. Tik op Aankoop herstellen om opnieuw te proberen."
+],
+[
+"One-time purchase",
+"Compra única",
+"شراء لمرة واحدة",
+"एक बार की खरीद",
+"Eenmalige aankoop"
+],
+[
+"Access code",
+"Código de acceso",
+"كود الدخول",
+"ऐक्सेस कोड",
+"Toegangscode"
+],
+[
+"Your SPUD code",
+"Tu código de SPUD",
+"كود SPUD الخاص بك",
+"आपका SPUD कोड",
+"Je SPUD-code"
+],
+[
+"Checking code…",
+"Comprobando el código…",
+"جارٍ التحقق من الكود…",
+"कोड जाँचा जा रहा है…",
+"Code controleren…"
+],
+[
+"Code accepted. Ads are removed.",
+"Código aceptado. Se han eliminado los anuncios.",
+"قُبل الكود. أُزيلت الإعلانات.",
+"कोड स्वीकार हुआ। विज्ञापन हटा दिए गए हैं।",
+"Code geaccepteerd. Advertenties zijn verwijderd."
+],
+[
+"Enter a code first.",
+"Introduce primero un código.",
+"أدخل كودًا أولًا.",
+"पहले कोड दर्ज करें।",
+"Voer eerst een code in."
+],
+[
+"This code has expired.",
+"Este código ha caducado.",
+"انتهت صلاحية هذا الكود.",
+"इस कोड की अवधि समाप्त हो गई है।",
+"Deze code is verlopen."
+],
+[
+"This code is inactive.",
+"Este código no está activo.",
+"هذا الكود غير نشط.",
+"यह कोड सक्रिय नहीं है।",
+"Deze code is niet actief."
+],
+[
+"This code has reached its use limit.",
+"Este código ha alcanzado su límite de usos.",
+"بلغ هذا الكود الحد الأقصى للاستخدام.",
+"इस कोड की उपयोग सीमा पूरी हो गई है।",
+"Deze code is maximaal gebruikt."
+],
+[
+"Could not check the code. Check your connection and try again.",
+"No se pudo comprobar el código. Revisa la conexión y vuelve a intentarlo.",
+"تعذر التحقق من الكود. تحقق من الاتصال وحاول مجددًا.",
+"कोड जाँचा नहीं जा सका। कनेक्शन जाँचकर फिर कोशिश करें।",
+"De code kon niet worden gecontroleerd. Controleer je verbinding en probeer opnieuw."
+],
+[
+"Code not found for SPUD. Check the spelling.",
+"No se encontró ese código para SPUD. Comprueba que esté bien escrito.",
+"لم يُعثر على الكود في SPUD. تحقق من كتابته.",
+"SPUD के लिए कोड नहीं मिला। सही अक्षर जाँचें।",
+"Code voor SPUD niet gevonden. Controleer de spelling."
+],
+[
+"I have a code",
+"Tengo un código",
+"لدي كود",
+"मेरे पास कोड है",
+"Ik heb een code"
+],
+[
+"Your first 3 days are ad-free. Afterwards, occasional ads appear after games. You can remove them with a purchase or an access code. Lessons stay ad-free.",
+"Los primeros 3 días no tienen anuncios. Después, aparecerán a veces al terminar una partida. Puedes eliminarlos con una compra o un código. Las lecciones seguirán sin anuncios.",
+"الأيام الثلاثة الأولى بلا إعلانات. بعد ذلك، تظهر إعلانات أحيانًا بعد المباريات. يمكنك إزالتها بالشراء أو بكود. تبقى الدروس بلا إعلانات.",
+"पहले 3 दिन विज्ञापन नहीं दिखेंगे। उसके बाद कभी-कभी बाज़ी के बाद विज्ञापन आएँगे। खरीद या कोड से उन्हें हटा सकते हैं। पाठ विज्ञापन-मुक्त रहेंगे।",
+"De eerste 3 dagen zijn advertentievrij. Daarna verschijnen af en toe advertenties na wedstrijden. Je kunt ze verwijderen met een aankoop of code. Lessen blijven advertentievrij."
+],
+[
+"SPUD shows occasional ads after games. Remove them with a purchase or an access code, or keep playing and be reminded in two weeks.",
+"SPUD muestra anuncios de vez en cuando al terminar una partida. Elimínalos con una compra o un código, o sigue jugando y recibe un recordatorio dentro de dos semanas.",
+"يعرض SPUD إعلانات أحيانًا بعد المباريات. أزلها بالشراء أو بكود، أو واصل اللعب واحصل على تذكير بعد أسبوعين.",
+"SPUD में कभी-कभी बाज़ी के बाद विज्ञापन आते हैं। खरीद या कोड से उन्हें हटाएँ, या खेलते रहें और दो हफ़्ते बाद याद दिलाएँ।",
+"SPUD toont af en toe advertenties na wedstrijden. Verwijder ze met een aankoop of code, of speel verder en krijg over twee weken een herinnering."
+],
+[
+"At least 2 players are required to start a game.",
+"Se necesitan al menos 2 jugadores para empezar.",
+"يلزم لاعبان على الأقل لبدء اللعبة.",
+"खेल शुरू करने के लिए कम से कम 2 खिलाड़ी चाहिए।",
+"Er zijn minstens 2 spelers nodig om te beginnen."
+],
+[
+"{0} players here · {1} free places. At least 2 players are required to start a game.",
+"{0} jugadores · {1} plazas libres. Se necesitan al menos 2 jugadores para empezar.",
+"{0} لاعبين هنا · {1} أماكن متاحة. يلزم لاعبان على الأقل لبدء اللعبة.",
+"{0} खिलाड़ी यहाँ · {1} खाली जगहें। शुरू करने के लिए कम से कम 2 खिलाड़ी चाहिए।",
+"{0} spelers aanwezig · {1} vrije plaatsen. Er zijn minstens 2 spelers nodig om te beginnen."
+],
+[
+"Naming: ",
+"Apodo para: ",
+"لقب للاعب: ",
+"उपनाम किसके लिए: ",
+"Bijnaam voor: "
+],
+[
+"Current nickname: ",
+"Apodo actual: ",
+"اللقب الحالي: ",
+"वर्तमान उपनाम: ",
+"Huidige bijnaam: "
+],
+[
+"New nickname: ",
+"Nuevo apodo: ",
+"اللقب الجديد: ",
+"नया उपनाम: ",
+"Nieuwe bijnaam: "
+],
+[
+"One new word",
+"Una palabra nueva",
+"كلمة جديدة واحدة",
+"एक नया शब्द",
+"Eén nieuw woord"
+],
+[
+"Suggest a word and vote. You may change your vote. Play continues when everyone has voted or time runs out.",
+"Propón una palabra y vota. Puedes cambiar tu voto. El juego continúa cuando todos hayan votado o se agote el tiempo.",
+"اقترح كلمة وصوّت. يمكنك تغيير صوتك. تُستأنف اللعبة عندما يصوّت الجميع أو ينتهي الوقت.",
+"एक शब्द सुझाएँ और वोट दें। आप अपना वोट बदल सकते हैं। सभी के वोट देने या समय समाप्त होने पर खेल आगे बढ़ेगा।",
+"Stel een woord voor en stem. Je mag je stem wijzigen. Het spel gaat verder als iedereen heeft gestemd of de tijd om is."
+],
+[
+"Points: ",
+"Puntos: ",
+"النقاط: ",
+"अंक: ",
+"Punten: "
+],
+[
+"Progress not shared",
+"Progreso no compartido",
+"التقدم غير مشارك",
+"प्रगति साझा नहीं की गई",
+"Voortgang niet gedeeld"
+],
+[
+"Waiting for Ready",
+"Esperando confirmación",
+"بانتظار تأكيد الاستعداد",
+"तैयार होने की पुष्टि बाकी है",
+"Wacht op bevestiging"
+],
+[
+"Waiting for players",
+"Esperando jugadores",
+"بانتظار اللاعبين",
+"खिलाड़ियों का इंतज़ार",
+"Wachten op spelers"
+],
+[
+"These players have not confirmed. Start without them?",
+"Estos jugadores no han confirmado. ¿Empezar sin ellos?",
+"لم يؤكد هؤلاء اللاعبون استعدادهم. هل نبدأ دونهم؟",
+"इन खिलाड़ियों ने पुष्टि नहीं की है। इनके बिना शुरू करें?",
+"Deze spelers hebben nog niet bevestigd. Beginnen zonder hen?"
+],
+[
+"Wait",
+"Esperar",
+"انتظار",
+"इंतज़ार करें",
+"Wachten"
+],
+[
+"Start anyway",
+"Empezar sin ellos",
+"البدء دونهم",
+"उनके बिना शुरू करें",
+"Zonder hen beginnen"
+],
+[
+"The host started without you. Join the next game when you are ready.",
+"El anfitrión empezó sin ti. Únete a la próxima partida cuando estés listo.",
+"بدأ المضيف دونك. انضم إلى اللعبة التالية عندما تكون مستعدًا.",
+"मेज़बान ने आपके बिना शुरू किया। तैयार होने पर अगले खेल में जुड़ें।",
+"De host is zonder jou begonnen. Doe mee aan de volgende ronde als je klaar bent."
+],
+[
+"Game ended",
+"Partida terminada",
+"انتهت اللعبة",
+"खेल समाप्त",
+"Spel afgelopen"
+],
+[
+"Winners: ",
+"Ganadores: ",
+"الفائزون: ",
+"विजेता: ",
+"Winnaars: "
+],
+[
+"Penalty: ",
+"Penalización: ",
+"نقاط جزاء: ",
+"दंड अंक: ",
+"Strafpunten: "
+],
+[
+"Pick up",
+"Recoger",
+"التقاط",
+"उठाएँ",
+"Oppakken"
+],
+[
+"Diagnose online lag",
+"Diagnosticar retrasos en línea",
+"تشخيص تأخر اللعب عبر الإنترنت",
+"ऑनलाइन रुकावट की जाँच",
+"Online vertraging onderzoeken"
+],
+[
+"Stop lag diagnosis",
+"Detener diagnóstico",
+"إيقاف التشخيص",
+"जाँच बंद करें",
+"Onderzoek stoppen"
+],
+[
+"Temporary lag diagnosis",
+"Diagnóstico temporal de retrasos",
+"تشخيص مؤقت للتأخر",
+"रुकावट की अस्थायी जाँच",
+"Tijdelijk onderzoek naar vertraging"
+],
+[
+"Start 10-minute diagnosis",
+"Iniciar diagnóstico de 10 minutos",
+"بدء تشخيص لمدة 10 دقائق",
+"10 मिनट की जाँच शुरू करें",
+"Onderzoek van 10 minuten starten"
+],
+[
+"For 10 minutes, send aggregate frame and connection timings, app version, phone model and language to our Firebase support log. No names, camera images, audio or gameplay recordings are collected. Join an online game after starting. You can stop at any time. Reports are removed during support cleanup; stopping ends collection.",
+"Durante 10 minutos, envía tiempos acumulados de pantalla y conexión, versión de la app, modelo del teléfono e idioma a nuestro registro de soporte en Firebase. No se recopilan nombres, imágenes de cámara, audio ni grabaciones del juego. Después, únete a una partida en línea. Puedes detenerlo cuando quieras. Los informes se eliminan durante la limpieza de soporte; detenerlo finaliza la recopilación.",
+"لمدة 10 دقائق، أرسل ملخصات توقيت العرض والاتصال وإصدار التطبيق وطراز الهاتف واللغة إلى سجل الدعم في Firebase. لا نجمع الأسماء أو صور الكاميرا أو الصوت أو تسجيلات اللعب. انضم إلى لعبة عبر الإنترنت بعد البدء. يمكنك الإيقاف في أي وقت. تُحذف التقارير عند تنظيف سجلات الدعم؛ الإيقاف ينهي جمع البيانات.",
+"10 मिनट तक स्क्रीन और कनेक्शन के संयुक्त समय-आँकड़े, ऐप संस्करण, फ़ोन मॉडल और भाषा हमारे Firebase सहायता लॉग में भेजें। नाम, कैमरा चित्र, आवाज़ या खेल की रिकॉर्डिंग नहीं ली जाती। शुरू करने के बाद ऑनलाइन खेल में जुड़ें। आप कभी भी रोक सकते हैं। सहायता लॉग की सफाई में रिपोर्ट मिटती हैं; रोकने पर संग्रह बंद होता है।",
+"Stuur 10 minuten lang samengevatte beeld- en verbindingstijden, appversie, telefoonmodel en taal naar ons Firebase-supportlog. We verzamelen geen namen, camerabeelden, geluid of spelopnamen. Doe daarna mee aan een online spel. Je kunt op elk moment stoppen. Rapporten worden tijdens supportopruiming verwijderd; stoppen beëindigt de verzameling."
+],
+[
+"Answering nicknames",
+"Responder a los apodos",
+"الإجابة عن الألقاب",
+"उपनामों का जवाब",
+"Bijnamen beantwoorden"
+],
+[
+"Choose from nicknames",
+"Elegir entre los apodos",
+"الاختيار من الألقاب",
+"उपनामों में से चुनें",
+"Uit bijnamen kiezen"
+],
+[
+"Show the correct nickname",
+"Mostrar el apodo correcto",
+"إظهار اللقب الصحيح",
+"सही उपनाम दिखाएँ",
+"De juiste bijnaam tonen"
+],
+[
+"Choose the nickname",
+"Elige el apodo",
+"اختر اللقب",
+"उपनाम चुनें",
+"Kies de bijnaam"
+],
+[
+"Already bought it? Restore with the same Google Play account.",
+"¿Ya lo compraste? Restáuralo con la misma cuenta de Google Play.",
+"هل اشتريته من قبل؟ استعده باستخدام حساب Google Play نفسه.",
+"पहले खरीद चुके हैं? उसी Google Play खाते से बहाल करें।",
+"Al gekocht? Herstel met hetzelfde Google Play-account."
+],
+[
+"No Remove Ads purchase was found for this Google Play account.",
+"No se encontró una compra de Quitar anuncios en esta cuenta de Google Play.",
+"لم يُعثر على شراء لإزالة الإعلانات في حساب Google Play هذا.",
+"इस Google Play खाते में विज्ञापन हटाने की खरीद नहीं मिली।",
+"Er is geen aankoop voor Advertenties verwijderen gevonden voor dit Google Play-account."
+],
+[
+"The code service could not authorize this installation. Update SPUD from Google Play and try again.",
+"El servicio de códigos no pudo autorizar esta instalación. Actualiza SPUD desde Google Play e inténtalo de nuevo.",
+"تعذر على خدمة الرموز اعتماد هذا التثبيت. حدّث SPUD من Google Play وحاول مجددًا.",
+"कोड सेवा इस इंस्टॉलेशन को अधिकृत नहीं कर सकी। Google Play से SPUD अपडेट करके फिर कोशिश करें।",
+"De codedienst kon deze installatie niet goedkeuren. Werk SPUD bij via Google Play en probeer opnieuw."
+],
+[
+"The code service is temporarily unavailable. Please try again later.",
+"El servicio de códigos no está disponible temporalmente. Inténtalo más tarde.",
+"خدمة الرموز غير متاحة مؤقتًا. حاول لاحقًا.",
+"कोड सेवा अभी उपलब्ध नहीं है। बाद में फिर कोशिश करें।",
+"De codedienst is tijdelijk niet beschikbaar. Probeer het later opnieuw."
+],
+[
+"This code belongs to a league. Join it from Family league.",
+"Este código pertenece a una liga. Únete desde Liga familiar.",
+"هذا الرمز يخص دوريًا. انضم من دوري العائلة.",
+"यह कोड एक लीग का है। पारिवारिक लीग से जुड़ें।",
+"Deze code hoort bij een competitie. Doe mee via Familiecompetitie."
+],
+[
+"The connection is unavailable. Please reconnect and try again.",
+"No hay conexión. Vuelve a conectarte e inténtalo de nuevo.",
+"الاتصال غير متاح. أعد الاتصال وحاول مجددًا.",
+"कनेक्शन उपलब्ध नहीं है। दोबारा कनेक्ट करके कोशिश करें।",
+"Er is geen verbinding. Maak opnieuw verbinding en probeer het nog eens."
+],
+[
+"This request could not be completed. Please try again.",
+"No se pudo completar la solicitud. Inténtalo de nuevo.",
+"تعذر إتمام الطلب. حاول مجددًا.",
+"यह अनुरोध पूरा नहीं हो सका। फिर कोशिश करें।",
+"Dit verzoek kon niet worden voltooid. Probeer het opnieuw."
+],
+[
+"Easy · tap to throw",
+"Fácil · toca para lanzar",
+"سهل · المس للرمي",
+"आसान · टैप करके फेंकें",
+"Makkelijk · tik om te gooien"
+],
+[
+"Standard · moving target",
+"Estándar · objetivo móvil",
+"عادي · هدف متحرك",
+"सामान्य · चलता निशाना",
+"Standaard · bewegend doel"
+],
+[
+"Pro · swipe to throw",
+"Pro · desliza para lanzar",
+"محترف · اسحب للرمي",
+"प्रो · स्वाइप करके फेंकें",
+"Pro · veeg om te gooien"
+],
+[
+"Ground contact before a hit",
+"Contacto con el suelo antes del golpe",
+"ملامسة الأرض قبل الإصابة",
+"लगने से पहले ज़मीन छूना",
+"Grond raken vóór een treffer"
+],
+[
+"Not allowed · everyone",
+"No permitido · para todos",
+"ممنوع · للجميع",
+"मनाही · सबके लिए",
+"Niet toegestaan · iedereen"
+],
+[
+"Allowed · everyone",
+"Permitido · para todos",
+"مسموح · للجميع",
+"अनुमति · सबके लिए",
+"Toegestaan · iedereen"
+],
+[
+"Paint balloon",
+"Globo de pintura",
+"بالون ألوان",
+"रंग का गुब्बारा",
+"Verfballon"
+],
+[
+"Tap the exact spot to throw. Tap a name to bring the target into view.",
+"Toca el punto exacto para lanzar. Toca un nombre para ver al objetivo.",
+"المس المكان الدقيق للرمي. المس الاسم لإظهار الهدف.",
+"ठीक जगह पर टैप करके फेंकें। लक्ष्य देखने के लिए नाम पर टैप करें।",
+"Tik precies waar je wilt gooien. Tik op een naam om het doel te zien."
+],
+[
+"Choose a player or name to show the moving target.",
+"Elige un jugador o su nombre para mostrar el punto móvil.",
+"اختر لاعبًا أو اسمه لإظهار النقطة المتحركة.",
+"चलता निशाना दिखाने के लिए खिलाड़ी या नाम चुनें।",
+"Kies een speler of naam om de bewegende stip te tonen."
+],
+[
+"Tap when the dot is where you want to hit. Farther means faster.",
+"Toca cuando el punto esté donde quieras acertar. Más lejos significa más rápido.",
+"المس عندما تكون النقطة حيث تريد الإصابة. كلما زادت المسافة زادت السرعة.",
+"जब बिंदु सही जगह हो तब टैप करें। दूरी बढ़ने पर गति बढ़ती है।",
+"Tik als de stip op je gewenste raakpunt staat. Verder weg betekent sneller."
+],
+[
+"Tap the exact spot to throw. Tap height sets the throw height.",
+"Toca el punto exacto para lanzar. La altura del toque determina la del lanzamiento.",
+"المس المكان الدقيق للرمي. ارتفاع اللمسة يحدد ارتفاع الرمية.",
+"ठीक जगह पर टैप करके फेंकें। टैप की ऊँचाई से थ्रो की ऊँचाई तय होती है।",
+"Tik precies waar je wilt gooien. De hoogte van je tik bepaalt de worphoogte."
+],
+[
+"Tap when the moving dot is where you want to hit.",
+"Toca cuando el punto móvil esté donde quieras acertar.",
+"المس عندما تصل النقطة المتحركة إلى المكان المطلوب.",
+"जब चलता बिंदु सही जगह हो तब टैप करें।",
+"Tik als de bewegende stip staat waar je wilt raken."
+],
+[
+"Update SPUD to join this game.",
+"Actualiza SPUD para unirte a esta partida.",
+"حدّث SPUD للانضمام إلى هذه المباراة.",
+"इस खेल में शामिल होने के लिए SPUD अपडेट करें।",
+"Werk SPUD bij om mee te spelen."
+],
+[
+"Everyone needs the latest SPUD version for these controls and paint balloons.",
+"Todos necesitan la última versión de SPUD para estos controles y globos de pintura.",
+"يحتاج الجميع إلى أحدث إصدار من SPUD لهذه الأدوات وبالونات الألوان.",
+"इन कंट्रोल और रंग के गुब्बारों के लिए सभी को SPUD का नया संस्करण चाहिए।",
+"Iedereen heeft de nieuwste SPUD nodig voor deze bediening en verfballonnen."
+],
+[
+"The balloon burst on the called player. One penalty.",
+"El globo explotó sobre el jugador llamado. Una penalización.",
+"انفجر البالون على اللاعب المنادى. نقطة جزاء واحدة.",
+"पुकारे गए खिलाड़ी पर गुब्बारा फूटा। एक पेनल्टी।",
+"De ballon knapte op de geroepen speler. Eén strafpunt."
+],
+[
+"The high balloon burst before pickup. One penalty.",
+"El globo alto explotó antes de recogerlo. Una penalización.",
+"انفجر البالون العالي قبل التقاطه. نقطة جزاء واحدة.",
+"ऊँचा गुब्बारा उठाने से पहले फूट गया। एक पेनल्टी।",
+"De hoog gegooide ballon knapte vóór het oppakken. Eén strafpunt."
+],
+[
+"The balloon burst on the ground.",
+"El globo explotó en el suelo.",
+"انفجر البالون على الأرض.",
+"गुब्बारा ज़मीन पर फूट गया।",
+"De ballon knapte op de grond."
+],
+[
+"Easy: tap the exact spot to throw. Standard: choose a player, then tap when the moving dot is where you want to hit. Farther targets move faster. Pro: swipe from your ball to control direction, power and height. Ground contact is a separate rule for everyone; it is off by default.",
+"Fácil: toca el punto exacto para lanzar. Estándar: elige un jugador y toca cuando el punto móvil esté donde quieras acertar. Cuanto más lejos, más rápido se mueve. Pro: desliza desde la pelota para controlar dirección, fuerza y altura. El contacto con el suelo es una regla aparte para todos; está desactivado de inicio.",
+"السهل: المس المكان الدقيق للرمي. العادي: اختر لاعبًا، ثم المس عندما تصل النقطة المتحركة إلى موضع الإصابة المطلوب. تتحرك أسرع للأهداف الأبعد. المحترف: اسحب من الكرة للتحكم في الاتجاه والقوة والارتفاع. ملامسة الأرض قاعدة منفصلة للجميع، وهي ممنوعة افتراضيًا.",
+"आसान: ठीक जगह पर टैप करके फेंकें। सामान्य: खिलाड़ी चुनें, फिर जब चलता बिंदु सही जगह हो तब टैप करें। दूर के निशाने तेज़ चलते हैं। प्रो: दिशा, ताकत और ऊँचाई के लिए गेंद से स्वाइप करें। पहले ज़मीन छूने की अनुमति सबके लिए अलग नियम है और शुरू में बंद रहती है।",
+"Makkelijk: tik op de exacte plek om te gooien. Standaard: kies een speler en tik als de bewegende stip op de gewenste plek staat. Bij verre doelen beweegt hij sneller. Pro: veeg vanaf je bal voor richting, kracht en hoogte. Eerst de grond raken is een aparte regel voor iedereen; standaard staat die uit."
+],
+[
+"The balloon burst in your hands!",
+"¡El globo explotó en tus manos!",
+"انفجر البالون في يديك!",
+"गुब्बारा आपके हाथों में फूट गया!",
+"De ballon knapte in je handen!"
+],
+[
+"Caught it, but it burst! The catcher gets a penalty.",
+"¡Lo atrapaste, pero explotó! Quien lo atrapa recibe la penalización.",
+"أمسكت به، لكنه انفجر! يحصل الممسك على نقطة جزاء.",
+"पकड़ लिया, लेकिन फूट गया! पकड़ने वाले को पेनल्टी मिलती है।",
+"Gevangen, maar geknapt! De vanger krijgt een strafpunt."
+],
+[
+"Direct hits and ground misses always burst. Catches usually save it. After 10 attack throws plus a random 1–3, the next throw at 80% maximum power can burst in the catcher’s hands and penalize them. Upward throws keep a separate 10 + 1–3 wait, then 80% maximum height.",
+"Los impactos directos y los fallos al suelo siempre explotan. Atrapar suele salvar el globo. Tras 10 ataques y otros 1–3 al azar, el siguiente lanzamiento con al menos el 80% de potencia máxima puede explotar en las manos y penalizar a quien lo atrapa. Las llamadas cuentan aparte: 10 + 1–3 y luego el 80% de altura máxima.",
+"الإصابات المباشرة والرميات التي تخطئ وتسقط على الأرض تنفجر دائمًا. الإمساك ينقذ البالون عادةً. بعد 10 رميات هجومية ثم 1–3 عشوائيًا، قد تنفجر الرمية التالية بقوة 80% على الأقل من الحد الأقصى في يدي الممسك وتمنحه نقطة جزاء. للرميات للأعلى عدّ منفصل: 10 + 1–3 ثم 80% من أقصى ارتفاع.",
+"सीधी हिट और चूककर ज़मीन पर गिरने पर गुब्बारा हमेशा फूटता है। कैच आम तौर पर उसे बचाता है। 10 हमलावर थ्रो और यादृच्छिक 1–3 और के बाद, अगला कम से कम 80% अधिकतम ताकत वाला थ्रो पकड़ने वाले के हाथों में फूट सकता है और उसे पेनल्टी मिलती है। ऊपर के थ्रो अलग गिने जाते हैं: 10 + 1–3, फिर कम से कम 80% अधिकतम ऊँचाई।",
+"Directe treffers en missers op de grond knappen altijd. Vangen redt de ballon meestal. Na 10 aanvalsworpen plus willekeurig 1–3 kan de volgende worp met minstens 80% van de maximale kracht in de handen knappen: de vanger krijgt het strafpunt. Omhoog gooien telt apart: 10 + 1–3, dan minstens 80% van de maximale hoogte."
+],
+[
+"Game settings lessons",
+"Aprende los ajustes",
+"تعلّم إعدادات اللعب",
+"खेल की सेटिंग सीखें",
+"Leer de spelinstellingen"
+],
+[
+"Choose one topic. Read a short tip, then try it without changing your journey progress.",
+"Elige un tema. Lee un consejo y pruébalo sin cambiar tu progreso.",
+"اختر موضوعًا واقرأ نصيحة قصيرة ثم جرّبه دون تغيير تقدمك.",
+"एक विषय चुनें। छोटी सलाह पढ़ें और अपनी प्रगति बदले बिना आज़माएँ।",
+"Kies een onderwerp. Lees een korte tip en oefen zonder je voortgang te veranderen."
+],
+[
+"Three ways to throw",
+"Tres formas de lanzar",
+"ثلاث طرق للرمي",
+"फेंकने के तीन तरीके",
+"Drie manieren om te gooien"
+],
+[
+"Easy: tap the spot to hit. Standard: tap when the moving dot reaches the spot; distant targets are harder. Pro: swipe from your ball to set direction, power and height. Try each mode on the tree.",
+"Fácil: toca donde quieras acertar. Estándar: toca cuando el punto móvil llegue; los objetivos lejanos son más difíciles. Pro: desliza desde la pelota para controlar dirección, fuerza y altura. Prueba cada modo con el árbol.",
+"سهل: اضغط على موضع الإصابة. عادي: اضغط عندما تصل النقطة المتحركة؛ الهدف البعيد أصعب. محترف: اسحب من الكرة لتحديد الاتجاه والقوة والارتفاع. جرّب كل وضع على الشجرة.",
+"आसान: जहाँ मारना है वहाँ टैप करें। सामान्य: चलती बिंदी वहाँ पहुँचे तब टैप करें; दूर का लक्ष्य कठिन है। प्रो: गेंद से स्वाइप करके दिशा, ताकत और ऊँचाई तय करें। पेड़ पर हर तरीका आज़माएँ।",
+"Makkelijk: tik op de plek die je wilt raken. Standaard: tik als de bewegende stip daar is; verre doelen zijn moeilijker. Pro: veeg vanaf de bal voor richting, kracht en hoogte. Probeer elk type op de boom."
+],
+[
+"Choose your ball",
+"Elige tu pelota",
+"اختر كرتك",
+"अपनी गेंद चुनें",
+"Kies je bal"
+],
+[
+"Balls have different speeds and bounces. Choose one below and land it on the golden island. The same ball behaves the same way in a match.",
+"Las pelotas tienen velocidades y botes distintos. Elige una y hazla caer en la isla dorada. Se comporta igual en las partidas.",
+"تختلف سرعة الكرات وارتدادها. اختر كرة وأنزلها على الجزيرة الذهبية. تتصرف بالطريقة نفسها في المباراة.",
+"गेंदों की गति और उछाल अलग हैं। एक चुनें और सुनहरे द्वीप पर गिराएँ। मैच में भी वही गेंद ऐसे ही चलती है।",
+"Ballen verschillen in snelheid en stuit. Kies er een en laat hem op het gouden eiland landen. In een wedstrijd werkt die bal hetzelfde."
+],
+[
+"Play with wind",
+"Juega con viento",
+"العب مع الرياح",
+"हवा में खेलें",
+"Spelen met wind"
+],
+[
+"Wind curves a ball's flight. Easy and Standard calculate the release toward your chosen point; Pro needs your own adjustment. Try the ring with different wind settings.",
+"El viento curva el vuelo. Fácil y Estándar calculan el lanzamiento hacia el punto elegido; en Pro debes compensar. Prueba el aro con distintos vientos.",
+"الرياح تغيّر مسار الكرة. يحسب السهل والعادي الرمية نحو النقطة المختارة؛ في المحترف عليك التعويض بنفسك. جرّب الحلقة برياح مختلفة.",
+"हवा गेंद को मोड़ती है। आसान और सामान्य चुने बिंदु तक फेंकने की गणना करते हैं; प्रो में खुद दिशा सुधारें। अलग हवाओं में छल्ला आज़माएँ।",
+"Wind buigt de balbaan. Makkelijk en Standaard berekenen de worp naar je gekozen punt; bij Pro corrigeer je zelf. Probeer de ring met verschillende wind."
+],
+[
+"Jump in low gravity",
+"Salta con poca gravedad",
+"اقفز بجاذبية منخفضة",
+"कम गुरुत्व में कूदें",
+"Springen bij lage zwaartekracht"
+],
+[
+"Andromeda has lower gravity: jumps last longer and rise higher. Time your jump over the low ball. Switch back to the park to feel the difference.",
+"Andrómeda tiene menos gravedad: los saltos son más altos y largos. Salta sobre la pelota baja. Vuelve al parque para comparar.",
+"جاذبية أندروميدا أقل: القفز أعلى وأطول. وقّت قفزتك فوق الكرة المنخفضة ثم عد للحديقة للمقارنة.",
+"एंड्रोमेडा में गुरुत्व कम है: छलाँग ऊँची और लंबी होती है। नीची गेंद के ऊपर सही समय पर कूदें। तुलना के लिए पार्क चुनें।",
+"Op Andromeda is de zwaartekracht lager: je springt hoger en langer. Spring op tijd over de lage bal. Vergelijk daarna met het park."
+],
+[
+"Ground before a hit",
+"Suelo antes del impacto",
+"الأرض قبل الإصابة",
+"लगने से पहले ज़मीन",
+"Grond vóór een treffer"
+],
+[
+"Normally a thrown attack must hit before touching the ground. The host can allow a bounce for everyone. Compare both rules here: aim low for a bounce toward the marked player. A paint balloon bursts instead of bouncing on an attack.",
+"Normalmente el ataque debe acertar antes de tocar el suelo. El anfitrión puede permitir un bote para todos. Compara ambas reglas apuntando bajo hacia el jugador marcado. Un globo de pintura explota al tocar el suelo en un ataque.",
+"عادة يجب أن تصيب رمية الهجوم قبل لمس الأرض. يمكن للمضيف السماح بارتداد للجميع. قارن القاعدتين وصوّب منخفضًا نحو اللاعب المحدد. ينفجر بالون الطلاء على الأرض عند الهجوم.",
+"आम तौर पर हमले की गेंद ज़मीन छूने से पहले लगनी चाहिए। मेज़बान सबके लिए उछाल की अनुमति दे सकता है। नीचा निशाना लगाकर दोनों नियम आज़माएँ। हमले में रंग का गुब्बारा ज़मीन पर फूटता है।",
+"Normaal moet een aanval raken vóór de bal de grond raakt. De host kan voor iedereen een stuit toestaan. Vergelijk beide regels met een lage worp naar de gemarkeerde speler. Een verfballon barst bij een aanval op de grond."
+],
+[
+"Paint balloon practice",
+"Practica con pintura",
+"تدرّب ببالون الطلاء",
+"रंग के गुब्बारे का अभ्यास",
+"Oefenen met verfballonnen"
+],
+[
+"Hit the marked player to paint them, or the ground for a splash. A catch usually saves the balloon; occasionally a powerful throw bursts in the catcher’s hands.",
+"Acierta al jugador marcado para pintarlo, o al suelo para salpicar. Atrapar suele salvar el globo; a veces un lanzamiento fuerte explota en las manos.",
+"أصب اللاعب المحدد لتلوينه، أو الأرض لترك بقعة. الإمساك يحفظ البالون عادةً؛ أحيانًا تنفجر رمية قوية في يدي الممسك.",
+"निशान वाले खिलाड़ी को रंगें या ज़मीन पर रंग बिखेरें। कैच आम तौर पर गुब्बारा बचाता है; कभी-कभी तेज़ थ्रो पकड़ने वाले के हाथों में फूट जाता है।",
+"Raak de gemarkeerde speler voor verf of de grond voor een spat. Vangen redt de ballon meestal; soms knapt een krachtige worp in de handen."
+],
+[
+"Tap a player or their name, then swipe upward from your held ball. Faster swipes toss higher. Angle left or right to send the ball toward that side of the circle; wind still affects it. This gesture works in every control mode.",
+"Toca a un jugador o su nombre y desliza hacia arriba desde tu pelota. Más rápido lanza más alto. Inclina a izquierda o derecha para dirigirla a ese lado del círculo; el viento sigue afectándola. Funciona en todos los controles.",
+"اضغط على لاعب أو اسمه ثم اسحب للأعلى من الكرة بيدك. السحب الأسرع يرمي أعلى. مِل يسارًا أو يمينًا لإرسالها نحو ذلك الجانب من الدائرة؛ الرياح تؤثر أيضًا. تعمل الحركة في جميع أنماط التحكم.",
+"खिलाड़ी या उसके नाम पर टैप करके हाथ की गेंद से ऊपर स्वाइप करें। तेज़ स्वाइप ऊँचा फेंकता है। बाएँ या दाएँ झुकाकर गोले की उस ओर फेंकें; हवा का असर बना रहता है। यह हर कंट्रोल में काम करता है।",
+"Tik op een speler of naam en veeg vanaf je bal omhoog. Sneller vegen gooit hoger. Veeg schuin links of rechts voor die kant van de cirkel; wind blijft invloed hebben. Dit werkt bij elke bediening."
+],
+[
+"After an airborne catch, the catcher takes the next turn and everyone else can run back. If a catch is missed, collect the ball and use the stop call when required by the match rules.",
+"Tras atrapar en el aire, el receptor toma el siguiente turno y los demás pueden volver corriendo. Si falla, recoge la pelota y usa la llamada de parada cuando las reglas lo exijan.",
+"بعد الإمساك في الهواء يأخذ الماسك الدور التالي ويمكن للآخرين الركض عائدين. عند إخفاق الإمساك، اجمع الكرة واستخدم نداء التوقف إذا أوجبت القواعد ذلك.",
+"हवा में कैच के बाद पकड़ने वाले की बारी होती है और बाकी वापस दौड़ सकते हैं। कैच छूटे तो गेंद उठाएँ और नियमों के अनुसार रुकने की पुकार दें।",
+"Na een vangbal krijgt de vanger de volgende beurt en mogen de anderen terugrennen. Bij een gemiste vangbal pak je de bal op en gebruik je de stoproep als de regels dat vereisen."
+],
+[
+"Call and toss",
+"Llama y lanza arriba",
+"نادِ وارمِ للأعلى",
+"नाम पुकारें और उछालें",
+"Roep en gooi omhoog"
+],
+[
+"Tap the marked partner, then swipe upward from your held ball. Faster swipes toss higher. Slant left or right to direct the toss; wind still affects it. The gesture works in every control mode.",
+"Toca al compañero marcado y desliza hacia arriba desde la pelota. Más rápido lanza más alto. Inclina a izquierda o derecha para dirigirla; el viento sigue afectándola. Funciona en todos los controles.",
+"اضغط على الشريك المحدد ثم اسحب للأعلى من الكرة بيدك. السحب الأسرع يرمي أعلى. اسحب مائلاً يسارًا أو يمينًا لتوجيهها؛ الرياح تؤثر أيضًا. تعمل الحركة في جميع أنماط التحكم.",
+"चिह्नित साथी पर टैप करके हाथ की गेंद से ऊपर स्वाइप करें। तेज़ स्वाइप ऊँचा फेंकता है। दिशा देने के लिए बाएँ या दाएँ तिरछा स्वाइप करें; हवा का असर बना रहता है। यह हर कंट्रोल में काम करता है।",
+"Tik op de gemarkeerde partner en veeg vanaf je bal omhoog. Sneller vegen gooit hoger. Veeg schuin links of rechts om te richten; wind blijft invloed hebben. Dit werkt bij elke bediening."
+],
+[
+"Run and stop",
+"Corre y para",
+"اركض وتوقف",
+"दौड़ें और रुकें",
+"Rennen en stoppen"
+],
+[
+"Drag to run. Release when the stop call appears. In a match, players can move before the call, except the ball holder. After a missed name-call catch, the called player picks up the ball and calls SPUD or Amodu.",
+"Arrastra para correr y suelta al ver la señal. En partidas todos pueden moverse antes de la llamada, salvo quien sostiene la pelota. Tras fallar una llamada, el jugador recoge la pelota y grita SPUD o Amodu.",
+"اسحب للركض وارفع إصبعك عند نداء التوقف. يمكن للجميع التحرك قبل النداء إلا حامل الكرة. بعد إخفاق التقاط نداء الاسم، يلتقط اللاعب الكرة وينادي SPUD أو Amodu.",
+"दौड़ने के लिए खींचें; रुकने की पुकार पर छोड़ें। मैच में पुकार से पहले गेंदधारी को छोड़कर सब चल सकते हैं। नाम-पुकार की गेंद छूटने पर पुकारा गया खिलाड़ी गेंद उठाकर SPUD या Amodu कहता है।",
+"Sleep om te rennen en laat los bij het stopsignaal. In een wedstrijd mag iedereen vóór de stop bewegen, behalve de balhouder. Na een gemiste naamworp pakt de geroepen speler de bal en roept SPUD of Amodu."
+],
+[
+"More match settings",
+"Más ajustes de partida",
+"إعدادات إضافية",
+"मैच की अन्य सेटिंग",
+"Meer wedstrijdinstellingen"
+],
+[
+"The host chooses these shared rules before the match. They do not change your journey progress.",
+"El anfitrión elige estas reglas antes de jugar. No cambian el progreso de los retos.",
+"يختار المضيف القواعد المشتركة قبل اللعب. لا تغيّر تقدم التحديات.",
+"मेज़बान मैच से पहले ये साझा नियम चुनता है। इनसे अभ्यास की प्रगति नहीं बदलती।",
+"De host kiest deze gedeelde regels vóór de wedstrijd. Ze veranderen je oefenvoortgang niet."
+],
+[
+"SPUD or nicknames",
+"SPUD o apodos",
+"SPUD أو الألقاب",
+"SPUD या उपनाम",
+"SPUD of bijnamen"
+],
+[
+"SPUD adds one letter per penalty; four letters eliminate a player. In the nickname game, every third penalty triggers a nickname choice. The host can choose suggested, automatic or typed nickname answers.",
+"SPUD añade una letra por penalización; cuatro eliminan. En el juego de apodos, cada tercera penalización permite elegir un apodo. El anfitrión elige respuestas sugeridas, automáticas o escritas.",
+"يضيف SPUD حرفًا لكل جزاء؛ أربعة حروف تُخرج اللاعب. في لعبة الألقاب يُختار لقب عند كل جزاء ثالث. يختار المضيف إجابات مقترحة أو تلقائية أو مكتوبة.",
+"SPUD में हर पेनल्टी पर एक अक्षर; चार पर बाहर। उपनाम खेल में हर तीसरी पेनल्टी पर उपनाम चुना जाता है। मेज़बान सुझाए, अपने आप या लिखे उत्तर चुनता है।",
+"SPUD geeft per strafpunt een letter; vier schakelen uit. Bij het bijnamenspel wordt na elk derde strafpunt een bijnaam gekozen. De host kiest voorgestelde, automatische of getypte antwoorden."
+],
+[
+"Stop call",
+"Llamada de parada",
+"نداء التوقف",
+"रुकने की पुकार",
+"Stoproep"
+],
+[
+"When the stop call is required, tap it before attacking. When optional, you may throw without it while others keep running. After the call, everyone else's feet freeze in place; they can still catch, jump or duck.",
+"Si la llamada es obligatoria, tócala antes de atacar. Si es opcional, puedes lanzar mientras los demás corren. Tras la llamada, los demás quedan fijos en su sitio; todavía pueden atrapar, saltar o agacharse.",
+"إن كان نداء التوقف مطلوبًا فاضغطه قبل الهجوم. إن كان اختياريًا يمكنك الرمي والآخرون يركضون. بعد النداء تثبت أقدام الآخرين في مكانها، مع إمكانية الإمساك أو القفز أو الانحناء.",
+"पुकार ज़रूरी हो तो हमले से पहले बटन दबाएँ। वैकल्पिक हो तो दूसरों के दौड़ते समय फेंक सकते हैं। पुकार के बाद बाकी सबके पैर वहीं रुकते हैं; वे कैच, छलाँग या झुकने का प्रयास कर सकते हैं।",
+"Is de stoproep verplicht, tik die dan vóór je aanval. Anders mag je gooien terwijl anderen rennen. Na de roep blijven de anderen op hun plek; ze kunnen nog vangen, springen of bukken."
+],
+[
+"Steps before throwing",
+"Pasos antes de lanzar",
+"الخطوات قبل الرمي",
+"फेंकने से पहले कदम",
+"Stappen vóór de worp"
+],
+[
+"The host chooses how many steps the holder may take after the stop call. These steps help reach a target; they do not let everyone run again.",
+"El anfitrión elige los pasos permitidos tras parar. Acercan al objetivo; no permiten que todos vuelvan a correr.",
+"يختار المضيف خطوات حامل الكرة بعد التوقف. تساعده للاقتراب ولا تسمح للجميع بالركض مجددًا.",
+"मेज़बान पुकार के बाद गेंदधारी के कदम तय करता है। ये लक्ष्य के पास ले जाते हैं; सबको फिर दौड़ने नहीं देते।",
+"De host kiest hoeveel stappen de balhouder na de stop mag nemen. Zo kom je dichterbij; anderen mogen niet weer rennen."
+],
+[
+"Turn timer",
+"Tiempo del turno",
+"مؤقّت الدور",
+"बारी का समय",
+"Beurttimer"
+],
+[
+"A match can limit decision time. Practice has no countdown, so you can learn at your own pace.",
+"Una partida puede limitar el tiempo para decidir. La práctica no tiene cuenta atrás.",
+"قد تحد المباراة وقت القرار. التدريب بلا عد تنازلي لتتعلم براحتك.",
+"मैच में निर्णय का समय सीमित हो सकता है। अभ्यास में उलटी गिनती नहीं है।",
+"Een wedstrijd kan bedenktijd beperken. Oefenen heeft geen aftelklok, dus leer op je eigen tempo."
+],
+[
+"Arena and lighting",
+"Escenario e iluminación",
+"الساحة والإضاءة",
+"मैदान और रोशनी",
+"Arena en verlichting"
+],
+[
+"Park, beach and Andromeda have different gravity and ground bounce. Lighting changes the look; it does not improve a player's skills.",
+"Parque, playa y Andrómeda tienen distinta gravedad y rebote. La luz cambia el aspecto, no las habilidades.",
+"للحديقة والشاطئ وأندروميدا جاذبية وارتداد مختلفان. الإضاءة تغيّر المظهر لا المهارات.",
+"पार्क, समुद्रतट और एंड्रोमेडा में गुरुत्व और उछाल अलग हैं। रोशनी रूप बदलती है, कौशल नहीं।",
+"Park, strand en Andromeda verschillen in zwaartekracht en stuit. Verlichting verandert het uiterlijk, niet de vaardigheden."
+],
+[
+"Try this freely. Lessons do not award points or advance the journey.",
+"Practica libremente. Las lecciones no dan puntos ni avanzan los retos.",
+"جرّب بحرية. الدروس لا تمنح نقاطًا ولا تقدّم الرحلة.",
+"खुलकर आज़माएँ। पाठों से अंक या यात्रा की प्रगति नहीं मिलती।",
+"Oefen gerust. Lessen geven geen punten en veranderen je reis niet."
+],
+[
+"Try three successes. You can repeat the lesson at any time.",
+"Intenta lograr tres aciertos. Puedes repetir cuando quieras.",
+"حاول النجاح ثلاث مرات. يمكنك إعادة الدرس متى شئت.",
+"तीन सफलताएँ आज़माएँ। पाठ कभी भी दोहरा सकते हैं।",
+"Probeer drie keer te slagen. Je kunt de les altijd herhalen."
+],
+[
+"Try it",
+"Probar",
+"جرّب",
+"आज़माएँ",
+"Proberen"
+],
+[
+"Practice opponent:",
+"Rival de práctica:",
+"خصم التدريب:",
+"अभ्यास विरोधी:",
+"Oefentegenstander:"
+],
+[
+"Practice partner:",
+"Compañero de práctica:",
+"شريك التدريب:",
+"अभ्यास साथी:",
+"Oefenpartner:"
+],
+[
+"Complete this challenge once with any available ball and control mode to move on.",
+"Completa una vez con cualquier pelota y control disponibles para avanzar.",
+"أكمل التحدي مرة بأي كرة وتحكم متاحين للانتقال.",
+"किसी भी उपलब्ध गेंद और नियंत्रण से एक बार पूरा करके आगे बढ़ें।",
+"Voltooi één keer met een beschikbare bal en bediening om verder te gaan."
+],
+[
+"Your first new challenge completed today earns 30 bonus points.",
+"El primer reto nuevo completado hoy da 30 puntos extra.",
+"أول تحدٍّ جديد تكمله اليوم يمنح 30 نقطة إضافية.",
+"आज का पहला नया पूरा चुनौती अभ्यास 30 बोनस अंक देता है।",
+"Je eerste nieuwe voltooide uitdaging vandaag geeft 30 bonuspunten."
+],
+[
+"Today's bonus is already saved.",
+"El bonus de hoy ya está guardado.",
+"حُفظت مكافأة اليوم.",
+"आज का बोनस सहेजा जा चुका है।",
+"De bonus van vandaag is al bewaard."
+],
+[
+"Tap a completed challenge to replay with other choices. Replays do not award more points.",
+"Toca un reto completado para repetir con otras opciones. Repetir no da más puntos.",
+"اضغط تحديًا مكتملًا لإعادته بخيارات أخرى. الإعادة بلا نقاط إضافية.",
+"पूरा अभ्यास टैप करके दूसरे विकल्प आज़माएँ। दोहराने पर अतिरिक्त अंक नहीं मिलते।",
+"Tik op een voltooide uitdaging voor andere keuzes. Herhalen geeft geen extra punten."
+],
+[
+"Open challenge",
+"Abrir reto",
+"افتح التحدي",
+"अभ्यास खोलें",
+"Uitdaging openen"
+],
+[
+"Previous cycle",
+"Ciclo anterior",
+"الدورة السابقة",
+"पिछला चक्र",
+"Vorige ronde"
+],
+[
+"Current challenge",
+"Reto actual",
+"التحدي الحالي",
+"वर्तमान अभ्यास",
+"Huidige uitdaging"
+],
+[
+"Recommended",
+"Recomendada",
+"موصى به",
+"सुझाई गई",
+"Aanbevolen"
+],
+[
+"Practice conditions",
+"Condiciones de práctica",
+"ظروف التدريب",
+"अभ्यास की स्थिति",
+"Oefenomstandigheden"
+],
+[
+"Park · no wind",
+"Parque · sin viento",
+"حديقة · بلا رياح",
+"पार्क · हवा नहीं",
+"Park · geen wind"
+],
+[
+"Park · light wind",
+"Parque · viento suave",
+"حديقة · رياح خفيفة",
+"पार्क · हल्की हवा",
+"Park · lichte wind"
+],
+[
+"Park · strong wind",
+"Parque · viento fuerte",
+"حديقة · رياح قوية",
+"पार्क · तेज़ हवा",
+"Park · sterke wind"
+],
+[
+"Andromeda · low gravity · light wind",
+"Andrómeda · poca gravedad · viento suave",
+"أندروميدا · جاذبية منخفضة · رياح خفيفة",
+"एंड्रोमेडा · कम गुरुत्व · हल्की हवा",
+"Andromeda · lage zwaartekracht · lichte wind"
+],
+[
+"Ground bounce allowed",
+"Bote permitido",
+"الارتداد مسموح",
+"ज़मीन पर उछाल की अनुमति",
+"Grondstuit toegestaan"
+],
+[
+"Hit before the ground",
+"Impacto antes del suelo",
+"الإصابة قبل الأرض",
+"ज़मीन से पहले लगना चाहिए",
+"Raken vóór de grond"
+],
+[
+"Foam: a balanced ball for learning.",
+"Espuma: equilibrada para aprender.",
+"إسفنجية: متوازنة للتعلّم.",
+"फोम: सीखने के लिए संतुलित गेंद।",
+"Schuim: een evenwichtige oefenbal."
+],
+[
+"Beach: slower flight and a softer bounce than tennis.",
+"Playa: más lenta y con menos bote que tenis.",
+"شاطئ: أبطأ وأقل ارتدادًا من التنس.",
+"बीच: टेनिस से धीमी और कम उछाल।",
+"Strand: langzamer en zachter dan tennis."
+],
+[
+"Neon: fast flight with a lively bounce.",
+"Neón: rápida y con mucho bote.",
+"نيون: سريعة وارتدادها قوي.",
+"नियॉन: तेज़ और खूब उछलती है।",
+"Neon: snel met een stevige stuit."
+],
+[
+"Tennis: small, fast and bouncier than a beach ball.",
+"Tenis: pequeña, rápida y con más bote que playa.",
+"تنس: صغيرة وسريعة وأكثر ارتدادًا من الشاطئية.",
+"टेनिस: छोटी, तेज़ और बीच बॉल से ज़्यादा उछाल।",
+"Tennis: klein, snel en stuiteriger dan een strandbal."
+],
+[
+"Paint: attacks burst on a hit or the ground. Catches usually save it, but strong throws can sometimes burst in the hands. Name-call tosses bounce unless their high-throw burst is due.",
+"Pintura: los ataques explotan al golpear o tocar el suelo. Atrapar suele salvarlo, pero a veces un tiro fuerte explota en las manos. Las llamadas rebotan salvo cuando toca explotar tras un lanzamiento alto.",
+"طلاء: الهجمات تنفجر عند الإصابة أو ملامسة الأرض. الإمساك يحفظه عادةً، لكن رمية قوية قد تنفجر في اليدين أحيانًا. رميات النداء ترتد إلا عند حلول دور انفجار رمية عالية.",
+"रंग: हमले में हिट या ज़मीन पर गुब्बारा फूटता है। कैच आम तौर पर बचाता है, लेकिन तेज़ थ्रो कभी-कभी हाथों में फूट सकता है। नाम पुकारकर उछाले गए गुब्बारे तब तक उछलते हैं जब तक ऊँचे थ्रो के फूटने की बारी न आए।",
+"Verf: aanvallen knappen bij een treffer of op de grond. Vangen redt hem meestal, maar krachtige worpen knappen soms in de handen. Naamworpen stuiten, tenzij de hoge worp aan de beurt is om te knappen."
+],
+[
+"Paint balloons bounce too softly for this rebound challenge; choose a ball.",
+"Los globos de pintura botan demasiado poco para este reto; elige una pelota.",
+"ارتداد بالونات الطلاء ضعيف جدًا لهذا التحدي؛ اختر كرة.",
+"इस रिबाउंड अभ्यास के लिए रंग के गुब्बारे बहुत कम उछलते हैं; गेंद चुनें।",
+"Verfballonnen stuiten te zacht voor deze uitdaging; kies een bal."
+],
+[
+"Lesson complete!",
+"¡Lección completada!",
+"اكتمل الدرس!",
+"पाठ पूरा!",
+"Les voltooid!"
+],
+[
+"Back to lesson",
+"Volver a la lección",
+"العودة للدرس",
+"पाठ पर वापस",
+"Terug naar de les"
+],
+[
+"Replay complete · your progress is unchanged.",
+"Repetición completada · progreso sin cambios.",
+"اكتملت الإعادة · تقدمك لم يتغير.",
+"दोहराव पूरा · प्रगति नहीं बदली।",
+"Herhaling voltooid · je voortgang blijft gelijk."
+],
+[
+"Tap Catch as the ball arrives. Your catch window lasts half a second; catch before the ground.",
+"Toca Atrapar al llegar la pelota. Tienes medio segundo; atrapa antes del suelo.",
+"اضغط إمساك عند وصول الكرة. لديك نصف ثانية قبل ملامسة الأرض.",
+"गेंद आते ही कैच टैप करें। आधे सेकंड की अवधि है; ज़मीन से पहले पकड़ें।",
+"Tik op Vangen als de bal komt. Je hebt een halve seconde; vang vóór de grond."
+],
+[
+"Hit the marked player. The ground rule is shown before this lesson.",
+"Acierta al jugador marcado. La regla del suelo aparece antes de esta lección.",
+"أصب اللاعب المحدد. تظهر قاعدة الأرض قبل الدرس.",
+"निशान वाले खिलाड़ी को मारें। ज़मीन का नियम पाठ से पहले दिखता है।",
+"Raak de gemarkeerde speler. De grondregel staat vóór de les."
+],
+[
+"Hit the target",
+"Acierta al objetivo",
+"أصب الهدف",
+"लक्ष्य लगाएँ",
+"Raak het doel"
+],
+[
+"Throw at the tree trunk, then catch the rebound before it lands. Drag into position and tap Catch as the ball arrives.",
+"Lanza al tronco y atrapa el rebote antes de que caiga. Arrastra para colocarte y toca Atrapar al llegar la pelota.",
+"ارمِ نحو الجذع وأمسك الارتداد قبل الهبوط. اسحب لتتمركز واضغط إمساك عند وصول الكرة.",
+"तने पर फेंकें और लौटती गेंद ज़मीन से पहले पकड़ें। सही जगह खींचें और गेंद आते ही कैच टैप करें।",
+"Gooi tegen de stam en vang vóór de landing. Sleep naar de goede plek en tik op Vangen als de bal komt."
+],
+[
+"Your partner missed. Try the pass again; no heart lost.",
+"Tu compañero falló. Repite el pase; no pierdes un corazón.",
+"أخفق شريكك. أعد التمريرة دون خسارة قلب.",
+"साथी चूक गया। फिर पास करें; कोई दिल नहीं गया।",
+"Je partner miste. Probeer opnieuw; geen hart verloren."
+],
+[
+"Practice at your own pace",
+"Practica a tu ritmo",
+"تدرّب بالوتيرة المناسبة لك",
+"अपनी गति से अभ्यास करें",
+"Oefen in je eigen tempo"
+],
+[
+"Your lesson is paused.",
+"La lección está pausada.",
+"الدرس متوقف مؤقتًا.",
+"पाठ रुका है।",
+"Je les is gepauzeerd."
+],
+[
+"Finish lesson",
+"Terminar lección",
+"إنهاء الدرس",
+"पाठ समाप्त करें",
+"Les beëindigen"
+],
+[
+"Drag to the marker, then tap Catch as the ball arrives.",
+"Arrastra hasta la marca y toca Atrapar cuando llegue la pelota.",
+"اسحب إلى العلامة واضغط إمساك عند وصول الكرة.",
+"निशान तक खींचें, गेंद आने पर कैच टैप करें।",
+"Sleep naar de markering en tik op Vangen als de bal komt."
 ]
 ]

@@ -64,7 +64,7 @@ struct ArenaCamera: Equatable {
         return GroundPoint(x: x + (sx - width * centerX) * depth / f, y: y + dy)
     }
 
-    /// Smooth approach toward `target` (framing centers switch at once, like Android).
+    /// Smooth approach toward `target`; the framing centers ease too (Android since 2026-11).
     func toward(_ target: ArenaCamera, _ dt: Double) -> ArenaCamera {
         let a = 1 - exp(-Kotlin.clamp(dt, 0.0, 0.1) * 4.2)
         var next = self
@@ -72,8 +72,8 @@ struct ArenaCamera: Equatable {
         next.y = y + (target.y - y) * a
         next.distance = distance + (target.distance - distance) * a
         next.focusHeight = focusHeight + (target.focusHeight - focusHeight) * a
-        next.centerX = target.centerX
-        next.centerY = target.centerY
+        next.centerX = centerX + (target.centerX - centerX) * a
+        next.centerY = centerY + (target.centerY - centerY) * a
         next.tilt = tilt + (target.tilt - tilt) * a
         return next
     }

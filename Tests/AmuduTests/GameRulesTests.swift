@@ -51,7 +51,8 @@ final class GameRulesTests: XCTestCase {
             let e = try AmuduEngine(members: players, config: GameConfig(scene: scene, participants: 10, rules: .spud, requireCall: true,
                                                                          stepsAfterCall: 4), seed: 52)
             for _ in 0..<(120 * 1600) where e.result == nil { e.tick(1.0 / 120) }
-            XCTAssertNotNil(e.result, "\(scene) stalled in \(e.phase)")
+            XCTAssertNotNil(e.result, "\(scene) stalled in \(e.phase) after \(e.time) at " +
+                e.actors.map { "\($0.member.id):\($0.penalties):\($0.spectator)" }.joined(separator: ", "))
             XCTAssertEqual(1, e.result?.winners.count)
             XCTAssertEqual(1, e.activeActors.count)
             XCTAssertTrue(e.actors.filter { !$0.active }.allSatisfy { $0.penalties == 4 && $0.spectator == .letters })
@@ -367,10 +368,14 @@ final class RanksVoiceAndCourtTests: XCTestCase {
         for id in ["minik", "miniko"] { XCTAssertEqual(StopCallVoice.funny, StopCallVoice.forCaller("he", id)) }
     }
 
-    func testEveryOtherCharacterUsesRegularRecording() {
-        for character in AmuduCharacters.all where character.id != "minik" && character.id != "miniko" {
-            XCTAssertEqual(StopCallVoice.regular, StopCallVoice.forCaller("he", character.id), character.id)
+    func testFemaleCallersUseTheOwnersFemaleRecording() {
+        for id in ["kyra", "gaya", "mia", "amber", "june"] {
+            for language in ["he", "he-IL", "iw"] { XCTAssertEqual(StopCallVoice.female, StopCallVoice.forCaller(language, id), id) }
         }
+    }
+
+    func testMaleAndAnimalCallersKeepTheirExistingRecordings() {
+        for id in ["flare", "comet", "moshiko", "coach67"] { XCTAssertEqual(StopCallVoice.regular, StopCallVoice.forCaller("he", id), id) }
     }
 
     func testOtherLanguagesKeepTheirExistingSpokenCall() {

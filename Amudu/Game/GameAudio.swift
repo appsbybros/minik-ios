@@ -6,6 +6,7 @@ private final class AudioBundleToken {}
 @MainActor final class GameAudio {
     /// Android `audio` map: event kind (or lobby cue) → raw resource.
     static let files: [String: String] = [
+        "paint": "balloon_burst.mp3",
         "throw": "sfx_throw.mp3",
         "bounce": "bounce.wav",
         "catch": "ball_catch.wav",
@@ -50,10 +51,17 @@ private final class AudioBundleToken {}
         player.play()
     }
 
-    /// Android `speak(s, english)`: QUEUE_FLUSH with the phone language voice, or US English when requested.
-    func speak(_ text: String, english: Bool = false) {
+    /// Android `onInit` (2026-11): speech is offered only when the phone has a voice for the app language
+    /// (`setLanguage(...) >= LANG_AVAILABLE`); otherwise no phrase is offered and nothing is spoken.
+    static func voiceAvailable(_ language: String = AppText.speechLanguage) -> Bool {
+        return voice(language) != nil
+    }
+
+    /// Android `speak(s, english, queued)`: QUEUE_FLUSH (or QUEUE_ADD for a chosen phrase) with the phone language
+    /// voice, or US English when requested.
+    func speak(_ text: String, english: Bool = false, queued: Bool = false) {
         if text.isEmpty { return }
-        synthesizer.stopSpeaking(at: .immediate)
+        if !queued { synthesizer.stopSpeaking(at: .immediate) }
         let utterance = AVSpeechUtterance(string: text)
         utterance.voice = GameAudio.voice(english ? "en-US" : AppText.speechLanguage)
         synthesizer.speak(utterance)

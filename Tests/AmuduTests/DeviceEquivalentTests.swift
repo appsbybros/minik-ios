@@ -19,7 +19,10 @@ final class DeviceEquivalentTests: XCTestCase {
         e.ball = Ball(V(1, 1), 25, V.zero, 0)
         XCTAssertTrue(e.command("p0", "hold", .catchBall))
         XCTAssertEqual(6, DeviceEquivalentTests.art.frame(e.actor("p0")!, e))
-        XCTAssertFalse(e.command("p0", "move", .move(V(1, 0))))
+        // Android 2026-11: a Move command now cancels a prepared catch in the engine (RevisionTest
+        // catchPreparedAfterReleaseHasShortWindowAndCanBeCancelledByMovement). Android's device test keeps the held finger
+        // from sending one, so no engine move is issued here; the stance must still expire after its window.
+        XCTAssertEqual(V.zero, e.actor("p0")!.move)
         for _ in 0..<100 { e.tick(1.0 / 120) }
         XCTAssertLessThan(e.actor("p0")!.catchUntil, e.time)
         XCTAssertEqual(1, e.events.filter { $0.kind == "catch_attempt" }.count)

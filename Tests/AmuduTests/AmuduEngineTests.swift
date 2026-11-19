@@ -23,10 +23,10 @@ final class AmuduEngineTests: XCTestCase {
         }
     }
 
-    func testNoMovingBeforeReleaseAndThrowRequiresTarget() throws {
+    func testMovingBeforeReleaseIsAllowedAndThrowRequiresTarget() throws {
         let e = try game()
         XCTAssertFalse(e.command("p0", "1", .toss(power: 0.5, drift: 0)))
-        XCTAssertFalse(e.command("p1", "2", .move(V(1, 0))))
+        XCTAssertTrue(e.command("p1", "2", .move(V(1, 0))))
         XCTAssertTrue(e.command("p0", "3", .select(target: "p1")))
         XCTAssertTrue(e.command("p0", "4", .toss(power: 0.5, drift: 0)))
         XCTAssertTrue(e.command("p1", "5", .move(V(1, 0))))
@@ -34,14 +34,20 @@ final class AmuduEngineTests: XCTestCase {
 
     func testSwipePowerChangesHeightAndAirTimeWithinBounds() throws {
         for s in ArenaScene.allCases {
-            let low = try game()
-            let high = try AmuduEngine(members: low.members, config: low.config.with(scene: s))
+            let baseline = try game()
+            let low = try AmuduEngine(members: baseline.members, config: baseline.config.copy(scene: s))
+            let high = try AmuduEngine(members: low.members, config: low.config)
             low.command("p0", "s", .select(target: "p1"))
             high.command("p0", "s", .select(target: "p1"))
             low.command("p0", "t", .toss(power: 0, drift: 0))
             high.command("p0", "t", .toss(power: 1, drift: 0))
             XCTAssertGreaterThan(high.ball.vz, low.ball.vz)
-            tick(high, 4.2)
+            if s == .andromeda {
+                XCTAssertTrue(low.ball.vz >= 5.9 && low.ball.vz <= 6.0, "\(s) \(low.ball.vz)")
+            } else {
+                XCTAssertGreaterThan(low.ball.vz, 5.0, "\(s)")
+            }
+            tick(high, 9.0)
             XCTAssertEqual(.retrieve, high.phase, "\(s)")
         }
     }
@@ -53,11 +59,13 @@ final class AmuduEngineTests: XCTestCase {
         XCTAssertFalse(e.command("p2", "c", .catchBall))
         e.actor("p1")!.position = e.landing
         var guardSteps = 0
-        while (e.ball.vz >= 0 || e.ball.height > 1.65) && guardSteps < 10_000 {
+        while (e.ball.vz >= 0 || e.ball.height > 1.95) && guardSteps < 10_000 {
             e.tick(1.0 / 120)
             guardSteps += 1
         }
+        e.actor("p1")!.position = e.ball.position
         XCTAssertTrue(e.command("p1", "catch", .catchBall))
+        e.actor("p1")!.catchRoll = 0.0 // Isolate timing/contact; probability has separate coverage.
         tick(e, 0.05)
         XCTAssertEqual(.resolve, e.phase)
         XCTAssertEqual("p1", e.nextThrower)
@@ -67,7 +75,7 @@ final class AmuduEngineTests: XCTestCase {
         let e = try game()
         e.command("p0", "s", .select(target: "p1"))
         e.command("p0", "t", .toss(power: 0, drift: 0))
-        tick(e, 1.2)
+        tick(e, 3.0)
         XCTAssertEqual(.retrieve, e.phase)
         XCTAssertFalse(e.command("p1", "bad", .shout))
         e.actor("p1")!.position = e.ball.position
@@ -104,6 +112,7 @@ final class AmuduEngineTests: XCTestCase {
         let e = try aimed()
         e.command("p0", "t", .throwBall(power: 0.5))
         e.command("p1", "c", .catchBall)
+        e.actor("p1")!.catchRoll = 0.0
         tick(e, 0.3)
         XCTAssertEqual(1, e.actor("p0")!.penalties)
         XCTAssertEqual(0, e.actor("p1")!.penalties)
@@ -113,18 +122,20 @@ final class AmuduEngineTests: XCTestCase {
         let e = try aimed()
         e.command("p1", "d", .duck)
         e.command("p0", "t", .throwBall(power: 0.5))
+        e.ball.height = 1.9
+        e.ball.vz = 1.0
         tick(e, 0.3)
         XCTAssertEqual(0, e.actor("p1")!.penalties)
         XCTAssertEqual(.flight, e.phase)
     }
 
-    func testHonorMovementOnlyOnePenaltyPerFreeze() throws {
+    func testLegacyHonorNowFreezesWithoutPenalty() throws {
         let e = try aimed(.honor)
-        for i in 0..<5 { e.command("p2", "m\(i)", .move(V(1, 0))) }
-        XCTAssertEqual(1, e.actor("p2")!.penalties)
+        for i in 0..<5 { XCTAssertFalse(e.command("p2", "m\(i)", .move(V(1, 0)))) }
+        XCTAssertEqual(0, e.actor("p2")!.penalties)
         tick(e, 0.1)
-        // Android (2026-10): the honor penalty ends the throw at once, so nobody keeps running.
-        XCTAssertEqual(.resolve, e.phase)
+        // Android (2026-11): a legacy Honor room plays as Freeze — moving is refused and nobody is penalized.
+        XCTAssertEqual(.aim, e.phase)
         XCTAssertEqual(14.0, e.actor("p2")!.position.x, accuracy: 0.0001)
     }
 

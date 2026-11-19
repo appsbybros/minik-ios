@@ -49,6 +49,35 @@ KOTLIN_SOURCES = [
     "app/src/main/java/com/appsbybros/minik/world/LandscapeFraming.kt",
     "app/src/main/java/com/appsbybros/minik/world/SpriteSizing.kt",
     "app/src/main/java/com/appsbybros/minik/world/StableLabels.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/EnvironmentCopy.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/FamilyLeague.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/MotionState.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/OnlineErrors.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/PaintEffects.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/ProjectileText.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/SnapshotPlayback.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/SnapshotWire.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/SpudFollowupText.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/core/ActorMovement.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/core/AttackPhysics.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/core/BallContact.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/core/BallShadow.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/core/CallLob.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/core/CatchPhysics.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/core/CircleFormation.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/core/EliminationExit.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/core/FleeMovement.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/core/GroundBounce.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/core/PaintBalloon.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/core/PracticeCurriculum.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/core/PracticeGuidance.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/core/TargetThrow.kt",
+    "app/src/main/java/com/appsbybros/minik/amudu/core/TossGesture.kt",
+    "app/src/main/java/com/appsbybros/minik/ui/SpudDialogStyle.kt",
+    "app/src/main/java/com/appsbybros/minik/ui/SpudPresentation.kt",
+    "app/src/main/java/com/appsbybros/minik/ui/SpudSpinnerAlignment.kt",
+    "app/src/main/java/com/appsbybros/minik/world/AirborneFraming.kt",
+    "app/src/main/java/com/appsbybros/minik/world/TightFraming.kt",
 ]
 
 # Android-only literals: debug QA intents/files, ads/billing/parent gate, Android framework identifiers.
@@ -64,7 +93,7 @@ EXCLUDED_SUBSTRINGS = [
 # Hebrew ads/billing/parent-gate texts (feature off on iOS), the debug demo name, regexes replaced by Unicode-category
 # checks, path templates built by concatenation, the layout-cache key and the tag text built with " · ".
 EQUIVALENT = {
-    "Player", "פרסומות ורכישות", "[A-Z2-9]{6}", "Android compatibility", "פרסומות בדיקה רק אחרי משחקים שהסתיימו.",
+    "Player", "SHA-256", "פרסומות ורכישות", "[A-Z2-9]{6}", "Android compatibility", "פרסומות בדיקה רק אחרי משחקים שהסתיימו.",
     "רכישות וקודים דורשים הפעלה בחנות.", "הסרת פרסומות · ", "הפרסומות הוסרו.", "הסרת פרסומות", "שחזור רכישה", "הזנת קוד", "אישור",
     "למבוגר אחראי", "{} × {} = ?", "נסו שוב.", "{}/{}/{}/{}", "{} · {}", "own", "running", "meanFrameMs", "screen", "origin",
     "width", "hands", "UNCHECKED_CAST", "minikAmudu/rooms/{}", "members/{}", "commands/{}",
@@ -97,6 +126,110 @@ EXCLUDED_EXACT = {
     "receptionZoomOwn", "receptionZoomOthers", "gameSounds", "battleOrientation",
     # Android view tags and QA control names (device tests only).
     "receptionZoomGroup", "group_", "arena_choices", "ball_choices", "choice_", "rotate", "roster", "camera", "chat",
+}
+
+
+# 2026-11-19 sync: Android-only literals of AmuduActivity/SpudDialogStyle/SpudSpinnerAlignment: the ads, Google Play
+# purchase and access-code page and messages (off on iOS), billing/code state names, test tags for device tests,
+# preference names (iOS adds "amudu."), keys built by concatenation ("title_" + topic), the Android privacy asset
+# loader, Android view ids ("android", "alertTitle") and Kotlin annotations.
+ANDROID_ONLY_2026_11 = {
+    "loading",
+    "not_owned",
+    "menu-create",
+    "menu-league",
+    "title_{}",
+    "lesson-{}",
+    "body_{}",
+    "journeyControl",
+    "journeyBall",
+    "practice-brief",
+    "practice-ball-note",
+    "practice-conditions",
+    "practice-mode",
+    "practice-ball",
+    "practice-environment",
+    "practice-ground",
+    "practice-start",
+    "privacy/{}.html",
+    "text/html",
+    "UTF-8",
+    "house-row-",
+    "house-identity-",
+    "house-portrait-",
+    "setup-primary",
+    "savedLeague",
+    "savedOwn",
+    "Compatibility callback",
+    "Your first 3 days are ad-free. Afterwards, occasional ads appear only after completed games. Lessons and Daily Challenge stay free of ads.",
+    "שלושת הימים הראשונים ללא פרסומות. לאחר מכן יופיעו פרסומות מדי פעם, רק אחרי משחקים שהסתיימו. הלמידה והאתגר היומי נשארים ללא פרסומות.",
+    "One purchase removes ads permanently. Restore it using the same Google Play account. An access code can remove ads for a limited period or permanently.",
+    "רכישה אחת מסירה פרסומות לצמיתות. אפשר לשחזר אותה עם אותו חשבון Google Play. קוד יכול להסיר פרסומות לתקופה מוגבלת או לצמיתות.",
+    "spud-buy",
+    "spud-restore",
+    "spud-code",
+    "Already bought it? Restore with the same Google Play account.",
+    "כבר רכשתם? שחזרו באמצעות אותו חשבון Google Play.",
+    "Ads are removed permanently.",
+    "הפרסומות הוסרו לצמיתות.",
+    "הפרסומות הוסרו עד {0}",
+    "Ad-free welcome: {0} days remaining",
+    "תקופת ההיכרות ללא פרסומות: נותרו {0} ימים",
+    "Ads may appear after completed games.",
+    "פרסומות עשויות להופיע אחרי משחקים שהסתיימו.",
+    "No Remove Ads purchase was found for this Google Play account.",
+    "לא נמצאה רכישה להסרת פרסומות בחשבון Google Play הזה.",
+    " · {}",
+    "verifying",
+    "Checking Google Play…",
+    "בודקים מול Google Play…",
+    "Purchase restored or completed. Ads are removed.",
+    "הרכישה שוחזרה או הושלמה. הפרסומות הוסרו.",
+    "pending",
+    "Payment is pending. Ads will be removed when Google Play confirms it.",
+    "התשלום בהמתנה. הפרסומות יוסרו לאחר אישור Google Play.",
+    "cancelled",
+    "Purchase canceled. Nothing changed.",
+    "הרכישה בוטלה. לא בוצע שינוי.",
+    "הרכישה דרך Google Play אינה זמינה כרגע. בדקו את החיבור ואת חשבון Play ולחצו על שחזור רכישה כדי לנסות שוב. עדיין אפשר להזין קוד.",
+    "verification_failed",
+    "לא ניתן לשמור את הרכישה. לחצו על שחזור רכישה כדי לנסות שוב.",
+    "One-time purchase",
+    "רכישה חד-פעמית",
+    "spud-code-input",
+    "Access code",
+    "קוד גישה",
+    "spud-code-message",
+    "Your SPUD code",
+    "Checking code…",
+    "בודקים את הקוד…",
+    "Code accepted. Ads are removed.",
+    "הקוד התקבל. הפרסומות הוסרו.",
+    "empty",
+    "Enter a code first.",
+    "הזינו קוד תחילה.",
+    "expired",
+    "This code has expired.",
+    "תוקף הקוד פג.",
+    "inactive",
+    "This code is inactive.",
+    "הקוד אינו פעיל.",
+    "exhausted",
+    "This code has reached its use limit.",
+    "הקוד הגיע למגבלת השימושים.",
+    "Could not check the code. Check your connection and try again.",
+    "לא ניתן לבדוק את הקוד. בדקו את החיבור ונסו שוב.",
+    "denied",
+    "The code service could not authorize this installation. Update SPUD from Google Play and try again.",
+    "שירות הקודים לא הצליח לאשר את ההתקנה הזו. עדכנו את עמודו דרך Google Play ונסו שוב.",
+    "service",
+    "The code service is temporarily unavailable. Please try again later.",
+    "שירות הקודים אינו זמין כרגע. נסו שוב מאוחר יותר.",
+    "Code not found for SPUD. Check the spelling.",
+    "לא נמצא קוד לעמודו. בדקו שהקוד הוזן נכון.",
+    "android",
+    "alertTitle",
+    "Deprecated in Java",
 }
 
 
@@ -242,7 +375,7 @@ def check_strings(android):
     for rel in KOTLIN_SOURCES:
         path = os.path.join(android, rel)
         for text in literals(path, decode_kotlin):
-            if text in EXCLUDED_EXACT or text in EQUIVALENT or any(x in text for x in EXCLUDED_SUBSTRINGS):
+            if text in EXCLUDED_EXACT or text in EQUIVALENT or text in ANDROID_ONLY_2026_11 or any(x in text for x in EXCLUDED_SUBSTRINGS):
                 continue
             if len(text) <= 1:
                 continue
@@ -293,6 +426,13 @@ def kotlin_catalog(android):
     sources = [open(os.path.join(folder, f), encoding="utf-8").read() for f in sorted(os.listdir(folder)) if f.endswith(".kt")]
     rows = {}
     for name in names:
+        if name == "spudLearningText":
+            # LearningCopy.kt: `"key" to listOf(en, he, es, ar, hi, nl)`; the row function maps en -> [es, ar, hi, nl].
+            copy = open(os.path.join(folder, "LearningCopy.kt"), encoding="utf-8").read()
+            m = re.search(r"internal val rows=mapOf\(", copy)
+            for _, values in kotlin_map_pairs(copy, m.end()):
+                rows[values[0]] = values[2:]
+            continue
         found = None
         for text in sources:
             m = re.search(r"(?:private |internal )?fun %s\(\)=mapOf\(" % name, text)
@@ -345,16 +485,17 @@ def check_assets():
     problems = []
     catalog = os.path.join(IOS, "Assets.xcassets")
     names = ["miniko", "minik", "kyra", "flare", "gaya", "mia", "amber", "comet", "june", "moshiko", "coach67"]
-    needed = names + [n + "_directions" for n in names] + ["park", "beach", "andromeda", "foam", "beachball", "neon", "tennis"]
+    needed = names + [n + "_directions" for n in names] + ["park", "beach", "andromeda", "foam", "beachball", "neon", "tennis", "paint_balloon_menu", "practice_tree"]
     for n in needed:
         folder = os.path.join(catalog, n + ".imageset")
         if not os.path.isfile(os.path.join(folder, n + ".png")) or not os.path.isfile(os.path.join(folder, "Contents.json")):
             problems.append("missing imageset " + n)
     for f in ["sfx_throw.mp3", "bounce.wav", "ball_catch.wav", "sfx_pickup.mp3", "sfx_wrong.mp3", "whistle.wav", "sfx_finish.mp3",
-              "connected.mp3", "player_ready.mp3", "amodu_call_funny.mp3", "amodu_call_standard.mp3"]:
+              "connected.mp3", "player_ready.mp3", "amodu_call_funny.mp3", "amodu_call_standard.mp3",
+              "amodu_call_female.mp3", "balloon_burst.mp3"]:
         if not os.path.isfile(os.path.join(IOS, "Audio", f)):
             problems.append("missing audio " + f)
-    for f in ["Art/atlas.json", "Art/directions.json", "Text/AmuduCatalog.json"]:
+    for f in ["Art/atlas.json", "Art/directions.json", "Art/face-protection.json", "Text/AmuduCatalog.json"]:
         if not os.path.isfile(os.path.join(IOS, f)):
             problems.append("missing " + f)
     for lang in ["en", "he", "ar", "es", "hi", "nl"]:

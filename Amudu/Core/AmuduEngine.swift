@@ -7,9 +7,10 @@ final class AmuduEngine {
     let config: GameConfig
     let seed: Int64
     let id: String
-    /// Kotlin `practice`: the skill-journey drill when `config.challengeStep >= 0`, else nil.
+    /// Kotlin `practice`: the skill-journey drill or lesson when `config.challengeStep >= 0`, else nil.
     let practice: SpudPractice?
     var actors: [GameActor]
+    private var movementStart: [V]
     var phase: Phase = .circle
     var phaseAt = 0.0
     var time = 0.0
@@ -31,7 +32,19 @@ final class AmuduEngine {
     var huddleSerial = 0
     var huddleDeadline = 0.0
     var sharedPause = false
+    /// Kotlin `recallAt`: when a house player who caught a name call makes the next call (0 when not scheduled).
+    var recallAt = 0.0
+    var circleAngle = -Double.pi / 2
+    var paintColor = PaintBalloon.colors[0]
+    var paintPoint = 0
+    let callBursts: BalloonBurstCycle
+    let attackBursts: BalloonBurstCycle
+    var paintSplashes: [PaintSplash] = []
+    var botCallStreak = 0
+    var connectedHumanIds: Set<String>
     var stepRemaining = 0.0
+    var retrievalGrace = 0.0
+    var retrievalDistance = Double.greatestFiniteMagnitude
     var actionDeadline = 0.0
     var actionActor = ""
     var actionStage = ""
@@ -57,7 +70,14 @@ final class AmuduEngine {
     var serial = 0
     var consumed = OrderedStringSet()
     var onEvent: ((GameEvent) -> Void)?
-    let windVector: V
+    /// Kotlin `baseWind`: the match wind; name calls in a match feel `callWindFactor` of it.
+    let baseWind: V
+
+    /// Kotlin `windVector`: reduced during a match's name call (AIR and RETRIEVE), full otherwise and in practice.
+    var windVector: V {
+        let reduced = practice == nil && (phase == .air || phase == .retrieve)
+        return baseWind * (reduced ? config.callWindFactor : 1.0)
+    }
 
     /// Kotlin `activeActors`: the actors still playing, in roster order.
     var activeActors: [GameActor] { return actors.filter { $0.active } }
@@ -73,15 +93,19 @@ final class AmuduEngine {
         self.config = cfg
         self.seed = seed
         self.id = id ?? ("local-" + String(seed))
-        practice = cfg.challengeStep >= 0 ? SpudPractice(cfg.challengeStep) : nil
+        practice = cfg.challengeStep >= 0 ? SpudPractice(cfg.challengeStep, seed, cfg.practiceLesson) : nil
         actors = members.map { GameActor(member: $0, position: V.zero) }
+        movementStart = [V](repeating: V.zero, count: members.count)
         thrower = first.id
         nextThrower = first.id
         ball = Ball(V(cfg.width / 2, cfg.depth / 2), 1.0, V.zero, 0.0, first.id)
         landing = V(cfg.width / 2, cfg.depth / 2)
+        callBursts = BalloonBurstCycle(seed ^ 0x4612)
+        attackBursts = BalloonBurstCycle(seed ^ 0x7991)
+        connectedHumanIds = Set(members.filter { !$0.bot }.map { $0.id })
         random = KotlinRandom(seed: seed)
         let sign: Double = Kotlin.floorMod(seed, Int64(2)) == 0 ? 1.0 : -1.0
-        windVector = V(sign, 0.18).unit() * cfg.wind.acceleration
+        baseWind = V(sign, 0.18).unit() * cfg.wind.acceleration
         guard members.count == cfg.participants, Set(members.map { $0.id }).count == members.count else { throw AmuduError.invalidRoster }
         guard members.allSatisfy({ Words.validName($0.name) }) else { throw AmuduError.invalidRoster }
         let humans = Set(members.filter { !$0.bot }.map { $0.character })
@@ -122,10 +146,11 @@ final class AmuduEngine {
         guard let a = actor(uid) else { return false }
         if !a.active || ball.holder != nil || time < a.duckUntil { return false }
         let pickup = phase == .retrieve && uid == called && ball.height <= 1.4
-        let catchingPhase = (phase == .air && uid == called) || (phase == .flight && uid != thrower)
-        let catching = catchingPhase && ball.height >= 0.35 && ball.height <= 2.1
-        let reach = config.ball.catchRadius + (pickup ? 0.25 : 0.10)
-        return (pickup || catching) && (ball.position - a.position).length() < reach
+        let nameCall = (phase == .air || phase == .retrieve) && uid == called &&
+            ball.height >= a.jumpHeight + 1.05 && ball.height <= a.jumpHeight + 2.0
+        let attack = phase == .flight && uid != thrower && ball.height >= a.jumpHeight + 0.35 && ball.height <= a.jumpHeight + 2.05
+        let catching = nameCall || attack
+        return (pickup || catching) && (ball.position - a.position).length() < config.ball.catchRadius + (pickup ? 0.60 : 0.10)
     }
 
     func isFrozen() -> Bool { return frozen || phase == .aim }
@@ -137,15 +162,19 @@ final class AmuduEngine {
     private func locked(_ a: GameActor) -> Bool {
         let anchored = (pickupAnchor != nil || phase == .aim) && a.member.id == thrower
         let throwingPhase = phase == .shout || phase == .aim || phase == .flight
-        return !a.active || (anchored && throwingPhase) || time < a.catchUntil
+        return !a.active || ball.holder == a.member.id || (anchored && throwingPhase) || time < a.catchUntil
+    }
+
+    private func freeCatchReturn() -> Bool {
+        return phase == .resolve && infoCode == "air_catch" && !regroupPending
     }
 
     private func movingPhase() -> Bool {
         switch phase {
-        case .air, .retrieve, .shout, .aim, .flight:
+        case .circle, .air, .retrieve, .shout, .aim, .flight:
             return true
-        case .circle, .resolve, .huddle, .returnVote, .waiting, .finished:
-            return false
+        case .resolve, .huddle, .returnVote, .waiting, .finished:
+            return freeCatchReturn()
         }
     }
 
@@ -153,12 +182,20 @@ final class AmuduEngine {
         if !a.active || !movingPhase() || time < a.catchUntil { return false }
         // After the call the thrower may spend the step allowance, and nothing more.
         if a.member.id == thrower && phase == .aim && ball.holder == thrower { return stepRemaining > 0.00001 }
-        return !locked(a) && (!isFrozen() || config.freezeRule == .honor)
+        return !locked(a) && !isFrozen()
     }
 
-    /// Kotlin `moveActor`: bounded movement; the thrower's movement after the call spends `stepRemaining`.
-    private func moveActor(_ a: GameActor, _ delta: V) {
-        let desired = bounded(a.position + delta) - a.position
+    /// Kotlin `moveActor(a, delta, contact)`: with `contact`, swept body contact (`ActorMovement.advance`) against the
+    /// other active players; the thrower's movement after the call spends `stepRemaining`.
+    private func moveActor(_ a: GameActor, _ delta: V, contact: Bool = false) {
+        let end: V
+        if contact {
+            let blockers = actors.filter { $0 !== a && $0.active }.map { $0.position }
+            end = ActorMovement.advance(a.position, delta, blockers, config)
+        } else {
+            end = bounded(a.position + delta)
+        }
+        let desired = end - a.position
         if a.member.id == thrower && phase == .aim {
             let length = desired.length()
             let amount = min(length, stepRemaining)
@@ -190,16 +227,15 @@ final class AmuduEngine {
         switch cmd {
         case .move(let v):
             if !v.finite() { return false }
+            if !a.member.bot && v.length() > 0.08 {
+                a.catchUntil = 0.0
+                a.catchRecoveryUntil = 0.0
+            }
             if !canRun(a) {
                 a.move = V.zero
                 return false
             }
             a.move = v.length() > 1 ? v.unit() : v
-            if isFrozen() && uid != thrower && a.move.length() > 0.12 && a.movementPenaltyTurn != turn {
-                a.movementPenaltyTurn = turn
-                penalty(a, "Moved after the call.", "זזתם אחרי הקריאה.")
-                resolve(uid, "Moved after the call.", "זזתם אחרי הקריאה.", who: uid, code: "moved")
-            }
         case .aim(let v):
             if !canAim(uid) || !v.finite() || v.length() < 0.01 { return false }
             a.direction = v.unit()
@@ -207,7 +243,7 @@ final class AmuduEngine {
         case .select(let target, let typedName):
             if phase != .circle || uid != thrower || target == uid { return false }
             guard let t = actor(target), t.active else { return false }
-            if config.rules == .nicknames && !t.suffixes.isEmpty {
+            if config.rules == .nicknames && config.nicknameAnswer != .automatic && !t.suffixes.isEmpty {
                 let typed = Words.normalize(typedName)
                 let names = [t.fullName(), t.fullName(hebrew: false), t.fullName(hebrew: true)]
                 if !names.contains(where: { typed == Words.normalize($0) }) {
@@ -221,40 +257,16 @@ final class AmuduEngine {
             emit("selected", uid)
         case .toss(let rawPower, let rawDrift):
             if phase != .circle || uid != thrower || Kotlin.isBlank(selected) || !rawPower.isFinite || !rawDrift.isFinite { return false }
-            let power = Kotlin.clamp(rawPower, 0.0, 1.0)
-            let duration = 1.05 + power * 2.95
-            a.idleStrikes = 0
-            called = selected
-            let goal = V(config.width / 2, config.depth / 2)
-            let driftX = Kotlin.clamp(rawDrift, -1.0, 1.0) * (1 + power * 2)
-            let driftY = (random.nextDouble() - 0.5) * 0.7
-            let nominal = bounded(goal + V(driftX, driftY))
-            let g = config.scene.gravity
-            let start = a.position
-            // Wind acts during flight. Its projected landing marker is not a homing target.
-            landing = bounded(nominal + windVector * (0.5 * duration * duration))
-            serial += 1
-            let flight = id + "-t" + String(turn) + "-" + String(serial)
-            let vz = g * duration / 2 - 1.2 / duration
-            ball = Ball(start, 1.2, (nominal - start) * (1 / duration), vz, nil, bounces: 0, flightId: flight, launchAt: time)
-            a.throwAt = time
-            a.facing = (nominal - start).unit()
-            for other in actors {
-                other.catchDecided = false
-                other.catchUntil = 0.0
-                other.nextThink = time + reaction(other)
-            }
-            frozen = false
-            circleFormation = false
-            pickupAnchor = nil
-            transition(.air)
-            emit("call", uid, actor(called)?.fullName() ?? "")
-            emit("throw", uid)
+            toss(a, uid, Kotlin.clamp(rawPower, 0.0, 1.0), rawDrift)
         case .jump:
-            return false
+            if phase == .retrieve && ball.height < 0.35 && abs(ball.vz) < 0.7 { return false }
+            let jumpPhase = phase == .air || phase == .retrieve || phase == .shout || phase == .aim || phase == .flight
+            if !jumpPhase || a.jumpHeight > 0 || time < a.duckUntil { return false }
+            a.jumpVelocity = CatchPhysics.jumpVelocity(a)
+            a.catchUntil = 0.0
         case .catchBall:
             if time < a.duckUntil || time < a.catchUntil || time < a.catchRecoveryUntil { return false }
-            if phase == .retrieve && uid == called && ball.height <= 1.4 && (ball.position - a.position).length() < config.ball.catchRadius + 0.25 {
+            if phase == .retrieve && uid == called && ball.height <= 1.4 && (ball.position - a.position).length() < config.ball.catchRadius + 0.60 {
                 ball.holder = uid
                 ball.velocity = V.zero
                 ball.vz = 0.0
@@ -269,15 +281,26 @@ final class AmuduEngine {
                 emit("pickup", uid)
                 return true
             }
-            if (phase == .air && uid == called) || (phase == .flight && uid != thrower) {
+            let nameCall = (phase == .air || phase == .retrieve) && uid == called
+            let defender = (phase == .retrieve && uid != called || (phase == .shout || phase == .aim || phase == .flight) && uid != thrower) &&
+                ball.holder != uid
+            if nameCall || defender {
                 let wasRunning = a.actuallyMoving || a.move.length() > 0.08
-                a.catchProbability = a.member.bot ? AmuduCharacters.get(a.member.character).qualities.catchProbability(wasRunning: wasRunning) : 1.0
-                let runningHuman = wasRunning && !a.member.bot
-                a.catchReadyAt = time + (runningHuman ? 0.10 : 0.0)
-                a.catchReach = runningHuman ? 0.82 : 1.0
+                a.catchProbability = CatchPhysics.probability(a, ball, actor(thrower), phase == .flight)
+                a.catchReadyAt = time
+                a.catchReach = wasRunning && !a.member.bot ? 0.82 : 1.0
+                if phase == .flight {
+                    if let approach = AttackPhysics.approach(ball, a, config, windVector) {
+                        a.catchHeight = approach.height - a.jumpHeight
+                    } else {
+                        a.catchHeight = ball.height - a.jumpHeight
+                    }
+                } else {
+                    a.catchHeight = 1.3
+                }
                 a.catchRoll = random.nextDouble()
-                a.catchUntil = time + config.catchWindow
-                a.catchRecoveryUntil = a.catchUntil + 0.12
+                a.catchUntil = time + CatchPhysics.window(a, config)
+                a.catchRecoveryUntil = a.member.bot ? a.catchUntil + 0.12 : time
                 a.move = V.zero
                 a.actuallyMoving = false
                 a.facing = (ball.position - a.position).unit()
@@ -286,7 +309,9 @@ final class AmuduEngine {
             }
             return false
         case .duck:
-            if !movingPhase() { return false }
+            if phase == .retrieve && ball.height < 0.35 && abs(ball.vz) < 0.7 { return false }
+            let duckPhase = phase == .air || phase == .retrieve || phase == .shout || phase == .aim || phase == .flight
+            if !duckPhase { return false }
             a.duckUntil = time + config.duckSeconds
             a.catchUntil = 0.0
             emit("duck", uid)
@@ -304,16 +329,46 @@ final class AmuduEngine {
             transition(.aim)
             emit("freeze", uid)
             message("SPUD! Catch or duck — keep your feet still.", "עמודו! תפסו או התכופפו — בלי להזיז רגליים.")
-        case .throwBall(let rawPower):
+        case .pointThrow(let point, let height):
+            if !canAim(uid) || a.member.bot || config.throwMode == .standard || (config.requireCall && phase != .aim) ||
+                !TargetThrow.valid(point, height, config) { return false }
+            a.idleStrikes = 0
+            stepRemaining = 0.0
+            if phase == .aim { frozen = true }
+            serial += 1
+            ball = TargetThrow.launch(a, point, height, config, windVector, id + "-hit-" + String(turn) + "-" + String(serial), time)
+            armAttackBurst(ball.velocity.length() / throwProfile(a, 1.0).speed)
+            a.direction = ball.velocity.unit()
+            a.facing = a.direction
+            a.throwAt = time
+            a.move = V.zero
+            for other in actors {
+                other.catchDecided = false
+                other.nextThink = time + reaction(other)
+            }
+            refreshPreparedCatches()
+            transition(.flight)
+            emit("throw", uid)
+        case .throwBall(let rawPower, let botVz):
             if !canAim(uid) || !rawPower.isFinite || (config.requireCall && phase != .aim) { return false }
             a.idleStrikes = 0
             stepRemaining = 0.0
+            if let vz = botVz, !a.member.bot || !vz.isFinite { return false }
             let p = Kotlin.clamp(rawPower, 0.0, 1.0)
-            let profile = throwProfile(a, p)
+            let base = throwProfile(a, p)
+            let lift = (config.scene.gravity / 9.8).squareRoot()
+            let launchVz: Double
+            if let vz = botVz {
+                launchVz = Kotlin.clamp(vz, -0.35 * lift, 4.95 * (config.scene.gravity / 9.8).squareRoot())
+            } else {
+                launchVz = base.vz
+            }
             if phase == .aim { frozen = true }
             serial += 1
             let flight = id + "-hit-" + String(turn) + "-" + String(serial)
-            ball = Ball(a.position + a.direction * 0.52, 1.17, a.direction * profile.speed, profile.vz, nil, bounces: 0, flightId: flight, launchAt: time)
+            ball = Ball(a.position + a.direction * 0.52, 1.17, a.direction * base.speed, launchVz, nil, bounces: 0, flightId: flight,
+                        launchAt: time)
+            armAttackBurst(p)
             a.throwAt = time
             a.facing = a.direction
             a.move = V.zero
@@ -321,6 +376,7 @@ final class AmuduEngine {
                 other.catchDecided = false
                 other.nextThink = time + reaction(other)
             }
+            refreshPreparedCatches()
             transition(.flight)
             emit("throw", uid)
         case .end:
@@ -336,12 +392,81 @@ final class AmuduEngine {
         return true
     }
 
+    /// The `Command.Toss` branch of Kotlin `command` (power already clamped).
+    private func toss(_ a: GameActor, _ uid: String, _ power: Double, _ rawDrift: Double) {
+        let launchVz = CallLob.velocity(config.scene, actor(selected)?.member.bot == false, power)
+        let spread = CallLob.spreadFactor(config.scene, launchVz)
+        let callWind = baseWind * config.callWindFactor
+        let g = config.scene.gravity
+        let duration = (launchVz + (launchVz * launchVz + 2 * g * (config.wind == .fast ? 1.2 : 1.2 - 0.23)).squareRoot()) / g
+        a.idleStrikes = 0
+        called = selected
+        if infoCode == "air_catch" { infoUntil = time }
+        assignCircleSpots(called)
+        botCallStreak = a.member.bot && actor(called)?.member.bot == true ? botCallStreak + 1 : 0
+        let goal = V(config.width / 2, config.depth / 2)
+        let drift = Kotlin.clamp(rawDrift, -1.0, 1.0)
+        // One fixed landing choice per call; no mid-flight homing or repeated random rolls.
+        let nominal: V
+        if config.wind == .fast {
+            // Preserve the established strong-wind launch and wind-driven flight.
+            let sideways = drift * (a.member.bot ? (1 + power * 2) * spread : (CircleFormation.RADIUS - 0.35) * spread)
+            nominal = bounded(goal + V(sideways, (random.nextDouble() - 0.5) * 0.7 * spread))
+        } else {
+            let range = ((CircleFormation.RADIUS - 0.35) * spread) * (config.wind == .none ? 0.30 : 1.0)
+            let angle = random.nextDouble(0.0, 2 * Double.pi)
+            let radius = random.nextDouble().squareRoot() * range
+            let randomOffset = V(cos(angle), sin(angle)) * radius
+            let offset = a.member.bot ? randomOffset + V(drift * range * 0.29, 0.0)
+                : CallLob.aimedOffset(randomOffset, rawDrift, (CircleFormation.RADIUS - 0.35) * spread)
+            let aimed = !a.member.bot && abs(rawDrift) >= 0.08
+            let limit = aimed ? (CircleFormation.RADIUS - 0.35) * spread : range
+            let destination = bounded(goal + (offset.length() > limit ? offset.unit() * limit : offset))
+            // Aim against light wind so its landing spread stays inside the marked circle.
+            if aimed {
+                let windy = destination - goal + callWind * (0.5 * duration * duration)
+                nominal = goal + (windy.length() > limit ? windy.unit() * limit : windy) - callWind * (0.5 * duration * duration)
+            } else {
+                nominal = destination - callWind * (0.5 * duration * duration)
+            }
+        }
+        let start = a.position
+        landing = bounded(nominal + callWind * (0.5 * duration * duration))
+        serial += 1
+        let flight = id + "-t" + String(turn) + "-" + String(serial)
+        ball = Ball(start, 1.2, (nominal - start) * (1 / duration), launchVz, nil, bounces: 0, flightId: flight, launchAt: time)
+        ball.burstOnGround = config.ball == .paint && callBursts.released(CallLob.high(config.scene, launchVz))
+        a.throwAt = time
+        a.facing = (nominal - start).unit()
+        for other in actors {
+            other.catchDecided = false
+            other.catchUntil = 0.0
+            other.nextThink = time + reaction(other)
+        }
+        frozen = false
+        circleFormation = false
+        pickupAnchor = nil
+        transition(.air)
+        emit("call", uid, actor(called)?.fullName() ?? "")
+        emit("throw", uid)
+    }
+
+    /// Catch may begin before release. Keep its original deadline and random roll, but use the actual released
+    /// projectile, not the previous held/rolling ball.
+    private func refreshPreparedCatches() {
+        for a in actors where a.active && a.member.id != thrower && time < a.catchUntil {
+            a.catchProbability = CatchPhysics.probability(a, ball, actor(thrower), true)
+            if let approach = AttackPhysics.approach(ball, a, config, windVector) {
+                a.catchHeight = approach.height - a.jumpHeight
+            } else {
+                a.catchHeight = ball.height - a.jumpHeight
+            }
+        }
+    }
+
     func throwProfile(_ a: GameActor, _ power: Double) -> (speed: Double, vz: Double) {
         let p = Kotlin.clamp(power, 0.0, 1.0)
         let strength = a.member.bot ? AmuduCharacters.get(a.member.character).qualities.powerFactor : 1.0
-        if config.throwMode == .easy {
-            return (config.ball.speed * (0.8 + p * 0.55) * strength, config.scene.gravity * 0.09)
-        }
         let speed = config.ball.speed * (0.55 + p * 1.1) * strength
         let vz = (-0.35 + 5.3 * p * p) * (config.scene.gravity / 9.8).squareRoot()
         return (speed, vz)
@@ -369,6 +494,13 @@ final class AmuduEngine {
             return
         }
         let current = eligible.member.id
+        let immediateRecall = !regroup && recallAt > 0 && eligible.member.bot
+        for a in actors where !a.active { EliminationExit.start(a, config, time) }
+        recallAt = 0.0
+        if regroup {
+            paintPoint += 1
+            paintColor = PaintBalloon.next(seed, paintPoint, paintColor)
+        }
         thrower = current
         selected = ""
         called = ""
@@ -381,28 +513,32 @@ final class AmuduEngine {
         circleFormation = regroup
         regroupPending = false
         let center = V(config.width / 2, config.depth / 2)
-        var index = 0
-        let playing = activeActors
-        let count = playing.count - 1
-        for a in playing {
-            if regroup {
-                if a.member.id == current {
-                    a.position = center
-                } else {
-                    let angle = -Double.pi / 2 + 2 * Double.pi * Double(index) / Double(count)
-                    index += 1
-                    a.position = center + V(cos(angle), sin(angle)) * 4.5
-                }
+        if regroup {
+            let others = activeActors.filter { $0.member.id != current }
+            if time == 0.0 {
+                circleAngle = random.nextDouble(0.0, 2 * Double.pi)
+                let spots = random.shuffled(CircleFormation.spots(center, others.count, circleAngle))
+                for (i, a) in others.enumerated() { a.circleSpot = spots[i] }
+            } else {
+                assignCircleSpots(current)
             }
-            a.move = V.zero
-            a.actuallyMoving = false
+            eligible.position = center
+            eligible.circleSpot = nil
+            for a in others { a.position = a.circleSpot ?? a.position }
+        }
+        for a in activeActors {
+            if regroup || a.member.id == current {
+                a.move = V.zero
+                a.actuallyMoving = false
+            }
             a.duckUntil = 0.0
             a.catchUntil = 0.0
             a.catchRecoveryUntil = 0.0
-            a.nextThink = time + 1.0
+            a.nextThink = immediateRecall && a.member.id == current ? time : time + random.nextDouble(1.15, 1.75)
             a.catchDecided = false
             a.facing = (eligible.position - a.position).unit()
         }
+        assignCircleSpots(current)
         ball = Ball(eligible.position, 1.2, V.zero, 0.0, current)
     }
 
@@ -415,7 +551,12 @@ final class AmuduEngine {
         message(a.member.displayName(hebrew: false) + ": " + en, a.member.displayName(hebrew: true) + ": " + he)
         if config.rules == .spud && a.penalties >= 4 {
             a.spectator = .letters
+            a.eliminatedAt = time
+            a.exitAt = -1.0
+            a.exitFrom = nil
+            a.exitTo = nil
             a.move = V.zero
+            a.actuallyMoving = false
             emit("spectator", a.member.id)
         } else if config.rules == .nicknames && a.penalties % 3 == 0 {
             pendingHuddles.append(a.member.id)
@@ -428,10 +569,17 @@ final class AmuduEngine {
             statusSerial += 1
             lastStatusAt = time
         }
+        if code == "air_catch" && actor(next)?.member.bot == true {
+            recallAt = time + random.nextDouble(0.70, 1.20)
+        } else {
+            recallAt = 0.0
+        }
         nextThrower = next
-        for a in actors {
-            a.move = V.zero
-            a.actuallyMoving = false
+        if code != "air_catch" {
+            for a in actors {
+                a.move = V.zero
+                a.actuallyMoving = false
+            }
         }
         transition(.resolve)
         message(en, he, who ?? next, code)
@@ -440,7 +588,7 @@ final class AmuduEngine {
     func tick(_ rawDt: Double) {
         if paused || sharedPause || result != nil { return }
         var left = Kotlin.clamp(rawDt, 0.0, 0.1)
-        while left > 0 {
+        while left > 1e-9 {
             let dt = min(left, 1.0 / 120)
             step(dt)
             left -= dt
@@ -448,14 +596,18 @@ final class AmuduEngine {
     }
 
     private func airborne(_ dt: Double) {
-        BallFlight.advance(&ball, dt, config.scene.gravity, windVector)
+        if ball.burst { return }
+        let wind = (phase == .air || phase == .retrieve) ? GroundBounce.edgeWind(ball, config, windVector) : windVector
+        BallFlight.advance(&ball, dt, config.scene.gravity, wind)
     }
 
     private func ground() {
+        if ball.burst { return }
         ball.height = 0.23
         let incoming = abs(ball.vz)
         ball.vz = incoming * config.ball.restitution * config.scene.bounce
-        ball.velocity = ball.velocity * 0.80
+        let nameCall = phase == .air || phase == .retrieve
+        ball.velocity = (nameCall ? GroundBounce.direction(ball.velocity, ball.flightId, ball.bounces) : ball.velocity) * 0.80
         ball.bounces += 1
         if incoming > 0.9 { emit("bounce", "") }
         if incoming < 0.7 || ball.bounces > 5 {
@@ -464,15 +616,10 @@ final class AmuduEngine {
         }
     }
 
+    /// The court edge is not an invisible wall. Let the ball slide to rest there; never reflect a leftward call to the
+    /// right without a real contact.
     private func wall() {
-        if ball.position.x < 0.25 || ball.position.x > config.width - 0.25 {
-            ball.position = V(Kotlin.clamp(ball.position.x, 0.25, config.width - 0.25), ball.position.y)
-            ball.velocity = V(-ball.velocity.x * 0.55, ball.velocity.y)
-        }
-        if ball.position.y < 0.25 || ball.position.y > config.depth - 0.25 {
-            ball.position = V(ball.position.x, Kotlin.clamp(ball.position.y, 0.25, config.depth - 0.25))
-            ball.velocity = V(ball.velocity.x, -ball.velocity.y * 0.55)
-        }
+        GroundBounce.contain(&ball, config)
     }
 
     private func step(_ dt: Double) {
@@ -493,23 +640,35 @@ final class AmuduEngine {
         if phase == .huddle {
             if !onlineHuddles {
                 botsHuddle()
-                if time >= huddleDeadline { finishHuddleLocal() }
+                let voted = activeActors.filter { $0.member.id != huddleTarget }.allSatisfy { votes[$0.member.id] != nil }
+                if time >= huddleDeadline || (time - phaseAt >= 2.0 && voted) { finishHuddleLocal() }
             }
             return
         }
-        if phase == .resolve {
+        // A point pauses walking, not gravity: finish an airborne dodge naturally.
+        for a in actors where a.jumpHeight > 0 || a.jumpVelocity != 0.0 {
+            a.jumpHeight = max(a.jumpHeight + a.jumpVelocity * dt - 0.5 * config.scene.gravity * dt * dt, 0.0)
+            a.jumpVelocity -= config.scene.gravity * dt
+            if a.jumpHeight == 0.0 { a.jumpVelocity = 0.0 }
+        }
+        if phase == .resolve && !freeCatchReturn() {
             // A tag rebounds away. It never visually becomes a catch.
             if ball.holder == nil && (ball.velocity.length() > 0.04 || ball.height > 0.24) {
                 airborne(dt)
                 if ball.height <= 0.23 { ground() }
-                wall()
             }
             let wait = regroupPending ? max(5.0, config.resolveSeconds) : config.resolveSeconds
             if time - phaseAt >= wait { afterResolution() }
             return
         }
+        for (i, a) in actors.enumerated() { movementStart[i] = a.position }
         moveActors(dt)
         if movingPhase() { separateActors() }
+        walkPoses(dt)
+        if freeCatchReturn() && time >= (recallAt > 0 ? recallAt : phaseAt + config.resolveSeconds) {
+            afterResolution()
+            return
+        }
         if let holder = ball.holder {
             if let h = actor(holder) { ball.position = h.position }
             ball.height = 1.2
@@ -525,50 +684,50 @@ final class AmuduEngine {
         let before = ball.position
         let beforeZ = ball.height
         airborne(dt)
-        if phase == .air {
-            if airContact() { return }
+        if phase == .air || phase == .retrieve {
+            if nameCallContact() { return }
         } else if phase == .flight {
             if flightContact(before: before, beforeZ: beforeZ) { return }
         }
         if ball.height <= 0.23 {
             let was = phase
+            if config.ball == .paint && (was == .flight || was == .air && ball.burstOnGround) {
+                ball.height = 0.23
+                burstBalloon()
+                if was == .flight {
+                    miss("The balloon burst on the ground.", "הבלון התפוצץ על הקרקע.")
+                } else {
+                    if let target = actor(called) { penalty(target, "The high balloon burst.", "הבלון הגבוה התפוצץ.") }
+                    resolve(called, "The high balloon burst before pickup. One penalty.", "הבלון הגבוה התפוצץ לפני האיסוף. נקודת חובה אחת.",
+                            who: called, code: "paint_burst")
+                }
+                return
+            }
             ground()
             if was == .air {
                 transition(.retrieve)
                 message("Pick it up. Throw now, or call SPUD to stop runners.", "אספו את הכדור. זרקו מיד, או קראו עמודו כדי לעצור את הרצים.", called, "pickup")
             }
-            if was == .flight && config.throwMode == .standard {
+            if was == .flight && !config.allowGroundHit {
                 miss("The ball touched the ground first.", "הכדור נגע קודם בקרקע.")
                 return
             }
         }
-        wall()
+        if phase == .air || phase == .retrieve { wall() }
         if phase == .flight && (time - phaseAt > 4.5 || ball.bounces >= 2) { miss("The throw missed.", "הזריקה החטיאה.") }
     }
 
     /// The `activeActors.forEach` movement loop of Kotlin `step` (the list is taken once, as Kotlin does).
     private func moveActors(_ dt: Double) {
         for a in activeActors {
-            if a.member.bot { bot(a) }
+            if a.member.bot { bot(a, dt) }
             if !canRun(a) {
                 a.move = V.zero
                 a.actuallyMoving = false
             }
             if a.move.length() > 0.01 {
-                let old = a.position
                 let factor = a.member.bot ? AmuduCharacters.get(a.member.character).qualities.runFactor : 1.0
-                moveActor(a, a.move * (config.moveSpeed * config.scene.run * factor * dt))
-                let actual = a.position - old
-                a.actuallyMoving = actual.length() > 0.0001
-                if a.actuallyMoving {
-                    a.gait += dt * 9
-                    a.facing = actual.unit()
-                } else {
-                    a.move = V.zero
-                    a.facing = (ball.position - a.position).unit()
-                }
-            } else {
-                a.actuallyMoving = false
+                moveActor(a, a.move * (config.moveSpeed * config.scene.run * factor * dt), contact: true)
             }
         }
     }
@@ -596,22 +755,70 @@ final class AmuduEngine {
         }
     }
 
-    /// The AIR branch of `step`; returns true when Kotlin returns from `step`.
-    private func airContact() -> Bool {
+    /// Decide the walk pose after collision separation, from distance actually travelled. Tiny approach corrections or a
+    /// blocked stride are not running.
+    private func walkPoses(_ dt: Double) {
+        for (i, a) in actors.enumerated() where a.active {
+            let actual = a.position - movementStart[i]
+            let direction = a.move.unit()
+            let forward = actual.x * direction.x + actual.y * direction.y
+            // A rate threshold is independent of the variable final physics substep.
+            // Below this is collision/rounding correction, not a visible stride.
+            a.actuallyMoving = a.move.length() > 0.01 && forward > dt * (a.actuallyMoving ? 0.01 : 0.025)
+            if a.actuallyMoving {
+                let factor = a.member.bot ? AmuduCharacters.get(a.member.character).qualities.runFactor : 1.0
+                let speed = config.moveSpeed * config.scene.run * factor
+                a.gait += min(forward, speed * dt) / speed * 9
+                a.facing = direction
+            } else if ball.holder != a.member.id && (ball.position - a.position).length() > 0.05 {
+                a.facing = (ball.position - a.position).unit()
+            }
+        }
+    }
+
+    /// The AIR/RETRIEVE branch of `step`; returns true when Kotlin returns from `step`.
+    private func nameCallContact() -> Bool {
         guard let target = actor(called) else { return true }
-        let distance = (ball.position - target.position).length()
-        let catchable = ball.vz < 0 && ball.height >= 0.48 && ball.height <= 2.0 && distance < config.ball.catchRadius * target.catchReach
-        if catchable && time >= target.catchReadyAt && time < target.catchUntil && time >= target.duckUntil {
+        let inHands = ball.height >= target.jumpHeight + 1.05 && ball.height <= target.jumpHeight + 2.0
+        if (ball.vz < 0 || phase == .retrieve) && inHands && (ball.position - target.position).length() < config.ball.catchRadius * target.catchReach &&
+            time >= target.catchReadyAt && time < target.catchUntil && time >= target.duckUntil {
             if target.catchRoll < target.catchProbability {
+                target.catchUntil = 0.0
                 target.catchAt = time
+                target.move = V.zero
+                target.actuallyMoving = false
                 ball.holder = called
-                emit("catch", called)
-                resolve(called, "Great catch! Call someone from here.", "תפיסה נהדרת! קראו למישהו מהמקום שלכם.", who: called, code: "air_catch")
+                if phase == .retrieve {
+                    // Once the name-call ball has bounced, collecting it (even in the air) leads
+                    // to a tag attempt, not another free name call.
+                    ball.velocity = V.zero
+                    ball.vz = 0.0
+                    ball.height = 1.2
+                    thrower = called
+                    pickupAnchor = target.position
+                    target.move = V.zero
+                    target.actuallyMoving = false
+                    transition(.shout)
+                    target.nextThink = time + 0.7
+                    emit("pickup", called)
+                } else {
+                    emit("catch", called)
+                    resolve(called, "Great catch! Call someone from here.", "תפיסה נהדרת! קראו למישהו מהמקום שלכם.", who: called, code: "air_catch")
+                }
                 return true
             }
             target.catchUntil = 0.0
         }
-        if ball.vz < 0 && ball.height >= 0.3 && ball.height <= 1.6 && distance < 0.45 && time >= target.duckUntil {
+        let bodyTop = time < target.duckUntil ? max(config.duckHeight, 1.4) : 1.6
+        if ball.vz < 0 && ball.height >= target.jumpHeight + 0.3 && ball.height <= target.jumpHeight + bodyTop &&
+            (ball.position - target.position).length() < 0.45 {
+            if config.ball == .paint && ball.burstOnGround {
+                burstBalloon(target)
+                penalty(target, "Paint hit!", "פגיעת צבע!")
+                resolve(called, "The balloon burst on the called player. One penalty.", "הבלון התפוצץ על השחקן ששמו נקרא. נקודת חובה אחת.",
+                        who: called, code: "paint_hit")
+                return true
+            }
             rebound(target)
             transition(.retrieve)
             message("It bounced off you. Pick it up to throw.", "הכדור פגע בכם. אספו אותו כדי לזרוק.", called, "air_hit")
@@ -629,44 +836,96 @@ final class AmuduEngine {
             groundT = 1.0
         }
         let delta = ball.position - before
-        let squared = delta.x * delta.x + delta.y * delta.y
-        var collisions: [(actor: GameActor, t: Double, dist: Double)] = []
+        let radius = BallContact.radius(config.ball)
+        var collisions: [(actor: GameActor, t: Double)] = []
         for a in activeActors where a.member.id != thrower {
-            var t = 0.0
-            if delta.length() >= 0.0001 {
-                let projection = (a.position.x - before.x) * delta.x + (a.position.y - before.y) * delta.y
-                t = Kotlin.clamp(projection / squared, 0.0, 1.0)
+            let height = time < a.duckUntil ? max(config.duckHeight, 1.4) : config.standingHeight
+            let reaching = time >= a.catchReadyAt && time < a.catchUntil && time >= a.duckUntil
+            let body = BallContact.first(before, ball.position, beforeZ, ball.height, a.position, 0.28 + radius, a.jumpHeight - radius / 2,
+                                         a.jumpHeight + height + radius / 2)
+            // An outstretched hand is a real contact, not merely an animation beside a tiny torso collider.
+            var hand: Double?
+            if reaching {
+                let low = a.catchHeight < 1.05
+                hand = BallContact.first(before, ball.position, beforeZ, ball.height, a.position + a.facing * 0.58, 0.20 + radius,
+                                         a.jumpHeight + (low ? 0.35 : 1.05), a.jumpHeight + (low ? 1.05 : 2.0))
             }
-            let closest = before + delta * t
-            collisions.append((actor: a, t: t, dist: (closest - a.position).length()))
+            let found = [body, hand].compactMap { $0 }
+            if let t = found.min() { collisions.append((actor: a, t: t)) }
         }
         let ordered = Kotlin.stableSorted(collisions) { $0.t < $1.t }
         for entry in ordered {
             let a = entry.actor
-            let z = beforeZ + (ball.height - beforeZ) * entry.t
-            let height = time < a.duckUntil ? config.duckHeight : config.standingHeight
-            if entry.t > groundT && config.throwMode == .standard { continue }
-            if entry.dist < 0.50 && z >= 0.22 && z <= height {
-                let armed = time >= a.catchReadyAt && time < a.catchUntil && time >= a.duckUntil
-                if armed && z > 0.48 && a.catchRoll < a.catchProbability {
-                    a.catchAt = time
-                    emit("catch", a.member.id)
-                    if let th = actor(thrower) { penalty(th, "The ball was caught!", "הכדור נתפס!") }
-                    ball.holder = a.member.id
-                    ball.velocity = V.zero
-                    ball.vz = 0.0
-                    resolve(a.member.id, "Caught it! The thrower gets a penalty.", "תפסתם! הזורק מקבל נקודת חובה.", who: a.member.id, code: "tag_catch")
-                } else {
-                    a.catchUntil = 0.0
-                    actor(thrower)?.rankEarned += 5
-                    penalty(a, "Tagged!", "הכדור פגע!")
-                    rebound(a)
-                    resolve(a.member.id, "A tag, not a catch. Back to the circle.", "פגיעה ולא תפיסה. חוזרים למעגל.", who: a.member.id, code: "tagged")
+            let t = entry.t
+            if t > groundT && (!config.allowGroundHit || config.ball == .paint) { continue }
+            let z = beforeZ + (ball.height - beforeZ) * t
+            ball.position = before + delta * t
+            ball.height = z
+            let caught = time >= a.catchReadyAt && time < a.catchUntil && time >= a.duckUntil && z - a.jumpHeight >= 0.35 &&
+                z - a.jumpHeight <= 2.05 &&
+                a.catchRoll < a.catchProbability * min(AttackPhysics.catchFactor(a.catchHeight), AttackPhysics.catchFactor(z - a.jumpHeight))
+            if caught {
+                a.catchUntil = 0.0
+                a.catchAt = time
+                if config.ball == .paint && ball.burstOnCatch {
+                    burstBalloon(a, caught: true)
+                    penalty(a, "The balloon burst in your hands!", "הבלון התפוצץ בידיים שלכם!")
+                    resolve(a.member.id, "Caught it, but it burst! The catcher gets a penalty.", "תפסתם, אבל הבלון התפוצץ! התופסים מקבלים נקודת חובה.",
+                            who: a.member.id, code: "catch_burst")
+                    return true
                 }
-                return true
+                emit("catch", a.member.id)
+                if let th = actor(thrower) { penalty(th, "The ball was caught!", "הכדור נתפס!") }
+                ball.holder = a.member.id
+                ball.velocity = V.zero
+                ball.vz = 0.0
+                // The penalized player makes the next name call in both rule sets.
+                // A fourth SPUD letter eliminates them, so the catcher starts instead.
+                var next = a.member.id
+                if let th = actor(thrower), th.active { next = th.member.id }
+                resolve(next, "Caught it! The thrower gets a penalty.", "תפסתם! הזורק מקבל נקודת חובה.", who: a.member.id, code: "tag_catch")
+            } else {
+                a.catchUntil = 0.0
+                actor(thrower)?.rankEarned += 5
+                penalty(a, "Tagged!", "הכדור פגע!")
+                if config.ball == .paint { burstBalloon(a) } else { rebound(a) }
+                resolve(a.member.id, "A tag, not a catch. Back to the circle.", "פגיעה ולא תפיסה. חוזרים למעגל.", who: a.member.id, code: "tagged")
             }
+            return true
         }
         return false
+    }
+
+    /// Kotlin `armAttackBurst(power)`: every direct impact bursts; only an otherwise successful catch uses the
+    /// rare-burst cadence.
+    func armAttackBurst(_ power: Double) {
+        if config.ball == .paint {
+            ball.burstOnGround = true
+            ball.burstOnCatch = attackBursts.released(power >= 0.80)
+        }
+    }
+
+    /// Kotlin `burstBalloon(target = null, call = phase in (AIR, RETRIEVE), caught = false)`.
+    func burstBalloon(_ target: GameActor? = nil, call: Bool? = nil, caught: Bool = false) {
+        let isCall = call ?? (phase == .air || phase == .retrieve)
+        if ball.burst { return }
+        let area = PaintBalloon.splashArea((pow(ball.velocity.length(), 2.0) + ball.vz * ball.vz).squareRoot())
+        if isCall {
+            callBursts.burst()
+        } else if caught {
+            attackBursts.burst()
+        }
+        ball.burst = true
+        ball.velocity = V.zero
+        ball.vz = 0.0
+        ball.holder = nil
+        if let t = target {
+            t.paintHits.append(paintColor)
+            t.hitAt = time
+        }
+        paintSplashes.append(PaintSplash(ball.position, paintColor, Int64(Kotlin.hashCode(ball.flightId)), time, area))
+        if paintSplashes.count > 36 { paintSplashes.removeFirst() }
+        emit("paint", target?.member.id ?? "")
     }
 
     private func rebound(_ a: GameActor) {
@@ -676,15 +935,14 @@ final class AmuduEngine {
         ball.velocity = (ball.velocity - normal * (2 * dot)) * 0.55
         ball.vz = abs(ball.vz) * 0.3 + 1.2
         ball.holder = nil
-        ball.position = a.position + normal * 0.58
+        ball.position = a.position + normal * (0.28 + BallContact.radius(config.ball) + 0.02)
         a.hitAt = time
         emit("hit", a.member.id)
     }
 
     private func miss(_ en: String, _ he: String) {
         if let th = actor(thrower) { penalty(th, en, he) }
-        let next = Kotlin.isBlank(called) ? thrower : called
-        resolve(next, en + " The thrower gets a penalty.", he + " הזורק מקבל נקודת חובה.", who: thrower, code: "miss")
+        resolve(thrower, en + " The thrower gets a penalty.", he + " הזורק מקבל נקודת חובה.", who: thrower, code: "miss")
     }
 
     private func afterResolution() {
@@ -721,10 +979,16 @@ final class AmuduEngine {
         // No global spoken announcement: the target gets an ordinary between-round pause.
     }
 
+    /// Kotlin `propose`: one person may offer distinct words (later ones keyed `uid~proposalKey`); a duplicate word never
+    /// splits votes. The proposer's own vote goes to their latest word.
     @discardableResult
     func propose(_ uid: String, _ text: String) -> Bool {
         if phase != .huddle || uid == huddleTarget || actor(uid)?.active != true || !Words.validSuggestion(text) { return false }
-        suggestions[uid] = Words.nfkcTrim(text)
+        let word = Words.nfkcTrim(text)
+        if suggestions.values.contains(where: { Words.normalize($0) == Words.normalize(word) }) { return false }
+        let key = suggestions[uid] == nil ? uid : uid + "~" + Words.proposalKey(word)
+        suggestions[key] = word
+        votes[uid] = key
         return true
     }
 
@@ -756,12 +1020,12 @@ final class AmuduEngine {
         if suggestions.isEmpty {
             suggestions["fallback"] = Words.suggestion(huddleSerial, hebrew: actor(huddleTarget)?.member.hebrew ?? false)
         }
-        // Kotlin `activeActors.singleOrNull { !it.member.bot }`.
+        // Kotlin `activeActors.singleOrNull { !it.member.bot }?.member?.id?.takeIf { it != huddleTarget }?.let { votes[it] }`.
         let humans = activeActors.filter { !$0.member.bot }
         var chosen: String?
         if humans.count == 1 {
             let human = humans[0].member.id
-            if human != huddleTarget && suggestions[human] != nil { chosen = human }
+            if human != huddleTarget { chosen = votes[human] }
         }
         if chosen == nil { chosen = AmuduEngine.rankedWinner(keys: suggestions.keys, votes: votes.values) }
         if let key = chosen, let winner = suggestions[key] { applyHuddle(winner) }
@@ -782,8 +1046,8 @@ final class AmuduEngine {
 
     func finish() {
         if result != nil { return }
-        // SPUD: the last active player wins; nickname rules: the fewest penalties among everyone.
-        let eligible = config.rules == .spud ? activeActors : actors
+        // SPUD: the last active player wins; nickname rules: the fewest penalties among everyone still in the room.
+        let eligible = config.rules == .spud ? activeActors : actors.filter { !$0.departed }
         let low = eligible.map { $0.penalties }.min()
         var penalties: [String: Int] = [:]
         for a in actors { penalties[a.member.id] = a.penalties }
@@ -826,8 +1090,20 @@ final class AmuduEngine {
             actionStage = stage
             actionActor = uid
             actionDeadline = time + Double(config.actionSeconds)
+            retrievalGrace = 0.0
+            retrievalDistance = Double.greatestFiniteMagnitude
         }
         timerHumans = humans
+        if stage == "retrieve", let a = actor(uid) {
+            let distance = (ball.position - a.position).length()
+            // At most three extra seconds, earned only by measurable progress toward the ball.
+            if distance < retrievalDistance - 0.25 && a.move.length() > 0.08 && retrievalGrace < 3.0 && actionDeadline - time < 3 {
+                let extra = min(0.5, 3.0 - retrievalGrace)
+                actionDeadline += extra
+                retrievalGrace += extra
+            }
+            if distance < retrievalDistance - 0.25 { retrievalDistance = distance }
+        }
         if time < actionDeadline { return false }
         guard let a = actor(uid), a.active else { return false }
         actionStage = ""
@@ -921,20 +1197,96 @@ final class AmuduEngine {
         transition(.resolve)
     }
 
+    private func flee(_ a: GameActor, _ dt: Double) {
+        FleeMovement.update(a, ball, windVector, config, time, dt, seed, phase, actors)
+    }
+
+    /// Assign one stable, evenly spaced destination per return, nearest overall. This never moves a human: only a
+    /// point reset places players on the circle.
+    private func assignCircleSpots(_ receiver: String) {
+        guard let target = actor(receiver) else { return }
+        target.circleSpot = nil
+        let others = activeActors.filter { $0.member.id != receiver }
+        let spots = CircleFormation.spots(V(config.width / 2, config.depth / 2), others.count, circleAngle)
+        let assigned = CircleFormation.nearest(others.map { $0.position }, spots)
+        for (i, a) in others.enumerated() { a.circleSpot = assigned[i] }
+    }
+
+    private func returnToBall(_ a: GameActor, _ pace: Double) {
+        if ball.holder == a.member.id {
+            a.move = V.zero
+            return
+        }
+        if a.circleSpot == nil { assignCircleSpots(phase == .air ? called : (ball.holder ?? thrower)) }
+        guard let spot = a.circleSpot else { return }
+        let delta = spot - a.position
+        // Stop on the marked 4.5-unit perimeter, with a real arrival tolerance.
+        a.move = delta.length() > 0.10 ? delta.unit() * min(pace, delta.length() * 1.5) : V.zero
+    }
+
+    private func shouldAnticipateCatch(_ a: GameActor) -> Bool {
+        guard let receiver = actor(called), receiver.active else { return false }
+        if ball.bounces != 0 { return false }
+        // This is a gamble on this flight, not a direction choice every physics tick.
+        // Crossing the six-unit entry threshold must not switch return -> flee -> return.
+        if !Kotlin.isBlank(ball.flightId) && a.anticipationFlight == ball.flightId { return true }
+        if (a.position - landing).length() < 6.0 { return false }
+        let g = config.scene.gravity
+        let disc = ball.vz * ball.vz + 2 * g * (ball.height - 1.45)
+        if disc <= 0 { return false }
+        let remaining = (ball.vz + disc.squareRoot()) / g
+        if remaining <= 0.12 { return false }
+        let point = ball.position + ball.velocity * remaining + windVector * (0.5 * remaining * remaining)
+        let factor = receiver.member.bot ? AmuduCharacters.get(receiver.member.character).qualities.runFactor : 1.0
+        let run = config.moveSpeed * config.scene.run * factor
+        if (point - receiver.position).length() > run * remaining * 0.85 + config.ball.catchRadius { return false }
+        // Estimate from visible trajectory/skill, never from the secret success roll.
+        let likely = copyForCatchPrediction(receiver, point, ball.velocity, ball.vz - g * remaining)
+        let chance = CatchPhysics.probability(likely.0, likely.1, actor(thrower))
+        var wagerRandom = KotlinRandom(seed: seed ^ Int64(Kotlin.hashCode(ball.flightId)) ^ Int64(Kotlin.hashCode(a.member.id)))
+        let wager = wagerRandom.nextDouble()
+        let returning = chance > 0.70 && wager < 0.65 + 0.25 * (Double(AmuduCharacters.get(a.member.character).qualities.accuracy) / 5.0)
+        if returning { a.anticipationFlight = ball.flightId }
+        return returning
+    }
+
+    private func copyForCatchPrediction(_ actor: GameActor, _ point: V, _ velocity: V, _ vz: Double) -> (GameActor, Ball) {
+        let copy = GameActor(member: actor.member, position: point)
+        copy.facing = velocity.unit() * -1.0
+        return (copy, Ball(point, 1.45, velocity, vz))
+    }
+
+    /// Explicit room departure is different from a temporary connection loss.
+    func depart(_ uid: String) {
+        guard let a = actor(uid) else { return }
+        if a.departed { return }
+        a.departed = true
+        a.spectator = .inactive
+        a.move = V.zero
+        a.actuallyMoving = false
+        a.returnQueued = false
+        connectedHumanIds.remove(uid)
+        pendingHuddles.removeAll { $0 == uid }
+        returnVotes[uid] = nil
+        votes[uid] = nil
+        emit("left", uid)
+        if result != nil { return }
+        if activeActors.count < 2 {
+            finish()
+            return
+        }
+        let heldTurn = called == uid && (phase == .air || phase == .retrieve) ||
+            thrower == uid && (phase == .circle || phase == .shout || phase == .aim)
+        if huddleTarget == uid || returnTarget == uid || ball.holder == uid || heldTurn {
+            huddleTarget = ""
+            returnTarget = ""
+            if let first = activeActors.first { circle(first.member.id, regroup: false) }
+        }
+    }
+
     private func nextBotId() -> String {
         serial += 1
         return "bot-" + String(serial)
-    }
-
-    private func flee(_ a: GameActor) {
-        let delta = (a.position - ball.position).unit()
-        let next = bounded(a.position + delta * 0.2)
-        if (next - (a.position + delta * 0.2)).length() > 0.001 {
-            a.move = V.zero
-            a.facing = (ball.position - a.position).unit()
-        } else {
-            a.move = delta
-        }
     }
 
     private func botThrow(_ a: GameActor) {
@@ -954,14 +1306,20 @@ final class AmuduEngine {
         }
         let delta = target.position - a.position
         let distance = max(delta.length() - 0.52, 0.2)
-        var best = 0.5
+        let targetHeight = AttackPhysics.height(random.nextDouble())
+        // Prefer a purposeful attack. Solve its elevation independently so power
+        // is not silently reduced just to reach torso height.
+        let preferred = 0.60 + 0.06 * Double(q.power)
+        let g = config.scene.gravity
+        let lift = (g / 9.8).squareRoot()
+        var best = preferred
         var score = Double.greatestFiniteMagnitude
         for i in 10...100 {
             let p = Double(i) / 100.0
-            let profile = throwProfile(a, p)
-            let t = distance / profile.speed
-            let z = 1.17 + profile.vz * t - 0.5 * config.scene.gravity * t * t
-            let cost = abs(z - 1.1)
+            let t = distance / throwProfile(a, p).speed
+            let vz = (targetHeight - 1.17 + 0.5 * g * t * t) / t
+            let outside = abs(vz - Kotlin.clamp(vz, -0.35 * lift, 4.95 * lift))
+            let cost = outside * 8 + abs(p - preferred)
             if cost < score {
                 score = cost
                 best = p
@@ -971,48 +1329,58 @@ final class AmuduEngine {
         let p = Kotlin.clamp(best + random.nextDouble(-1.0, 1.0) * powerError, 0.06, 1.0)
         let travel = distance / throwProfile(a, p).speed
         let lead = target.actuallyMoving ? target.move * (config.moveSpeed * travel * (Double(q.accuracy) / 5.0)) : V.zero
-        let error = Double(5 - q.accuracy) * 0.24
+        let ballError: Double
+        switch config.ball {
+        case .tennis: ballError = 0.65
+        case .beach: ballError = 1.3
+        case .paint: ballError = 0.9
+        case .foam, .neon: ballError = 1.0
+        }
+        let error = Double(5 - q.accuracy) * 0.24 * ballError
         let errorX = random.nextDouble(-1.0, 1.0) * error
         let errorY = random.nextDouble(-1.0, 1.0) * error
         let aim = delta + lead - windVector * (0.5 * travel * travel) + V(errorX, errorY)
+        // All three heights use the same legal launch limits, also in Easy mode.
+        let vz = (targetHeight - 1.17 + 0.5 * g * travel * travel) / travel + random.nextDouble(-1.0, 1.0) * Double(5 - q.accuracy) * 0.05
         command(a.member.id, nextBotId(), .aim(aim.unit()))
-        command(a.member.id, nextBotId(), .throwBall(power: p))
+        command(a.member.id, nextBotId(), .throwBall(power: p, botVz: vz))
     }
 
-    private func bot(_ a: GameActor) {
+    private func bot(_ a: GameActor, _ dt: Double) {
         let uid = a.member.id
         let q = AmuduCharacters.get(a.member.character).qualities
         if time < a.catchUntil {
             a.move = V.zero
             return
         }
+        if freeCatchReturn() {
+            returnToBall(a, 1.0)
+            return
+        }
         switch phase {
         case .circle:
-            if uid == thrower && time > a.nextThink {
-                let others = activeActors.filter { $0.member.id != uid }
-                if others.isEmpty { return }
-                let target = others[random.nextIndex(others.count)]
-                command(uid, nextBotId(), .select(target: target.member.id, typedName: target.fullName()))
-                let tossId = nextBotId()
-                let power = random.nextDouble(0.18, 0.45 + 0.1 * Double(q.power))
-                let drift = random.nextDouble(-1.0, 1.0) * (1.0 - Double(q.accuracy) * 0.12)
-                command(uid, tossId, .toss(power: power, drift: drift))
+            if uid != thrower {
+                returnToBall(a, 1.0)
+            } else if time > a.nextThink {
+                botCall(a, uid, q)
             }
         case .air, .retrieve:
             if uid == called {
                 let goal = phase == .air ? landing : ball.position
                 let delta = goal - a.position
                 a.move = delta.length() > 0.15 ? delta.unit() : V.zero
-                let near = (ball.position - a.position).length()
-                if phase == .air && ball.vz < 0 && ball.height < 2.5 && !a.catchDecided && time > a.nextThink && near < config.ball.catchRadius + 0.35 {
+                if ball.vz < 0 && ball.height < 2.5 && !a.catchDecided && time > a.nextThink &&
+                    (ball.position - a.position).length() < config.ball.catchRadius + 0.35 {
                     a.catchDecided = true
                     command(uid, nextBotId(), .catchBall)
                 }
                 if phase == .retrieve && (ball.position - a.position).length() < config.ball.catchRadius + 0.2 {
                     command(uid, nextBotId(), .catchBall)
                 }
+            } else if phase == .air && shouldAnticipateCatch(a) {
+                returnToBall(a, 0.42 + 0.16 * (Double(q.speed) / 5.0))
             } else {
-                flee(a)
+                flee(a, dt)
             }
         case .shout:
             if uid == thrower {
@@ -1027,7 +1395,7 @@ final class AmuduEngine {
                     }
                 }
             } else {
-                flee(a)
+                flee(a, dt)
             }
         case .aim:
             a.move = V.zero
@@ -1052,16 +1420,22 @@ final class AmuduEngine {
             }
         case .flight:
             if uid != thrower {
-                if !isFrozen() && !a.catchDecided { flee(a) }
-                let delta = ball.position - a.position
-                let approaching = ball.velocity.x * delta.x + ball.velocity.y * delta.y < 0
-                if !a.catchDecided && delta.length() < (1.6 + Double(q.catching) * 0.12) && time > a.nextThink && approaching {
-                    a.catchDecided = true
-                    if q.catching >= 3 && ball.height > 1.25 && random.nextDouble() < 0.12 {
+                if !isFrozen() && !a.catchDecided { flee(a, dt) }
+                if !a.catchDecided && time > a.nextThink {
+                    if let incoming = AttackPhysics.approach(ball, a, config, windVector), incoming.at <= 0.35 {
+                        a.catchDecided = true
+                        let action: GameCommand
+                        if incoming.height < 0.95 && AttackPhysics.canJump(ball, a, config, incoming) &&
+                            random.nextDouble() < 0.55 + 0.08 * Double(q.jumping - 1) {
+                            action = .jump
+                        } else if incoming.height > 1.50 && AttackPhysics.canDuck(ball, a, config, incoming) &&
+                            random.nextDouble() < 0.55 + 0.08 * Double(q.catching - 1) {
+                            action = .duck
+                        } else {
+                            action = .catchBall
+                        }
                         a.move = V.zero
-                        command(uid, nextBotId(), .duck)
-                    } else {
-                        command(uid, nextBotId(), .catchBall)
+                        command(uid, nextBotId(), action)
                     }
                 }
             }
@@ -1070,12 +1444,45 @@ final class AmuduEngine {
         }
     }
 
+    /// The CIRCLE name call of a house thrower (Kotlin `bot`, `Phase.CIRCLE`, thrower branch).
+    private func botCall(_ a: GameActor, _ uid: String, _ q: Skills) {
+        let opponents = activeActors.filter { $0.member.id != uid }
+        if opponents.isEmpty { return }
+        // Name calls land around the circle center. Outside the initial 4.5-unit
+        // circle plus 1.5 units is a meaningful run back, regardless of thrower position.
+        let center = V(config.width / 2, config.depth / 2)
+        let distant = opponents.filter { ($0.position - center).length() > 6.0 }
+        let accuracy = Double(min(max(q.accuracy, 1), 5) - 1) / 4.0
+        let maxPower = Kotlin.clamp(0.45 + 0.1 * Double(q.power), 0.0, 1.0)
+        let humans = opponents.filter { !$0.member.bot && connectedHumanIds.contains($0.member.id) }
+        let pool = botCallStreak >= 3 && !humans.isEmpty ? humans : (distant.isEmpty ? opponents : distant)
+        let target = pool[random.nextIndex(pool.count)]
+        let power: Double
+        if distant.contains(where: { $0 === target }) {
+            // One roll per call: low/fast arrival 30–90%; otherwise the bot's full toss.
+            power = random.nextDouble() < 0.30 + 0.60 * accuracy ? 0.0 : maxPower
+        } else {
+            // Nearby opponents get a high call 76–80%; the alternative stays below
+            // even Earth's existing height cap, so the two choices really differ.
+            if random.nextDouble() < 0.76 + 0.04 * accuracy {
+                power = maxPower * random.nextDouble(0.94, 1.0)
+            } else {
+                power = random.nextDouble(0.08, 0.30)
+            }
+        }
+        if command(uid, nextBotId(), .select(target: target.member.id, typedName: target.fullName())) {
+            let tossId = nextBotId()
+            let drift = random.nextDouble(-1.0, 1.0) * (1.0 - Double(q.accuracy) * 0.12)
+            command(uid, tossId, .toss(power: power, drift: drift))
+        }
+    }
+
     private func botsHuddle() {
         let helpers = activeActors.filter { $0.member.bot && $0.member.id != huddleTarget }
         for a in helpers {
             if time > a.nextThink && suggestions[a.member.id] == nil {
-                let index = Int(random.nextInt(until: 6))
-                propose(a.member.id, Words.suggestion(index, hebrew: a.member.hebrew))
+                let index = Int(random.nextInt(until: 10000))
+                propose(a.member.id, Words.uniqueSuggestion(index, hebrew: a.member.hebrew, used: suggestions.values))
                 a.nextThink = time + 1.0
             }
             if time > a.nextThink && !suggestions.isEmpty && votes[a.member.id] == nil {

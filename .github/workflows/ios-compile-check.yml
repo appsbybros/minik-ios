@@ -9,13 +9,18 @@ on:
         description: Set by the release script to follow this run; leave empty
         required: false
         default: ""
+      schemes:
+        description: Only these apps, separated by spaces (e.g. "MinikAmudu"); empty compiles every app
+        required: false
+        default: ""
 
 permissions:
   contents: read
 
 jobs:
   compile:
-    runs-on: macos-latest
+    # Apple requires the iOS 27 SDK (Xcode 27) for uploads from April 2027 (ITMS-90725); GitHub has it on this image.
+    runs-on: xcode-27
     # The first eleven apps take about an hour; Triple Shot, the largest Swift module, and its tests add to it.
     timeout-minutes: 120
     steps:
@@ -58,7 +63,8 @@ jobs:
           # minutes) a failing app stops the run; in a public one (free minutes) every app is
           # compiled, so one run lists all errors. A test failure never stops the apps.
           STOP_AT_FIRST_FAILURE="${{ github.event.repository.private }}"
-          # Minik Math's, the sports and Triple Shot's (Android parity) unit tests also run, on the newest available iPhone simulator.
+          # Minik Math's, Minik Amudu's (its iOS payment model is pinned there), the sports and Triple Shot's (Android
+          # parity) unit tests also run, on the newest available iPhone simulator.
           SIMULATOR_UDID="$(xcrun simctl list devices available -j | python3 -c '
           import json
           import re
@@ -77,7 +83,10 @@ jobs:
                           best = key
           print(best[2] if best else "")
           ')"
-          for SCHEME in MinikPlus MinikPingPong MinikRetroPingPong MinikMathPlus MinikMath MinikPlusEnglish MinikMultiPingPong MinikAmudu MinikSplash MinikSquash MinikBeachVolley MinikTripleShot; do
+          ALL_SCHEMES="MinikPlus MinikPingPong MinikRetroPingPong MinikMathPlus MinikMath MinikPlusEnglish MinikMultiPingPong MinikAmudu MinikSplash MinikSquash MinikBeachVolley MinikTripleShot"
+          # The release script leaves "schemes" empty, so a release always compiles every app.
+          ONLY_SCHEMES="${{ inputs.schemes }}"
+          for SCHEME in ${ONLY_SCHEMES:-$ALL_SCHEMES}; do
             echo "Compiling $SCHEME"
             xcodebuild build -scheme "$SCHEME" "${COMMON[@]}" > "build/logs/$SCHEME.log" 2>&1
             scheme_status=$?
@@ -107,7 +116,7 @@ jobs:
               if (( test_status != 0 )); then
                 echo "::error::Compile failed for $TESTS"
                 status=$test_status
-              elif [ "$SCHEME" = "MinikMath" ] || [ "$SCHEME" = "MinikSquash" ] || [ "$SCHEME" = "MinikTripleShot" ]; then
+              elif [ "$SCHEME" = "MinikMath" ] || [ "$SCHEME" = "MinikAmudu" ] || [ "$SCHEME" = "MinikSquash" ] || [ "$SCHEME" = "MinikTripleShot" ]; then
                 if [ -n "$SIMULATOR_UDID" ]; then
                   echo "Running $TESTS"
                   xcodebuild test-without-building -project Minik.xcodeproj -scheme "$SCHEME" -configuration Debug \
@@ -160,7 +169,10 @@ jobs:
   maze:
     # Minik Maze is a Godot game: Godot exports its own Xcode project (Maze/README.md). It runs beside
     # the other apps, and any failure names MinikMaze, so the release script holds back only Minik Maze.
-    runs-on: macos-latest
+    # Apple requires the iOS 27 SDK (Xcode 27) for uploads from April 2027 (ITMS-90725); GitHub has it on this image.
+    runs-on: xcode-27
+    # Skipped when the check is asked for other apps only.
+    if: ${{ inputs.schemes == '' || contains(inputs.schemes, 'MinikMaze') }}
     timeout-minutes: 60
     steps:
       - name: Check out repository

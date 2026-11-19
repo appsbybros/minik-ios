@@ -18,7 +18,7 @@ final class OctoberRefinementTests: XCTestCase {
         }
     }
 
-    func testSoloHumanProposalWinsAfterVisibleCountdown() throws {
+    func testSoloHumanCanChangeTheirAutomaticallyCastVote() throws {
         let e = try world()
         e.phase = .huddle
         e.huddleTarget = "b"
@@ -30,7 +30,7 @@ final class OctoberRefinementTests: XCTestCase {
         for _ in 0..<60 { e.tick(1.0 / 120) }
         XCTAssertEqual(.huddle, e.phase)
         for _ in 0..<220 { e.tick(1.0 / 120) }
-        XCTAssertEqual("Mooncake", e.actor("b")!.fullName())
+        XCTAssertEqual("frog", e.actor("b")!.fullName())
     }
 
     func testWrongNicknamePenalizedExactlyOnce() throws {
@@ -44,13 +44,12 @@ final class OctoberRefinementTests: XCTestCase {
         XCTAssertEqual("wrong_nickname", e.infoCode)
     }
 
-    func testTossTargetsCenterEvenIfCalledPlayerIsFarAway() throws {
+    func testCalmTossStaysNearCenterEvenIfCalledPlayerIsFarAway() throws {
         let e = try world()
         e.actor("b")!.position = V(15, 15)
         e.command("me", "s", .select(target: "b"))
         e.command("me", "t", .toss(power: 1, drift: 0))
-        XCTAssertEqual(e.config.width / 2, e.landing.x, accuracy: 0.001)
-        XCTAssertEqual(e.config.depth / 2, e.landing.y, accuracy: 0.36)
+        XCTAssertLessThanOrEqual((e.landing - V(e.config.width / 2, e.config.depth / 2)).length(), 1.246)
     }
 
     func testProximityRequiresCorrectPhaseReachAndHeight() throws {

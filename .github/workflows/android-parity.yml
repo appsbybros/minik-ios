@@ -36,7 +36,8 @@ permissions:
 
 jobs:
   capture:
-    runs-on: macos-latest
+    # Apple requires the iOS 27 SDK (Xcode 27) for uploads from April 2027 (ITMS-90725); GitHub has it on this image.
+    runs-on: xcode-27
     timeout-minutes: 90
     env:
       APP: ${{ inputs.app }}

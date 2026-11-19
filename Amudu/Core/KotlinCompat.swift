@@ -77,6 +77,28 @@ struct KotlinRandom {
         if until <= 0 { return 0 }
         return Int(nextInt(until: Int32(truncatingIfNeeded: until)))
     }
+
+    /// Kotlin `Random.nextInt(from, until)` for `until > from`: `from + nextInt(until - from)`.
+    mutating func nextInt(from: Int, until: Int) -> Int {
+        return from + Int(nextInt(until: Int32(truncatingIfNeeded: until - from)))
+    }
+
+    /// Kotlin `Random.nextBoolean()`: `nextBits(1) != 0`.
+    mutating func nextBoolean() -> Bool {
+        return nextBits(1) != 0
+    }
+
+    /// Kotlin `MutableList.shuffle(random)` / `Iterable.shuffled(random)` (Fisher–Yates from the last index down).
+    mutating func shuffled<T>(_ items: [T]) -> [T] {
+        var list = items
+        var i = list.count - 1
+        while i >= 1 {
+            let j = Int(nextInt(until: Int32(truncatingIfNeeded: i + 1)))
+            list.swapAt(i, j)
+            i -= 1
+        }
+        return list
+    }
 }
 
 /// Kotlin/Java helpers whose exact semantics the Android code relies on.

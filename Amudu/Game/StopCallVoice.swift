@@ -4,13 +4,18 @@ import AVFoundation
 enum StopCallVoice {
     case funny
     case regular
+    case female
 
     static func forCaller(_ language: String, _ character: String?) -> StopCallVoice? {
         var base = language.lowercased()
         if let dash = base.firstIndex(of: "-") { base = String(base[..<dash]) }
         if let underscore = base.firstIndex(of: "_") { base = String(base[..<underscore]) }
         if base != "he" && base != "iw" { return nil }
-        return (character == "minik" || character == "miniko") ? .funny : .regular
+        switch character {
+        case "minik", "miniko": return .funny
+        case "kyra", "gaya", "mia", "amber", "june": return .female
+        default: return .regular
+        }
     }
 }
 
@@ -25,7 +30,8 @@ private final class StopCallBundleToken {}
 
     init() {
         let bundle = Bundle(for: StopCallBundleToken.self)
-        let files: [(StopCallVoice, String)] = [(.funny, "amodu_call_funny"), (.regular, "amodu_call_standard")]
+        let files: [(StopCallVoice, String)] = [(.funny, "amodu_call_funny"), (.regular, "amodu_call_standard"),
+                                                 (.female, "amodu_call_female")]
         for (voice, name) in files {
             guard let url = bundle.url(forResource: name, withExtension: "mp3") ?? Bundle.main.url(forResource: name, withExtension: "mp3"),
                   let player = try? AVAudioPlayer(contentsOf: url) else {

@@ -3,9 +3,10 @@ import Foundation
 private final class AppTextBundleToken {}
 
 /// Android `com.appsbybros.minik.localization.AppText`: the device-language catalog. English and Hebrew come from the
-/// call sites; Spanish, Arabic, Hindi and Dutch come from `AmuduCatalog.json` (all 959 rows of Android's effective
-/// `rows` map: `screenPresentationRevision() + chunk0() + … + chunk13() + gameSupportText() + spudJourneyText()`,
-/// first position and last value per key).
+/// call sites; Spanish, Arabic, Hindi and Dutch come from `AmuduCatalog.json` (all 1142 rows of Android's effective
+/// `rows` map: `screenPresentationRevision() + chunk0() + … + chunk13() + gameSupportText() + spudJourneyText() +
+/// spudNovemberText() + spudMonetizationText() + spudNovemberReviewText() + spudEighteenIssueText() + spudTargetText() +
+/// spudLearningText()`, first position and last value per key).
 /// Never changes stored names or network answer keys.
 enum AppText {
     static let supported: Set<String> = ["en", "he", "es", "ar", "hi", "nl"]
@@ -145,6 +146,10 @@ enum AppText {
 
     private static func resolveUncached(_ en: String, _ he: String?, column: Int) -> String {
         if let templated = matchTemplate(en, column: column) { return templated }
+        // Kotlin: `en.split("\n").joinToString("\n") { t(it, it, false) }` — each line on its own.
+        if en.contains("\n") {
+            return en.components(separatedBy: "\n").map { t($0, $0, hebrew: false) }.joined(separator: "\n")
+        }
         // Preserve a caller's intentional padding when looking up a short label.
         let clean = Kotlin.trim(en)
         if clean != en, let row = catalog.rows[clean] {
@@ -187,7 +192,8 @@ enum GameText {
 
     static func overriddenKeys() -> [String] { return Array(overrides.keys) }
 
-    private static let overrides: [String: [String]] = [
+    /// Kotlin `SpudFollowupText.copy + mapOf(...)`: the inline rows below win over the follow-up copy.
+    private static let overrides: [String: [String]] = SpudFollowupText.copy.merging([
         "MINIK AMUDU": ["Spud", "עמודו", "Pies Quietos!", "لعبة أسماء", "Naam Aur Ball", "Stand in de mand"],
         "Your Amudu code": ["Your Spud code", "הקוד שלכם לעמודו", "Tu código de Pies Quietos!", "رمز لعبة أسماء الخاص بك", "आपका Naam Aur Ball कोड", "Je code voor Stand in de mand"],
         "Amudu code": ["Spud code", "קוד לעמודו", "Código de Pies Quietos!", "رمز لعبة أسماء", "Naam Aur Ball कोड", "Code voor Stand in de mand"],
@@ -202,5 +208,5 @@ enum GameText {
         "SPUD! Catch or duck — keep your feet still.": ["Stop! Catch or duck — keep your feet still.", "עמודו! תפסו או התכופפו — בלי להזיז רגליים.", "¡Pies quietos! Atrapa o agáchate, sin mover los pies.", "ستوب! أمسك الكرة أو انحنِ، دون تحريك قدميك.", "STOP! कैच लें या झुकें — पैर न हिलाएँ।", "Stop! Vang of buk — houd je voeten stil."],
         "Pick it up. Throw now, or call SPUD to stop runners.": ["Pick it up. Throw now, or call Stop! to stop the runners.", "אספו את הכדור. זרקו מיד, או קראו עמודו כדי לעצור את הרצים.", "Recógela. Lanza ya o grita «¡Pies quietos!» para detener a los demás.", "التقط الكرة. ارمِ الآن أو نادِ «ستوب!» لإيقاف الآخرين.", "गेंद उठाएँ। अभी फेंकें, या दौड़ने वालों को रोकने के लिए “STOP!” कहें।", "Pak de bal. Gooi meteen of roep Stop! om de renners te stoppen."],
         "After missing the airborne catch, get close and tap to pick up the ball. Your feet stay planted there. You may aim and throw immediately, or tap SPUD to stop the runners first. SPUD is only spoken when chosen.": ["After missing the airborne catch, get close and tap to pick up the ball. Your feet stay planted there. Aim and throw immediately, or tap Stop! to stop the runners first. The call is only spoken when you press the button.", "אחרי החטאת התפיסה, התקרבו וגעו כדי לאסוף. הרגליים נשארות במקום האיסוף. אפשר לכוון ולזרוק מיד, או ללחוץ עמודו כדי לעצור קודם את הרצים. הקריאה מושמעת רק כשלוחצים.", "Si no atrapaste la pelota, acércate y toca para recogerla. Desde ahí ya no puedes moverte. Apunta y lanza directamente, o toca «¡Pies quietos!» para detener primero a los demás. Solo se grita cuando pulsas el botón.", "إذا فاتتك الكرة، اقترب والمس لالتقاطها. تثبت قدماك هناك. صوّب وارمِ مباشرة أو المس «ستوب!» لإيقاف الآخرين أولًا. لا يُنطق النداء إلا عند الضغط على الزر.", "कैच छूटे तो पास जाकर टैप से गेंद उठाएँ। अब वहीं खड़े रहें। सीधे निशाना लगाकर फेंकें, या पहले “STOP!” दबाकर सबको रोकें। पुकार सिर्फ बटन दबाने पर होगी।", "Miste je de vangst? Ga dichterbij en tik om de bal te pakken. Vanaf die plek blijven je voeten staan. Richt en gooi meteen, of tik eerst op Stop! om de renners te stoppen. De kreet klinkt alleen als je op de knop tikt."],
-    ]
+    ]) { _, inline in inline }
 }

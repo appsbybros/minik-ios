@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 
 /// Android `core/Models.kt` — world vectors, characters, settings, members and commands.
@@ -38,12 +39,15 @@ struct Skills: Equatable {
     let power: Int
     let speed: Int
     let catching: Int
+    /// Kotlin `jumping` (defaults to `speed`): the house player's independent Jump rating.
+    let jumping: Int
 
-    init(_ accuracy: Int, _ power: Int, _ speed: Int, _ catching: Int) {
+    init(_ accuracy: Int, _ power: Int, _ speed: Int, _ catching: Int, _ jumping: Int? = nil) {
         self.accuracy = min(max(accuracy, 1), 5)
         self.power = min(max(power, 1), 5)
         self.speed = min(max(speed, 1), 5)
         self.catching = min(max(catching, 1), 5)
+        self.jumping = min(max(jumping ?? speed, 1), 5)
     }
 
     func catchProbability(wasRunning: Bool) -> Double {
@@ -65,17 +69,17 @@ struct AmuduCharacter: Equatable {
 
 enum AmuduCharacters {
     static let all: [AmuduCharacter] = [
-        AmuduCharacter(id: "miniko", en: "Miniko", he: "מיניקו", qualities: Skills(1, 3, 3, 1)),
-        AmuduCharacter(id: "minik", en: "Minik", he: "מיניק", qualities: Skills(2, 2, 3, 2)),
-        AmuduCharacter(id: "kyra", en: "Kyra", he: "ספיר", qualities: Skills(5, 5, 5, 4)),
-        AmuduCharacter(id: "flare", en: "Flare", he: "ברק", qualities: Skills(4, 5, 5, 5)),
-        AmuduCharacter(id: "gaya", en: "Gaya", he: "גאיה", qualities: Skills(5, 5, 5, 5)),
-        AmuduCharacter(id: "mia", en: "Mia", he: "מיה", qualities: Skills(5, 3, 4, 5)),
-        AmuduCharacter(id: "amber", en: "Amber", he: "ענבר", qualities: Skills(4, 3, 2, 4)),
-        AmuduCharacter(id: "comet", en: "Comet", he: "שביט", qualities: Skills(3, 4, 5, 4)),
-        AmuduCharacter(id: "june", en: "June", he: "סהר", qualities: Skills(4, 3, 5, 5)),
-        AmuduCharacter(id: "moshiko", en: "Bouncy Bob", he: "מושיק", qualities: Skills(4, 5, 1, 4)),
-        AmuduCharacter(id: "coach67", en: "Coach", he: "המאמן", qualities: Skills(2, 3, 4, 4)),
+        AmuduCharacter(id: "miniko", en: "Miniko", he: "מיניקו", qualities: Skills(1, 3, 3, 1, 4)),
+        AmuduCharacter(id: "minik", en: "Minik", he: "מיניק", qualities: Skills(2, 2, 3, 2, 3)),
+        AmuduCharacter(id: "kyra", en: "Kyra", he: "ספיר", qualities: Skills(5, 4, 5, 4, 5)),
+        AmuduCharacter(id: "flare", en: "Flare", he: "ברק", qualities: Skills(4, 5, 5, 4, 5)),
+        AmuduCharacter(id: "gaya", en: "Gaya", he: "גאיה", qualities: Skills(5, 5, 4, 5, 4)),
+        AmuduCharacter(id: "mia", en: "Mia", he: "מיה", qualities: Skills(5, 3, 4, 5, 3)),
+        AmuduCharacter(id: "amber", en: "Amber", he: "ענבר", qualities: Skills(3, 3, 2, 3, 2)),
+        AmuduCharacter(id: "comet", en: "Comet", he: "שביט", qualities: Skills(3, 4, 5, 3, 5)),
+        AmuduCharacter(id: "june", en: "June", he: "סהר", qualities: Skills(4, 3, 5, 4, 4)),
+        AmuduCharacter(id: "moshiko", en: "Bouncy Bob", he: "קובי קפיץ", qualities: Skills(4, 5, 1, 3, 1)),
+        AmuduCharacter(id: "coach67", en: "Coach", he: "המאמן", qualities: Skills(2, 3, 3, 4, 2)),
     ]
 
     static var ids: [String] { return all.map { $0.id } }
@@ -160,6 +164,7 @@ enum BallKind: String, CaseIterable {
     case beach = "BEACH"
     case neon = "NEON"
     case tennis = "TENNIS"
+    case paint = "PAINT"
 
     var speed: Double {
         switch self {
@@ -167,15 +172,17 @@ enum BallKind: String, CaseIterable {
         case .beach: return 6.2
         case .neon: return 9.4
         case .tennis: return 8.6
+        case .paint: return 8.0
         }
     }
 
     var restitution: Double {
         switch self {
         case .foam: return 0.36
-        case .beach: return 0.70
+        case .beach: return 0.48
         case .neon: return 0.86
-        case .tennis: return 0.78
+        case .tennis: return 0.82
+        case .paint: return 0.22
         }
     }
 
@@ -185,6 +192,7 @@ enum BallKind: String, CaseIterable {
         case .beach: return 0.82
         case .neon: return 0.65
         case .tennis: return 0.60
+        case .paint: return 0.67
         }
     }
 
@@ -194,6 +202,7 @@ enum BallKind: String, CaseIterable {
         case .beach: return "Beach ball"
         case .neon: return "Neon party"
         case .tennis: return "Tennis ball"
+        case .paint: return "Paint balloon"
         }
     }
 
@@ -203,23 +212,27 @@ enum BallKind: String, CaseIterable {
         case .beach: return "כדור ים"
         case .neon: return "כדור ניאון"
         case .tennis: return "כדור טניס"
+        case .paint: return "בלון צבע"
         }
     }
 
     var visualScale: Double {
         switch self {
         case .tennis: return 0.72
+        case .paint: return 0.86
         case .foam, .beach, .neon: return 1.0
         }
     }
 
-    /// Asset name of the ball sprite (Android foam.webp, beachball.webp, neon.webp, tennis.png).
+    /// Asset name of the ball sprite (Android foam.webp, beachball.webp, neon.webp, tennis.png). The paint balloon is
+    /// drawn (Android `PaintEffects.balloon()`); its menu picture is `paint_balloon_menu.webp`.
     var artName: String {
         switch self {
         case .foam: return "foam"
         case .beach: return "beachball"
         case .neon: return "neon"
         case .tennis: return "tennis"
+        case .paint: return "paint_balloon_menu"
         }
     }
 }
@@ -279,21 +292,25 @@ enum Wind: String, CaseIterable {
     }
 }
 
+/// Android `ThrowMode`. STANDARD retains its saved/network identifier for the original swipe control ("Pro").
 enum ThrowMode: String, CaseIterable {
     case easy = "EASY"
+    case target = "TARGET"
     case standard = "STANDARD"
 
     var en: String {
         switch self {
-        case .easy: return "Easy · low throws and ground bounces allowed"
-        case .standard: return "Standard · control height; no ground bounce"
+        case .easy: return "Easy · tap to throw"
+        case .target: return "Standard · moving target"
+        case .standard: return "Pro · swipe to throw"
         }
     }
 
     var he: String {
         switch self {
-        case .easy: return "קל · זריקה נמוכה ופגיעה אחרי קפיצה"
-        case .standard: return "רגיל · שליטה בגובה, בלי קפיצה מהקרקע"
+        case .easy: return "קל · נגיעה לזריקה"
+        case .target: return "סטנדרטי · מטרה נעה"
+        case .standard: return "מקצועי · החלקה לזריקה"
         }
     }
 }
@@ -302,6 +319,13 @@ enum ThrowMode: String, CaseIterable {
 enum RuleSet: String, CaseIterable {
     case nicknames = "NICKNAMES"
     case spud = "SPUD"
+}
+
+/// Android `NicknameAnswer`: how a thrower answers a nicknamed player's name (choices, automatic or typed).
+enum NicknameAnswer: String, CaseIterable {
+    case choices = "CHOICES"
+    case automatic = "AUTOMATIC"
+    case typed = "TYPED"
 }
 
 /// Android `SpectatorReason`: why an actor is watching (`none` while playing).
@@ -364,14 +388,20 @@ struct GameConfig: Equatable {
     let returnAttemptLimit: Int
     /// Kotlin `challengeStep`: the skill-journey challenge this engine practices (-1 for a regular game).
     let challengeStep: Int
+    let nicknameAnswer: NicknameAnswer
+    let allowGroundHit: Bool
+    /// Kotlin `practiceLesson`: the learning-curriculum topic ("" for the journey or a match).
+    let practiceLesson: String
+    let callWindFactor: Double
 
     init(scene: ArenaScene = .park, ball: BallKind = .foam, freezeRule: FreezeRule = .freeze, participants: Int = 6, turns: Int = 0,
          width: Double = 16.0, depth: Double = 16.0, moveSpeed: Double = 4.4, catchWindow: Double = 0.7, duckSeconds: Double = 0.8,
-         duckHeight: Double = 0.66, standingHeight: Double = 1.75, doubleTapMs: Int = 190, resolveSeconds: Double = 2.2,
-         huddleSeconds: Double = 24.0, snapshotHz: Int = 12, daylight: Daylight = .noon, throwMode: ThrowMode = .standard,
+         duckHeight: Double = 1.4, standingHeight: Double = 1.75, doubleTapMs: Int = 190, resolveSeconds: Double = 2.2,
+         huddleSeconds: Double = 24.0, snapshotHz: Int = 12, daylight: Daylight = .noon, throwMode: ThrowMode = .easy,
          wind: Wind = .none, rules: RuleSet = .nicknames, requireCall: Bool = false, stepsAfterCall: Int = 0, actionSeconds: Int = 30,
          stepLengthFraction: Double = 0.03125, returnVoteSeconds: Double = 15.0, idleLimit: Int = 3, returnAttemptLimit: Int = 3,
-         challengeStep: Int = -1) throws {
+         challengeStep: Int = -1, nicknameAnswer: NicknameAnswer = .choices, allowGroundHit: Bool = false, practiceLesson: String = "",
+         callWindFactor: Double = 0.90) throws {
         let modes = GameConfig.actionChoices.contains(actionSeconds) && stepsAfterCall >= 0 && stepsAfterCall <= 4 &&
             stepLengthFraction >= 0.01 && stepLengthFraction <= 0.04 && returnVoteSeconds >= 10.0 && returnVoteSeconds <= 20.0 &&
             idleLimit == 3 && returnAttemptLimit == 3
@@ -386,7 +416,8 @@ struct GameConfig: Equatable {
                   snapshotHz: snapshotHz, daylight: daylight, throwMode: throwMode, wind: wind, rules: rules, requireCall: requireCall,
                   stepsAfterCall: stepsAfterCall, actionSeconds: actionSeconds, stepLengthFraction: stepLengthFraction,
                   returnVoteSeconds: returnVoteSeconds, idleLimit: idleLimit, returnAttemptLimit: returnAttemptLimit,
-                  challengeStep: challengeStep)
+                  challengeStep: challengeStep, nicknameAnswer: nicknameAnswer, allowGroundHit: allowGroundHit,
+                  practiceLesson: practiceLesson, callWindFactor: callWindFactor)
     }
 
     private init(raw scene: ArenaScene, ball: BallKind, freezeRule: FreezeRule, participants: Int, turns: Int, width: Double,
@@ -394,7 +425,8 @@ struct GameConfig: Equatable {
                  standingHeight: Double, doubleTapMs: Int, resolveSeconds: Double, huddleSeconds: Double, snapshotHz: Int,
                  daylight: Daylight, throwMode: ThrowMode, wind: Wind, rules: RuleSet, requireCall: Bool, stepsAfterCall: Int,
                  actionSeconds: Int, stepLengthFraction: Double, returnVoteSeconds: Double, idleLimit: Int, returnAttemptLimit: Int,
-                 challengeStep: Int) {
+                 challengeStep: Int, nicknameAnswer: NicknameAnswer, allowGroundHit: Bool, practiceLesson: String,
+                 callWindFactor: Double) {
         self.scene = scene
         self.ball = ball
         self.freezeRule = freezeRule
@@ -423,31 +455,47 @@ struct GameConfig: Equatable {
         self.idleLimit = idleLimit
         self.returnAttemptLimit = returnAttemptLimit
         self.challengeStep = challengeStep
+        self.nicknameAnswer = nicknameAnswer
+        self.allowGroundHit = allowGroundHit
+        self.practiceLesson = practiceLesson
+        self.callWindFactor = callWindFactor
     }
 
-    /// The Kotlin defaults (6 players, park, foam, noon, standard, no wind, no turn limit, nickname rules, 16x16 court).
+    /// The Kotlin defaults (6 players, park, foam, noon, Easy controls, no wind, no turn limit, nickname rules, 16x16 court).
     static let defaults = GameConfig(raw: .park, ball: .foam, freezeRule: .freeze, participants: 6, turns: 0, width: 16.0, depth: 16.0,
-                                     moveSpeed: 4.4, catchWindow: 0.7, duckSeconds: 0.8, duckHeight: 0.66, standingHeight: 1.75,
+                                     moveSpeed: 4.4, catchWindow: 0.7, duckSeconds: 0.8, duckHeight: 1.4, standingHeight: 1.75,
                                      doubleTapMs: 190, resolveSeconds: 2.2, huddleSeconds: 24.0, snapshotHz: 12, daylight: .noon,
-                                     throwMode: .standard, wind: .none, rules: .nicknames, requireCall: false, stepsAfterCall: 0,
+                                     throwMode: .easy, wind: .none, rules: .nicknames, requireCall: false, stepsAfterCall: 0,
                                      actionSeconds: 30, stepLengthFraction: 0.03125, returnVoteSeconds: 15.0, idleLimit: 3,
-                                     returnAttemptLimit: 3, challengeStep: -1)
+                                     returnAttemptLimit: 3, challengeStep: -1, nicknameAnswer: .choices, allowGroundHit: false,
+                                     practiceLesson: "", callWindFactor: 0.90)
 
     /// Kotlin `copy(...)`: every field that is not passed keeps its value; the copy is validated like the constructor.
+    /// Parameters follow the Kotlin field order (any subset may be passed, in this order).
     func copy(scene: ArenaScene? = nil, ball: BallKind? = nil, freezeRule: FreezeRule? = nil, participants: Int? = nil, turns: Int? = nil,
-              width: Double? = nil, depth: Double? = nil, huddleSeconds: Double? = nil, daylight: Daylight? = nil,
+              width: Double? = nil, depth: Double? = nil, moveSpeed: Double? = nil, catchWindow: Double? = nil,
+              duckSeconds: Double? = nil, duckHeight: Double? = nil, standingHeight: Double? = nil, doubleTapMs: Int? = nil,
+              resolveSeconds: Double? = nil, huddleSeconds: Double? = nil, snapshotHz: Int? = nil, daylight: Daylight? = nil,
               throwMode: ThrowMode? = nil, wind: Wind? = nil, rules: RuleSet? = nil, requireCall: Bool? = nil,
-              stepsAfterCall: Int? = nil, actionSeconds: Int? = nil, stepLengthFraction: Double? = nil) throws -> GameConfig {
+              stepsAfterCall: Int? = nil, actionSeconds: Int? = nil, stepLengthFraction: Double? = nil,
+              returnVoteSeconds: Double? = nil, challengeStep: Int? = nil, nicknameAnswer: NicknameAnswer? = nil,
+              allowGroundHit: Bool? = nil, practiceLesson: String? = nil, callWindFactor: Double? = nil) throws -> GameConfig {
         return try GameConfig(scene: scene ?? self.scene, ball: ball ?? self.ball, freezeRule: freezeRule ?? self.freezeRule,
                               participants: participants ?? self.participants, turns: turns ?? self.turns, width: width ?? self.width,
-                              depth: depth ?? self.depth, moveSpeed: moveSpeed, catchWindow: catchWindow, duckSeconds: duckSeconds,
-                              duckHeight: duckHeight, standingHeight: standingHeight, doubleTapMs: doubleTapMs,
-                              resolveSeconds: resolveSeconds, huddleSeconds: huddleSeconds ?? self.huddleSeconds, snapshotHz: snapshotHz,
+                              depth: depth ?? self.depth, moveSpeed: moveSpeed ?? self.moveSpeed,
+                              catchWindow: catchWindow ?? self.catchWindow, duckSeconds: duckSeconds ?? self.duckSeconds,
+                              duckHeight: duckHeight ?? self.duckHeight, standingHeight: standingHeight ?? self.standingHeight,
+                              doubleTapMs: doubleTapMs ?? self.doubleTapMs, resolveSeconds: resolveSeconds ?? self.resolveSeconds,
+                              huddleSeconds: huddleSeconds ?? self.huddleSeconds, snapshotHz: snapshotHz ?? self.snapshotHz,
                               daylight: daylight ?? self.daylight, throwMode: throwMode ?? self.throwMode, wind: wind ?? self.wind,
                               rules: rules ?? self.rules, requireCall: requireCall ?? self.requireCall,
                               stepsAfterCall: stepsAfterCall ?? self.stepsAfterCall, actionSeconds: actionSeconds ?? self.actionSeconds,
-                              stepLengthFraction: stepLengthFraction ?? self.stepLengthFraction, returnVoteSeconds: returnVoteSeconds,
-                              idleLimit: idleLimit, returnAttemptLimit: returnAttemptLimit, challengeStep: challengeStep)
+                              stepLengthFraction: stepLengthFraction ?? self.stepLengthFraction,
+                              returnVoteSeconds: returnVoteSeconds ?? self.returnVoteSeconds, idleLimit: idleLimit,
+                              returnAttemptLimit: returnAttemptLimit, challengeStep: challengeStep ?? self.challengeStep,
+                              nicknameAnswer: nicknameAnswer ?? self.nicknameAnswer, allowGroundHit: allowGroundHit ?? self.allowGroundHit,
+                              practiceLesson: practiceLesson ?? self.practiceLesson,
+                              callWindFactor: callWindFactor ?? self.callWindFactor)
     }
 
     /// Kotlin `copy(participants = n)`.
@@ -467,13 +515,16 @@ struct Member: Equatable {
     let name: String
     let bot: Bool
     let hebrew: Bool
+    /// Kotlin `points`: the colour-rank points a room member publishes (nil when unknown).
+    let points: Int?
 
-    init(_ id: String, _ character: String, _ name: String, bot: Bool = false, hebrew: Bool = false) {
+    init(_ id: String, _ character: String, _ name: String, bot: Bool = false, hebrew: Bool = false, points: Int? = nil) {
         self.id = id
         self.character = character
         self.name = name
         self.bot = bot
         self.hebrew = hebrew
+        self.points = points
     }
 
     func displayName(hebrew: Bool) -> String {
@@ -482,7 +533,12 @@ struct Member: Equatable {
 
     /// Kotlin `copy(id = ..., bot = ...)`.
     func copy(id newId: String? = nil, bot newBot: Bool? = nil) -> Member {
-        return Member(newId ?? id, character, name, bot: newBot ?? bot, hebrew: hebrew)
+        return Member(newId ?? id, character, name, bot: newBot ?? bot, hebrew: hebrew, points: points)
+    }
+
+    /// Kotlin `copy(points = ...)`.
+    func copy(points newPoints: Int?) -> Member {
+        return Member(id, character, name, bot: bot, hebrew: hebrew, points: newPoints)
     }
 }
 
@@ -490,6 +546,8 @@ struct Member: Equatable {
 final class GameActor {
     let member: Member
     var position: V
+    /// Kotlin `paintHits`: the paint colours that hit this actor, in order.
+    var paintHits: [Int] = []
     /// Colour-rank points this actor earned in this match (5 for a catch or a successful tag).
     var rankEarned = 0
     /// Kotlin `jumpHeight`/`jumpVelocity`: a practice jump (skill journey only).
@@ -507,11 +565,19 @@ final class GameActor {
     var catchReach = 1.0
     var catchRoll = 0.0
     var catchProbability = 1.0
+    /// Kotlin `catchHeight`: the predicted contact height of the catch being attempted.
+    var catchHeight = 1.3
     var throwAt = -99.0
     var catchAt = -99.0
     var hitAt = -99.0
     var gait = 0.0
     var actuallyMoving = false
+    var eliminatedAt = -1.0
+    var exitAt = -1.0
+    var exitFrom: V?
+    var exitTo: V?
+    /// Kotlin `departed`: explicitly left the room (different from a temporary connection loss).
+    var departed = false
     var spectator = SpectatorReason.none
     var idleStrikes = 0
     var returnAttempts = 0
@@ -520,9 +586,14 @@ final class GameActor {
     var nextThink = 0.0
     var catchDecided = false
     var movementPenaltyTurn = -1
+    var anticipationFlight = ""
+    var circleSpot: V?
+    var fleeDirection = V.zero
+    var fleeFlight = ""
+    var fleeNextAt = 0.0
 
-    /// Kotlin `active`: playing, not watching.
-    var active: Bool { return spectator == SpectatorReason.none }
+    /// Kotlin `active`: playing, not watching, and still in the room.
+    var active: Bool { return !departed && spectator == SpectatorReason.none }
 
     init(member: Member, position: V) {
         self.member = member
@@ -547,9 +618,12 @@ struct Ball: Equatable {
     var bounces: Int
     var flightId: String
     var launchAt: Double
+    var burst: Bool
+    var burstOnGround: Bool
+    var burstOnCatch: Bool
 
     init(_ position: V, _ height: Double, _ velocity: V, _ vz: Double, _ holder: String? = nil, bounces: Int = 0,
-         flightId: String = "", launchAt: Double = 0.0) {
+         flightId: String = "", launchAt: Double = 0.0, burst: Bool = false, burstOnGround: Bool = false, burstOnCatch: Bool = false) {
         self.position = position
         self.height = height
         self.velocity = velocity
@@ -558,6 +632,9 @@ struct Ball: Equatable {
         self.bounces = bounces
         self.flightId = flightId
         self.launchAt = launchAt
+        self.burst = burst
+        self.burstOnGround = burstOnGround
+        self.burstOnCatch = burstOnCatch
     }
 }
 
@@ -587,7 +664,10 @@ enum GameCommand: Equatable {
     case catchBall
     case duck
     case shout
-    case throwBall(power: Double)
+    /// Kotlin `Command.PointThrow(point, height)`: Easy/Standard controls throw at a chosen physical point.
+    case pointThrow(point: V, height: Double)
+    /// Kotlin `Command.Throw(power, botVz = null)`: `botVz` is only accepted from a house player.
+    case throwBall(power: Double, botVz: Double? = nil)
     case end
     /// Kotlin `Command.Pause(value)`: only the last active human can pause a shared match.
     case pause(value: Bool)
@@ -605,10 +685,27 @@ enum Words {
                      "moon", "star"]
     static let he = ["הצפרדע", "הקופצנית", "הצב", "המרחף", "הפנדה", "המצחיקה", "המנגו", "הענן", "הפינגווין", "הבננה", "בננה", "הכוכב",
                      "המחייך", "הנודל", "המלפפון", "קפטן", "פרופסור", "חללית", "קופץ", "רוקד", "מנצנץ", "המנצנץ", "קטנטן"]
-    static let phrasesEn = ["Nice catch!", "You almost got me!", "Ready for takeoff!", "Oops, slippery fingers!", "That was cosmic!",
+    static let phrasesEn = ["Nice catch!", "You almost got me!", "Ready for takeoff!", "Oops, slippery fingers!", "Cool game dudes",
                             "Here comes the bouncy ball!"]
-    static let phrasesHe = ["תפיסה יפה!", "כמעט תפסת אותי!", "מוכנים להמראה!", "אופס, אצבעות חלקלקות!", "זה היה קוסמי!",
+    static let phrasesHe = ["תפיסה יפה!", "כמעט תפסת אותי!", "מוכנים להמראה!", "אופס, אצבעות חלקלקות!", "אחלה משחק חברים",
                             "הנה מגיע הכדור הקופצני!"]
+
+    /// Kotlin `proposalKey`: the first 10 bytes of SHA-256(normalize(word) as UTF-8), as lowercase hex.
+    static func proposalKey(_ word: String) -> String {
+        let digest = SHA256.hash(data: Data(normalize(word).utf8))
+        return digest.prefix(10).map { String(format: "%02x", $0) }.joined()
+    }
+
+    /// Kotlin `uniqueSuggestion(seed, hebrew, used)`: the first funny word from `seed` on that nobody proposed yet, or "".
+    static func uniqueSuggestion(_ seed: Int, hebrew: Bool, used: [String]) -> String {
+        let list = hebrew ? he : en
+        let existing = Set(used.map { normalize($0) })
+        for i in list.indices {
+            let word = list[Kotlin.floorMod(seed + i, list.count)]
+            if !existing.contains(normalize(word)) { return word }
+        }
+        return ""
+    }
     private static let suggestionsEn = ["frog", "banana", "noodle", "panda", "pickle", "waffle"]
     private static let suggestionsHe = ["הצפרדע", "הפנדה", "בננה", "הכוכב", "הצב", "הפינגווין"]
 

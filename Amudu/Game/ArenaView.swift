@@ -77,8 +77,11 @@ final class ArenaView: UIView {
     var sendCommand: (@MainActor (GameCommand) -> Void)?
     var remote = false
     var remoteUpdate: (@MainActor () -> Void)?
-    /// Android `networkWaiting`: the room's connection is lost (or a guest's snapshots stopped); play is frozen.
+    /// Android `networkWaiting`: the room's connection is lost (or a guest's snapshots stopped); input is blocked, but a
+    /// guest keeps playing back the known ball path.
     var networkWaiting = false
+    /// Android `speechAvailable`: the "…" phrase button shows only while the speech engine works.
+    var speechAvailable = false
 
     /// Shown only when Metal is unavailable (Android always has the world renderer).
     private let backgroundView = UIImageView()
@@ -129,7 +132,16 @@ final class ArenaView: UIView {
     private(set) var cameraRect = CGRect.zero
     private(set) var rosterRect = CGRect.zero
     private(set) var jumpRect = CGRect.zero
+    /// Android `catchButton` / `duckButton`: the match action bar (Catch, Jump ↑, Duck) while the ball is loose.
+    private(set) var catchRect = CGRect.zero
+    private(set) var duckRect = CGRect.zero
     private var practiceObstacle: CGRect?
+    private let paintEffects = PaintEffects()
+    /// Android `displayedAim`: the moving target dot of the Standard (timed target) control, as last drawn.
+    private var displayedAim: TargetThrow.Aim?
+    /// Android `attackFlight` / `attackTarget`: the defender an attack is heading for (camera framing only).
+    private var attackFlight = ""
+    private var attackTarget: String?
 
     private struct Tag {
         let actor: GameActor
@@ -224,7 +236,7 @@ final class ArenaView: UIView {
 
     private func fieldTop() -> CGFloat { return wide ? 64 : bounds.height * 0.24 }
 
-    private func fieldBottom() -> CGFloat { return wide ? bounds.height - 12 : bounds.height * 0.845 }
+    private func fieldBottom() -> CGFloat { return wide ? bounds.height - 70 : bounds.height * 0.845 }
 
     // MARK: Frame loop
 
@@ -250,12 +262,12 @@ final class ArenaView: UIView {
         let now = uptimeMs()
         let ms = lastMs == 0 ? 16 : now - lastMs
         lastMs = now
-        if !networkWaiting {
-            if !remote {
-                engine.tick(Double(ms) / 1000.0)
-            } else {
-                remoteUpdate?()
-            }
+        LagDiagnostics.frame(numericCast(ms))
+        // A late packet does not stop a known ballistic path. Input remains blocked by the reconnect overlay.
+        if remote {
+            remoteUpdate?()
+        } else if !networkWaiting {
+            engine.tick(Double(ms) / 1000.0)
         }
         let fresh = engine.events.filter { $0.id > eventCursor }
         for e in fresh {
@@ -270,7 +282,7 @@ final class ArenaView: UIView {
             shownReturn = engine.returnSerial
             onReturnVote?()
         }
-        if engine.phase == .resolve && engine.statusSerial > 0 && shownStatus != engine.statusSerial {
+        if engine.phase == .resolve && engine.statusSerial > 0 && engine.time - engine.phaseAt >= 2.0 && shownStatus != engine.statusSerial {
             shownStatus = engine.statusSerial
             onStatus?()
         }
@@ -295,11 +307,12 @@ final class ArenaView: UIView {
         return t
     }
 
-    /// Android `tr`: the localized text with the stop call replaced by this rule set's call (SPUD letters word).
+    /// Android `tr`: the localized text ("balloon" for "ball" with the paint balloon) with the stop call replaced by this
+    /// rule set's call (SPUD letters word).
     private func tr(_ en: String, _ he: String) -> String {
         let stop = ArenaView.trimBang(GameText.stopCall())
         let call = ArenaView.trimBang(RuleText.call(engine.config.rules))
-        let text = GameText.t(en, he, hebrew: hebrew)
+        let text = ProjectileText.apply(GameText.t(en, he, hebrew: hebrew), kind: engine.config.ball, language: hebrew ? "he" : AppText.language)
         if stop.isEmpty || stop == call { return text }
         return text.replacingOccurrences(of: stop, with: call)
     }
@@ -311,10 +324,14 @@ final class ArenaView: UIView {
         let initial = cameraAt == 0
         let dt = initial ? 0.0 : Double(now - cameraAt) / 1000.0
         cameraAt = now
-        let base = practiceCamera() ?? aimedCamera() ?? framedCamera(targetCamera())
+        let action = attackCamera()
+        let base = practiceCamera() ?? action ?? aimedCamera() ?? framedCamera(targetCamera())
         normalCamera = base
-        let target = receptionCamera(base, dt)
-        arenaCamera = initial ? target : arenaCamera.toward(target, min(dt, 0.033))
+        // Ground-only framing can lose a tall name-call toss above the screen. Anticipate
+        // the ascent for smooth zoom-out, then contain the actual ball after camera easing.
+        let target = frameAirborneBall(action != nil ? base : receptionCamera(base, dt), 0.35)
+        let eased = initial ? target : arenaCamera.toward(target, min(dt, 0.033))
+        arenaCamera = frameAirborneBall(eased, 0.0)
         let night: Float
         switch engine.config.daylight {
         case .morning: night = 0.15
@@ -324,6 +341,23 @@ final class ArenaView: UIView {
         }
         world.submit(ArenaFrame(camera: arenaCamera, scene: engine.config.scene.rawValue.lowercased(), width: engine.config.width,
                                 depth: engine.config.depth, time: engine.time, night: night))
+    }
+
+    /// Android `frameAirborneBall`: backs the camera off just enough to keep a loose airborne ball (and, with `lead`, where
+    /// it is rising to) on screen. Presentation only.
+    private func frameAirborneBall(_ base: ArenaCamera, _ lead: Double) -> ArenaCamera {
+        let b = engine.ball
+        if engine.practice != nil || b.holder != nil || !(engine.phase == .air || engine.phase == .flight || engine.phase == .retrieve) {
+            return base
+        }
+        let gravity = engine.config.scene.gravity
+        let ahead = min(lead, max(0.0, b.vz) / gravity)
+        let futureHeight = max(b.height, b.height + b.vz * ahead - 0.5 * gravity * ahead * ahead)
+        let points: [(Double, Double, Double)] = [(b.position.x, b.position.y, b.height * 2),
+                                                  (b.position.x + b.velocity.x * ahead, b.position.y + b.velocity.y * ahead, futureHeight * 2)]
+        let w = Double(bounds.width)
+        let h = Double(bounds.height)
+        return AirborneFraming.fit(base, points, w, h, Double(fieldLeft()) + 16, w - 24, Double(fieldTop()) + 20, Double(fieldBottom()) - 12)
     }
 
     /// Android `receptionCamera`: eases toward a close view of a human receiver and the incoming ball.
@@ -347,7 +381,7 @@ final class ArenaView: UIView {
         // Fit the receiver's whole body and the actual airborne ball, including tall catches.
         for _ in 0..<110 {
             let points = [close.project(receiver.x, receiver.y, 0.0, w, h), close.project(receiver.x, receiver.y, 4.0, w, h),
-                          close.project(nearBall.x, nearBall.y, ball.height, w, h)]
+                          close.project(nearBall.x, nearBall.y, ball.height * 2, w, h)]
             if points.contains(where: { $0.x < left || $0.x > right || $0.y < top || $0.y > bottom }) {
                 close = close.copy(distance: close.distance + 0.35)
             }
@@ -364,7 +398,8 @@ final class ArenaView: UIView {
     /// Android `practiceCamera`: the smallest distance that shows every actor and the target, head to feet.
     private func practiceCamera() -> ArenaCamera? {
         guard let d = engine.practice else { return nil }
-        let positions = engine.actors.map { $0.position } + [d.target]
+        let shown = engine.actors.filter { !$0.member.bot || d.stage.cooperative || d.stage.defence || d.stage.skill == .tag }
+        let positions = shown.map { $0.position } + [d.target]
         let w = Double(bounds.width)
         let h = Double(bounds.height)
         let left = Double(fieldLeft()) + 15
@@ -385,6 +420,53 @@ final class ArenaView: UIView {
             cam = cam.copy(distance: cam.distance + 0.4)
         }
         return cam
+    }
+
+    /// Android `attackCamera`: during an attack and its first 2.1 s of outcome, frame the defender the ball is heading for
+    /// (chosen once per flight), the players near them and the ball.
+    private func attackCamera() -> ArenaCamera? {
+        if engine.practice != nil { return nil }
+        let flight = engine.phase == .flight
+        let aftermath = engine.phase == .resolve && engine.time - engine.phaseAt < 2.1
+        if !flight && !aftermath {
+            attackFlight = ""
+            attackTarget = nil
+            return nil
+        }
+        let b = engine.ball
+        if flight && attackFlight != b.flightId {
+            attackFlight = b.flightId
+            let direction = b.velocity.unit()
+            var best: GameActor?
+            var bestScore = Double.infinity
+            for a in engine.activeActors where a.member.id != engine.thrower {
+                let d = a.position - b.position
+                let along = d.x * direction.x + d.y * direction.y
+                let score = along < 0 ? 1000.0 + d.length() : abs(d.x * direction.y - d.y * direction.x) * 4 + along * 0.15
+                if best == nil || score < bestScore {
+                    best = a
+                    bestScore = score
+                }
+            }
+            attackTarget = best?.member.id
+        }
+        guard let id = b.holder ?? attackTarget, let target = engine.actor(id)?.position else { return nil }
+        let vicinity = engine.activeActors.filter { ($0.position - target).length() < 4 }.map { $0.position }
+        var points: [(Double, Double, Double)] = []
+        for p in vicinity + [target] {
+            points.append((p.x, p.y, 0.0))
+            points.append((p.x, p.y, 4.0))
+        }
+        points.append((b.position.x, b.position.y, b.height * 2))
+        let mid = target * 0.72 + b.position * 0.28
+        let w = Double(bounds.width)
+        let h = Double(bounds.height)
+        let left = Double(fieldLeft()) + 12
+        let right = w - 20
+        let top = Double(fieldTop()) + 8
+        let bottom = Double(fieldBottom()) - 8
+        if right <= left || bottom <= top { return nil }
+        return TightFraming.fit(arenaCamera.copy(x: mid.x, y: mid.y, focusHeight: 1.0, tilt: 0.86), points, w, h, left, right, top, bottom, 16.0)
     }
 
     /// While aiming at a tapped player, frame the thrower and that player together.
@@ -416,7 +498,7 @@ final class ArenaView: UIView {
             return normalCamera.copy(x: cfg.width / 2, y: cfg.depth / 2, distance: 24.0, focusHeight: 0.0)
         }
         if playerCamera { return normalCamera.copy(x: me.x, y: me.y, distance: 20.0, focusHeight: 0.0) }
-        let followed = (engine.phase == .air || engine.phase == .retrieve) ? engine.called : engine.thrower
+        let followed = engine.ball.holder ?? ((engine.phase == .air || engine.phase == .retrieve || engine.phase == .resolve) ? engine.called : engine.thrower)
         let actor = engine.actor(followed)?.position ?? me
         let ball = engine.ball
         let focus: V
@@ -424,7 +506,7 @@ final class ArenaView: UIView {
         case .air: focus = ball.vz > 0 ? ball.position : actor * 0.7 + ball.position * 0.3
         case .retrieve: focus = actor * 0.5 + ball.position * 0.5
         case .shout, .aim, .flight: focus = actor * 0.5 + ball.position * 0.5
-        default: focus = actor
+        default: focus = engine.ball.holder != nil ? actor : ball.position
         }
         let distance: Double
         switch engine.phase {
@@ -432,8 +514,15 @@ final class ArenaView: UIView {
         case .aim, .shout: distance = 27.0
         default: distance = 24.0
         }
-        return normalCamera.copy(x: focus.x, y: focus.y, distance: Kotlin.clamp(distance, 20.0, 40.0),
-                                 focusHeight: engine.phase == .air ? ball.height * 0.42 : 0.0)
+        let middle = engine.phase == .resolve ? focus : me * 0.30 + focus * 0.70
+        let base = normalCamera.copy(x: middle.x, y: middle.y, distance: Kotlin.clamp(distance, 20.0, 40.0),
+                                     focusHeight: engine.phase == .air ? ball.height * 0.30 : 0.0)
+        var framed: [(Double, Double)] = engine.phase == .resolve ? [] : [(me.x, me.y)]
+        framed.append((actor.x, actor.y))
+        framed.append((ball.position.x, ball.position.y))
+        let w = Double(bounds.width)
+        let h = Double(bounds.height)
+        return LandscapeFraming.fit(base, framed, w, h, Double(fieldLeft()), w - 16, Double(fieldTop()), Double(fieldBottom()), 4.2)
     }
 
     private func framedCamera(_ base: ArenaCamera) -> ArenaCamera {
@@ -454,17 +543,17 @@ final class ArenaView: UIView {
         let bottom = Double(fieldBottom())
         var camera = base.copy(x: playerCamera ? base.x : cfg.width / 2, y: playerCamera ? base.y : cfg.depth / 2, distance: base.distance * 0.78,
                                focusHeight: playerCamera ? base.focusHeight : 0.0, centerX: (left + right) / 2 / w,
-                               centerY: (top + (bottom - top) * 0.52) / h, tilt: 0.68)
-        let points: [V]
+                               centerY: (top + bottom) / 2 / h, tilt: 0.76)
         if !playerCamera {
-            points = [V(0.6, 0.6), V(cfg.width - 0.6, 0.6), V(0.6, cfg.depth - 0.6), V(cfg.width - 0.6, cfg.depth - 0.6)]
+            var points: [(Double, Double, Double)] = [V(0.5, 0.5), V(cfg.width - 0.5, 0.5), V(0.5, cfg.depth - 0.5),
+                                                      V(cfg.width - 0.5, cfg.depth - 0.5)].map { ($0.x, $0.y, 0.0) }
+            for a in engine.activeActors {
+                points.append((a.position.x, a.position.y, 0.0))
+                points.append((a.position.x, a.position.y, 4.0))
+            }
+            camera = TightFraming.fit(camera, points, w, h, left + 10, right - 10, top + 8, bottom - 8)
         } else if engine.phase == .circle && engine.circleFormation {
-            points = engine.activeActors.map { $0.position }
-        } else {
-            points = []
-        }
-        if !points.isEmpty {
-            camera = LandscapeFraming.fit(camera, points.map { ($0.x, $0.y) }, w, h, left, right, top, bottom, 3.8)
+            camera = LandscapeFraming.fit(camera, engine.activeActors.map { ($0.position.x, $0.position.y) }, w, h, left, right, top, bottom, 3.8)
         }
         return camera
     }
@@ -498,28 +587,39 @@ final class ArenaView: UIView {
         return (s as NSString).size(withAttributes: [.font: font(size)]).width
     }
 
-    /// Android `drawText` at a baseline, centered or right-aligned.
-    private func text(_ s: String, _ x: CGFloat, _ y: CGFloat, _ size: CGFloat, _ color: UInt32 = 0xffffffff, right: Bool = false) {
+    /// Android `drawText` at a baseline, centered, right-aligned or left-aligned.
+    private func text(_ s: String, _ x: CGFloat, _ y: CGFloat, _ size: CGFloat, _ color: UInt32 = 0xffffffff, right: Bool = false,
+                      left: Bool = false) {
         let f = font(size)
         let attributes: [NSAttributedString.Key: Any] = [.font: f, .foregroundColor: argbColor(color)]
         let string = s as NSString
         let width = string.size(withAttributes: attributes).width
-        let originX = right ? x - width : x - width / 2
+        let originX = left ? x : (right ? x - width : x - width / 2)
         string.draw(at: CGPoint(x: originX, y: y - f.ascender), withAttributes: attributes)
     }
 
-    /// Android `StaticLayout` centered horizontally and vertically in `rect`.
-    private func paragraph(_ s: String, _ rect: CGRect, _ size: CGFloat, _ color: UInt32 = 0xffffffff) {
+    /// Android `paragraphHeight`: the height of `s` laid out in a box `w` wide (minus the 12-point side insets).
+    private func paragraphHeight(_ s: String, _ w: CGFloat, _ size: CGFloat) -> CGFloat {
+        let attributed = NSAttributedString(string: s, attributes: [.font: font(size)])
+        let bounding = attributed.boundingRect(with: CGSize(width: max(w - 24, 1), height: CGFloat.greatestFiniteMagnitude),
+                                               options: [.usesLineFragmentOrigin, .usesFontLeading], context: nil)
+        return ceil(bounding.height)
+    }
+
+    /// Android `paragraph`: a `StaticLayout` inset in `box` (6 points each side when centered, 12 when start-aligned),
+    /// vertically centered, written in the language's direction.
+    private func paragraph(_ s: String, _ box: CGRect, _ size: CGFloat, _ color: UInt32 = 0xffffffff, center: Bool = true) {
+        let rect = box.insetBy(dx: center ? 6 : 12, dy: 3)
         let w = max(rect.width, 1)
-        let key = s + "/" + String(Int(w)) + "/" + String(Double(size)) + "/" + String(color)
+        let key = "\(s)/\(Int(w))/\(Double(size))/\(color)/\(center)"
         let entry: (NSAttributedString, CGFloat)
         if let cached = cachedLayouts[key] {
             entry = cached
         } else {
             if cachedLayouts.count > 90 { cachedLayouts.removeAll() }
             let style = NSMutableParagraphStyle()
-            style.alignment = .center
-            style.baseWritingDirection = .natural
+            style.alignment = center ? .center : .natural
+            style.baseWritingDirection = AppText.rtl ? .rightToLeft : .leftToRight
             style.lineBreakMode = .byWordWrapping
             let attributed = NSAttributedString(string: s, attributes: [.font: font(size), .foregroundColor: argbColor(color), .paragraphStyle: style])
             let bounding = attributed.boundingRect(with: CGSize(width: w, height: CGFloat.greatestFiniteMagnitude),
@@ -583,32 +683,47 @@ final class ArenaView: UIView {
             ctx.setLineWidth(2)
             ctx.strokePath()
         }
-        if engine.phase == .air {
-            let p = project(engine.landing)
+        if engine.phase == .air || engine.phase == .retrieve {
+            let p = project(engine.phase == .air ? engine.landing : engine.ball.position)
             ctx.setStrokeColor(argbColor(0x66fff06a).cgColor)
             ctx.setLineWidth(3)
             ctx.strokeEllipse(in: CGRect(x: p.x - 23, y: p.y - 10, width: 46, height: 20))
+        }
+        let pixel = 1 / max(traitCollection.displayScale, 1)
+        for splash in engine.paintSplashes {
+            paintEffects.ground(ctx, splash, engine.time, pixel: pixel) { v, z in self.ballPoint(v, z) }
         }
         drawPractice(ctx)
         actorRects.removeAll()
         handPoints.removeAll()
         tags.removeAll()
-        let loose = engine.ball.holder == nil
-        if loose { drawBallShadow(ctx, width, height) }
+        let loose = engine.ball.holder == nil && !engine.ball.burst
+        if !engine.ball.burst { drawBallShadow(ctx) }
+        if let practice = engine.practice {
+            for shot in practice.shots where shot.ball.flightId != engine.ball.flightId && !shot.ball.burst {
+                drawBallShadow(ctx, shot.ball)
+            }
+        }
         var ballDrawn = false
-        let ordered = Kotlin.stableSorted(engine.activeActors) { $0.position.y < $1.position.y }
+        // Eliminated players stay visible while they walk off; practice hides house players a lesson does not use.
+        let shown = engine.actors.filter { a in
+            if !EliminationExit.visible(a, engine.time) { return false }
+            guard let d = engine.practice else { return true }
+            return !a.member.bot || d.stage.cooperative || d.stage.defence || d.stage.skill == .tag || d.stage.skill == .freeze
+        }
+        let ordered = Kotlin.stableSorted(shown) { EliminationExit.position($0, engine.time).y < EliminationExit.position($1, engine.time).y }
         for a in ordered {
-            if loose && !ballDrawn && engine.ball.position.y < a.position.y {
-                drawFlyingBall(ctx, width, height)
+            if loose && !ballDrawn && engine.ball.position.y < EliminationExit.position(a, engine.time).y {
+                drawFlyingBall(ctx)
                 ballDrawn = true
             }
             drawActor(ctx, a, width, height)
         }
-        if loose && !ballDrawn { drawFlyingBall(ctx, width, height) }
+        if loose && !ballDrawn { drawFlyingBall(ctx) }
         // Kotlin draws every practice ball that is not the engine's ball object; flights have unique IDs.
         if let practice = engine.practice {
             for shot in practice.shots where shot.ball.flightId != engine.ball.flightId {
-                drawFlyingBall(ctx, width, height, shot.ball)
+                drawFlyingBall(ctx, shot.ball)
             }
         }
         // During reception zoom, show a translucent locator at the actual ball position
@@ -616,10 +731,10 @@ final class ArenaView: UIView {
         receptionBallLocatorVisible = false
         if loose && receptionZoom.amount > 0.1 && receptionZoom.incoming(engine, ownId, receptionZoomEnabled, followHumanZoomEnabled) != nil {
             let ball = engine.ball
-            let point = project(ball.position, ball.height)
-            let size = min(width, height) * 0.067 * CGFloat(engine.config.ball.visualScale)
-            let hidden = engine.activeActors.contains { actor in
-                actor.position.y > ball.position.y && (actorRects[actor.member.id]?.contains(point) ?? false)
+            let point = ballPoint(ball.position, ball.height)
+            let size = ballSize(ball.position, ball.height)
+            let hidden = engine.actors.filter { EliminationExit.visible($0, engine.time) }.contains { actor in
+                EliminationExit.position(actor, engine.time).y > ball.position.y && (actorRects[actor.member.id]?.contains(point) ?? false)
             }
             if hidden {
                 receptionBallLocatorVisible = true
@@ -627,14 +742,14 @@ final class ArenaView: UIView {
                 ctx.setStrokeColor(argbColor(0xffbafff4).cgColor)
                 ctx.setLineWidth(2)
                 ctx.strokeEllipse(in: CGRect(x: point.x - r, y: point.y - r, width: r * 2, height: r * 2))
-                art.ball(engine.config.ball).draw(in: CGRect(x: point.x - size / 2, y: point.y - size / 2, width: size, height: size),
-                                                  blendMode: .normal, alpha: 195.0 / 255.0)
+                ballArt(CGRect(x: point.x - size / 2, y: point.y - size / 2, width: size, height: size), alpha: 195.0 / 255.0)
             }
         }
         // Arena lighting of the ground is drawn by the world renderer; this tints the actors, not the HUD.
         drawLighting(ctx, width, height)
         drawAim(ctx, rect)
         drawTags(ctx, width, height)
+        drawTarget(ctx)
         drawHud(ctx, width, height)
     }
 
@@ -647,60 +762,29 @@ final class ArenaView: UIView {
         let skill = d.stage.skill
         if skill == .ring || skill == .ground || skill == .tree || skill == .rebound {
             if skill == .tree || skill == .rebound {
+                // The practice tree artwork, 6 m tall, standing on the target point, with drifting glow motes.
                 let ground = project(t)
-                let top = project(t, 3.3)
-                let left = project(V(t.x - 0.65, t.y))
-                let right = project(V(t.x + 0.65, t.y))
-                let rw = (right.x - left.x) * 0.5
-                let height = ground.y - top.y
-                ctx.setFillColor(argbColor(0x5540291b).cgColor)
-                ctx.fillEllipse(in: CGRect(x: ground.x - rw * 1.5, y: ground.y - 9, width: rw * 3, height: 19))
-                let trunk = CGMutablePath()
-                trunk.move(to: CGPoint(x: ground.x - rw, y: ground.y))
-                trunk.addLine(to: CGPoint(x: top.x - rw * 0.65, y: top.y))
-                trunk.addLine(to: CGPoint(x: top.x + rw * 0.65, y: top.y))
-                trunk.addLine(to: CGPoint(x: ground.x + rw, y: ground.y))
-                trunk.closeSubpath()
-                let bark = [argbColor(0xff67412b).cgColor, argbColor(0xffb5814e).cgColor, argbColor(0xff72432a).cgColor] as CFArray
-                if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: bark, locations: [0, 0.5, 1]) {
-                    ctx.saveGState()
-                    ctx.addPath(trunk)
-                    ctx.clip()
-                    ctx.drawLinearGradient(gradient, start: CGPoint(x: left.x, y: top.y), end: CGPoint(x: right.x, y: top.y),
-                                           options: [.drawsBeforeStartLocation, .drawsAfterEndLocation])
-                    ctx.restoreGState()
-                }
-                ctx.setStrokeColor(argbColor(0xff67452f).cgColor)
-                ctx.setLineWidth(1.5)
-                ctx.setLineCap(.round)
-                for i in -2...2 {
-                    let x = ground.x + CGFloat(i) * rw * 0.25
-                    ctx.move(to: CGPoint(x: x, y: ground.y - 6))
-                    ctx.addCurve(to: CGPoint(x: x, y: top.y + 4), control1: CGPoint(x: x - rw * 0.16, y: ground.y - height * 0.3),
-                                 control2: CGPoint(x: x + rw * 0.16, y: ground.y - height * 0.6))
-                    ctx.strokePath()
-                }
-                let leaves: [UInt32] = [0xff246a50, 0xff35865d, 0xff53a76a, 0xff6abd79]
-                for i in 0...6 {
-                    let dx = CGFloat(i % 3 - 1) * rw * 0.75
-                    let dy: CGFloat = i < 3 ? -rw * 0.9 : (i < 6 ? -rw * 0.1 : -rw * 1.5)
-                    ctx.setFillColor(argbColor(leaves[i % 4]).cgColor)
-                    ctx.fillEllipse(in: CGRect(x: top.x + dx - rw, y: top.y + dy - rw * 0.65, width: rw * 2, height: rw * 1.2))
-                }
-                ctx.setFillColor(argbColor(0xffa9dc83).cgColor)
-                for i in 0...5 {
-                    let x = top.x + CGFloat(i % 3 - 1) * rw * 0.7
-                    let y = top.y - rw * (0.9 + CGFloat(i / 3) * 0.4)
-                    ctx.fillEllipse(in: CGRect(x: x, y: y, width: rw * 0.22, height: rw * 0.1))
+                let top = project(t, 6.0)
+                let tall = ground.y - top.y
+                let treeSize = art.practiceTree.size
+                let treeWidth = treeSize.height > 0 ? tall * treeSize.width / treeSize.height : 0
+                art.practiceTree.draw(in: CGRect(x: ground.x - treeWidth / 2, y: top.y, width: treeWidth, height: tall))
+                ctx.setFillColor(argbColor(0xbaffec93).cgColor)
+                for i in 0...7 {
+                    let phase = engine.time * 0.8 + Double(i)
+                    let glow = project(V(t.x + sin(phase) * 1.3, t.y), 2.5 + cos(phase * 0.7) * 1.1)
+                    ctx.fillEllipse(in: CGRect(x: glow.x - 1.5, y: glow.y - 1.5, width: 3, height: 3))
                 }
             }
+        }
+        if skill == .ring || skill == .ground {
             let isGround = skill == .ground
             let radius = (skill == .tree || skill == .rebound) ? 0.5 : d.radius
             let path = CGMutablePath()
             for i in 0...48 {
                 let angle = Double(i) * 2 * Double.pi / 48
                 let point = V(t.x + cos(angle) * radius, t.y + (isGround ? sin(angle) * radius : 0.0))
-                let pt = project(point, isGround ? 0.24 : d.targetHeight + sin(angle) * radius)
+                let pt = project(point, isGround ? 0.24 : (d.targetHeight + sin(angle) * radius) * 2)
                 if i == 0 { path.move(to: pt) } else { path.addLine(to: pt) }
             }
             path.closeSubpath()
@@ -715,7 +799,7 @@ final class ArenaView: UIView {
             ctx.addPath(path)
             ctx.strokePath()
         }
-        if d.stage.cooperative {
+        if d.stage.cooperative || d.stage.skill == .tag {
             let at = project(d.partner(engine).position, 3.8)
             text("★", at.x, at.y, 23, 0xffffdf70)
         }
@@ -741,31 +825,38 @@ final class ArenaView: UIView {
     }
 
     /// Android `practiceInstruction`: the briefing names the lesson and the top HUD shows goal and hearts, so the live
-    /// coach names only the gesture (it fits even short landscape screens).
+    /// coach names the control mode and ball, then only the gesture (it fits even short landscape screens).
     func practiceInstruction(_ d: SpudPractice) -> String {
-        if d.stage.skill == .freeze {
-            return d.freezeReady ? tr("SPUD · stay still", "עמודו · עצרו במקום") : tr("RUN · drag to move", "רוצו · גררו לתנועה")
-        }
-        if d.stage.skill == .call {
-            return tr("Tap the starred partner, then swipe up from your ball", "געו בשותף המסומן ואז החליקו מעלה מהכדור")
-        }
-        if d.stage.defence {
+        let action: String
+        if engine.time < engine.infoUntil && !Kotlin.isBlank(engine.infoEn) {
+            action = tr(engine.infoEn, engine.infoHe)
+        } else if d.stage.skill == .freeze {
+            action = d.freezeReady ? tr("SPUD · stay still", "עמודו · עצרו במקום") : tr("RUN · drag to move", "רוצו · גררו לתנועה")
+        } else if d.stage.skill == .call && engine.ball.holder == ownId {
+            action = tr("Tap the starred partner, then swipe up from your ball", "געו בשותף המסומן ואז החליקו מעלה מהכדור")
+        } else if d.stage.defence {
             switch d.stage.skill {
-            case .duck: return tr("Double-tap to duck", "נגיעה כפולה לכיפוף")
-            case .jump: return tr("Tap Jump at the right moment", "געו בקפיצה ברגע הנכון")
-            case .move: return tr("Drag to move aside", "גררו כדי לזוז הצדה")
-            default: return tr("Move, jump or duck", "זוזו, קפצו או התכופפו")
+            case .duck: action = tr("Double-tap to duck", "נגיעה כפולה לכיפוף")
+            case .jump: action = tr("Tap Jump at the right moment", "געו בקפיצה ברגע הנכון")
+            case .move: action = tr("Drag to move aside", "גררו כדי לזוז הצדה")
+            default: action = tr("Move, jump or duck", "זוזו, קפצו או התכופפו")
             }
+        } else if d.stage.throwing && engine.ball.holder == ownId {
+            action = tr(PracticeGuidance.live(d.stage, engine.config.throwMode, false), PracticeGuidance.live(d.stage, engine.config.throwMode, true))
+        } else if d.stage.skill == .catching && d.stage.moving {
+            action = tr("Drag to the marker, then tap Catch as the ball arrives.", "גררו לסימון וגעו בתפיסה כשהכדור מגיע.")
+        } else if [DrillSkill.tree, .ring, .ground, .tag, .call].contains(d.stage.skill) {
+            action = tr("Watch where your throw goes. Adjust your next throw.", "עקבו אחרי הכדור והתאימו את הזריקה הבאה.")
+        } else {
+            action = tr("Tap Catch as the ball arrives. Your catch window lasts half a second; catch before the ground.",
+                        "געו בתפיסה כשהכדור מתקרב. יש חצי שנייה לתפוס לפני הנגיעה בקרקע.")
         }
-        if engine.ball.holder == ownId {
-            return tr("Tap a target to aim · swipe from your ball to throw", "נגיעה במטרה לכיוון · החלקה מהכדור לזריקה")
-        }
-        return tr("Drag into position · tap or hold to catch", "גררו למקום · געו או החזיקו לתפיסה")
+        return tr(engine.config.throwMode.en, engine.config.throwMode.he) + " · " + tr(engine.config.ball.en, engine.config.ball.he) + "\n" + action
     }
 
     /// The aim line, kept off every character (Android `clipOutRect` of each actor).
     private func drawAim(_ ctx: CGContext, _ area: CGRect) {
-        guard engine.canAim(ownId), let mine = engine.actor(ownId) else { return }
+        guard engine.canAim(ownId), let mine = engine.actor(ownId), engine.practice == nil, engine.config.throwMode == .standard else { return }
         ctx.saveGState()
         for body in actorRects.values {
             ctx.addRect(area)
@@ -773,7 +864,7 @@ final class ArenaView: UIView {
             ctx.clip(using: .evenOdd)
         }
         let origin = handPoints[ownId] ?? project(mine.position, 1.2)
-        let end = project(mine.position + mine.direction * 4.5, 1.1)
+        let end = ballPoint(mine.position + mine.direction * 4.5, 1.1)
         ctx.setStrokeColor(argbColor(0xffffe466).cgColor)
         ctx.setLineWidth(3)
         ctx.setLineCap(.round)
@@ -782,7 +873,6 @@ final class ArenaView: UIView {
         ctx.addLine(to: end)
         ctx.strokePath()
         ctx.setLineDash(phase: 0, lengths: [])
-        ctx.strokeEllipse(in: CGRect(x: end.x - 12, y: end.y - 12, width: 24, height: 24))
         ctx.restoreGState()
     }
 
@@ -792,14 +882,20 @@ final class ArenaView: UIView {
         let rules = cfg.rules
         let top = CGRect(x: 12, y: 7, width: width - 24, height: (wide ? 53 : 62) - 7)
         panel(ctx, top)
-        backRect = CGRect(x: top.minX, y: top.minY, width: 52, height: top.height)
-        rotateRect = CGRect(x: backRect.maxX + 2, y: top.minY, width: 48, height: top.height)
+        let rtl = AppText.rtl
+        backRect = CGRect(x: rtl ? top.maxX - 52 : top.minX, y: top.minY, width: 52, height: top.height)
+        rotateRect = CGRect(x: rtl ? backRect.minX - 50 : backRect.maxX + 2, y: top.minY, width: 48, height: top.height)
         panel(ctx, rotateRect, 0xe01b5668)
-        text("↻", rotateRect.midX, rotateRect.midY + 8, 26)
+        text("↻", rotateRect.midX, rotateRect.midY + 6, 22)
         let cx = backRect.midX
         let cy = backRect.midY
-        line(ctx, CGPoint(x: cx + 5, y: cy - 9), CGPoint(x: cx - 5, y: cy), 0xff7effe2, 4)
-        line(ctx, CGPoint(x: cx - 5, y: cy), CGPoint(x: cx + 5, y: cy + 9), 0xff7effe2, 4)
+        let arrow: CGFloat = rtl ? -5 : 5
+        for outline in [true, false] {
+            let color: UInt32 = outline ? 0xfffff6df : 0xffff5b86
+            let stroke: CGFloat = outline ? 6 : 3.5
+            line(ctx, CGPoint(x: cx + arrow, y: cy - 9), CGPoint(x: cx - arrow, y: cy), color, stroke)
+            line(ctx, CGPoint(x: cx - arrow, y: cy), CGPoint(x: cx + arrow, y: cy + 9), color, stroke)
+        }
         let turnText: String
         if let practice = engine.practice {
             turnText = "\(practice.successes) / \(practice.goal)"
@@ -808,14 +904,28 @@ final class ArenaView: UIView {
         } else {
             turnText = tr("Turn \(engine.turn) / \(cfg.turns)", "תור \u{2066}\(engine.turn) / \(cfg.turns)\u{2069}")
         }
-        text(turnText, width / 2, top.midY + 6, 17)
-        let scoreText: String
+        let penaltyText: String
         if let practice = engine.practice {
-            scoreText = "♥ \(3 - practice.mistakes)"
+            penaltyText = "♥ \(3 - practice.mistakes)"
         } else {
-            scoreText = mine.map { RuleText.score($0, rules) } ?? "—"
+            penaltyText = mine.map { tr("Penalty: ", "חובה: ") + RuleText.score($0, rules) } ?? "—"
         }
-        text(scoreText, top.maxX - 15, top.midY + 6, 17, 0xffffc6cb, right: true)
+        // Reserve the real translated score width instead of letting it collide with
+        // the centered turn counter on compact Spanish/Dutch displays.
+        let textLeft = rtl ? top.minX + 15 : rotateRect.maxX + 8
+        let textRight = rtl ? rotateRect.minX - 8 : top.maxX - 15
+        let available = max(textRight - textLeft - 10, 1)
+        let needed = measure(turnText, 17) + measure(penaltyText, 17)
+        let hudSize = 17 * min(1, available / max(needed, 1))
+        let turnWidth = measure(turnText, hudSize)
+        let penaltyWidth = measure(penaltyText, hudSize)
+        let turnLeft = rtl ? textLeft + penaltyWidth + 10 : textLeft
+        let turnRight = rtl ? textRight : textRight - penaltyWidth - 10
+        let low = turnLeft + turnWidth / 2
+        let high = max(turnRight - turnWidth / 2, low)
+        let turnCenter = min(max(width / 2, low), high)
+        text(turnText, turnCenter, top.midY + 6, hudSize)
+        text(penaltyText, rtl ? textLeft : textRight, top.midY + 6, hudSize, 0xffffc6cb, right: !rtl, left: rtl)
         var instructionText = instruction()
         let seconds = engine.countdownSeconds()
         if seconds >= 0 && seconds <= 5 {
@@ -825,10 +935,15 @@ final class ArenaView: UIView {
             let steps = engine.stepRemaining / (min(cfg.width, cfg.depth) * cfg.stepLengthFraction)
             instructionText += "\n" + RuleText.format(RuleText["stepsLeft"], steps)
         }
-        let instructionBox = wide ? CGRect(x: 12, y: 64, width: sideWidth - 12, height: max(height - 132 - 64, 1))
-            : CGRect(x: 14, y: 72, width: width - 28, height: max(height * 0.215 - 72, 1))
-        panel(ctx, instructionBox, 0xd9163049)
-        paragraph(instructionText, instructionBox, 16)
+        let instructionBox: CGRect
+        if wide {
+            let bottom = min(height - 166, 64 + paragraphHeight(instructionText, sideWidth - 12, 16) + 20)
+            instructionBox = CGRect(x: 12, y: 64, width: sideWidth - 12, height: max(bottom - 64, 1))
+        } else {
+            instructionBox = CGRect(x: 14, y: 72, width: width - 28, height: max(height * 0.215 - 72, 1))
+        }
+        panel(ctx, instructionBox, 0xf066b9ef)
+        paragraph(instructionText, instructionBox, 16, 0xff102940, center: false)
         if engine.phase == .shout && engine.called == ownId {
             shoutRect = wide ? CGRect(x: 12, y: height - 122, width: sideWidth - 12, height: 52)
                 : CGRect(x: width * 0.2, y: height * 0.86, width: width * 0.6, height: height * 0.08)
@@ -837,19 +952,27 @@ final class ArenaView: UIView {
         } else {
             shoutRect = .zero
             let status: String
-            if engine.practice != nil {
+            if !cfg.practiceLesson.isEmpty {
+                status = LearningCopy.get("lesson_status")
+            } else if engine.practice != nil {
                 status = tr("Practice at your own pace · progress is saved", "מתאמנים בקצב שלכם · ההתקדמות נשמרת")
             } else if engine.time < engine.infoUntil {
                 status = feedbackText()
             } else {
-                status = tr("Drag to run · Tap / hold to catch\nDouble-tap to duck", "גררו כדי לרוץ · נגיעה או לחיצה לתפיסה\nנגיעה כפולה להתכופפות")
+                status = tr("Drag to run · Time your catch\nJump low balls · Duck high balls", "גררו לריצה · תזמנו את התפיסה\nקפצו מעל כדור נמוך · התכופפו מתחת לגבוה")
             }
-            let r = wide ? CGRect(x: 12, y: height - 122, width: sideWidth - 12, height: 56)
-                : CGRect(x: 12, y: height * 0.865, width: width - 24, height: height * 0.946 - height * 0.865)
+            let r: CGRect
+            if wide {
+                let statusTop = instructionBox.maxY + 8
+                let statusBottom = min(height - 66, instructionBox.maxY + 28 + paragraphHeight(status, sideWidth - 12, 14))
+                r = CGRect(x: 12, y: statusTop, width: sideWidth - 12, height: max(statusBottom - statusTop, 0))
+            } else {
+                r = CGRect(x: 12, y: height * 0.865, width: width - 24, height: height * 0.946 - height * 0.865)
+            }
             // In landscape the thrower's "Choose player" button takes this place.
             if !(wide && engine.phase == .circle && engine.thrower == ownId) {
                 panel(ctx, r)
-                paragraph(status, r, 14)
+                paragraph(status, r, 14, center: false)
             }
         }
         returnRect = .zero
@@ -869,7 +992,7 @@ final class ArenaView: UIView {
                 label = RuleText["askReturn"]
             }
             panel(ctx, box, canRequest ? 0xffe91e63 : 0xff173047)
-            paragraph(label, box, 16)
+            paragraph(engine.time < engine.infoUntil ? feedbackText() : label, box, 16)
             returnRect = canRequest ? box : .zero
         }
         cameraRect = CGRect(x: 12, y: height - (wide ? 60 : 39), width: (wide ? sideWidth - 49 : width - 70) - 12, height: wide ? 48 : 36)
@@ -878,6 +1001,40 @@ final class ArenaView: UIView {
             paragraph(playerCamera ? tr("Your view · switch", "המבט שלכם · החלפה") : tr("Action view · switch", "מבט כללי · החלפה"), cameraRect, 13)
         }
         jumpRect = .zero
+        catchRect = .zero
+        duckRect = .zero
+        let actionPhases: [Phase] = [.retrieve, .shout, .aim, .flight]
+        if engine.practice == nil, let mine, mine.active, engine.ball.holder != ownId,
+           actionPhases.contains(engine.phase) || (engine.phase == .air && engine.called == ownId) {
+            let bar = wide ? CGRect(x: sideWidth + 12, y: height - 60, width: width - 12 - (sideWidth + 12), height: 48)
+                : CGRect(x: 12, y: height * 0.795, width: width - 24, height: height * 0.855 - height * 0.795)
+            let actionEnabled = (engine.phase == .air || actionPhases.contains(engine.phase)) && engine.ball.holder != ownId
+            let groundPickup = engine.phase == .retrieve && engine.ball.height < 0.35 && abs(engine.ball.vz) < 0.7
+            let eligible = engine.called == ownId
+            let callCatch = engine.phase == .air
+            let count = callCatch ? 1 : 3
+            let cell = (bar.width - 6 * CGFloat(count - 1)) / CGFloat(count)
+            var cells: [CGRect] = []
+            for i in 0..<count {
+                cells.append(CGRect(x: bar.minX + CGFloat(i) * (cell + 6), y: bar.minY, width: cell, height: bar.height))
+            }
+            catchRect = cells[0]
+            if !callCatch {
+                jumpRect = cells[1]
+                duckRect = cells[2]
+            }
+            for r in cells { panel(ctx, r, actionEnabled ? 0xffffdf70 : 0xff93a0a8) }
+            paragraph(groundPickup && eligible ? tr("Pick up", "איסוף") : tr("Catch", "תפיסה"), catchRect, 16, 0xff173047)
+            if !callCatch {
+                paragraph(tr("Jump ↑", "קפיצה ↑"), jumpRect, 16, 0xff173047)
+                paragraph(tr("Duck", "כיפוף"), duckRect, 16, 0xff173047)
+            }
+            if !actionEnabled {
+                jumpRect = .zero
+                catchRect = .zero
+                duckRect = .zero
+            }
+        }
         if let d = engine.practice {
             if d.allowsJump {
                 var r = cameraRect
@@ -896,7 +1053,7 @@ final class ArenaView: UIView {
         } else {
             rosterRect = .zero
         }
-        if engine.practice == nil {
+        if engine.practice == nil && speechAvailable {
             chatRect = wide ? CGRect(x: sideWidth - 44, y: height - 60, width: 44, height: 48) : CGRect(x: width - 57, y: height - 39, width: 45, height: 36)
             panel(ctx, chatRect, 0xc5173049)
             ctx.setFillColor(UIColor.white.cgColor)
@@ -985,7 +1142,9 @@ final class ArenaView: UIView {
         let owner = engine.actor(engine.thrower)
         let target = engine.actor(engine.called)
         if engine.sharedPause { return tr("Your game is paused.", "המשחק מושהה.") }
-        if engine.actor(ownId)?.active == false && engine.phase != .returnVote { return RuleText["spectating"] }
+        if engine.actor(ownId)?.active == false && engine.phase != .returnVote {
+            return engine.time < engine.infoUntil ? feedbackText() : RuleText["spectating"]
+        }
         switch engine.phase {
         case .circle:
             if engine.thrower == ownId {
@@ -1007,18 +1166,22 @@ final class ArenaView: UIView {
             return tr("Keep running until SPUD!", "המשיכו לרוץ עד עמודו!")
         case .shout:
             if engine.called == ownId {
-                return RuleText.format(RuleText[engine.config.requireCall ? "mustCall" : "mayCall"], RuleText.call(engine.config.rules))
+                if engine.config.requireCall { return RuleText.format(RuleText["mustCall"], RuleText.call(engine.config.rules)) }
+                return attackInstruction()
             }
             return tr("Keep running, or stop and prepare to catch.", "המשיכו לרוץ, או עצרו והתכוננו לתפוס.")
         case .aim:
-            if engine.thrower == ownId { return tr("Aim by tapping a player.\nFlick from your ball to throw.", "כוונו בנגיעה בשחקן.\nהחליקו מהכדור כדי לזרוק.") }
+            if engine.thrower == ownId { return attackInstruction() }
             return tr("SPUD! Stay still.\nTap to catch · Double-tap to duck", "עמודו! עמדו במקום.\nנגיעה לתפיסה · נגיעה כפולה להתכופפות")
         case .flight:
-            return tr("Catch it or duck!", "תפסו או התכופפו!")
+            return tr("Catch, jump or duck!", "תפסו, קפצו או התכופפו!")
         case .resolve:
             return feedbackText()
         case .huddle:
-            if engine.huddleTarget == ownId { return tr("Take a break.\nThe next round is on its way.", "זמן להפסקה קצרה.\nעוד מעט ממשיכים.") }
+            if engine.huddleTarget == ownId {
+                return tr("The other players are choosing a nickname for you.\nThe game will continue when they finish.",
+                          "השחקנים האחרים בוחרים לכם כינוי.\nהמשחק ימשיך כשיסיימו.")
+            }
             return tr("Choose one funny word privately.", "בוחרים בסוד מילה מצחיקה אחת.")
         case .returnVote:
             return RuleText["pausedVote"]
@@ -1032,9 +1195,11 @@ final class ArenaView: UIView {
     /// Android `drawActor`: every character stands on its feet with the same visible height for its depth (from its
     /// art's opaque bounds), and the touch target is that visible body.
     private func drawActor(_ ctx: CGContext, _ a: GameActor, _ width: CGFloat, _ height: CGFloat) {
-        let p = project(a.position, a.jumpHeight)
-        let head = project(a.position, a.jumpHeight + 3.5)
-        let visibleHeight = min(max(p.y - head.y, 28), height * 0.27)
+        let displayPosition = EliminationExit.position(a, engine.time)
+        let floor = project(displayPosition)
+        let p = project(displayPosition, a.jumpHeight * 2)
+        let head = project(displayPosition, a.jumpHeight * 2 + engine.config.standingHeight * 2)
+        let visibleHeight = min(max(p.y - head.y, 14), height * 0.34)
         let visual = art.visual(a, engine)
         let f = visual.frame
         let anchor = art.anchor(a.member.character, visual)
@@ -1042,42 +1207,75 @@ final class ArenaView: UIView {
         let w = rect.width
         let h = rect.height
         ctx.setFillColor(argbColor(0x40091326).cgColor)
-        ctx.fillEllipse(in: CGRect(x: p.x - w * 0.3, y: p.y - h * 0.05, width: w * 0.6, height: h * 0.095))
+        ctx.fillEllipse(in: CGRect(x: floor.x - w * 0.3, y: floor.y - h * 0.05, width: w * 0.6, height: h * 0.095))
         let id = a.member.id
         if id == ownId || id == engine.selected || id == engine.called {
             ctx.setStrokeColor(argbColor(id == ownId ? 0xff00e5ff : 0xffffea00).cgColor)
             ctx.setLineWidth(2.5)
-            ctx.strokeEllipse(in: CGRect(x: p.x - w * 0.4, y: p.y - h * 0.03, width: w * 0.8, height: h * 0.075))
+            ctx.strokeEllipse(in: CGRect(x: floor.x - w * 0.4, y: floor.y - h * 0.03, width: w * 0.8, height: h * 0.075))
         }
-        let handX = rect.minX + w * (visual.mirrored ? 1 - f.handX : f.handX)
-        let hand = CGPoint(x: handX, y: rect.minY + h * f.handY)
+        let palm = CGPoint(x: rect.minX + w * (visual.mirrored ? 1 - f.handX : f.handX), y: rect.minY + h * f.handY)
+        let b = ballSize(a.position, 1.2 + a.jumpHeight)
+        // The hand supports the lower edge, rather than a sphere being pasted over
+        // its centre. Back/side fingers and forearms naturally occlude the sphere.
+        let minik = a.member.character == "minik"
+        let offsetX: CGFloat
+        switch visual.facing {
+        case "front": offsetX = 0.18
+        case "back": offsetX = minik ? 0.35 : -0.12
+        default: offsetX = minik ? 0.40 : 0.25
+        }
+        let holding = engine.ball.holder == id
+        let hand = holding ? CGPoint(x: palm.x + b * offsetX * (visual.mirrored ? -1 : 1),
+                                     y: palm.y - b * (minik && visual.facing != "front" ? 0.20 : 0.34)) : palm
         handPoints[id] = hand
         let sx = visibleHeight / anchor.height
         let half = (anchor.right - anchor.left) * sx / 2
         actorRects[id] = CGRect(x: p.x - half, y: p.y - visibleHeight, width: half * 2, height: visibleHeight)
-        let holding = engine.ball.holder == id
-        if holding && visual.facing == "back" { drawHeldBall(hand, w) }
-        if visual.mirrored {
+        /// The sprite, with its paint patches composited onto its own pixels (Android `saveLayer` + `SRC_ATOP`).
+        func sprite() {
+            let painted = !a.paintHits.isEmpty
             ctx.saveGState()
-            ctx.translateBy(x: rect.midX, y: rect.midY)
-            ctx.scaleBy(x: -1, y: 1)
-            ctx.translateBy(x: -rect.midX, y: -rect.midY)
+            if painted { ctx.beginTransparencyLayer(in: rect, auxiliaryInfo: nil) }
+            ctx.saveGState()
+            if visual.mirrored {
+                ctx.translateBy(x: rect.midX, y: rect.midY)
+                ctx.scaleBy(x: -1, y: 1)
+                ctx.translateBy(x: -rect.midX, y: -rect.midY)
+            }
             visual.image.draw(in: rect)
+            paintEffects.body(ctx, rect, a, engine.config.rules, visual.image, f.face)
             ctx.restoreGState()
-        } else {
-            visual.image.draw(in: rect)
+            if painted { ctx.endTransparencyLayer() }
+            ctx.restoreGState()
         }
-        if holding && visual.facing != "back" { drawHeldBall(hand, w) }
+        func heldBall() {
+            ballArt(CGRect(x: hand.x - b / 2, y: hand.y - b / 2, width: b, height: b))
+        }
+        if holding && visual.facing != "front" { heldBall() }
+        sprite()
+        if holding && visual.facing == "front" {
+            heldBall()
+            // Reuse actual foreground palm pixels, sized from the artwork (not from
+            // the ball). Torso stays behind it; fingers support the lower rim.
+            let paw = a.member.character == "minik" || a.member.character == "miniko"
+            let rx = w * (paw ? 0.046 : 0.028)
+            let ry = h * (paw ? 0.032 : 0.023)
+            ctx.saveGState()
+            ctx.addEllipse(in: CGRect(x: palm.x - rx, y: palm.y - ry, width: rx * 2, height: ry * 2))
+            ctx.clip()
+            sprite()
+            ctx.restoreGState()
+        }
         let label = id == ownId ? tr("You", "אתם") : a.fullName(hebrew: hebrew)
-        let maxLength = engine.actors.count >= 9 ? 10 : 14
-        var shown = label
-        if label.utf16.count > maxLength {
-            shown = String(decoding: Array(label.utf16.prefix(maxLength - 1)), as: UTF16.self) + "…"
-        }
+        // Kotlin `label.split(" ")`: at most four words, then "…".
+        let words = label.components(separatedBy: " ")
+        let shown = words.count > 4 ? words.prefix(4).joined(separator: " ") + "…" : label
         let score = a.penalties == 0 ? "" : " · " + RuleText.score(a, engine.config.rules)
         tags.append(Tag(actor: a, text: shown + score, base: p, width: w * 1.24))
         if engine.time < a.catchUntil {
-            let sweep = CGFloat(2 * Double.pi * (a.catchUntil - engine.time) / engine.config.catchWindow)
+            let fraction = Kotlin.clamp((a.catchUntil - engine.time) / CatchPhysics.window(a, engine.config), 0.0, 1.0)
+            let sweep = CGFloat(2 * Double.pi * fraction)
             let arc = UIBezierPath(arcCenter: hand, radius: w * 0.25, startAngle: -CGFloat.pi / 2, endAngle: -CGFloat.pi / 2 + sweep, clockwise: true)
             ctx.setStrokeColor(argbColor(0xb2ffe96a).cgColor)
             ctx.setLineWidth(2)
@@ -1086,9 +1284,24 @@ final class ArenaView: UIView {
         }
     }
 
-    private func drawHeldBall(_ hand: CGPoint, _ w: CGFloat) {
-        let b = w * 0.342 * CGFloat(engine.config.ball.visualScale)
-        art.ball(engine.config.ball).draw(in: CGRect(x: hand.x - b / 2, y: hand.y - b / 2, width: b, height: b))
+    /// Android `ballPoint`: the ball's drawing height is doubled to match the doubled sprite scale.
+    private func ballPoint(_ v: V, _ z: Double) -> CGPoint {
+        return project(v, z * 2.0)
+    }
+
+    /// Android `ballSize`: one physical-looking diameter for possession, flight and shadows. Never enlarge a held ball to
+    /// make its touch target easier; input has its own hit tolerance.
+    private func ballSize(_ v: V, _ z: Double) -> CGFloat {
+        let r = BallContact.radius(engine.config.ball)
+        let a = project(V(v.x - r, v.y), z * 2)
+        let b = project(V(v.x + r, v.y), z * 2)
+        return abs(b.x - a.x)
+    }
+
+    /// Android `ballArt`: the paint balloon in the current paint colour, or the ball artwork.
+    private func ballArt(_ r: CGRect, alpha: CGFloat = 1) {
+        let image = engine.config.ball == .paint ? art.paintBalloon(engine.paintColor) : art.ball(engine.config.ball)
+        image.draw(in: r, blendMode: .normal, alpha: alpha)
     }
 
     /// Android `drawTags`: stable slots (StableLabels) near the feet, kept off bodies and other tags inside the field;
@@ -1099,7 +1312,7 @@ final class ArenaView: UIView {
         let obstacles = Array(actorRects.values) + (practiceObstacle.map { [$0] } ?? [])
         let bodies = obstacles.map { LabelBox(x: Float($0.minX - 3), y: Float($0.minY - 3), w: Float($0.width + 6), h: Float($0.height + 6)) }
         let left = fieldLeft()
-        let bounds = LabelBox(x: Float(left), y: Float(fieldTop()), w: Float(width - left - 5), h: Float(fieldBottom() - fieldTop()))
+        let bounds = LabelBox(x: Float(left), y: Float(fieldTop()), w: Float(width - left - 5), h: Float((wide ? height - 70 : fieldBottom()) - fieldTop()))
         let ordered = tags.sorted { l, r in
             let lo = l.actor.member.id == ownId ? 0 : 1
             let ro = r.actor.member.id == ownId ? 0 : 1
@@ -1108,34 +1321,83 @@ final class ArenaView: UIView {
         }
         let size: CGFloat = engine.actors.count >= 9 ? 10 : 11
         let rank = ProgressRanks.at(rankPoints)
-        let tagFont = font(size)
         for tag in ordered {
-            let w = min(max(measure(tag.text, size) + 16, 45), CGFloat(bounds.w))
-            let b = stableLabels.place(tag.actor.member.id, Float(tag.base.x), Float(tag.base.y + 5), Float(w), 22, bounds, bodies, used, 24)
+            let w = min(max(measure(tag.text, size) + 16, 45), min(CGFloat(bounds.w), 220))
+            let mine = tag.actor.member.id == ownId
+            // The thrower's chosen caller target is highlighted in yellow.
+            let selected = engine.phase == .circle && engine.thrower == ownId && tag.actor.member.id == engine.selected
+            let ink: UInt32 = selected ? 0xff122e43 : (mine ? rank.ink : 0xffffffff)
+            let shaped = tagLayout(tag.text, w - 12, size, ink)
+            let tagH = max(22, shaped.1 + 6)
+            let b = stableLabels.place(tag.actor.member.id, Float(tag.base.x), Float(tag.base.y + 5), Float(w), Float(tagH), bounds, bodies, used, 24)
             let rect = CGRect(x: CGFloat(b.x), y: CGFloat(b.y), width: CGFloat(b.w), height: CGFloat(b.h))
             used.append(b)
-            tagRects.append((tag.actor.member.id, rect))
+            if tag.actor.active { tagRects.append((tag.actor.member.id, rect)) }
             if distance2D(CGFloat(b.cx) - tag.base.x, CGFloat(b.y) - tag.base.y) > 28 {
                 line(ctx, tag.base, CGPoint(x: CGFloat(b.cx), y: CGFloat(b.cy)), 0x88122e43, 1)
             }
-            let mine = tag.actor.member.id == ownId
-            panel(ctx, rect, mine ? rank.color : 0xf0153043)
-            // Android baseline: cy - (ascent + descent) / 2 (UIKit descender is negative).
-            text(tag.text, CGFloat(b.cx), CGFloat(b.cy) + (tagFont.ascender + tagFont.descender) / 2, size, mine ? rank.ink : 0xffffffff)
+            panel(ctx, rect, selected ? 0xffffea00 : (mine ? rank.color : 0xf0153043))
+            if selected {
+                ctx.setStrokeColor(UIColor.white.cgColor)
+                ctx.setLineWidth(2)
+                ctx.addPath(UIBezierPath(roundedRect: rect, cornerRadius: 14).cgPath)
+                ctx.strokePath()
+            }
+            let layoutWidth = max(w - 12, 1)
+            shaped.0.draw(with: CGRect(x: CGFloat(b.cx) - layoutWidth / 2, y: CGFloat(b.cy) - shaped.1 / 2, width: layoutWidth, height: shaped.1),
+                          options: [.usesLineFragmentOrigin, .usesFontLeading, .truncatesLastVisibleLine], context: nil)
         }
     }
 
-    private func drawBallShadow(_ ctx: CGContext, _ width: CGFloat, _ height: CGFloat) {
-        let ground = project(engine.ball.position)
-        let size = min(width, height) * 0.067 * CGFloat(engine.config.ball.visualScale)
-        ctx.setFillColor(argbColor(0x450a1830).cgColor)
-        ctx.fillEllipse(in: CGRect(x: ground.x - size * 0.6, y: ground.y - size * 0.15, width: size * 1.2, height: size * 0.3))
+    /// Android's tag `StaticLayout`: centered, at most two lines, ellipsized at the end (cached like `cachedLayouts`).
+    private func tagLayout(_ s: String, _ width: CGFloat, _ size: CGFloat, _ ink: UInt32) -> (NSAttributedString, CGFloat) {
+        let w = max(width, 1)
+        let key = "tag/\(s)/\(Double(w))/\(Double(size))/\(ink)"
+        if let cached = cachedLayouts[key] { return cached }
+        if cachedLayouts.count > 90 { cachedLayouts.removeAll() }
+        let style = NSMutableParagraphStyle()
+        style.alignment = .center
+        style.baseWritingDirection = AppText.rtl ? .rightToLeft : .leftToRight
+        style.lineBreakMode = .byWordWrapping
+        let f = font(size)
+        let attributed = NSAttributedString(string: s, attributes: [.font: f, .foregroundColor: argbColor(ink), .paragraphStyle: style])
+        let bounding = attributed.boundingRect(with: CGSize(width: w, height: CGFloat.greatestFiniteMagnitude),
+                                               options: [.usesLineFragmentOrigin, .usesFontLeading], context: nil)
+        let entry = (attributed, min(ceil(bounding.height), ceil(f.lineHeight * 2)))
+        cachedLayouts[key] = entry
+        return entry
     }
 
-    private func drawFlyingBall(_ ctx: CGContext, _ width: CGFloat, _ height: CGFloat, _ ball: Ball? = nil) {
+    /// Android `drawBallShadow`: soft footprints projected on the ground plane — perspective, penumbra and light direction
+    /// follow the same world coordinates as the ball, never its future landing marker.
+    private func drawBallShadow(_ ctx: CGContext, _ ball: Ball? = nil) {
         let b = ball ?? engine.ball
-        let p = project(b.position, b.height)
-        let size = min(width, height) * 0.067 * CGFloat(engine.config.ball.visualScale)
+        if b.burst { return }
+        for s in BallShadow.project(b, engine.config, engine.time) {
+            for layer in stride(from: 5, through: 0, by: -1) {
+                let t = Double(layer) / 5.0
+                let rx = s.radiusX + s.softness * t
+                let ry = s.radiusY + s.softness * t
+                for i in 0...24 {
+                    let angle = Double(i) * 2 * Double.pi / 24
+                    let x = cos(angle) * rx
+                    let y = sin(angle) * ry
+                    let p = project(s.center + V(x * cos(s.angle) - y * sin(s.angle), x * sin(s.angle) + y * cos(s.angle)))
+                    if i == 0 { ctx.move(to: p) } else { ctx.addLine(to: p) }
+                }
+                ctx.closePath()
+                let alpha = UInt32(min(max(Kotlin.toInt(255 * s.opacity / 6), 0), 255))
+                ctx.setFillColor(argbColor((alpha << 24) | 0x000c111c).cgColor)
+                ctx.fillPath()
+            }
+        }
+    }
+
+    private func drawFlyingBall(_ ctx: CGContext, _ ball: Ball? = nil) {
+        let b = ball ?? engine.ball
+        if b.burst { return }
+        let p = ballPoint(b.position, b.height)
+        let size = ballSize(b.position, b.height)
         // No altitude clamp: a powerful lob can leave the viewport and return naturally.
         if engine.ballWithinReach(ownId) {
             let r = size * 0.72
@@ -1144,8 +1406,11 @@ final class ArenaView: UIView {
             ctx.setLineWidth(2.5)
             ctx.strokeEllipse(in: CGRect(x: p.x - r, y: p.y - r, width: r * 2, height: r * 2))
         }
-        art.ball(engine.config.ball).draw(in: CGRect(x: p.x - size / 2, y: p.y - size / 2, width: size, height: size))
+        ballArt(CGRect(x: p.x - size / 2, y: p.y - size / 2, width: size, height: size))
     }
+
+    /// Android `outcomeExplanation()`: the explanation the result/score pages repeat.
+    func outcomeExplanation() -> String { return feedbackText() }
 
     /// Android `feedbackText()`: names the actor ("You" only for the local player, nicknames as they are now).
     func feedbackText() -> String {
@@ -1273,6 +1538,14 @@ final class ArenaView: UIView {
             command(.jump)
             return
         }
+        if catchRect.contains(point) {
+            command(.catchBall)
+            return
+        }
+        if duckRect.contains(point) {
+            command(.duck)
+            return
+        }
         if rotateRect.contains(point) {
             cancelInput()
             onRotate?()
@@ -1321,7 +1594,7 @@ final class ArenaView: UIView {
         if let hand = handPoints[ownId] { onBall = distance2D(x - hand.x, y - hand.y) < 45 }
         if engine.thrower == ownId && engine.phase == .circle && onBall {
             gesture = "toss"
-        } else if engine.canAim(ownId) && onBall {
+        } else if engine.canAim(ownId) && engine.config.throwMode == .standard && onBall {
             gesture = "throw"
         } else {
             gesture = "move"
@@ -1356,8 +1629,10 @@ final class ArenaView: UIView {
             case "move":
                 command(.move(inverseVector(dx, dy) * min(1.0, Double(distance / 40))))
             case "throw":
-                aimedAt = nil
-                command(.aim(inverseVector(dx, dy)))
+                if engine.config.throwMode == .standard {
+                    aimedAt = nil
+                    command(.aim(inverseVector(dx, dy)))
+                }
             default:
                 break
             }
@@ -1376,9 +1651,10 @@ final class ArenaView: UIView {
         let dy = y - startY
         if dragged {
             if gesture == "toss" && dy < -18 {
-                let speed = Double(-dy) / Double(max(Int64(60), now - startAt)) * 1000
+                // Physical points and gesture time (Android dp and milliseconds).
+                let power = TossGesture.power(Double(-dy), numericCast(now - startAt))
                 let drift = Double(dx / max(abs(dy), 30))
-                command(.toss(power: Kotlin.clamp((speed - 180) / 1900, 0, 1), drift: Kotlin.clamp(drift, -1, 1)))
+                command(.toss(power: power, drift: Kotlin.clamp(drift, -1, 1)))
             }
             if gesture == "throw" {
                 let speed = Double(distance2D(dx, dy)) / Double(max(Int64(45), now - startAt)) * 1000
@@ -1387,12 +1663,33 @@ final class ArenaView: UIView {
             command(.move(V.zero))
             return
         }
+        if engine.canAim(ownId) && engine.config.throwMode != .standard {
+            singleTap(x, y)
+            return
+        }
         if secondTap {
             secondTap = false
             command(.duck)
             return
         }
         if catchCommitted { return }
+        // Catch-only lessons have no double-tap duck to disambiguate. Respond to
+        // the tap now; movement drags already returned above.
+        if engine.ball.holder != ownId {
+            singleTap(x, y)
+            tapAt = now
+            tapX = x
+            tapY = y
+            // Remember a possible second tap without delaying the first catch.
+            let forget: @MainActor () -> Void = { [weak self] in
+                guard let self else { return }
+                self.pendingTap = nil
+                self.pendingTapAction = nil
+            }
+            pendingTapAction = forget
+            pendingTap = afterDelay(Double(engine.config.doubleTapMs) / 1000.0) { forget() }
+            return
+        }
         if let previous = pendingTapAction {
             pendingTap?.cancel()
             pendingTap = nil
@@ -1420,13 +1717,22 @@ final class ArenaView: UIView {
             }
             return
         }
+        if engine.canAim(ownId) && engine.config.throwMode != .standard {
+            tapThrow(x, y, target)
+            return
+        }
         if let d = engine.practice, engine.canAim(ownId) {
-            // Android inverts the projected 16 m square at the target's height (Matrix.setPolyToPoly); the camera's own
-            // inverse at that height is the same mapping.
-            if let me = engine.actor(ownId) {
-                let at = arenaCamera.ground(Double(x), Double(y), max(Double(bounds.width), 1), max(Double(bounds.height), 1), d.targetHeight)
-                command(.aim(V(at.x, at.y) - me.position))
+            guard let me = engine.actor(ownId) else { return }
+            let marked = ballPoint(d.target, d.stage.skill == .ground ? 0.0 : d.targetHeight)
+            if distance2D(x - marked.x, y - marked.y) < 80 || target != nil {
+                let aimAt = target.flatMap { engine.actor($0)?.position } ?? d.target
+                command(.aim(aimAt - me.position))
+                return
             }
+            // Android inverts the projected 16 m square at the target's (ball-scaled) height (Matrix.setPolyToPoly); the
+            // camera's own inverse at that height is the same mapping.
+            let at = arenaCamera.ground(Double(x), Double(y), max(Double(bounds.width), 1), max(Double(bounds.height), 1), d.targetHeight * 2)
+            command(.aim(V(at.x, at.y) - me.position))
             return
         }
         if engine.canAim(ownId) {
@@ -1438,6 +1744,149 @@ final class ArenaView: UIView {
             return
         }
         command(.catchBall)
+    }
+
+    // MARK: Tap and timed-target throws (Android `aimCentre`, `drawTarget`, `pointAt`, `tapThrow`)
+
+    private func aimCentre() -> V? {
+        if let p = engine.practice, p.stage.throwing && p.stage.skill != .call { return p.target }
+        guard let id = aimedAt, let a = engine.actor(id), a.active else { return nil }
+        return a.position
+    }
+
+    private func aimSide(_ target: V) -> V {
+        let from = engine.actor(ownId)?.position ?? target
+        let d = (target - from).unit()
+        return V(-d.y, d.x)
+    }
+
+    /// The Standard control's moving dot over the chosen player (or practice target), in the player's rank colour.
+    private func drawTarget(_ ctx: CGContext) {
+        displayedAim = nil
+        if !engine.canAim(ownId) || engine.config.throwMode != .target || networkWaiting { return }
+        guard let centre = aimCentre(), let me = engine.actor(ownId) else { return }
+        let dot = TargetThrow.dot(engine.time, (centre - me.position).length())
+        let base = engine.practice?.targetHeight ?? 1.03
+        let aim = TargetThrow.Aim(position: centre + aimSide(centre) * dot.0, height: dot.1 + base - 1.03)
+        displayedAim = aim
+        let p = ballPoint(aim.position, aim.height)
+        let color = ProgressRanks.at(me.member.points ?? rankPoints).color
+        for (radius, fill) in [(CGFloat(9), UInt32(0xff17283f)), (7.5, 0xffffffff), (5.5, color)] {
+            ctx.setFillColor(argbColor(fill).cgColor)
+            ctx.fillEllipse(in: CGRect(x: p.x - radius, y: p.y - radius, width: radius * 2, height: radius * 2))
+        }
+    }
+
+    /// Invert the projected vertical target plane, preserving foot/face and side taps.
+    private func pointAt(_ x: CGFloat, _ y: CGFloat, _ centre: V) -> TargetThrow.Aim? {
+        let side = aimSide(centre)
+        let source: [Double] = [-2, -0.6, 2, -0.6, 2, 3.4, -2, 3.4]
+        let camera = gestureCamera ?? arenaCamera
+        let w = Double(bounds.width)
+        let h = Double(bounds.height)
+        var screen: [Double] = []
+        for i in 0...3 {
+            let v = centre + side * source[2 * i]
+            let p = camera.project(v.x, v.y, source[2 * i + 1] * 2.0, w, h)
+            screen.append(p.x)
+            screen.append(p.y)
+        }
+        guard let mapped = ArenaView.mapThroughQuad(screen, source, Double(x), Double(y)) else { return nil }
+        let aim = TargetThrow.Aim(position: centre + side * mapped.0, height: mapped.1)
+        return TargetThrow.valid(aim.position, aim.height, engine.config) ? aim : nil
+    }
+
+    /// Android `Matrix.setPolyToPoly(src, 0, dst, 0, 4)` + `mapPoints`: the perspective transform taking the four `from`
+    /// points (x0, y0, …, x3, y3) to the four `to` points, applied to (x, y).
+    static func mapThroughQuad(_ from: [Double], _ to: [Double], _ x: Double, _ y: Double) -> (Double, Double)? {
+        // Unknowns h0…h7 of u = (h0 x + h1 y + h2) / (h6 x + h7 y + 1), v = (h3 x + h4 y + h5) / (h6 x + h7 y + 1).
+        var m = [[Double]](repeating: [Double](repeating: 0, count: 9), count: 8)
+        for i in 0...3 {
+            let sx = from[2 * i]
+            let sy = from[2 * i + 1]
+            let u = to[2 * i]
+            let v = to[2 * i + 1]
+            m[2 * i] = [sx, sy, 1, 0, 0, 0, -sx * u, -sy * u, u]
+            m[2 * i + 1] = [0, 0, 0, sx, sy, 1, -sx * v, -sy * v, v]
+        }
+        for col in 0..<8 {
+            var pivot = col
+            for row in col..<8 where abs(m[row][col]) > abs(m[pivot][col]) { pivot = row }
+            if abs(m[pivot][col]) < 1e-12 { return nil }
+            m.swapAt(col, pivot)
+            for row in 0..<8 where row != col {
+                let factor = m[row][col] / m[col][col]
+                if factor == 0 { continue }
+                for k in col..<9 { m[row][k] -= factor * m[col][k] }
+            }
+        }
+        let hm = (0..<8).map { m[$0][8] / m[$0][$0] }
+        let d = hm[6] * x + hm[7] * y + 1
+        if abs(d) < 1e-12 { return nil }
+        return ((hm[0] * x + hm[1] * y + hm[2]) / d, (hm[3] * x + hm[4] * y + hm[5]) / d)
+    }
+
+    /// Android `tapThrow`: Easy throws at the exact tapped point; Standard first picks a target, then throws at the
+    /// moving dot when tapped.
+    private func tapThrow(_ x: CGFloat, _ y: CGFloat, _ target: String?) {
+        var other: String?
+        if let t = target, t != ownId, engine.actor(t)?.active == true { other = t }
+        let point = CGPoint(x: x, y: y)
+        let label = other.flatMap { id in tagRects.first(where: { $0.0 == id })?.1.contains(point) } ?? false
+        if engine.config.throwMode == .target {
+            if let o = other, aimedAt == nil || (label && o != aimedAt), engine.practice == nil {
+                aimedAt = o
+                playerCamera = false
+                displayedAim = nil
+                return
+            }
+            if let aim = displayedAim {
+                command(.pointThrow(point: aim.position, height: aim.height))
+                displayedAim = nil
+            }
+            return
+        }
+        if label {
+            aimedAt = other
+            playerCamera = false
+            return
+        }
+        var centre: V?
+        if let p = engine.practice {
+            centre = p.target
+        } else if let o = other, let a = engine.actor(o) {
+            centre = a.position
+        } else if let c = aimCentre() {
+            centre = c
+        } else {
+            var best: GameActor?
+            var bestDistance = CGFloat.greatestFiniteMagnitude
+            for a in engine.activeActors where a.member.id != ownId {
+                let p = ballPoint(a.position, 1.0)
+                let d = distance2D(x - p.x, y - p.y)
+                if best == nil || d < bestDistance {
+                    best = a
+                    bestDistance = d
+                }
+            }
+            centre = best?.position
+        }
+        guard let c = centre, let aim = pointAt(x, y, c) else { return }
+        command(.pointThrow(point: aim.position, height: aim.height))
+    }
+
+    private func attackInstruction() -> String {
+        switch engine.config.throwMode {
+        case .easy:
+            return tr("Tap the exact spot to throw. Tap a name to bring the target into view.", "געו במקום המדויק כדי לזרוק. געו בשם כדי לראות את המטרה.")
+        case .target:
+            if aimCentre() == nil {
+                return tr("Choose a player or name to show the moving target.", "בחרו שחקן או שם כדי להציג את הנקודה הנעה.")
+            }
+            return tr("Tap when the dot is where you want to hit. Farther means faster.", "געו כשהנקודה במקום שבו רוצים לפגוע. רחוק יותר פירושו מהר יותר.")
+        case .standard:
+            return tr("Aim by tapping a player or their name label.\nFlick from your ball to throw.", "כוונו בנגיעה בשחקן או בתווית השם שלו.\nהחליקו מהכדור כדי לזרוק.")
+        }
     }
 
     private func cancelInput() {

@@ -301,7 +301,12 @@ final class ArenaWorldView: UIView {
         float n = worldNoise(p * 0.34);
         float3 col = mix(float3(0.18, 0.34, 0.17), material, 0.67) * (0.85 + n * 0.12);
         if (scene > 0.5 && scene < 1.5) {
-            col = material * (0.93 + n * 0.13);
+            // Subtle non-periodic sand relief; no mirrored tile or harsh pixel grain.
+            // Broad, low-contrast variation stays fixed as the camera moves.
+            float sand = worldNoise(p * 0.17 + float2(17.3, 8.1)) * 0.7 + worldNoise(float2(p.x * 0.53 - p.y * 0.31, p.x * 0.31 + p.y * 0.53) + float2(4.7, 31.9)) * 0.3;
+            col = mix(float3(0.88, 0.745, 0.52), float3(0.95, 0.825, 0.625), sand);
+            float relief = worldNoise(p * float2(2.1, 3.4) + float2(9.2, 13.7)) * 0.60 + worldNoise(p * float2(5.7, 7.2) + float2(33.1, 1.4)) * 0.28 + worldNoise(p * 13.0 + float2(2.3, 45.1)) * 0.12;
+            col *= 0.965 + relief * 0.070;
         }
         if (scene > 1.5 && scene < 2.5) {
             float grid = max(step(0.975, fract(p.x * 0.32)), step(0.975, fract(p.y * 0.32)));

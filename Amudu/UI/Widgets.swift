@@ -36,7 +36,32 @@ struct AmuduLabel: View {
     }
 }
 
-/// Android setup `fieldTitle(title)`: a 17 sp label 20 dp below the previous field.
+/// Android `paragraph(s, size, color)` (2026-11): the bold label, but starting at the reading edge of the language
+/// (right in Hebrew and Arabic) instead of centred.
+struct AmuduParagraph: View {
+    let text: String
+    var size: CGFloat = 18
+    var color: UInt32 = 0xffffffff
+
+    init(_ text: String, size: CGFloat = 18, color: UInt32 = 0xffffffff) {
+        self.text = text
+        self.size = size
+        self.color = color
+    }
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: size, weight: .bold))
+            .foregroundColor(Color(argb: color))
+            .multilineTextAlignment(.leading)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 7)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// Android setup `fieldTitle(title)`: a 17 sp label 20 dp below the previous field, at the reading edge (2026-11).
 struct FieldTitle: View {
     let text: String
 
@@ -45,36 +70,93 @@ struct FieldTitle: View {
     }
 
     var body: some View {
-        AmuduLabel(text, size: 17)
+        AmuduParagraph(text, size: 17)
             .padding(.top, 20)
             .padding(.bottom, 6)
     }
 }
 
-/// Android `button(s, color)`: 54 dp, 18 dp corners, dark bold text on a raised sky surface (`bg(color)`).
+/// Android `button(s, color)` (2026-11): at least 56 dp, 14/12 dp padding, 8 dp apart, dark bold text on a raised sky
+/// surface (`bg(color)`); a Back or Cancel button is pink with white text.
 struct AmuduButton: View {
     let title: String
     var color: UInt32 = 0xffb8f3dc
+    var ink: UInt32? = nil
+    var enabled = true
     let action: () -> Void
 
-    init(_ title: String, color: UInt32 = 0xffb8f3dc, action: @escaping () -> Void) {
+    init(_ title: String, color: UInt32 = 0xffb8f3dc, ink: UInt32? = nil, enabled: Bool = true, action: @escaping () -> Void) {
         self.title = title
         self.color = color
+        self.ink = ink
+        self.enabled = enabled
         self.action = action
     }
 
+    /// Android `s == tr("Back", "חזרה") || s == tr("Cancel", "ביטול")`.
+    static func isBack(_ title: String) -> Bool {
+        let he = AppText.language == "he"
+        return title == GameText.t("Back", "חזרה", hebrew: he) || title == GameText.t("Cancel", "ביטול", hebrew: he)
+    }
+
     var body: some View {
-        Button(action: action) {
+        let back = AmuduButton.isBack(title)
+        let fill: UInt32 = back ? 0xffe91e63 : color
+        return Button(action: action) {
             Text(title)
                 .font(.system(size: 16, weight: .bold))
-                .foregroundColor(Color(argb: 0xff12324a))
+                .foregroundColor(Color(argb: ink ?? (back ? 0xffffffff : 0xff12324a)))
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 12)
-                .frame(maxWidth: .infinity, minHeight: 54)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .frame(maxWidth: .infinity, minHeight: 56)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(SkyButtonStyle(color: color, panel: SkyPalette.isPanelFill(color)))
-        .padding(.vertical, 6)
+        .buttonStyle(SkyButtonStyle(color: fill, panel: SkyPalette.isPanelFill(fill)))
+        .disabled(!enabled)
+        .opacity(enabled ? 1 : 0.45)
+        .padding(.vertical, 8)
+    }
+}
+
+/// Android `screenBack(action)`: the page's back control — a 48 dp target at the top start of the header holding a
+/// pink arrow (4 dp) over a cream outline (6 dp), pointing towards the start edge (right in Hebrew and Arabic).
+struct BackChevron: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            ZStack {
+                BackArrowShape(rtl: AppText.rtl)
+                    .stroke(Color(argb: 0xfffffff0), style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round))
+                BackArrowShape(rtl: AppText.rtl)
+                    .stroke(Color(argb: 0xffe91e63), style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
+            }
+            .frame(width: 48, height: 48)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(AppText.t("Back", "חזרה"))
+    }
+}
+
+private struct BackArrowShape: Shape {
+    let rtl: Bool
+
+    func path(in rect: CGRect) -> Path {
+        let cx = rect.midX
+        let cy = rect.midY
+        let dir: CGFloat = rtl ? -1 : 1
+        let tip = cx - 9 * dir
+        let tail = cx + 9 * dir
+        var p = Path()
+        p.move(to: CGPoint(x: tip, y: cy))
+        p.addLine(to: CGPoint(x: tail, y: cy))
+        p.move(to: CGPoint(x: tip, y: cy))
+        p.addLine(to: CGPoint(x: cx, y: cy - 9))
+        p.move(to: CGPoint(x: tip, y: cy))
+        p.addLine(to: CGPoint(x: cx, y: cy + 9))
+        return p
     }
 }
 
@@ -85,6 +167,8 @@ struct AmuduPage<Content: View>: View {
     let title: String
     let background: UIImage
     let scrollCue: Bool
+    /// Android `screenBack(action)` (2026-11): the back arrow at the top start of the header; nil on the home page.
+    let back: (() -> Void)?
     let content: Content
     @State private var scrollHandle = ScrollHandle()
     @State private var moreBelow = false
@@ -93,10 +177,11 @@ struct AmuduPage<Content: View>: View {
     private let space = "amuduPageScroll"
     private let endID = "amuduPageEnd"
 
-    init(_ title: String, background: UIImage, scrollCue: Bool = false, @ViewBuilder content: () -> Content) {
+    init(_ title: String, background: UIImage, scrollCue: Bool = false, back: (() -> Void)? = nil, @ViewBuilder content: () -> Content) {
         self.title = title
         self.background = background
         self.scrollCue = scrollCue
+        self.back = back
         self.content = content()
     }
 
@@ -126,7 +211,22 @@ struct AmuduPage<Content: View>: View {
                     VStack(spacing: 0) {
                         ScrollView {
                             VStack(spacing: 0) {
-                                AmuduLabel(title, size: 28)
+                                // Android: a 48 dp header holding the 28 sp title (48 dp clear on both sides) and the
+                                // back arrow at its top start, 16 dp above the content.
+                                ZStack(alignment: .topLeading) {
+                                    Text(title)
+                                        .font(.system(size: 28, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .multilineTextAlignment(.center)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                        .padding(.horizontal, 48)
+                                        .padding(.vertical, 7)
+                                        .frame(maxWidth: .infinity, minHeight: 48)
+                                    if let back {
+                                        BackChevron(action: back)
+                                    }
+                                }
+                                .padding(.bottom, 16)
                                 content
                                 if scrollCue {
                                     Color.clear
@@ -321,11 +421,14 @@ struct MenuLink: View {
 struct SectionButton: View {
     let title: String
     let color: UInt32
+    /// Android `FamilyButtonAlignment.opticalOffset(button, dp)` (positive lowers the lettering).
+    var offset: CGFloat = 0
     let action: () -> Void
 
-    init(_ title: String, color: UInt32, action: @escaping () -> Void) {
+    init(_ title: String, color: UInt32, offset: CGFloat = 0, action: @escaping () -> Void) {
         self.title = title
         self.color = color
+        self.offset = offset
         self.action = action
     }
 
@@ -335,6 +438,7 @@ struct SectionButton: View {
                 .font(.system(size: 16, weight: .bold))
                 .foregroundColor(Color(argb: MenuColors.ink))
                 .multilineTextAlignment(.center)
+                .offset(y: offset)
                 .padding(.horizontal, 12)
                 .frame(maxWidth: .infinity, minHeight: 54)
                 .contentShape(Rectangle())
@@ -365,10 +469,12 @@ private struct ToggleSign: Shape {
     }
 }
 
-/// Android setup `group(title)`: a lilac button that opens or closes the rules below it.
+/// Android setup `group(title)`: a lilac button that opens or closes the rules below it (2026-11: 24 dp above the first
+/// group, 16 dp above the next ones, nothing below; the open body ends with 12 dp).
 struct GroupToggle: View {
     let title: String
     let expanded: Bool
+    var first = true
     let action: () -> Void
 
     var body: some View {
@@ -382,12 +488,11 @@ struct GroupToggle: View {
                     .foregroundColor(Color(argb: 0xff12324a))
             }
             .padding(.horizontal, 12)
-            .frame(maxWidth: .infinity, minHeight: 54)
+            .frame(maxWidth: .infinity, minHeight: 56)
             .contentShape(Rectangle())
         }
         .buttonStyle(SkyButtonStyle(color: 0xffdfcfff))
-        .padding(.top, 24)
-        .padding(.bottom, 8)
+        .padding(.top, first ? 24 : 16)
         .accessibilityLabel((expanded ? "−  " : "+  ") + title)
     }
 }
@@ -453,10 +558,11 @@ struct PictureChoices: View {
                     .foregroundColor(Color(argb: isSelected ? 0xff12324a : 0xfff4faff))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 2)
-                    .padding(.top, 5)
-                    .frame(maxWidth: .infinity, minHeight: 43)
+                    .padding(.vertical, 5)
+                    .frame(maxWidth: .infinity, minHeight: 51)
             }
-            .padding(EdgeInsets(top: 6, leading: 5, bottom: 5, trailing: 5))
+            // Android (2026-11): arena cards keep 6 dp above the picture, ball cards 14 dp; no padding below the caption.
+            .padding(EdgeInsets(top: arena ? 6 : 14, leading: 5, bottom: 0, trailing: 5))
             .contentShape(Rectangle())
         }
         // Android: a raised sky card (selected pale blue, otherwise dark navy) outlined 3 or 1 dp, clipped to its outline.
@@ -492,25 +598,20 @@ struct DialogCard<Content: View>: View {
     let title: String
     let content: Content
 
-    init(_ title: String, @ViewBuilder content: () -> Content) {
+    var allowClose = true
+    var onClose: () -> Void = {}
+
+    init(_ title: String, allowClose: Bool = true, onClose: @escaping () -> Void = {}, @ViewBuilder content: () -> Content) {
         self.title = title
+        self.allowClose = allowClose
+        self.onClose = onClose
         self.content = content()
     }
 
+    /// Since 2026-11 the shared `SpudDialogStyle` panel (pale sky, × at the top end, centred blue title).
     var body: some View {
-        ZStack {
-            Color.black.opacity(0.45).ignoresSafeArea()
-            VStack(alignment: .leading, spacing: 0) {
-                Text(title)
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(Color(argb: 0xff17384d))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.bottom, 8)
-                content
-            }
-            .padding(16)
-            .background(SkySurface(color: 0xffffffff, radius: 24, panel: true))
-            .padding(.horizontal, 22)
+        SpudDialogPanel(title: title, allowClose: allowClose, onClose: onClose) {
+            content
         }
     }
 }
@@ -521,19 +622,11 @@ struct DialogTextButton: View {
     let title: String
     let action: () -> Void
 
+    /// Since 2026-11 a full-width `SpudDialogStyle` action, 20 dp below the body (a positive "Continue" is mint).
     var body: some View {
-        HStack {
-            Spacer(minLength: 0)
-            Button(action: action) {
-                Text(title)
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(Color(argb: 0xff174963))
-                    .padding(.horizontal, 8)
-                    .frame(minWidth: 88, minHeight: 48)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(SkyButtonStyle(color: 0xffa6dcff))
-        }
+        SpudDialogButton(title: title, tone: title == GameText.t("Continue", "המשך", hebrew: AppText.language == "he") ? .green : .blue,
+                         action: action)
+            .padding(.top, 20)
     }
 }
 
@@ -638,6 +731,45 @@ struct SkillStars: View {
     }
 }
 
+/// Android `QualityStrip` (lobby house players): one star per quality in the setup order (accuracy, power, speed,
+/// catch, jump), each filled in gold from its start edge to value/5 of its width and outlined in gold.
+struct QualityStrip: View {
+    let values: [Int]
+
+    var body: some View {
+        Canvas { context, size in
+            let count = max(values.count, 1)
+            let step = size.width / CGFloat(count)
+            let radius = min(step * 0.42, size.height * 0.43)
+            for (i, value) in values.enumerated() {
+                let cx = step * (CGFloat(i) + 0.5)
+                let cy = size.height / 2
+                var shape = Path()
+                for j in 0..<10 {
+                    let angle = -Double.pi / 2 + Double(j) * Double.pi / 5
+                    let r = j % 2 == 0 ? radius : radius * 0.44
+                    let point = CGPoint(x: cx + CGFloat(cos(angle)) * r, y: cy + CGFloat(sin(angle)) * r)
+                    if j == 0 { shape.move(to: point) } else { shape.addLine(to: point) }
+                }
+                shape.closeSubpath()
+                let fraction = CGFloat(min(max(value, 0), 5)) / 5
+                var clipped = context
+                clipped.clip(to: Path(CGRect(x: cx - radius, y: cy - radius, width: 2 * radius * fraction, height: 2 * radius)))
+                clipped.fill(shape, with: .color(Color(argb: 0xffffdd63)))
+                context.stroke(shape, with: .color(Color(argb: 0xffffdd63)), lineWidth: 1)
+            }
+        }
+        .accessibilityElement()
+        .accessibilityLabel(QualityStrip.description(values))
+    }
+
+    static func description(_ values: [Int]) -> String {
+        let names = ["Accuracy", "Power", "Speed", "Catch", "Jump"]
+        return values.enumerated().map { i, v in AppText.t(i < names.count ? names[i] : "") + ": " + String(v) + " / 5" }
+            .joined(separator: ", ")
+    }
+}
+
 private struct ChevronShape: Shape {
     let right: Bool
 
@@ -697,16 +829,26 @@ private struct DropdownShape: Shape {
     }
 }
 
-/// Android setup `choice()`: a field title above a light raised field (`bg(0xffe3f4ff)`) with a dropdown chevron.
+/// Android setup `choice()`: a field title above a light raised field (`bg(0xffe3f4ff)`) with a dropdown chevron. Since
+/// 2026-11 (`SpudSpinnerAlignment`) the selected row is one 19 sp line (ellipsized), 20 dp from the start and 14 dp from
+/// the chevron, centred in a field at least 54 dp high. The learning pages (`learningChoice`) title it with an 18 sp
+/// paragraph (16 dp above, 6 dp below) and show no chevron.
 struct ChoiceMenu: View {
     let title: String
     let items: [String]
     let selected: Int
+    var learning = false
     let change: (Int) -> Void
 
     var body: some View {
         VStack(spacing: 0) {
-            FieldTitle(title)
+            if learning {
+                AmuduParagraph(title, size: 18)
+                    .padding(.top, 9)
+                    .padding(.bottom, -1)
+            } else {
+                FieldTitle(title)
+            }
             Menu {
                 ForEach(items.indices, id: \.self) { i in
                     Button {
@@ -722,18 +864,22 @@ struct ChoiceMenu: View {
             } label: {
                 HStack(spacing: 8) {
                     Text(selected >= 0 && selected < items.count ? items[selected] : "")
-                        .font(.system(size: 16))
-                        .foregroundColor(Color(argb: 0xff14324a))
+                        .font(.system(size: 19))
+                        .foregroundColor(Color(argb: learning ? 0xff17384d : 0xff14324a))
                         .multilineTextAlignment(.leading)
-                        .lineLimit(3)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    DropdownShape()
-                        .fill(Color(argb: 0xff14324a))
-                        .frame(width: 28, height: 28)
+                    if !learning {
+                        DropdownShape()
+                            .fill(Color(argb: 0xff14324a))
+                            .frame(width: 28, height: 28)
+                    }
                 }
-                .padding(.horizontal, 12)
+                .padding(.leading, 20)
+                .padding(.trailing, 14)
                 .padding(.vertical, 10)
-                .frame(maxWidth: .infinity, minHeight: items.contains(where: { $0.count > 44 }) ? 82 : 54)
+                .frame(maxWidth: .infinity, minHeight: 54)
                 .background(SkySurface(color: 0xffe3f4ff, radius: 18))
                 .contentShape(Rectangle())
             }

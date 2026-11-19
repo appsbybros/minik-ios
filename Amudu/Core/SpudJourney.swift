@@ -2,7 +2,7 @@ import Foundation
 
 /// Android `core/SpudJourney.kt` `DrillSkill` (same order; `catching` is Kotlin `CATCH`).
 enum DrillSkill: CaseIterable {
-    case catching, duck, jump, move, dodge, ring, ground, tree, rebound, pass, call, freeze
+    case catching, duck, jump, move, dodge, ring, ground, tree, rebound, pass, call, freeze, tag
 }
 
 /// Android `SpudStage`: one challenge of the daily skill journey.
@@ -35,7 +35,13 @@ struct SpudStage {
     var cooperative: Bool { return skill == .catching || skill == .pass || skill == .call }
     var defence: Bool { return skill == .duck || skill == .jump || skill == .move || skill == .dodge }
     var throwing: Bool {
-        return skill == .ring || skill == .ground || skill == .tree || skill == .rebound || skill == .pass || skill == .call
+        return skill == .ring || skill == .ground || skill == .tree || skill == .rebound || skill == .pass || skill == .call ||
+            skill == .tag
+    }
+
+    /// Kotlin `copy(id = ...)`: the same challenge under another identity (an inserted condition variant).
+    func copy(id newId: String) -> SpudStage {
+        return SpudStage(newId, en, he, skill, bots, paired: paired, opposite: opposite, moving: moving, high: high, base: base)
     }
 
     func goal(_ cycle: Int) -> Int { return base + 2 * min(max(cycle, 0), 8) }
@@ -68,8 +74,11 @@ struct SpudStage {
     func brief(_ he: Bool) -> String {
         switch skill {
         case .catching:
-            return he ? "געו או החזיקו לתפיסה כשהכדור מתקרב. גררו כדי להגיע לסימון הנחיתה. תפיסה נספרת רק לפני שהכדור נוגע בקרקע."
-                : "Tap or hold to catch as the ball arrives. Drag to reach the landing marker. A catch counts only before the ball touches the ground."
+            return he ? "געו בתפיסה כשהכדור מתקרב. יש חצי שנייה לתפוס לפני הנגיעה בקרקע."
+                : "Tap Catch as the ball arrives. Your catch window lasts half a second; catch before the ground."
+        case .tag:
+            return he ? "פגעו בשחקן המסומן. בדקו אם מותרת נגיעה בקרקע לפני הפגיעה."
+                : "Hit the marked player. Check whether a ground bounce is allowed before the hit."
         case .duck:
             return he ? "געו פעמיים בזירה כדי להתכופף מתחת לכדור. בסיבוב הזה לא הולכים ולא קופצים. עקבו אחרי הסימן מעל הזורק."
                 : "Double-tap the arena to duck under the ball. Walking and jumping rest this round. Watch the cue above the thrower."
@@ -91,8 +100,8 @@ struct SpudStage {
             return he ? "כוונו לסימון שעל גזע העץ והחליקו מהכדור. פגעו בעץ לפני שהכדור נוגע בקרקע."
                 : "Aim at the mark on the tree trunk and swipe from your ball. Hit the tree before the ball touches the ground."
         case .rebound:
-            return he ? "זרקו אל גזע העץ, ואז תפסו את הכדור החוזר לפני הנחיתה. גררו כדי להתמקם וגעו או החזיקו לתפיסה בזמן."
-                : "Throw at the tree trunk, then catch the rebound before it lands. Drag into position and tap or hold to catch at the right moment."
+            return he ? "זרקו אל גזע העץ ותפסו את הכדור החוזר לפני הנחיתה. גררו להתמקמות וגעו בתפיסה כשהכדור מגיע."
+                : "Throw at the tree trunk, then catch the rebound before it lands. Drag into position and tap Catch as the ball arrives."
         case .pass:
             return he ? "מסרו לשותף המסומן, ואז תפסו את המסירה החוזרת. כשהסימון עובר, כוונו לשותף החדש. זוזו לכיוון מסירות שנוטות לצד."
                 : "Pass to the marked partner, then catch the return. When the marker moves, aim at the new partner. Move toward passes that drift sideways."
@@ -119,9 +128,9 @@ struct SpudStage {
     }
 }
 
-/// Android `SpudJourney`: the 30 challenges, repeated in cycles.
+/// Android `SpudJourney`: the 30 base challenges plus 10 inserted condition variants (40 per cycle), repeated in cycles.
 enum SpudJourney {
-    static let stages: [SpudStage] = [
+    static let baseStages: [SpudStage] = [
         SpudStage("catch", "Your first catch", "התפיסה הראשונה", .catching),
         SpudStage("duck", "Duck under", "מתכופפים מתחת", .duck),
         SpudStage("jump", "Jump over", "קופצים מעל", .jump),
@@ -154,7 +163,41 @@ enum SpudJourney {
         SpudStage("freeze", "Run, call, freeze", "רצים, קוראים, עוצרים", .freeze),
     ]
 
-    static func stage(_ step: Int) -> SpudStage { return stages[Kotlin.floorMod(step, stages.count)] }
+    /// Original identities retain their completion status when new conditions are inserted: after base stage `key`, a
+    /// copy of base stage `value.0` under the id `value.1`.
+    private static let inserted: [Int: (Int, String)] = [9: (5, "ring_breeze"), 14: (7, "catch_evening"), 16: (4, "tree_evening"),
+                                                         18: (6, "ground_breeze"), 20: (8, "pass_night"), 22: (13, "ring_night"),
+                                                         24: (21, "catch_night"), 26: (14, "ground_night"), 28: (4, "tree_night"),
+                                                         29: (8, "pass_breeze")]
+
+    static let stages: [SpudStage] = {
+        var list: [SpudStage] = []
+        for (i, s) in baseStages.enumerated() {
+            list.append(s)
+            if let entry = inserted[i] { list.append(baseStages[entry.0].copy(id: entry.1)) }
+        }
+        return list
+    }()
+
+    static var size: Int { return stages.count }
+
+    static func stage(_ step: Int) -> SpudStage { return stages[Kotlin.floorMod(step, size)] }
+
+    /// Kotlin `key(step)`: "cycle:id", the mastery identity of a challenge.
+    static func key(_ step: Int) -> String { return "\(step / size):\(stage(step).id)" }
+
+    /// Kotlin `legacyStep(step)`: a step of the old 30-challenge journey in the 40-challenge journey.
+    static func legacyStep(_ step: Int) -> Int {
+        if step < 0 { return step }
+        let id = baseStages[step % 30].id
+        return (step / 30) * size + (stages.firstIndex { $0.id == id } ?? -1)
+    }
+
+    static func firstUnfinished(_ mastered: Set<String>, _ start: Int = 0) -> Int {
+        var n = start
+        while mastered.contains(key(n)) { n += 1 }
+        return n
+    }
 }
 
 /// Android `SpudProgress`: the completed challenges and the journey points. Kotlin keeps the receipts in a
@@ -164,18 +207,37 @@ struct SpudProgress: Equatable {
     var points = 0
     var bonusDay = ""
     var receipts: [String] = []
+    /// Kotlin `mastered`: the `SpudJourney.key` of every completed challenge (a set; order is not meaningful).
+    var mastered: Set<String> = []
+
+    /// Kotlin `done(step)`.
+    func done(_ step: Int) -> Bool {
+        return step < completed || mastered.contains(SpudJourney.key(step))
+    }
 
     /// A first win of the current challenge earns 40 points, 10 more for every completed cycle (up to 100), and 30 more
     /// for the first win of the day. A replayed match (same receipt) earns nothing.
     func finish(_ id: String, _ step: Int, _ won: Bool, _ day: String) -> SpudProgress {
         if !won || step != completed || receipts.contains(id) { return self }
         let daily = Kotlin.less(bonusDay, day)
+        var earned = mastered
+        earned.insert(SpudJourney.key(step))
         var next = self
-        next.completed = completed + 1
-        next.points = points + 40 + min(completed / 30, 10) * 10 + (daily ? 30 : 0)
+        next.completed = SpudJourney.firstUnfinished(earned, completed + 1)
+        next.points = points + 40 + min(completed / SpudJourney.size, 10) * 10 + (daily ? 30 : 0)
         next.bonusDay = daily ? day : bonusDay
         next.receipts = Array((receipts + [id]).suffix(128))
+        next.mastered = earned
         return next
+    }
+
+    /// Kotlin `SpudProgress.migrate`: a saved 30-challenge progress keeps its mastery and points but gains no new
+    /// challenges.
+    static func migrate(completed: Int, points: Int, bonusDay: String, receipts: [String]) -> SpudProgress {
+        var earned: Set<String> = []
+        for i in 0..<max(completed, 0) { earned.insert(SpudJourney.key(SpudJourney.legacyStep(i))) }
+        return SpudProgress(completed: SpudJourney.firstUnfinished(earned), points: points, bonusDay: bonusDay, receipts: receipts,
+                            mastered: earned)
     }
 }
 
@@ -205,20 +267,30 @@ final class PracticeBall {
     let aim: V
     var rebounded: Bool
     var passed: Bool
+    var evaluated: Bool
+    var partnerMiss: Bool
 
-    init(_ ball: Ball, _ owner: String, _ incoming: Bool, _ aim: V, rebounded: Bool = false, passed: Bool = false) {
+    init(_ ball: Ball, _ owner: String, _ incoming: Bool, _ aim: V, rebounded: Bool = false, passed: Bool = false,
+         evaluated: Bool = false, partnerMiss: Bool = false) {
         self.ball = ball
         self.owner = owner
         self.incoming = incoming
         self.aim = aim
         self.rebounded = rebounded
         self.passed = passed
+        self.evaluated = evaluated
+        self.partnerMiss = partnerMiss
     }
 }
 
 /// Android `SpudPractice`: a local practice session observes real projectile contacts, never touch counts.
+/// Kotlin's `Ball` is a shared object: the engine ball and the first shot's ball are the same instance. Here every write
+/// the Kotlin code makes through `e.ball` to a shot's ball is copied back into that shot.
 final class SpudPractice {
     let step: Int
+    let seed: Int64
+    /// Kotlin `lesson`: the learning-curriculum topic ("" for a journey challenge).
+    let lesson: String
     let stage: SpudStage
     let cycle: Int
     let goal: Int
@@ -232,17 +304,25 @@ final class SpudPractice {
     var selected = ""
     var target = V(8.0, 5.0)
     var targetHeight = 1.4
+    private var random: KotlinRandom
     var freezeAt = 0.0
     var moved = 0.0
     var freezeReady = false
     var shots: [PracticeBall] = []
     var lastSuccess = -10.0
 
-    init(_ step: Int) {
+    init(_ step: Int, _ seed: Int64 = 1, _ lesson: String = "") {
         self.step = step
-        stage = SpudJourney.stage(step)
-        cycle = max(step / 30, 0)
-        goal = stage.goal(cycle)
+        self.seed = seed
+        self.lesson = lesson
+        if lesson == "ground" || lesson == "paint" {
+            stage = SpudStage("lesson_tag", "Hit the target", "פוגעים במטרה", .tag, base: 3)
+        } else {
+            stage = SpudJourney.stage(!lesson.isEmpty ? PracticeCurriculum.step(lesson) : step)
+        }
+        cycle = lesson.isEmpty ? max(step / SpudJourney.size, 0) : 0
+        goal = lesson.isEmpty ? stage.goal(cycle) : 3
+        random = KotlinRandom(seed: seed)
     }
 
     var won: Bool { return successes >= goal }
@@ -274,7 +354,7 @@ final class SpudPractice {
                 : -Double.pi / 2 + (Double(i) - Double(bots.count - 1) * 0.5) * 0.6
             if stage.defence {
                 a.position = h.position + V(cos(angle), sin(angle)) * 6.0
-            } else if stage.cooperative {
+            } else if stage.cooperative || stage.skill == .tag {
                 a.position = V(4.0 + 8.0 * Double(i + 1) / Double(bots.count + 1), 5.0)
             } else {
                 a.position = V(3.0, 5.0)
@@ -286,10 +366,11 @@ final class SpudPractice {
     }
 
     private func ready(_ e: AmuduEngine) {
+        trialColour(e)
         let h = human(e)
         let n = successes + mistakes
         switch stage.skill {
-        case .pass, .call:
+        case .pass, .call, .tag:
             target = partner(e).position
         default:
             let x = stage.moving ? [5.0, 11.0, 8.0][n % 3] : 8.0
@@ -328,7 +409,7 @@ final class SpudPractice {
             a.move = v.length() > 1 ? v.unit() : v
         case .jump:
             if !allowsJump || a.jumpHeight > 0 || e.time < a.duckUntil { return false }
-            a.jumpVelocity = 4.8
+            a.jumpVelocity = CatchPhysics.jumpVelocity(a)
         case .duck:
             if !allowsDuck || a.jumpHeight > 0 { return false }
             a.duckUntil = e.time + e.config.duckSeconds
@@ -336,8 +417,10 @@ final class SpudPractice {
             e.emit("duck", a.member.id)
         case .catchBall:
             if stage.defence || stage.skill == .freeze || e.time < a.catchRecoveryUntil { return false }
+            a.catchProbability = CatchPhysics.probability(a, e.ball, e.actor(e.thrower))
+            a.catchRoll = random.nextDouble()
             a.catchReadyAt = e.time + (a.move.length() > 0.08 ? 0.1 : 0.0)
-            a.catchUntil = e.time + e.config.catchWindow
+            a.catchUntil = e.time + CatchPhysics.window(a, e.config)
             a.catchRecoveryUntil = a.catchUntil + 0.12
             a.catchReach = a.move.length() > 0.08 ? 0.82 : 1.0
             a.move = V.zero
@@ -350,22 +433,52 @@ final class SpudPractice {
             guard stage.skill == .call, let chosen = e.actor(targetId), chosen.member.bot else { return false }
             selected = targetId
             e.selected = selected
+            e.called = selected
             a.facing = (chosen.position - a.position).unit()
             e.emit("call", a.member.id, chosen.fullName())
-        case .toss(let power, _):
+        case .toss(let power, let drift):
             if stage.skill != .call || Kotlin.isBlank(selected) || e.ball.holder != a.member.id || !power.isFinite { return false }
             guard let partnerActor = e.actor(selected) else { return false }
-            let t = 1.3 + Kotlin.clamp(power, 0.0, 1.0) * 1.2
-            launch(e, a, partnerActor.position, 1.2, t, false)
+            let vz = CallLob.velocity(e.config.scene, false, power)
+            let t = 2 * vz / e.config.scene.gravity
+            launch(e, a, partnerActor.position + V(Kotlin.clamp(drift, -1.0, 1.0) * 2.0, 0.0), 1.2, t, false)
+            e.ball.burstOnGround = e.config.ball == .paint && e.callBursts.released(CallLob.high(e.config.scene, vz))
+            syncLastShot(e)
             e.phase = .flight
-        case .throwBall(let power):
-            if !stage.throwing || stage.skill == .call || e.ball.holder != a.member.id || !power.isFinite { return false }
-            let profile = e.throwProfile(a, power)
+        case .pointThrow(let point, let height):
+            if !stage.throwing || stage.skill == .call || e.ball.holder != a.member.id || e.config.throwMode == .standard ||
+                !TargetThrow.valid(point, height, e.config) { return false }
             e.serial += 1
-            let b = Ball(a.position + a.direction * 0.52, 1.17, a.direction * profile.speed, profile.vz, nil, bounces: 0,
-                         flightId: "\(e.id)-drill-\(e.serial)", launchAt: e.time)
+            let b = TargetThrow.launch(a, point, height, e.config, e.windVector, "\(e.id)-drill-\(e.serial)", e.time)
+            a.direction = b.velocity.unit()
+            a.facing = a.direction
             shots.append(PracticeBall(b, a.member.id, false, target))
             e.ball = b
+            armPaint(e, b.velocity.length() / e.throwProfile(a, 1.0).speed)
+            syncLastShot(e)
+            e.phase = .flight
+            a.throwAt = e.time
+            e.emit("throw", a.member.id)
+        case .throwBall(let power, _):
+            if !stage.throwing || stage.skill == .call || e.ball.holder != a.member.id || !power.isFinite { return false }
+            let profile = e.throwProfile(a, power)
+            let speed = profile.speed
+            let launchPosition = a.position + a.direction * 0.52
+            let travel = max((target - launchPosition).length(), 0.8) / speed
+            let vz: Double
+            if e.config.throwMode == .easy {
+                let t = stage.skill == .ground ? travel * (0.7 + 0.6 * power) : travel
+                vz = (targetHeight - 1.17 + 0.5 * e.config.scene.gravity * t * t) / t
+            } else {
+                vz = profile.vz
+            }
+            e.serial += 1
+            let b = Ball(launchPosition, 1.17, a.direction * speed, vz, nil, bounces: 0, flightId: "\(e.id)-drill-\(e.serial)",
+                         launchAt: e.time)
+            shots.append(PracticeBall(b, a.member.id, false, target))
+            e.ball = b
+            armPaint(e, power)
+            syncLastShot(e)
             e.phase = .flight
             a.throwAt = e.time
             e.emit("throw", a.member.id)
@@ -377,10 +490,16 @@ final class SpudPractice {
         return true
     }
 
+    /// Kotlin aliasing: the last shot's ball is `e.ball`; copy what was written through `e.ball` back into the shot.
+    private func syncLastShot(_ e: AmuduEngine) {
+        if let last = shots.last { last.ball = e.ball }
+    }
+
     private func launch(_ e: AmuduEngine, _ a: GameActor, _ to: V, _ z: Double, _ t: Double, _ incoming: Bool) {
         e.serial += 1
-        let b = Ball(a.position, 1.2, (to - a.position) * (1 / t), (z - 1.2 + 0.5 * e.config.scene.gravity * t * t) / t, nil, bounces: 0,
-                     flightId: "\(e.id)-drill-\(e.serial)", launchAt: e.time)
+        let b = Ball(a.position, 1.2, (to - a.position) * (1 / t) - e.windVector * (0.5 * t),
+                     (z - 1.2 + 0.5 * e.config.scene.gravity * t * t) / t, nil, bounces: 0, flightId: "\(e.id)-drill-\(e.serial)",
+                     launchAt: e.time)
         shots.append(PracticeBall(b, a.member.id, incoming, to))
         a.throwAt = e.time
         a.facing = (to - a.position).unit()
@@ -389,26 +508,35 @@ final class SpudPractice {
     }
 
     private func incoming(_ e: AmuduEngine) {
+        trialColour(e)
         let h = human(e)
         for id in cue {
             guard let a = e.actor(id) else { continue }
             let q = AmuduCharacters.get(a.member.character).qualities
-            let t: Double
+            let baseTime: Double
             if stage.defence {
-                t = max(6.0 / (5.0 + Double(q.power) * 0.28 + Double(min(cycle, 8)) * 0.12), 0.68)
+                baseTime = max(6.0 / (5.0 + Double(q.power) * 0.28 + Double(min(cycle, 8)) * 0.12), 0.68)
             } else if stage.high {
-                t = 0.85
+                baseTime = 0.85
             } else {
-                t = 1.35
+                baseTime = 1.35
             }
+            let t = Kotlin.clamp(baseTime * BallKind.foam.speed / e.config.ball.speed, stage.moving ? 1.05 : 0.62, 1.8)
             let offset: Double
             if stage.cooperative && (stage.moving || cycle > 0) {
                 offset = min(1.4, 0.18 * Double(5 - q.accuracy) + Double(cycle) * 0.07 + (stage.moving ? 0.45 : 0.0))
             } else {
                 offset = 0.0
             }
-            let to = V(Kotlin.clamp(h.position.x + (wave % 2 == 0 ? offset : -offset), 1.0, 15.0), h.position.y)
-            launch(e, a, to, (stage.defence && !cueHigh) ? 0.38 : 1.2, t, true)
+            let to: V
+            if stage.skill == .catching && stage.moving {
+                to = V(Kotlin.clamp(h.position.x + (h.position.x < 8 ? 2.5 : -2.5), 1.0, 15.0), h.position.y)
+            } else {
+                to = V(Kotlin.clamp(h.position.x + (wave % 2 == 0 ? offset : -offset), 1.0, 15.0), h.position.y)
+            }
+            launch(e, a, to, stage.defence ? (cueHigh ? 2.25 : 0.38) : 1.2, t, true)
+            armPaint(e, e.ball.velocity.length() / e.throwProfile(a, 1.0).speed)
+            syncLastShot(e)
             e.landing = to
         }
         if let first = cue.first { e.thrower = first }
@@ -420,8 +548,8 @@ final class SpudPractice {
     func tick(_ e: AmuduEngine, _ dt: Double) {
         let h = human(e)
         if h.jumpVelocity != 0.0 || h.jumpHeight > 0 {
-            h.jumpHeight = max(h.jumpHeight + h.jumpVelocity * dt - 0.5 * 9.8 * dt * dt, 0.0)
-            h.jumpVelocity -= 9.8 * dt
+            h.jumpHeight = max(h.jumpHeight + h.jumpVelocity * dt - 0.5 * e.config.scene.gravity * dt * dt, 0.0)
+            h.jumpVelocity -= e.config.scene.gravity * dt
             if h.jumpHeight == 0.0 { h.jumpVelocity = 0.0 }
         }
         let old = h.position
@@ -480,15 +608,31 @@ final class SpudPractice {
                 let catching = !stage.defence && e.time >= h.catchReadyAt && e.time < h.catchUntil &&
                     near < e.config.ball.catchRadius * h.catchReach && height >= 0.35 && height <= 2.1
                 if t <= groundT && catching {
-                    h.catchAt = e.time
-                    credit(e, true)
-                    remove(s)
-                    e.emit("catch", h.member.id)
-                    continue
+                    if h.catchRoll < h.catchProbability {
+                        if e.config.ball == .paint && s.ball.burstOnCatch {
+                            h.catchUntil = 0.0
+                            h.catchAt = e.time
+                            paintImpact(e, s, h, caught: true)
+                            credit(e, false)
+                            remove(s)
+                            continue
+                        }
+                        h.catchAt = e.time
+                        s.ball.holder = h.member.id
+                        s.ball.velocity = V.zero
+                        s.ball.vz = 0.0
+                        credit(e, true)
+                        remove(s)
+                        e.ball = s.ball
+                        e.emit("catch", h.member.id)
+                        continue
+                    }
+                    h.catchUntil = 0.0
                 }
-                let top = h.jumpHeight + (e.time < h.duckUntil ? e.config.duckHeight : e.config.standingHeight)
-                if t <= groundT && near < 0.5 && height >= h.jumpHeight + 0.22 && height <= top {
+                let top = h.jumpHeight + 0.23 + (e.time < h.duckUntil ? max(e.config.duckHeight, 1.4) : e.config.standingHeight)
+                if t <= groundT && near < 0.5 && height >= h.jumpHeight - 0.23 && height <= top {
                     h.hitAt = e.time
+                    paintImpact(e, s, h)
                     credit(e, false)
                     remove(s)
                     continue
@@ -496,28 +640,47 @@ final class SpudPractice {
                 let direction = s.ball.velocity.unit()
                 let past = s.ball.position - s.aim
                 if past.x * direction.x + past.y * direction.y > 0.0 { s.passed = true }
-                if s.ball.height <= 0.23 || e.time - s.ball.launchAt > 4.0 {
+                if s.ball.height <= 0.23 || e.time - s.ball.launchAt > 10.0 {
+                    if s.ball.height <= 0.23 { paintImpact(e, s) }
                     credit(e, stage.defence && s.passed)
                     remove(s)
                     continue
                 }
             } else {
+                if stage.skill == .tag && s.ball.height <= 0.23 && groundT < 1.0 {
+                    if !e.config.allowGroundHit || e.config.ball == .paint && s.ball.burstOnGround || s.ball.bounces > 0 {
+                        paintImpact(e, s)
+                        credit(e, false)
+                        remove(s)
+                        continue
+                    }
+                    s.ball.position = before + (s.ball.position - before) * groundT
+                    s.ball.height = 0.23
+                    s.ball.vz = abs(s.ball.vz) * e.config.ball.restitution * e.config.scene.bounce
+                    s.ball.bounces += 1
+                    e.emit("bounce", h.member.id)
+                    continue
+                }
                 if stage.skill == .ground && s.ball.height <= 0.23 {
                     let at = before + (s.ball.position - before) * groundT
+                    paintImpact(e, s)
                     credit(e, (at - target).length() <= radius)
                     remove(s)
                     continue
                 }
                 let plane = target.y
-                if (before.y - plane) * (s.ball.position.y - plane) <= 0 && abs(s.ball.position.y - before.y) > 1e-7 {
+                if !s.evaluated && (before.y - plane) * (s.ball.position.y - plane) <= 0 && abs(s.ball.position.y - before.y) > 1e-7 {
                     let t = (plane - before.y) / (s.ball.position.y - before.y)
                     let at = before + (s.ball.position - before) * t
                     let height = z + (s.ball.height - z) * t
                     var hit = false
                     if t <= groundT {
                         switch stage.skill {
+                        case .tag:
+                            hit = abs(at.x - target.x) < 0.5 && height >= 0.23 && height <= e.config.standingHeight &&
+                                (s.ball.bounces == 0 || e.config.allowGroundHit)
                         case .tree, .rebound:
-                            hit = abs(at.x - target.x) < 0.65 && height >= 0.3 && height <= 3.0
+                            hit = abs(at.x - target.x) < 0.65 && height >= 0.3 && height <= 1.6
                         case .pass, .call:
                             hit = abs(at.x - target.x) < e.config.ball.catchRadius && height >= 0.45 && height <= 2.1 &&
                                 (stage.skill != .call || selected == partner(e).member.id)
@@ -529,27 +692,70 @@ final class SpudPractice {
                     }
                     if stage.skill != .ground {
                         if hit && stage.skill == .rebound {
-                            s.ball.position = at
-                            s.ball.velocity = s.ball.velocity * -1.0
-                            s.ball.height = height
-                            s.ball.vz = (1.2 - height + 0.5 * e.config.scene.gravity * 0.8 * 0.8) / 0.8
-                            s.rebounded = true
-                            e.emit("bounce", h.member.id)
-                        } else if hit && stage.skill == .pass {
-                            remove(s)
-                            cue = [partner(e).member.id]
-                            releaseAt = e.time + 0.8
-                            partner(e).catchAt = e.time
-                            e.emit("catch", partner(e).member.id)
+                            if e.config.ball == .paint {
+                                paintImpact(e, s)
+                                credit(e, false)
+                                remove(s)
+                            } else {
+                                s.ball.position = at
+                                s.ball.height = height
+                                let duration = Kotlin.clamp((h.position - at).length() /
+                                    (s.ball.velocity.length() * (e.config.ball.restitution / 0.82).squareRoot()), 0.65, 1.7)
+                                s.ball.velocity = (h.position - at) * (1 / duration) - e.windVector * (0.5 * duration)
+                                s.ball.vz = (1.2 - height + 0.5 * e.config.scene.gravity * duration * duration) / duration
+                                s.rebounded = true
+                                e.emit("bounce", h.member.id)
+                            }
+                        } else if hit && (stage.skill == .pass || stage.skill == .call) {
+                            let receiver = partner(e)
+                            let chance = CatchPhysics.probability(receiver, s.ball, h)
+                            s.evaluated = true
+                            if random.nextDouble() < chance {
+                                if e.config.ball == .paint && s.ball.burstOnCatch {
+                                    paintImpact(e, s, receiver, caught: true)
+                                    credit(e, true)
+                                    remove(s)
+                                    continue
+                                }
+                                remove(s)
+                                s.ball.holder = receiver.member.id
+                                s.ball.velocity = V.zero
+                                s.ball.vz = 0.0
+                                e.ball = s.ball
+                                receiver.catchAt = e.time
+                                receiver.facing = (h.position - receiver.position).unit()
+                                e.emit("catch", receiver.member.id)
+                                if stage.skill == .pass {
+                                    cue = [receiver.member.id]
+                                    releaseAt = e.time + 1.0
+                                } else {
+                                    credit(e, true)
+                                }
+                            } else {
+                                s.partnerMiss = true
+                            }
+                        } else if stage.skill == .pass || stage.skill == .call {
+                            s.evaluated = true
                         } else {
+                            if hit && (stage.skill == .tree || stage.skill == .tag) {
+                                paintImpact(e, s, stage.skill == .tag ? partner(e) : nil)
+                            }
                             credit(e, hit)
                             remove(s)
                         }
                         continue
                     }
                 }
-                if s.ball.height <= 0.23 || e.time - s.ball.launchAt > 4.0 {
-                    credit(e, false)
+                if s.ball.height <= 0.23 || e.time - s.ball.launchAt > 10.0 {
+                    if s.ball.height <= 0.23 { paintImpact(e, s) }
+                    if s.partnerMiss {
+                        nextAt = e.time + 1.1
+                        e.infoEn = "Your partner missed. Try the pass again; no heart lost."
+                        e.infoHe = "השותף החמיץ. נסו למסור שוב; לא איבדתם לב."
+                        e.infoUntil = e.time + 2.0
+                    } else {
+                        credit(e, false)
+                    }
                     remove(s)
                     continue
                 }
@@ -559,9 +765,30 @@ final class SpudPractice {
             e.ball = first.ball
         } else if stage.throwing && releaseAt < 0 && e.time >= nextAt && e.result == nil {
             ready(e)
-        } else if !stage.throwing {
+        } else if !stage.throwing && e.time >= nextAt {
             let p = partner(e)
             e.ball = Ball(p.position, 1.2, V.zero, 0.0, p.member.id)
+        }
+    }
+
+    private func trialColour(_ e: AmuduEngine) {
+        if e.config.ball == .paint && e.paintPoint != successes + mistakes {
+            e.paintPoint = successes + mistakes
+            e.paintColor = PaintBalloon.next(seed, e.paintPoint, e.paintColor)
+        }
+    }
+
+    private func armPaint(_ e: AmuduEngine, _ power: Double) {
+        e.armAttackBurst(power)
+    }
+
+    /// Kotlin `paintImpact(e, b, target, caught)`: `e.ball = b; e.burstBalloon(...)` mutates the shared ball, so the
+    /// burst state is copied back into the shot.
+    private func paintImpact(_ e: AmuduEngine, _ s: PracticeBall, _ target: GameActor? = nil, caught: Bool = false) {
+        if e.config.ball == .paint && !s.ball.burst && s.ball.burstOnGround {
+            e.ball = s.ball
+            e.burstBalloon(target, call: stage.skill == .call, caught: caught)
+            s.ball = e.ball
         }
     }
 

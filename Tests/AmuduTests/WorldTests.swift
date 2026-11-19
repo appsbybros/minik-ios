@@ -1,7 +1,8 @@
 import XCTest
 @testable import MinikAmudu
 
-/// Ports of Android `world/ArenaCameraTest.kt`, `world/LandscapeFramingTest.kt`, `world/StableLabelsTest.kt` and
+/// Ports of Android `world/ArenaCameraTest.kt`, `world/LandscapeFramingTest.kt`, `world/AirborneFramingTest.kt`,
+/// `world/StableLabelsTest.kt` and
 /// `localization/PresentationLanguageTest.kt`.
 final class WorldTests: XCTestCase {
     func testTouchProjectionMatchesWorldAtEveryCamera() {
@@ -57,9 +58,52 @@ final class WorldTests: XCTestCase {
         XCTAssertEqual(0.5, p.centerX)
         XCTAssertEqual(0.61, p.centerY)
         let t = p.copy(centerX: 0.63, centerY: 0.56)
-        let moved = p.toward(t, 0.016)
-        XCTAssertEqual(t.centerX, moved.centerX)
-        XCTAssertEqual(t.centerY, moved.centerY)
+        var moved = p.toward(t, 0.016)
+        XCTAssertTrue(moved.centerX > p.centerX && moved.centerX < t.centerX)
+        XCTAssertTrue(moved.centerY < p.centerY && moved.centerY > t.centerY)
+        for _ in 0..<180 { moved = moved.toward(t, 1.0 / 60) }
+        XCTAssertEqual(t.centerX, moved.centerX, accuracy: 0.0001)
+        XCTAssertEqual(t.centerY, moved.centerY, accuracy: 0.0001)
+    }
+
+    // Android `world/AirborneFramingTest.kt`.
+
+    func testHighTossAndPlayersRemainInsidePortraitAndLandscape() {
+        for (w, h) in [(1080.0, 2400.0), (2400.0, 1080.0), (1920.0, 1200.0), (2560.0, 1600.0)] {
+            for tilt in [0.68, 1.02] {
+                for z in [0.0, 2.4, 18.0, 35.0, 60.0] {
+                    let base = ArenaCamera(x: 14.0, y: 9.0, distance: 28.0, tilt: tilt, centerY: 0.6)
+                    let points: [(Double, Double, Double)] = [(1.0, 1.0, 0.0), (27.0, 17.0, 4.2), (14.0, 9.0, z)]
+                    let c = AirborneFraming.fit(base, points, w, h, 80.0, w - 30.0, 90.0, h - 120.0)
+                    for (x, y, zz) in points {
+                        let q = c.project(x, y, zz, w, h)
+                        XCTAssertTrue(q.depth > 1)
+                        XCTAssertTrue(q.x >= 80 && q.x <= w - 30)
+                        XCTAssertTrue(q.y >= 90 && q.y <= h - 120)
+                    }
+                    XCTAssertEqual(base.x, c.x)
+                    XCTAssertEqual(base.y, c.y)
+                    XCTAssertEqual(base.tilt, c.tilt)
+                    XCTAssertTrue(c.distance >= base.distance)
+                }
+            }
+        }
+    }
+
+    func testContainedBallDoesNotChangeCamera() {
+        let c = ArenaCamera(x: 8.0, y: 8.0, distance: 32.0)
+        XCTAssertEqual(c, AirborneFraming.fit(c, [(8.0, 8.0, 1.0)], 1920, 1080, 30.0, 1890.0, 80.0, 1000.0))
+    }
+
+    func testEasingCannotLeaveRisingBallOutsideTheFinalFrame() {
+        var c = ArenaCamera(x: 8.0, y: 8.0, distance: 24.0, tilt: 0.68)
+        for i in 0...120 {
+            let z = 60.0 * Double(i) / 120
+            let predicted: [(Double, Double, Double)] = [(8.0, 8.0, z + 3)]
+            let target = AirborneFraming.fit(c.copy(distance: 24.0), predicted, 2400, 1080, 300.0, 2370.0, 100.0, 940.0)
+            c = AirborneFraming.fit(c.toward(target, 1.0 / 60), [(8.0, 8.0, z)], 2400, 1080, 300.0, 2370.0, 100.0, 940.0)
+            XCTAssertTrue(c.project(8.0, 8.0, z, 2400, 1080).y >= 100)
+        }
     }
 
     func testUnchangedSceneDoesNotOscillateBetweenSlots() {

@@ -58,7 +58,8 @@ jobs:
 
   upload:
     needs: preflight
-    runs-on: macos-latest
+    # Apple requires the iOS 27 SDK (Xcode 27) for uploads from April 2027 (ITMS-90725); GitHub has it on this image.
+    runs-on: xcode-27
     timeout-minutes: 120
     steps:
       - name: Check out repository
@@ -106,6 +107,12 @@ jobs:
         run: |
           set -euo pipefail
           xcodebuild -version
+          # App Store Connect refuses builds made with an iOS SDK older than 27 from April 2027.
+          xcode_major="$(xcodebuild -version | awk '/^Xcode /{split($2, v, "."); print v[1]}')"
+          if [ "${xcode_major:-0}" -lt 27 ]; then
+            echo "::error::Xcode $xcode_major is too old: TestFlight uploads need Xcode 27 or later (ITMS-90725)."
+            exit 1
+          fi
           if ! command -v xcodegen >/dev/null 2>&1; then
             brew install xcodegen
           fi
