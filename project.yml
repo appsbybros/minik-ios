@@ -632,11 +632,6 @@ targets:
       - path: Family
       - path: Resources/Privacy/Amudu/PrivacyInfo.xcprivacy
         buildPhase: resources
-      # Online rooms and family leagues: the iOS app registered in Android Spud's Firebase project (minikswish).
-      # Until the owner adds this file, the app runs offline and online shows "Online activation is pending."
-      - path: Config/Firebase/MinikAmudu/GoogleService-Info.plist
-        buildPhase: resources
-        optional: true
     info:
       path: GeneratedInfoPlists/MinikAmudu-Info.plist
       properties:
@@ -672,6 +667,25 @@ targets:
         MINIK_MARKETING_VERSION: "1.0"
         MINIK_BUILD_NUMBER: "1"
         OTHER_LDFLAGS: "$(inherited) -ObjC"
+    preBuildScripts:
+      # Online rooms and family leagues: the iOS app registered in Android Spud's Firebase project (minikswish).
+      # Until the owner adds Config/Firebase/MinikAmudu/GoogleService-Info.plist, the app is built without it, runs
+      # offline, and online shows "Online activation is pending." (Amudu/Online/OnlineRoom.swift).
+      - name: Copy Spud Firebase plist when present
+        script: |
+          plist="$SRCROOT/Config/Firebase/MinikAmudu/GoogleService-Info.plist"
+          if [ ! -f "$plist" ]; then
+            echo "note: no $plist; online play stays off in this build"
+            exit 0
+          fi
+          /usr/bin/plutil -lint "$plist"
+          firebase_bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :BUNDLE_ID' "$plist" 2>/dev/null || true)"
+          if [ "$firebase_bundle_id" != "$PRODUCT_BUNDLE_IDENTIFIER" ]; then
+            echo "error: Firebase BUNDLE_ID '$firebase_bundle_id' does not match target '$PRODUCT_BUNDLE_IDENTIFIER'"
+            exit 1
+          fi
+          /bin/mkdir -p "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH"
+          /bin/cp "$plist" "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/GoogleService-Info.plist"
     dependencies:
       - package: AppStoreCommerceKit
         product: AppStoreCommerceKit
