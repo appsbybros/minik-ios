@@ -263,7 +263,7 @@ final class LearningCurriculumTests: XCTestCase {
     }
 
     func testPaintLessonUsesRealContactAndPersistsPaint() throws {
-        let e = try game(topic: "paint", ball: .paint)
+        let e = try game(ball: .paint, topic: "paint")
         let p = try XCTUnwrap(e.practice)
         XCTAssertTrue(e.command("h", "throw", .pointThrow(point: p.target, height: 1.1)))
         advance(e, 1.0)
