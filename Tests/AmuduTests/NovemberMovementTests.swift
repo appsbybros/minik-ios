@@ -386,7 +386,8 @@ final class CircleMotionTests: XCTestCase {
         for i in spots.indices {
             for j in (i + 1)..<spots.count { XCTAssertGreaterThan((spots[i] - spots[j]).length(), 1.1) }
         }
-        let restored = try AmuduCodec.create(AmuduCodec.checkpoint(e))
+        // Roster order kept like Kotlin's in-memory LinkedHashMap (the saved local game passes it the same way).
+        let restored = try AmuduCodec.create(AmuduCodec.checkpoint(e), order: e.actors.map { $0.member.id })
         XCTAssertEqual(e.actors.map { $0.circleSpot }, restored.actors.map { $0.circleSpot })
         let positions = restored.actors.map { $0.position }
         let gaits = restored.actors.map { $0.gait }

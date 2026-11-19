@@ -66,8 +66,10 @@ final class DeviceEquivalentTests: XCTestCase {
         e.huddleTarget = "p0"
         e.huddleDeadline = e.time + 30
         let instruction = view.instruction()
-        XCTAssertTrue(instruction.contains("Take a break"))
-        XCTAssertFalse(instruction.contains("name") || instruction.contains("word"))
+        // Android 2026-11 (AmuduView `Phase.HUDDLE`): the target is told the others are choosing a nickname; it never
+        // gets the private funny-word prompt. (Android's DeviceInteractionTest still expects the older "Take a break".)
+        XCTAssertTrue(instruction.contains("The other players are choosing a nickname for you."))
+        XCTAssertFalse(instruction.contains("funny word"))
         e.huddleTarget = "p1"
         XCTAssertTrue(view.instruction().contains("funny word"))
     }

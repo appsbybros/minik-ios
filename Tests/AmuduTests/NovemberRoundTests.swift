@@ -304,7 +304,9 @@ final class RoundVarietyTests: XCTestCase {
                 let gap = (sorted[(i + 1) % ring.count] - sorted[i] + 2 * Double.pi).truncatingRemainder(dividingBy: 2 * Double.pi)
                 XCTAssertEqual(2 * Double.pi / Double(ring.count), gap, accuracy: 1e-9)
             }
-            let copy = try AmuduCodec.create(AmuduCodec.checkpoint(e))
+            // Kotlin keeps the checkpoint map in roster order (LinkedHashMap); a Swift dictionary has none, so the
+            // round trip passes the roster order exactly as the saved local game does (AppModel `{checkpoint, order}`).
+            let copy = try AmuduCodec.create(AmuduCodec.checkpoint(e), order: e.actors.map { $0.member.id })
             XCTAssertEqual(e.circleAngle, copy.circleAngle)
             XCTAssertEqual(e.actors.map { $0.position }, copy.actors.map { $0.position })
         }

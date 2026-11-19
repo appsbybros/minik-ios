@@ -269,7 +269,8 @@ final class LearningCurriculumTests: XCTestCase {
         advance(e, 1.0)
         XCTAssertEqual(1, p.successes)
         XCTAssertEqual(1, p.partner(e).paintHits.count)
-        let r = try AmuduCodec.create(AmuduCodec.checkpoint(e))
+        // Roster order kept like Kotlin's in-memory LinkedHashMap (the saved local game passes it the same way).
+        let r = try AmuduCodec.create(AmuduCodec.checkpoint(e), order: e.actors.map { $0.member.id })
         XCTAssertEqual(e.actors[1].paintHits, r.actors[1].paintHits)
     }
 

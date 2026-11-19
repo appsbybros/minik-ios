@@ -164,6 +164,10 @@ wire-name lists, which now include all 11 phases). Deviations: Kotlin's shared `
 flight id in `OwnerFeedbackPhysics.failedPassIsStillInFlightBeyondReceiver`; `SpudStage` is compared by `id`; loops that
 wait for a phase change have guards so a regression fails instead of hanging; `DeviceEquivalentTests`'s held-catch test
 no longer sends a Move (a Move now cancels a prepared catch, as on Android).
+Checkpoint round trips that compare actors by index pass the roster order (`create(_:order:)`, like the saved local game),
+because Kotlin's in-memory map keeps it and a Swift dictionary does not; the nickname target's instruction is checked
+against Android HEAD's "The other players are choosing a nickname for you." (Android's DeviceInteractionTest still expects
+the older "Take a break"); `LanguageTests` pins the 1142 catalog rows.
 
 Least-sure compile spots (2026-11-19 additions):
 - `Amudu/Core/AmuduModels.swift:670` — default on an enum associated value (`throwBall(power:botVz: Double? = nil)`);

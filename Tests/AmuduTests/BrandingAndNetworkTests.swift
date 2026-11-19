@@ -159,7 +159,8 @@ final class LanguageTests: XCTestCase {
     }
 
     func testAllFourLanguagesHaveCompleteCatalogColumns() {
-        XCTAssertEqual(820, AppText.keys().count)
+        // Android's effective AppText.rows size at 372c448 (audit-amudu.py checks the rows themselves).
+        XCTAssertEqual(1142, AppText.keys().count)
         for lang in ["es", "ar", "hi", "nl"] {
             for key in AppText.keys() {
                 let value = AppText.translated(key, lang) ?? ""
