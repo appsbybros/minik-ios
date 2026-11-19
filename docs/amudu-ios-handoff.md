@@ -125,8 +125,11 @@ Deliberate differences:
   are no ads, so codes and Remove ads would unlock nothing; none of it is ported and the page stays hidden.
 - **Speech failures**: Android disables phrases after an asynchronous TTS engine error; AVSpeechSynthesizer reports no
   such error, so iOS only checks up front that a voice exists for the app language.
-- **Privacy policy page**: built (with the grown-up gate on its links) but hidden until an iOS `privacy-<language>.html`
-  is added under `Amudu/`; Android's text describes the Android app (AdMob, Google Play, Android storage).
+- **Privacy policy page**: built (with the grown-up gate on its links). Since 2026-11-19 the iOS policy is bundled as
+  `Amudu/Privacy/privacy-<language>.html` (six languages; the `appstore/privacy/Spud/` pages without their language links),
+  so the home menu shows "Privacy policy". Android's text describes the Android app (AdMob, Google Play, Android storage)
+  and is not ported; when the iOS policy changes, update `appstore/privacy/Spud/`, these copies and the website copies
+  together (`docs/amudu-app-store-submission.md`).
 - **Lag diagnosis**: iOS omits Android's `android` (SDK level) field (the rules reject unknown fields); `model` is "Apple " +
   the hardware id, `code` is `CFBundleVersion`.
 - League page without Firebase shows "Online activation is pending." (Android shows a blank page). League rows, round order

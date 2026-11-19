@@ -203,6 +203,14 @@ Line numbers are from the current working tree.
 
 ### Spud
 
+**19 November 2026 (Spud 1.0, the iOS payment model and online play active):** the six `Spud/` pages (and their
+website copies under `minik/apps/amodu/privacy-ios*`) were rewritten for the release: "Ads and children" became "No
+ads", "Purchases and codes" became "Full game and purchase" (the free tier and the one-time App Store purchase),
+"Children and parents" and "Optional online-lag diagnosis" were added, and online rooms and family leagues are
+described as active. The same pages, without the language links, are bundled as `Amudu/Privacy/privacy-<lang>.html`,
+which shows the in-app "Privacy policy" button. The facts below are from 4 October 2026 and no longer apply; see
+`docs/amudu-app-store-submission.md`.
+
 - No ads or StoreKit dependency (`project.yml:498-502`; `docs/amudu-ios-handoff.md`, "Not ported").
 - Online rooms only with a bundled plist for this bundle ID with a database URL (`Amudu/Online/OnlineRoom.swift:21-40`); none
   is bundled. No room expiry or cleanup code in `Amudu/Online/`.

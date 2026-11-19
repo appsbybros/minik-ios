@@ -632,6 +632,11 @@ targets:
       - path: Family
       - path: Resources/Privacy/Amudu/PrivacyInfo.xcprivacy
         buildPhase: resources
+      # Online rooms and family leagues: the iOS app registered in Android Spud's Firebase project (minikswish).
+      # Until the owner adds this file, the app runs offline and online shows "Online activation is pending."
+      - path: Config/Firebase/MinikAmudu/GoogleService-Info.plist
+        buildPhase: resources
+        optional: true
     info:
       path: GeneratedInfoPlists/MinikAmudu-Info.plist
       properties:
