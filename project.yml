@@ -622,8 +622,9 @@ targets:
 
   MinikAmudu:
     # Standalone port of the Android Spud game (C:/Projects/MinikAmudu); it shares no
-    # code with the Minik apps. Ads and purchases stay off until this app has its
-    # own AdMob IDs and App Store products.
+    # code with the Minik apps. iOS payment model (CLAUDE.md): no ads and no Google Mobile
+    # Ads SDK (Tests/AmuduTests/SpudAccessTests.swift fails if it is linked here); one
+    # non-consumable full-game purchase with a free tier (Amudu/Store/).
     type: application
     platform: iOS
     sources:
@@ -637,6 +638,8 @@ targets:
         CFBundleDisplayName: Minik Spud
         # This app's family catalogue key: the "More Minik apps & games" card never promotes the app itself.
         MinikFamilyCatalogKey: spud
+        # iOS payment model (CLAUDE.md): the full game (Amudu/Store/SpudStore.swift).
+        SpudFullGameProductIdentifier: $(SPUD_FULL_GAME_PRODUCT_IDENTIFIER)
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleLocalizations: [en, he, ar, es, hi, nl]
@@ -658,11 +661,15 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.appsbybros.minik.spud
         PRODUCT_NAME: MinikAmudu
+        # Non-consumable, Family Sharing on (App Store Connect).
+        SPUD_FULL_GAME_PRODUCT_IDENTIFIER: com.appsbybros.minik.spud.full_game
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         MINIK_MARKETING_VERSION: "1.0"
         MINIK_BUILD_NUMBER: "1"
         OTHER_LDFLAGS: "$(inherited) -ObjC"
     dependencies:
+      - package: AppStoreCommerceKit
+        product: AppStoreCommerceKit
       - package: FirebaseApple
         product: FirebaseCore
       - package: FirebaseApple

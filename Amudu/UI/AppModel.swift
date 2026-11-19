@@ -250,6 +250,8 @@ struct ShareText: Identifiable {
 
     let art: ArtStore
     let audio: GameAudio
+    // iOS payment model (CLAUDE.md): the full-game purchase and its free tier (Amudu/Store/).
+    let spud: SpudStore
     private let stopCalls: HebrewStopCalls
     private(set) var online: OnlineRoom?
     private(set) var league: FamilyLeague?
@@ -277,6 +279,8 @@ struct ShareText: Identifiable {
         art = ArtStore()
         audio = GameAudio()
         stopCalls = HebrewStopCalls()
+        // iOS payment model (CLAUDE.md): the full-game purchase.
+        spud = SpudStore.make()
         let d = UserDefaults.standard
         defaults = d
         // Android `FamilyButtonAlignment.useFullRaisedFace(true)`: SPUD centres button lettering on the whole raised face.
@@ -312,6 +316,10 @@ struct ShareText: Identifiable {
         loadRulePreferences(rules)
         // Android `FamilyMessages.get(this).setLanguage(AppText.language)`.
         FamilyMessages.shared.languageOverride = AppText.language
+        // iOS payment model (CLAUDE.md): the pages follow the purchase; the App Store is asked at launch.
+        spud.relayChanges(to: objectWillChange)
+        let store = spud
+        Task { await store.start() }
     }
 
     private static func validHouse(_ ids: [String]) -> [String] {
@@ -653,7 +661,7 @@ struct ShareText: Identifiable {
     // MARK: Privacy policy (Android `privacyPage()`)
 
     /// Android `assets/privacy/<language>.html`. The iOS bundle carries the page as `privacy-<language>.html` only
-    /// once the owner supplies the iOS wording (Android's describes Google Play, AdMob and Android storage); until then
+    /// once the owner supplies the iOS wording (Android's describes Google Play, its ads and Android storage); until then
     /// the home menu offers no Privacy policy button.
     static func privacyPolicy() -> String? {
         let code = AppText.supported.contains(AppText.language) ? AppText.language : "en"
@@ -803,6 +811,8 @@ struct ShareText: Identifiable {
     /// throwers on a 16 m court (`PracticeCurriculum.config`).
     func launchPractice(_ step: Int, _ mode: ThrowMode, _ ball: BallKind, _ conditions: PracticeConditions, _ topic: String = "",
                         _ ground: Bool = false) {
+        // iOS payment model (CLAUDE.md): challenges after the 7th, locked balls/arenas and used-up paint games.
+        guard let allowed = spudPractice(step, ball, conditions, topic) else { return }
         activeLeagueRound = false
         localLeagueId = ""
         let d = SpudPractice(step, 1, topic)
@@ -816,7 +826,7 @@ struct ShareText: Identifiable {
         online?.close()
         online = nil
         let seed = Int64(Date().timeIntervalSince1970 * 1000)
-        guard let cfg = try? PracticeCurriculum.config(step, mode, ball, conditions, members.count, topic, ground),
+        guard let cfg = try? PracticeCurriculum.config(step, mode, allowed.ball, allowed.conditions, members.count, topic, ground),
               let engine = try? AmuduEngine(members: members, config: cfg, seed: seed) else { return }
         present(engine, uid: "p0", network: nil)
     }
@@ -864,8 +874,11 @@ struct ShareText: Identifiable {
 
     // MARK: Setup
 
-    private func config(_ n: Int? = nil) -> GameConfig? {
-        return try? GameConfig(scene: scene, ball: ball, freezeRule: .freeze, participants: n ?? count, turns: turns, width: 28.0,
+    private func config(_ n: Int? = nil, limited: Bool = false) -> GameConfig? {
+        // iOS payment model (CLAUDE.md): a game this player starts or hosts (`limited`) uses the free values without the
+        // full game; the saved settings (`persist`) keep the chosen ones.
+        let free = limited ? SpudAccess.clamp(SpudAccess.Choices(players: n ?? count, scene: scene, ball: ball), owner: fullGame) : nil
+        return try? GameConfig(scene: free?.scene ?? scene, ball: free?.ball ?? ball, freezeRule: .freeze, participants: free?.players ?? n ?? count, turns: turns, width: 28.0,
                                depth: 18.0, daylight: daylight, throwMode: throwMode, wind: wind, rules: rules,
                                requireCall: requireCall, stepsAfterCall: stepsAfterCall, actionSeconds: actionSeconds,
                                stepLengthFraction: 0.5 / 18.0, nicknameAnswer: nicknameAnswer, allowGroundHit: allowGroundHit)
@@ -934,8 +947,9 @@ struct ShareText: Identifiable {
 
     /// Android `updateCapacity()`: "You + {0} house players · {1} places for friends".
     var capacityNote: String {
-        let selected = house.filter { $0 != avatar }.count
-        let free = count - selected - 1
+        // iOS payment model (CLAUDE.md): the places and house players a game can have (`spudPlayers`, `spudHouse`).
+        let selected = spudHouse.filter { $0 != avatar }.count
+        let free = spudPlayers - selected - 1
         return tr("You + {0} house players · {1} places for friends", "אתם + {0} שחקני בית · {1} מקומות לחברים")
             .replacingOccurrences(of: "{0}", with: String(selected)).replacingOccurrences(of: "{1}", with: String(free))
     }
@@ -943,14 +957,17 @@ struct ShareText: Identifiable {
     /// Android: a house player can be added only while the room has a free place; never while opening a league round.
     func houseEnabled(_ id: String) -> Bool {
         if id == avatar { return false }
-        let free = count - house.filter { $0 != avatar }.count - 1
-        return setupPurpose != 2 && (house.contains(id) || free > 0)
+        // iOS payment model (CLAUDE.md): without the full game, the places of a 3-player game.
+        let free = spudPlayers - spudHouse.filter { $0 != avatar }.count - 1
+        return setupPurpose != 2 && (spudHouse.contains(id) || free > 0)
     }
 
     func setHouse(_ id: String, _ selected: Bool) {
+        // iOS payment model (CLAUDE.md): a change made without the full game starts from the house players it shows.
+        if !fullGame { house = spudHouse }
         if selected {
             if house.contains(id) { return }
-            if house.count >= count - 1 { return }
+            if house.count >= spudPlayers - 1 { return }
             house.append(id)
         } else {
             house.removeAll { $0 == id }
@@ -973,19 +990,32 @@ struct ShareText: Identifiable {
         activeLeagueRound = false
         localLeagueId = ""
         var roster = [Member("p0", avatar, AmuduCharacters.get(avatar).name(hebrew: hebrew), bot: false, hebrew: hebrew)]
-        let chosen = Array(AmuduCharacters.availableBots(humans: [roster[0]], requested: house, fillTo: 0).prefix(house.count))
+        // iOS payment model (CLAUDE.md): without the full game, at most 3 players, the free arena and balls.
+        let team = spudHouse
+        let chosen = Array(AmuduCharacters.availableBots(humans: [roster[0]], requested: team, fillTo: 0).prefix(team.count))
         for (i, id) in chosen.enumerated() {
             roster.append(Member("house\(i)", id, AmuduCharacters.get(id).name(hebrew: hebrew), bot: true, hebrew: hebrew))
         }
         online?.close()
         online = nil
         let seed = Int64(Date().timeIntervalSince1970 * 1000)
-        guard let cfg = config(roster.count), let engine = try? AmuduEngine(members: roster, config: cfg, seed: seed) else { return }
+        guard let cfg = config(roster.count, limited: true), let engine = try? AmuduEngine(members: roster, config: cfg, seed: seed) else { return }
+        // iOS payment model (CLAUDE.md): a paint-balloon game uses a free one.
+        guard spudMayStart(cfg.ball) else { return }
         present(engine, uid: "p0", network: nil)
     }
 
     func openPrivateRoom() {
         if !validName() { return }
+        // iOS payment model (CLAUDE.md): a host without the full game has at most 3 places; a paint room uses a free game.
+        if !fullGame {
+            if spudHouse.count >= spudPlayers - 1 {
+                status(StoreText.get(.roomFull))
+            } else if spudMayStart(spudBall) {
+                openRoom(nil)
+            }
+            return
+        }
         if house.count >= count - 1 {
             status(tr("Leave at least one place for a friend: remove a house player or increase room capacity (maximum 10).",
                       "השאירו לפחות מקום אחד לחבר: הסירו שחקן בית או הגדילו את מספר המקומות (עד 10)."))
@@ -998,10 +1028,13 @@ struct ShareText: Identifiable {
     func setupLeagueAction() {
         if !validName() { return }
         persist()
-        guard let cfg = config(10) else { return }
+        // iOS payment model (CLAUDE.md): a league host without the full game opens 3-player rounds with the free choices;
+        // a round with the paint balloon uses a free paint game.
+        guard let cfg = config(10, limited: true) else { return }
         if setupPurpose == 1 {
-            league?.create(cfg, house, leagueIdentity())
+            league?.create(cfg, spudHouse, leagueIdentity())
         } else {
+            guard spudMayStart(cfg.ball) else { return }
             league?.start(cfg)
         }
     }
@@ -1541,7 +1574,10 @@ struct ShareText: Identifiable {
         connectingLeague = false
         screen = .connecting
         let identity = Member("", avatar, Kotlin.trim(playerName), bot: false, hebrew: hebrew, points: rankPoints)
-        let net = OnlineRoom(model: self, identity: identity, config: config() ?? GameConfig.defaults, house: house)
+        // iOS payment model (CLAUDE.md): only the host's room is limited (`code == nil`); joiners never are.
+        let hosting = SpudAccess.limitsRoom(owner: fullGame, hosting: code == nil)
+        let net = OnlineRoom(model: self, identity: identity, config: config(nil, limited: hosting) ?? GameConfig.defaults,
+                             house: hosting ? spudHouse : house)
         online = net
         net.onOpenFailed = { [weak self, weak net] text in
             guard let self, let net, self.online === net else { return }

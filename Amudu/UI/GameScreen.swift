@@ -216,6 +216,10 @@ struct RootView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             screen
+            // iOS payment model (CLAUDE.md): the unlock screen covers the page it was opened from.
+            if model.spud.unlockVisible {
+                SpudUnlockScreen(model: model, store: model.spud)
+            }
             ForEach(model.dialogs) { request in
                 SpudDialogView(model: model, request: request)
             }

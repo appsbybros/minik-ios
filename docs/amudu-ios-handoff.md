@@ -1,6 +1,48 @@
 # Spud (Minik Amudu / מיניק עמודו) — iOS port handoff
 
 
+## Deliberate difference: iOS payment model
+
+Owner's decision (2026-11-19). Android Spud has ads and a "Remove ads" purchase; **iOS Spud has no ads** (no Google
+Mobile Ads SDK, no ad code) and sells one non-consumable, `com.appsbybros.minik.spud.full_game` (Family Sharing on in
+App Store Connect), through the shared `Packages/AppStoreCommerceKit` (StoreKit 2), as Minik Plus does. Owning it
+unlocks everything. Without it:
+
+| Limit | Rule | Where it is enforced |
+| --- | --- | --- |
+| Players | at most 3 in a game (the player + house players and/or people); 4-10 shown with a lock | `SpudAccess.clamp` / `playersLocked`; `AppModel.config(_:limited:)`, `spudPlayers`, `spudHouse`, `capacityNote`, `houseEnabled`, `setHouse`, `startLocal`, `openPrivateRoom`, `setupLeagueAction` |
+| Arenas | Sunshine park only | `sceneLocked`; setup pictures (`chooseScene`), lesson conditions (`practiceConditions`: Andromeda = `.space`) |
+| Balls | Soft foam and Beach ball; Neon party and Tennis ball locked | `ballLocked`; setup pictures (`chooseBall`), practice ball menu (`practiceBall`) |
+| Paint balloon | 3 free welcome games, then 1 free game per local calendar day (no accumulation; the day the last welcome game is used counts as that day's game). Counted per game, never per throw | `PaintBalloonAllowance` (pure: stored state + date + calendar), `PaintBalloonAllowanceRepository` (`amudu.store.paintWelcomeUsed`, `amudu.store.paintFreeDay`), `SpudStore.usePaintGame`, `AppModel.spudMayStart`: a local match (`startLocal`), a hosted private room (`openPrivateRoom`, when the host opens it), a hosted league round (`setupLeagueAction`, purpose 2), a challenge or lesson run (`launchPractice`) |
+| Daily challenges | steps 0-6 (challenges 1-7 of the first cycle) free; later ones show a lock and Start opens the unlock screen | `challengeLocked`; `AppModel.spudPractice` (from `launchPractice`), `PracticeOptions`, the challenge map |
+| Lessons | same arena/ball limits; the paint lesson uses a free paint game | `spudPractice`, `PracticeOptions` |
+| Online | only the host is limited: its room settings (capacity, arena, ball) apply to everyone, so joiners are never checked, whatever the host's platform, and a room opened from Android is never limited | `SpudAccess.limitsRoom`; `AppModel.openRoom` (`config(nil, limited: code == nil)`, the host's `spudHouse`), `setupLeagueAction` / `league.create` / `league.start`. No wire, protocol or database change: only the values the host writes |
+| Old settings | a saved capacity (default 6), arena or ball is clamped at setup display and game start, never rewritten (`persist()` keeps the chosen values), so buying brings them back; resuming a saved game is allowed | `AppModel.config(limited:)`, `spudPlayers/spudScene/spudBall/spudHouse`, `PracticeOptions.init` |
+
+Locked choices stay visible with "🔒 " and open the unlock screen (`SpudUnlockScreen`, an overlay in `RootView`, so
+Back returns to the same page with its choices). The setup and practice pages show "N free paint balloon games left"
+or "The next free paint balloon game comes tomorrow" while a non-owner has the paint balloon chosen. The unlock
+screen lists what the full game adds, "One purchase, no ads. Family Sharing included.", "Unlock the full game · <App
+Store price>" behind the grown-up gate, "Restore purchases" (no gate) and Back; owners see a thank-you state. States:
+loading (disabled button, "Loading the App Store price…"), unavailable ("Load the price again"), purchasing/restoring
+("One moment…"), Ask to Buy pending, cancelled (silent), failed, nothing to restore. `Transaction.updates` is followed
+while the app runs: a Family Sharing grant unlocks, a refund or revoked grant relocks. Ownership is cached in
+UserDefaults `amudu.store.fullGame` (offline launches stay unlocked). App Store captures (`SpudScreenshot`) count as
+owned. Settings & feedback has an entry "Full game: unlocked ✓" / "Full game: not unlocked yet" (where Android's "Ads &
+purchases" button would be).
+
+Files: `Amudu/Store/SpudAccess.swift` (pure rules and the paint counter), `SpudStore.swift` (the AppStoreCommerceKit
+controller), `SpudAccessModel.swift` (the `AppModel` extension the pages use), `SpudUnlockScreen.swift`,
+`StoreText.swift` (the iOS-only texts in en, he, es, ar, hi, nl, with CLDR plurals for the paint line; not in
+`AmuduCatalog.json`). `project.yml` links `AppStoreCommerceKit` to `MinikAmudu` and sets the Info.plist key
+`SpudFullGameProductIdentifier` from `SPUD_FULL_GAME_PRODUCT_IDENTIFIER`. Hooks in Android-mapped files carry the
+comment `// iOS payment model (CLAUDE.md): ...` (`UI/AppModel.swift`, `UI/Screens.swift`, `UI/GameScreen.swift`
+`RootView`); a sync from Android must keep them. `Tests/AmuduTests/SpudAccessTests.swift` pins every limit, the
+product ID, the texts, and fails if anything under `Amudu/` mentions the Google ad SDK or project.yml links it to
+`MinikAmudu`.
+
+When Android changes monetization (`monetization/*`, AdMob, Remove ads, access codes), do not port it; note it here.
+
 ## 2026-11-19 sync
 
 iOS now matches Android `C:/Projects/MinikAmudu` commit **372c448** ("Refresh SPUD 0.29 store media and verify environment
@@ -69,7 +111,8 @@ Ported, by area (Android → iOS):
   missing, assets OK (the only hygiene notes are CRLF in the Windows working tree from `core.autocrlf`).
 
 Deliberate differences:
-- **Monetization (not ported, needs the owner's decision)**. Android now has: an "Ads & purchases" home button behind the
+- **Monetization (not ported; iOS has its own payment model, see "Deliberate difference: iOS payment model" above)**.
+  Android now has: an "Ads & purchases" home button behind the
   grown-up gate; a page with the 3-day ad-free welcome and days left, "Ads removed until {date}" / "permanently",
   "Remove ads · price" (Google Play one-time product `remove_ads`, option `remove-ads-option-id`), "Restore purchase" with
   its states (loading, not owned, verifying, pending, cancelled, verification failed); "Enter code": MINIK's existing
@@ -79,7 +122,7 @@ Deliberate differences:
   Firebase app "spud-access-codes" with App Check) whose only effect is removing ads for N days or permanently, stored as a
   Keystore-signed record; re-checks on foreground; AdMob interstitials after completed games (not during the 3-day
   welcome, at most every 4 minutes); the family remove-ads reminder (first idle launch, then every 14 days). On iOS there
-  are no ads, so codes and the purchase would unlock nothing; none of it is ported and the page stays hidden.
+  are no ads, so codes and Remove ads would unlock nothing; none of it is ported and the page stays hidden.
 - **Speech failures**: Android disables phrases after an asynchronous TTS engine error; AVSpeechSynthesizer reports no
   such error, so iOS only checks up front that a voice exists for the app language.
 - **Privacy policy page**: built (with the grown-up gate on its links) but hidden until an iOS `privacy-<language>.html`
@@ -297,8 +340,8 @@ Source: Android project `C:/Projects/MinikAmudu` (read-only; state of 2026-10-12
 ## Not ported (and why)
 
 - AdMob interstitials, UMP consent, Play Billing "Remove ads", signed code redemption and the "Ads & purchases" page:
-  ads and purchases stay off on iOS until the app has its own AdMob IDs and App Store products. The grown-up gate is
-  ported (it guards Settings & feedback).
+  iOS has no ads; it sells the full game instead ("Deliberate difference: iOS payment model"). The grown-up gate is
+  ported (it guards Settings & feedback and the full-game purchase).
 - The family module (`MinikFamilyServices`): "More Minik apps & games" is ported (2026-10-13) as a link in Advanced
   behind the grown-up gate (shared `Family/` module, `docs/family-messages-ios.md`). Its automatic promotions and
   Remove-ads reminders need ads and purchases, which stay off on iOS.

@@ -139,23 +139,27 @@ struct SetupScreen: View {
                 model.selectRules(RuleSet.allCases[i])
             }
             AmuduParagraph(RuleText["rulesHint"], size: 15, color: 0xffd0e4ee)
+            // iOS payment model (CLAUDE.md): without the full game the setup shows the free values; locked choices keep a
+            // lock mark and open the unlock screen (Amudu/Store/SpudAccessModel.swift).
             if purpose == 0 {
-                ChoiceMenu(title: model.tr("Room capacity", "מספר מקומות בחדר"), items: (2...10).map { String($0) }, selected: model.count - 2) { i in
-                    model.setCapacity(i + 2)
+                ChoiceMenu(title: model.tr("Room capacity", "מספר מקומות בחדר"), items: (2...10).map { model.capacityTitle($0) },
+                           selected: model.spudPlayers - 2) { i in
+                    model.chooseCapacity(i + 2)
                 }
             }
             AmuduParagraph(model.capacityNote, size: 16, color: 0xffa8f7df)
             FieldTitle(model.tr("Arena", "זירה"))
-            PictureChoices(options: ArenaScene.allCases.map { PictureOption(id: $0.rawValue, name: model.tr($0.en, $0.he), image: model.art.scene($0)) },
-                           selected: model.scene.rawValue, arena: true) { id in
-                model.scene = ArenaScene(rawValue: id) ?? .park
-                model.persist()
+            PictureChoices(options: ArenaScene.allCases.map { PictureOption(id: $0.rawValue, name: model.sceneTitle($0), image: model.art.scene($0)) },
+                           selected: model.spudScene.rawValue, arena: true) { id in
+                model.chooseScene(ArenaScene(rawValue: id) ?? .park)
             }
             FieldTitle(model.tr("Ball", "כדור"))
-            PictureChoices(options: BallKind.allCases.map { PictureOption(id: $0.rawValue, name: model.tr($0.en, $0.he), image: model.art.ballPreview($0)) },
-                           selected: model.ball.rawValue, arena: false) { id in
-                model.ball = BallKind(rawValue: id) ?? .foam
-                model.persist()
+            PictureChoices(options: BallKind.allCases.map { PictureOption(id: $0.rawValue, name: model.ballTitle($0), image: model.art.ballPreview($0)) },
+                           selected: model.spudBall.rawValue, arena: false) { id in
+                model.chooseBall(BallKind(rawValue: id) ?? .foam)
+            }
+            if let line = model.spudPaintLine(model.spudBall) {
+                AmuduParagraph(line, size: 16, color: 0xffffdf70)
             }
             GroupToggle(title: RuleText["environment"], expanded: model.environmentOpen, first: true) { model.environmentOpen.toggle() }
             if model.environmentOpen {
@@ -258,7 +262,8 @@ struct SetupScreen: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: 54, height: 78)
-                HouseCheck(title: title, checked: model.house.contains(c.id), enabled: model.houseEnabled(c.id)) { selected in
+                // iOS payment model (CLAUDE.md): the house players that fit the game (`spudHouse`).
+                HouseCheck(title: title, checked: model.spudHouse.contains(c.id), enabled: model.houseEnabled(c.id)) { selected in
                     model.setHouse(c.id, selected)
                 }
             }
@@ -330,7 +335,9 @@ struct PracticeOptions: View {
         self.step = step
         self.topic = topic
         _mode = State(initialValue: control)
-        _chosen = State(initialValue: PracticeCurriculum.ball(step, ballChoice, topic))
+        // iOS payment model (CLAUDE.md): a locked saved ball or arena starts on a free one.
+        _chosen = State(initialValue: SpudAccess.practiceBall(PracticeCurriculum.ball(step, ballChoice, topic),
+                                                              allowed: PracticeCurriculum.balls(step, topic), owner: model.fullGame))
         let initial: PracticeConditions
         switch topic {
         case "wind": initial = .wind
@@ -338,7 +345,7 @@ struct PracticeOptions: View {
         case "gravity": initial = .space
         default: initial = topic.isEmpty ? PracticeCurriculum.conditions(step) : .calm
         }
-        _conditions = State(initialValue: initial)
+        _conditions = State(initialValue: SpudAccess.practiceConditions(initial, owner: model.fullGame))
     }
 
     private var stage: SpudStage {
@@ -349,6 +356,7 @@ struct PracticeOptions: View {
         let s = stage
         let modes = ThrowMode.allCases
         let allowed = PracticeCurriculum.balls(step, topic)
+        let locked = topic.isEmpty && model.challengeLocked(step)
         return VStack(spacing: 0) {
             ChoiceMenu(title: model.tr("Control difficulty", "רמת שליטה"), items: modes.map { model.tr($0.en, $0.he) },
                        selected: modes.firstIndex(of: mode) ?? 0, learning: true) { i in
@@ -356,20 +364,34 @@ struct PracticeOptions: View {
                 model.setJourneyControl(mode)
             }
             if topic != "paint" {
-                ChoiceMenu(title: model.tr("Ball", "כדור"), items: allowed.map { model.tr($0.en, $0.he) },
+                // iOS payment model (CLAUDE.md): locked balls keep a lock mark and open the unlock screen.
+                ChoiceMenu(title: model.tr("Ball", "כדור"), items: allowed.map { model.ballTitle($0) },
                            selected: allowed.firstIndex(of: chosen) ?? 0, learning: true) { i in
+                    if SpudAccess.ballLocked(allowed[i], owner: model.fullGame) {
+                        model.openUnlock()
+                        return
+                    }
                     let value = allowed[i].rawValue
                     chosen = PracticeCurriculum.ball(step, value, topic)
                     model.setJourneyBall(value)
                 }
                 AmuduParagraph(model.learn("ball_" + chosen.rawValue.lowercased()), size: 16, color: 0xffacf4dc)
             }
+            // iOS payment model (CLAUDE.md): the free paint-balloon games left.
+            if let line = model.spudPaintLine(chosen) {
+                AmuduParagraph(line, size: 16, color: 0xffffdf70)
+            }
             if s.skill == .rebound {
                 AmuduParagraph(model.learn("no_balloon_rebound"), size: 16)
             }
             if ["wind", "gravity", "light"].contains(topic) {
-                ChoiceMenu(title: model.learn("conditions"), items: PracticeConditions.allCases.map { model.conditionText($0) },
+                // iOS payment model (CLAUDE.md): Andromeda keeps a lock mark and opens the unlock screen.
+                ChoiceMenu(title: model.learn("conditions"), items: PracticeConditions.allCases.map { model.conditionsTitle($0) },
                            selected: PracticeConditions.allCases.firstIndex(of: conditions) ?? 0, learning: true) { i in
+                    if SpudAccess.conditionsLocked(PracticeConditions.allCases[i], owner: model.fullGame) {
+                        model.openUnlock()
+                        return
+                    }
                     conditions = PracticeConditions.allCases[i]
                 }
             }
@@ -385,7 +407,11 @@ struct PracticeOptions: View {
                            ? model.tr("Goal: \(s.goal(step / SpudJourney.size)) successes · three hearts · no countdown",
                                       "היעד: \(s.goal(step / SpudJourney.size)) הצלחות · שלושה לבבות · בלי שעון")
                            : model.learn("lesson_goal"), size: 16)
-            AmuduButton(topic.isEmpty ? model.tr("Start challenge", "התחלת האתגר") : model.learn("try_it")) {
+            // iOS payment model (CLAUDE.md): challenges after the 7th need the full game (Start opens the unlock screen).
+            if locked {
+                AmuduParagraph(StoreText.get(.challengeLocked), size: 16, color: 0xffffdf70)
+            }
+            AmuduButton((locked ? AppModel.lockMark : "") + (topic.isEmpty ? model.tr("Start challenge", "התחלת האתגר") : model.learn("try_it"))) {
                 model.launchPractice(step, mode, chosen, conditions, topic, ground)
             }
             .padding(.top, 16)
@@ -445,7 +471,8 @@ struct JourneyScreen: View {
         let done = p.done(index)
         let unlocked = done || index == p.completed
         let conditions = PracticeCurriculum.conditions(index)
-        let mark = done ? "✓ " : (index == p.completed ? "→ " : "")
+        // iOS payment model (CLAUDE.md): challenges after the 7th keep a lock mark without the full game.
+        let mark = (model.challengeLocked(index) ? AppModel.lockMark : "") + (done ? "✓ " : (index == p.completed ? "→ " : ""))
         let text = mark + model.tr(stage.en, stage.he) + (conditions == .calm ? "" : "\n" + model.conditionText(conditions))
         let line = Text(text)
             .font(.system(size: 17, weight: .bold))
@@ -559,6 +586,8 @@ struct SupportScreen: View {
     var body: some View {
         AmuduPage(model.tr("Settings & feedback", "הגדרות ומשוב"), background: model.art.scene(model.scene), back: { model.home() }) {
             Color.clear.frame(height: 24)
+            // iOS payment model (CLAUDE.md): the full game, owned or not (where Android's "Ads & purchases" would be).
+            AmuduButton(model.spudSettingsTitle, color: 0xffb8f3dc) { model.openUnlock() }
             AmuduButton(model.tr("Rate the app", "דירוג האפליקציה"), color: 0xffffd65a) { model.rateApp() }
             AmuduButton(model.tr("Share the game", "שיתוף המשחק"), color: 0xffff5b67) { model.openShare() }
             AmuduButton(model.tr("Send feedback", "שליחת משוב"), color: 0xffff5ba6) { model.openFeedback() }
