@@ -318,8 +318,12 @@ struct ShareText: Identifiable {
         FamilyMessages.shared.languageOverride = AppText.language
         // iOS payment model (CLAUDE.md): the pages follow the purchase; the App Store is asked at launch.
         spud.relayChanges(to: objectWillChange)
-        let store = spud
-        Task { await store.start() }
+        // Not while the app only hosts the unit tests: on a simulator without an App Store account the launch-time
+        // StoreKit calls keep XCTest from attaching ("The test runner hung before establishing connection").
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil {
+            let store = spud
+            Task { await store.start() }
+        }
     }
 
     private static func validHouse(_ ids: [String]) -> [String] {
