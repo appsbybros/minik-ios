@@ -129,17 +129,21 @@ jobs:
           print(f"iphone\t{phone[3]}\t{phone[2]}")
           print(f"ipad\t{tablet[2]}\t{tablet[1]}")
           PY
+          # The iPad's first start hung here twice (2026-11-20, 14 and 22 minutes) until the run was cancelled:
+          # every call has a time limit, and a Simulator that is not ready is started again by the capture step.
+          limit() { perl -e 'alarm shift; exec @ARGV' "$@"; }
           while IFS=$'\t' read -r DEVICE UDID NAME; do
             echo "$DEVICE: $NAME"
-            xcrun simctl boot "$UDID" < /dev/null || true
-            xcrun simctl bootstatus "$UDID" -b < /dev/null
-            xcrun simctl status_bar "$UDID" override --time "9:41" \
+            limit 300 xcrun simctl boot "$UDID" < /dev/null || true
+            limit 600 xcrun simctl bootstatus "$UDID" -b < /dev/null \
+              || echo "::warning::$NAME did not report ready within 10 minutes; the capture step starts it again"
+            limit 60 xcrun simctl status_bar "$UDID" override --time "9:41" \
               --dataNetwork wifi --wifiMode active --wifiBars 3 \
               --cellularMode active --cellularBars 4 \
-              --batteryState charged --batteryLevel 100 < /dev/null
+              --batteryState charged --batteryLevel 100 < /dev/null || true
             # Only one Simulator runs at a time while capturing: two at once starved a runner
             # until GitHub lost it (the pong job, 2026-10-24).
-            xcrun simctl shutdown "$UDID" < /dev/null
+            limit 120 xcrun simctl shutdown "$UDID" < /dev/null || true
           done < build/simulators.tsv
 
       - name: Capture scenes
