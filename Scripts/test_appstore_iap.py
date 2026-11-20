@@ -32,6 +32,8 @@ class FakeApi:
             return 200, {"data": [{"id": "USA"}, {"id": "ISR"}]}
         if "inAppPurchaseLocalizations" in path:
             return 200, {"data": []}
+        if "iapPriceSchedule" in path:  # Apple's empty schedule before a price is chosen
+            return 200, {"data": {"id": "s", "relationships": {"manualPrices": {"data": []}}}, "included": []}
         return 404, {"errors": [{"detail": "not found"}]}
 
 

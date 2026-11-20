@@ -339,8 +339,11 @@ def fill(asc, config, screenshot=None):
         asc.owner.append("add the App Review screenshot (the unlock screen) on the purchase's page")
 
     # The price is the owner's: only report it.
-    status, schedule = asc.get(f"/v2/inAppPurchases/{iap_id}/iapPriceSchedule")
-    if status != 200 or not schedule.get("data"):
+    # Apple answers with an (empty) schedule even before a price exists: only manual prices count.
+    status, schedule = asc.get(f"/v2/inAppPurchases/{iap_id}/iapPriceSchedule?include=manualPrices")
+    prices = ((schedule.get("data") or {}).get("relationships", {}).get("manualPrices", {}).get("data")
+              if status == 200 else None) or [i for i in (schedule.get("included") or []) if status == 200]
+    if not prices:
         asc.owner.append("set the price on the purchase's page (Price Schedule)")
     else:
         asc.skipped.append("a price is set (not changed by this script)")
