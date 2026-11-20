@@ -1,6 +1,7 @@
 name: App Store in-app purchase
 # Creates and fills in an app's in-app purchase in App Store Connect from appstore/iap/<Scheme>.json (Scripts/appstore-iap.py).
-# It never sets a price and never submits anything: the owner sets the price and presses "Add for Review". Only started by hand.
+# It sets a price only when the owner's chosen US price is given and the purchase has none yet, and never submits
+# anything: the owner presses "Add for Review". Only started by hand.
 run-name: ${{ format('App Store in-app purchase {0}{1}', inputs.app, inputs.dry_run && ' (dry run)' || '') }}
 
 on:
@@ -14,6 +15,10 @@ on:
         description: Dry run (only read App Store Connect and print every change it would make)
         type: boolean
         default: true
+      price:
+        description: The owner's chosen US price (e.g. 3.99), set only when the purchase has no price yet; empty = no price
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -44,6 +49,7 @@ jobs:
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
           APP: ${{ inputs.app }}
           DRY_RUN: ${{ inputs.dry_run }}
+          PRICE: ${{ inputs.price }}
         run: |
           set -euo pipefail
           export ASC_KEY_ID="$(printf '%s' "$ASC_KEY_ID" | tr -d '[:space:]')"
@@ -52,5 +58,8 @@ jobs:
           args=(--app "$APP")
           if [ "$DRY_RUN" = "true" ]; then
             args+=(--dry-run)
+          fi
+          if [ -n "$PRICE" ]; then
+            args+=(--price "$PRICE")
           fi
           python3 Scripts/appstore-iap.py "${args[@]}"

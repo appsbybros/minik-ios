@@ -6,10 +6,13 @@ its availability (every territory, and new ones) and, when the file exists, its 
     python3 Scripts/appstore-iap.py --app MinikAmudu --dry-run
     python3 Scripts/appstore-iap.py --app MinikAmudu
     python3 Scripts/appstore-iap.py --check-only --app MinikAmudu     (offline: checks the file, needs no key)
+    python3 Scripts/appstore-iap.py --app MinikAmudu --price 3.99     (also sets the owner's chosen US price)
 
-It never sets or changes a PRICE (the owner sets it in App Store Connect), never deletes a purchase and never
-submits anything: call() refuses every price, submission, review and release endpoint. The owner attaches the
-purchase to the app version and presses "Add for Review" in App Store Connect.
+The price is never in the settings file. Only with --price (the owner's choice, in US dollars) does it set one:
+the US price point of that amount as the base price, Apple deriving every other country's price; and only when
+the purchase has no price yet (an existing price is reported, never changed). Without --price every price endpoint
+is refused. It never deletes a purchase and never submits anything: the guard refuses every submission, review and
+release endpoint. The owner attaches the purchase to the app version and presses "Add for Review".
 
 --dry-run reads App Store Connect and prints every change without making one.
 Needs ASC_KEY_ID, ASC_ISSUER_ID and ASC_PRIVATE_KEY (the .p8 text) in the environment and PyJWT with
@@ -96,6 +99,9 @@ class Refused(Exception):
 FORBIDDEN_PATH = re.compile(r"submi|releaseRequest|phasedRelease|reviewDetail|customerReview|pricePoint|priceSchedule"
                             r"|inAppPurchasePrice", re.I)
 READABLE_PRICE = re.compile(r"/v2/inAppPurchases/[\w-]+/iapPriceSchedule")
+# Only with --price: reading the purchase's price points and creating its first price schedule.
+PRICE_READ = re.compile(r"/v2/inAppPurchases/[\w-]+/pricePoints")
+PRICE_WRITE = "/v1/inAppPurchasePriceSchedules"
 ALLOWED_WRITES = [
     ("POST", r"/v2/inAppPurchases", {"name", "productId", "inAppPurchaseType", "reviewNote", "familySharable"}),
     ("PATCH", r"/v2/inAppPurchases/[\w-]+", {"name", "reviewNote", "familySharable"}),
@@ -107,11 +113,18 @@ ALLOWED_WRITES = [
 ]
 
 
-def check_request(method, path, body=None):
+def check_request(method, path, body=None, allow_price=False):
     method = method.upper()
     bare = path.split("?", 1)[0]
     if not re.match(r"^/v[12]/", bare) or "//" in bare or ".." in bare or "://" in path:
         raise Refused(f"{method} {path}: not a plain App Store Connect API path")
+    if allow_price:
+        if method == "GET" and PRICE_READ.fullmatch(bare):
+            return
+        if method == "POST" and bare == PRICE_WRITE:
+            if re.search(r'"submi', json.dumps(body), re.I):
+                raise Refused(f"{method} {path}: the body asks for a submission")
+            return
     if FORBIDDEN_PATH.search(bare) and not (method == "GET" and READABLE_PRICE.fullmatch(bare)):
         raise Refused(f"{method} {path}: this script never touches prices, submissions or releases")
     if body is not None and re.search(r'"(submitted|submit|price|manualPrices)"\s*:', json.dumps(body), re.I):
@@ -166,13 +179,14 @@ def errors_text(payload):
 
 
 class Asc:
-    def __init__(self, dry_run, transport=None):
+    def __init__(self, dry_run, transport=None, price=None):
         self.dry_run = dry_run
+        self.price = price  # the owner's US price ("3.99"), or None: then no price request is allowed at all
         self.transport = transport or http_call
         self.done, self.skipped, self.errors, self.owner = [], [], [], []
 
     def get(self, path):
-        check_request("GET", path)
+        check_request("GET", path, allow_price=self.price is not None)
         return self.transport("GET", path, None)
 
     def get_all(self, path):
@@ -189,7 +203,7 @@ class Asc:
         return 200, items
 
     def write(self, what, method, path, body=None):
-        check_request(method, path, body)
+        check_request(method, path, body, allow_price=self.price is not None)
         if self.dry_run:
             self.done.append("would " + what)
             return None
@@ -265,7 +279,10 @@ def fill(asc, config, screenshot=None):
                 asc.done.append("would make it available in every territory, and in new ones")
                 if screenshot:
                     asc.done.append(f"would upload the App Review screenshot {screenshot.name}")
-                asc.owner.append("set the price (the purchase does not exist yet)")
+                if asc.price:
+                    asc.done.append(f"would set the price to US${asc.price} (Apple sets the other countries)")
+                else:
+                    asc.owner.append("set the price (the purchase does not exist yet)")
             return
         iap = created["data"]
     else:
@@ -343,11 +360,45 @@ def fill(asc, config, screenshot=None):
     status, schedule = asc.get(f"/v2/inAppPurchases/{iap_id}/iapPriceSchedule?include=manualPrices")
     prices = ((schedule.get("data") or {}).get("relationships", {}).get("manualPrices", {}).get("data")
               if status == 200 else None) or [i for i in (schedule.get("included") or []) if status == 200]
-    if not prices:
-        asc.owner.append("set the price on the purchase's page (Price Schedule)")
-    else:
+    if prices:
         asc.skipped.append("a price is set (not changed by this script)")
+    elif asc.price:
+        set_price(asc, iap_id, asc.price)
+    else:
+        asc.owner.append("set the price on the purchase's page (Price Schedule)")
     asc.owner.append("on version 1.0's page, under In-App Purchases, select this purchase so it is reviewed with the app")
+
+
+def set_price(asc, iap_id, price):
+    """The purchase's first price: the US price point of exactly `price` dollars, the US as the base territory."""
+    status, points = asc.get_all(f"/v2/inAppPurchases/{iap_id}/pricePoints?filter[territory]=USA"
+                                 f"&fields[inAppPurchasePricePoints]=customerPrice&limit=200")
+    if status != 200:
+        asc.errors.append(f"could not read the US price points: HTTP {status}: {errors_text(points)}")
+        return
+
+    def amount(point):
+        try:
+            return float(point.get("attributes", {}).get("customerPrice"))
+        except (TypeError, ValueError):
+            return None
+
+    matching = [p for p in points if amount(p) is not None and abs(amount(p) - float(price)) < 0.001]
+    if len(matching) != 1:
+        near = sorted({p["attributes"]["customerPrice"] for p in points
+                       if amount(p) is not None and abs(amount(p) - float(price)) < 1.01})
+        asc.errors.append(f"no single US price point of ${price} (close ones: {', '.join(near) or 'none'})")
+        return
+    local = "${price-usa}"  # Apple's way of naming the price created in the same request
+    asc.write(f"set the price to US${price} (US base price; Apple sets the other countries)", "POST", PRICE_WRITE,
+              {"data": {"type": "inAppPurchasePriceSchedules",
+                        "relationships": {"inAppPurchase": {"data": {"type": "inAppPurchases", "id": iap_id}},
+                                          "baseTerritory": {"data": {"type": "territories", "id": "USA"}},
+                                          "manualPrices": {"data": [{"type": "inAppPurchasePrices", "id": local}]}}},
+               "included": [{"type": "inAppPurchasePrices", "id": local, "attributes": {"startDate": None},
+                             "relationships": {"inAppPurchaseV2": {"data": {"type": "inAppPurchases", "id": iap_id}},
+                                               "inAppPurchasePricePoint": {"data": {"type": "inAppPurchasePricePoints",
+                                                                                    "id": matching[0]["id"]}}}}]})
 
 
 def upload_screenshot(asc, iap_id, path, digest):
@@ -376,7 +427,13 @@ def main(argv=None):
     parser.add_argument("--app", required=True, help="Xcode scheme, e.g. MinikAmudu")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--check-only", action="store_true")
+    parser.add_argument("--price", help="the owner's chosen US price, e.g. 3.99; set only when no price exists yet")
     args = parser.parse_args(argv)
+    if args.price is not None:
+        args.price = args.price.strip().lstrip("$") or None
+    if args.price is not None and not re.fullmatch(r"\d{1,4}\.\d{2}", args.price):
+        print(f"--price {args.price}: write it like 3.99")
+        return 1
     config = load_config(args.app)
     problems = check_config(config)
     in_project = project_product_id(args.app)
@@ -390,7 +447,7 @@ def main(argv=None):
     if args.check_only:
         return 0
     screenshot = IAP_ROOT / f"{args.app}-review.png"
-    asc = Asc(args.dry_run)
+    asc = Asc(args.dry_run, price=args.price)
     if args.dry_run:
         print("DRY RUN: App Store Connect is only read; every change below is printed, not made.")
     try:
@@ -403,7 +460,9 @@ def main(argv=None):
             print(f"\n{title}:")
             for item in items:
                 print(f"  - {item}")
-    print("\nNo price was set and nothing was submitted for review." + (" (dry run: nothing was changed)" if args.dry_run else ""))
+    priced = any(line.startswith("set the price") for line in asc.done)
+    print(("\nThe price was set" if priced else "\nNo price was set") + " and nothing was submitted for review."
+          + (" (dry run: nothing was changed)" if args.dry_run else ""))
     return 1 if asc.errors else 0
 
 

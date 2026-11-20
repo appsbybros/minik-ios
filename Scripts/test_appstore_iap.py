@@ -15,8 +15,8 @@ CONFIG = iap.load_config("MinikAmudu")
 class FakeApi:
     """Answers reads like App Store Connect for an app without the purchase; records every write."""
 
-    def __init__(self, existing=None):
-        self.calls, self.existing = [], existing
+    def __init__(self, existing=None, priced=False):
+        self.calls, self.existing, self.priced = [], existing, priced
 
     def __call__(self, method, path, body):
         self.calls.append((method, path, body))
@@ -33,7 +33,11 @@ class FakeApi:
         if "inAppPurchaseLocalizations" in path:
             return 200, {"data": []}
         if "iapPriceSchedule" in path:  # Apple's empty schedule before a price is chosen
-            return 200, {"data": {"id": "s", "relationships": {"manualPrices": {"data": []}}}, "included": []}
+            manual = [{"type": "inAppPurchasePrices", "id": "p1"}] if self.priced else []
+            return 200, {"data": {"id": "s", "relationships": {"manualPrices": {"data": manual}}}, "included": []}
+        if "/pricePoints" in path:
+            return 200, {"data": [{"id": f"pp{c}", "attributes": {"customerPrice": c}}
+                                  for c in ("2.99", "3.99", "4.99", "39.99")]}
         return 404, {"errors": [{"detail": "not found"}]}
 
 
@@ -103,6 +107,57 @@ class Fill(unittest.TestCase):
         iap.fill(asc, CONFIG)
         self.assertTrue(any("cannot be changed" in e for e in asc.errors))
         self.assertFalse(any(p == "/v2/inAppPurchases" for m, p, b in api.calls if m == "POST"))
+
+
+class Price(unittest.TestCase):
+    EXISTING = {"id": "iap1", "attributes": {"productId": CONFIG["productId"], "inAppPurchaseType": CONFIG["type"],
+                                             "state": "MISSING_METADATA", "name": CONFIG["referenceName"],
+                                             "reviewNote": CONFIG["reviewNote"], "familySharable": True}}
+
+    def test_price_requests_only_with_the_owners_price(self):
+        with self.assertRaises(iap.Refused):
+            iap.check_request("POST", iap.PRICE_WRITE, {"data": {}})
+        with self.assertRaises(iap.Refused):
+            iap.check_request("GET", "/v2/inAppPurchases/1/pricePoints")
+        iap.check_request("POST", iap.PRICE_WRITE, {"data": {}}, allow_price=True)
+        iap.check_request("GET", "/v2/inAppPurchases/1/pricePoints?filter[territory]=USA", allow_price=True)
+        with self.assertRaises(iap.Refused):  # a price never opens submissions
+            iap.check_request("POST", "/v1/inAppPurchaseSubmissions", {"data": {}}, allow_price=True)
+
+    def test_sets_the_us_price_point_when_none_is_set(self):
+        api = FakeApi(self.EXISTING)
+        asc = iap.Asc(dry_run=False, transport=api, price="3.99")
+        iap.fill(asc, CONFIG)
+        posts = [b for m, p, b in api.calls if m == "POST" and p == iap.PRICE_WRITE]
+        self.assertEqual(len(posts), 1)
+        body = posts[0]
+        self.assertEqual(body["data"]["relationships"]["baseTerritory"]["data"]["id"], "USA")
+        self.assertEqual(body["data"]["relationships"]["inAppPurchase"]["data"]["id"], "iap1")
+        point = body["included"][0]["relationships"]["inAppPurchasePricePoint"]["data"]["id"]
+        self.assertEqual(point, "pp3.99")
+        self.assertEqual(asc.errors, [])
+        self.assertFalse(any("set the price" in line for line in asc.owner))
+
+    def test_existing_price_is_never_changed(self):
+        api = FakeApi(self.EXISTING, priced=True)
+        asc = iap.Asc(dry_run=False, transport=api, price="3.99")
+        iap.fill(asc, CONFIG)
+        self.assertFalse(any(p == iap.PRICE_WRITE for m, p, b in api.calls))
+        self.assertFalse(any("/pricePoints" in p for m, p, b in api.calls))
+
+    def test_unknown_amount_is_an_error_not_a_guess(self):
+        api = FakeApi(self.EXISTING)
+        asc = iap.Asc(dry_run=False, transport=api, price="3.49")
+        iap.fill(asc, CONFIG)
+        self.assertFalse(any(p == iap.PRICE_WRITE for m, p, b in api.calls))
+        self.assertTrue(any("no single US price point of $3.49" in e for e in asc.errors))
+
+    def test_dry_run_with_price_writes_nothing(self):
+        api = FakeApi(self.EXISTING)
+        asc = iap.Asc(dry_run=True, transport=api, price="3.99")
+        iap.fill(asc, CONFIG)
+        self.assertTrue(all(m == "GET" for m, _, _ in api.calls))
+        self.assertTrue(any(line.startswith("would set the price to US$3.99") for line in asc.done))
 
 
 if __name__ == "__main__":
