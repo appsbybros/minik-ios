@@ -1,0 +1,56 @@
+name: App Store in-app purchase
+# Creates and fills in an app's in-app purchase in App Store Connect from appstore/iap/<Scheme>.json (Scripts/appstore-iap.py).
+# It never sets a price and never submits anything: the owner sets the price and presses "Add for Review". Only started by hand.
+run-name: ${{ format('App Store in-app purchase {0}{1}', inputs.app, inputs.dry_run && ' (dry run)' || '') }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: Scheme with a file in appstore/iap (e.g. MinikAmudu)
+        required: true
+        default: MinikAmudu
+      dry_run:
+        description: Dry run (only read App Store Connect and print every change it would make)
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  iap:
+    # Linux is enough for the App Store Connect API; no macOS minutes are used.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Check the settings file
+        shell: bash
+        env:
+          APP: ${{ inputs.app }}
+        run: |
+          set -euo pipefail
+          python3 Scripts/test_appstore_iap.py
+          python3 Scripts/appstore-iap.py --check-only --app "$APP"
+
+      - name: Fill in App Store Connect
+        shell: bash
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+          APP: ${{ inputs.app }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          export ASC_KEY_ID="$(printf '%s' "$ASC_KEY_ID" | tr -d '[:space:]')"
+          export ASC_ISSUER_ID="$(printf '%s' "$ASC_ISSUER_ID" | tr -d '[:space:]')"
+          python3 -m pip install --quiet "pyjwt[crypto]"
+          args=(--app "$APP")
+          if [ "$DRY_RUN" = "true" ]; then
+            args+=(--dry-run)
+          fi
+          python3 Scripts/appstore-iap.py "${args[@]}"
