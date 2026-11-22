@@ -1859,6 +1859,9 @@ extension AppModel {
         case "gate": openSettings()
         case "join": joinDialog()
         case "unlock": openUnlock()
+        case "unlock.price":
+            spud.showPreviewPrice("$3.99")
+            openUnlock()
         case "setup": openSetup()
         case "help": openHelp()
         case "lessons": openLessonHub()

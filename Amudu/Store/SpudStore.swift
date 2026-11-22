@@ -106,6 +106,9 @@ final class SpudStore: ObservableObject {
     private var updateTask: Task<Void, Never>?
     private var relay: AnyCancellable?
     private var hasStarted = false
+    /// QA captures only (`spudqa.unlock.price`): the unlock screen with a shown price, for the in-app purchase's
+    /// App Review screenshot. The Simulator has no App Store product.
+    private var previewPrice = false
 
     init(configuration: SpudStoreConfiguration,
          store: (any CommerceStore)?,
@@ -170,6 +173,13 @@ final class SpudStore: ObservableObject {
     func closeUnlock() {
         unlockVisible = false
         notice = nil
+    }
+
+    func showPreviewPrice(_ price: String) {
+        guard SpudScreenshot.isQA, let productID = configuration.productID else { return }
+        previewPrice = true
+        product = CommerceProduct(id: productID, displayName: "Full Game", displayPrice: price, kind: .nonConsumable)
+        status = .ready
     }
 
     // MARK: Paint balloon
@@ -296,7 +306,7 @@ final class SpudStore: ObservableObject {
         if let state = try? await entitlements {
             apply(state)
         }
-        if let loaded {
+        if let loaded, !previewPrice {
             product = loaded.first { $0.id == productID }
         }
         // Bug report 2026-11-22 (2.2): an answer without the product is not a connection problem.

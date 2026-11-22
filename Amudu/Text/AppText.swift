@@ -134,6 +134,8 @@ enum AppText {
     static func t(_ en: String, _ he: String? = nil, hebrew: Bool? = nil) -> String {
         let isHebrew = hebrew ?? (language == "he")
         if isHebrew { return he ?? en }
+        // iOS texts of the bug report of 22 November 2026 (not in the catalog generated from Android).
+        if let row = SpudIOSText.copy[en], let index = SpudIOSText.languages.firstIndex(of: language) { return row[index] }
         guard let column = columns.firstIndex(of: language) else { return en }
         if let row = catalog.rows[en] { return row[column] }
         let cacheKey = language + "\u{1}" + en

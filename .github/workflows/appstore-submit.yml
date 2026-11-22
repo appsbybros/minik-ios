@@ -19,6 +19,14 @@ on:
         options:
           - check
           - submit
+      iaps:
+        description: In-app purchase product IDs to submit with the version (commas); purchases already waiting are kept
+        required: false
+        default: ""
+      replace_build:
+        description: Withdraw a version waiting for review with an older build and send the newest build (loses the queue place)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -39,10 +47,15 @@ jobs:
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
           APPS: ${{ inputs.apps }}
           MODE: ${{ inputs.mode }}
+          IAPS: ${{ inputs.iaps }}
+          REPLACE_BUILD: ${{ inputs.replace_build }}
         run: |
           set -euo pipefail
           [[ "$APPS" =~ ^[A-Za-z,]+$ ]] || { echo "::error::apps must be scheme names separated by commas"; exit 1; }
           export ASC_KEY_ID="$(printf '%s' "$ASC_KEY_ID" | tr -d '[:space:]')"
           export ASC_ISSUER_ID="$(printf '%s' "$ASC_ISSUER_ID" | tr -d '[:space:]')"
           python3 -m pip install --quiet "pyjwt[crypto]"
-          python3 Scripts/appstore-submit.py --apps "$APPS" "--$MODE"
+          [[ "$IAPS" =~ ^[A-Za-z0-9._,]*$ ]] || { echo "::error::iaps must be product IDs separated by commas"; exit 1; }
+          args=(--apps "$APPS" "--$MODE" --iaps "$IAPS")
+          if [ "$REPLACE_BUILD" = "true" ]; then args+=(--replace-build); fi
+          python3 Scripts/appstore-submit.py "${args[@]}"
