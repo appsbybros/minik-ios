@@ -1,0 +1,174 @@
+name: iOS Run Check
+
+# Builds one app for the Simulator, installs it fresh on an iPhone and an iPad Simulator, launches it in each
+# language, checks that it is still running after the wait (no crash at launch) and keeps a screenshot of what it
+# shows. A fresh Minik Plus shows its welcome window ("Try Minik Plus free for 7 days"), so this is also how the
+# purchase window is checked without a real device. Nothing is uploaded anywhere but the run's artifact.
+on:
+  workflow_dispatch:
+    inputs:
+      scheme:
+        description: "App scheme, e.g. MinikPlus"
+        required: true
+        default: MinikPlus
+      languages:
+        description: "Interface languages, separated by spaces (e.g. en he ar)"
+        required: true
+        default: "en he"
+      wait:
+        description: "Seconds to wait after launch before the screenshot (the store request gives up after 12 s)"
+        required: true
+        default: "30"
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    # Apple requires the iOS 27 SDK (Xcode 27) for uploads from April 2027 (ITMS-90725); GitHub has it on this image.
+    runs-on: xcode-27
+    timeout-minutes: 90
+    env:
+      SCHEME: ${{ inputs.scheme }}
+      LANGUAGES: ${{ inputs.languages }}
+      WAIT: ${{ inputs.wait }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Check the inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$SCHEME" =~ ^[A-Za-z]+$ ]] || { echo "::error::scheme must be a plain scheme name"; exit 1; }
+          [[ "$LANGUAGES" =~ ^[A-Za-z\ -]+$ ]] || { echo "::error::languages must be codes like en he pt-BR"; exit 1; }
+          [[ "$WAIT" =~ ^[0-9]{1,3}$ ]] || { echo "::error::wait must be a number of seconds"; exit 1; }
+
+      - name: Generate project
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          if ! command -v xcodegen >/dev/null 2>&1; then
+            brew install xcodegen
+          fi
+          xcodegen generate
+
+      - name: Build for the Simulator
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p build/logs
+          if ! xcodebuild build \
+            -project Minik.xcodeproj \
+            -scheme "$SCHEME" \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination "generic/platform=iOS Simulator" \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            ARCHS=arm64 \
+            ONLY_ACTIVE_ARCH=NO \
+            > "build/logs/$SCHEME-build.log" 2>&1; then
+            echo "::error::Build failed for $SCHEME"
+            grep -E "error:" "build/logs/$SCHEME-build.log" | sort -u | head -40 || true
+            exit 1
+          fi
+          echo "Built $SCHEME"
+
+      - name: Choose an iPhone and an iPad Simulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcrun simctl list devices available -j > build/available-devices.json
+          python3 - <<'PY' > build/simulators.tsv
+          import json
+          import re
+
+          data = json.load(open("build/available-devices.json", encoding="utf-8"))
+          phones, tablets = [], []
+          for runtime, devices in data.get("devices", {}).items():
+              if ".iOS-" not in runtime:
+                  continue
+              version = tuple(int(value) for value in re.findall(r"\d+", runtime))
+              for device in devices:
+                  name = device.get("name", "")
+                  if not device.get("isAvailable"):
+                      continue
+                  if name.startswith("iPhone") and "Pro" in name:
+                      phones.append((version, name, device["udid"]))
+                  elif name.startswith("iPad"):
+                      # A smaller iPad, like the one in the bug report, before the 13-inch iPad Pro.
+                      rank = 2 if ("mini" in name or "Air" in name) else 1
+                      tablets.append((version, rank, name, device["udid"]))
+          if not phones or not tablets:
+              raise SystemExit("No iPhone Pro or iPad Simulator is available")
+          phone, tablet = max(phones), max(tablets)
+          print(f"iphone\t{phone[2]}\t{phone[1]}")
+          print(f"ipad\t{tablet[3]}\t{tablet[2]}")
+          PY
+          cat build/simulators.tsv
+
+      - name: Install, launch and capture
+        shell: bash
+        run: |
+          set +e -uo pipefail
+          limit() { perl -e 'alarm shift; exec @ARGV' "$@"; }
+          APP="build/DerivedData/Build/Products/Debug-iphonesimulator/$SCHEME.app"
+          BUNDLE="$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP/Info.plist")"
+          mkdir -p build/run
+          problems=0
+          while IFS=$'\t' read -r DEVICE UDID NAME; do
+            echo "== $DEVICE: $NAME"
+            limit 300 xcrun simctl boot "$UDID" < /dev/null
+            limit 900 xcrun simctl bootstatus "$UDID" -b < /dev/null > /dev/null 2>&1 \
+              || echo "::warning::$NAME did not report ready"
+            limit 60 xcrun simctl status_bar "$UDID" override --time "9:41" --batteryState charged \
+              --batteryLevel 100 < /dev/null > /dev/null 2>&1
+            limit 120 xcrun simctl uninstall "$UDID" "$BUNDLE" < /dev/null > /dev/null 2>&1
+            if ! limit 300 xcrun simctl install "$UDID" "$APP" < /dev/null; then
+              echo "::error::Could not install $SCHEME on $NAME"
+              problems=$((problems + 1))
+              continue
+            fi
+            for LANGUAGE in $LANGUAGES; do
+              OUT="build/run/$SCHEME-$DEVICE-$LANGUAGE.png"
+              limit 60 xcrun simctl terminate "$UDID" "$BUNDLE" < /dev/null > /dev/null 2>&1
+              # The first launch after an install can take minutes on a busy runner.
+              if ! limit 900 xcrun simctl launch "$UDID" "$BUNDLE" -MinikOfflineSmoke YES \
+                -AppleLanguages "($LANGUAGE)" < /dev/null; then
+                echo "::error::$SCHEME did not launch on $NAME ($LANGUAGE)"
+                problems=$((problems + 1))
+                continue
+              fi
+              sleep "$WAIT"
+              if limit 60 xcrun simctl spawn "$UDID" launchctl list < /dev/null | grep -F "$BUNDLE" > /dev/null; then
+                echo "Still running after $WAIT s: $SCHEME on $NAME ($LANGUAGE)"
+              else
+                echo "::error::$SCHEME is no longer running on $NAME ($LANGUAGE) after $WAIT s: a crash?"
+                problems=$((problems + 1))
+              fi
+              limit 60 xcrun simctl io "$UDID" screenshot "$OUT" < /dev/null > /dev/null 2>&1 \
+                && echo "Captured $OUT" || echo "::warning::No screenshot for $NAME ($LANGUAGE)"
+            done
+            limit 60 xcrun simctl terminate "$UDID" "$BUNDLE" < /dev/null > /dev/null 2>&1
+            # Crash reports of this app, if any, go into the artifact.
+            find ~/Library/Logs/DiagnosticReports -name "$SCHEME*" -newer "$APP/Info.plist" \
+              -exec cp {} build/run/ \; 2>/dev/null
+            limit 120 xcrun simctl shutdown "$UDID" < /dev/null > /dev/null 2>&1
+          done < build/simulators.tsv
+          ls -l build/run
+          if [ "$problems" -gt 0 ]; then
+            echo "::error::$problems launch problem(s)"
+            exit 1
+          fi
+
+      - name: Keep the screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.scheme }}-run-check
+          path: |
+            build/run
+            build/logs
+          if-no-files-found: warn

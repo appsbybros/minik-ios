@@ -159,7 +159,7 @@ struct MinikPlusPaywallView: View {
                 Button {
                     request(.startFreeWeek)
                 } label: {
-                    Text(verbatim: interfaceLocale.text("Start free week"))
+                    MinikInkCenteredText(interfaceLocale.text("Start free week"), fontSize: 22 * textScale)
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(MinikPretty.HeroButtonStyle(
@@ -175,10 +175,10 @@ struct MinikPlusPaywallView: View {
                 request(.unlock)
             } label: {
                 HStack(spacing: 10) {
-                    Text(verbatim: MinikPlusPaywallText.unlockButton(
+                    MinikInkCenteredText(MinikPlusPaywallText.unlockButton(
                         price: commerce.fullAccessProduct?.displayPrice,
                         locale: interfaceLocale
-                    ))
+                    ), fontSize: 22 * textScale)
                     // Only while the App Store is being asked. When it did not answer (or has no
                     // such product yet) the button stays without a price, unavailable, and the
                     // message below offers Try again.
@@ -205,7 +205,7 @@ struct MinikPlusPaywallView: View {
                 Button {
                     commerce.dismissRequestedPaywall()
                 } label: {
-                    Text(verbatim: interfaceLocale.text("Continue"))
+                    MinikInkCenteredText(interfaceLocale.text("Continue"), fontSize: 20 * textScale)
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(MinikPretty.HeroButtonStyle(
@@ -218,7 +218,7 @@ struct MinikPlusPaywallView: View {
             Button {
                 request(.restore)
             } label: {
-                Text(verbatim: interfaceLocale.text("Restore Purchases"))
+                MinikInkCenteredText(interfaceLocale.text("Restore Purchases"), fontSize: 18 * textScale)
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(MinikPretty.HeroButtonStyle(
@@ -256,10 +256,11 @@ struct MinikPlusPaywallView: View {
     }
 
     /// The App Store did not answer, or it has no full-access product yet: Unlock everything waits
-    /// without a price, and Try again asks once more (the window also asks every 15 s).
+    /// without a price, and Try again asks once more (the window also asks every 15 s). The message
+    /// names the real reason; only a device that is offline is told to check the internet.
     private var storeUnavailableMessage: some View {
         VStack(spacing: 8) {
-            Text(verbatim: interfaceLocale.text("Can't reach the store right now. Check the internet and try again."))
+            Text(verbatim: storeProblemMessage)
                 .font(MinikPretty.bodyFont(15 * textScale))
                 .foregroundStyle(MinikPretty.color(0xC2416E))
                 .multilineTextAlignment(.center)
@@ -340,6 +341,19 @@ struct MinikPlusPaywallView: View {
             format: interfaceLocale.text("Your free week lasts 7 days. After that, the whole app is locked until you unlock it with a one-time purchase of %@."),
             price
         )
+    }
+
+    private var storeProblemMessage: String {
+        switch commerce.storeProblem {
+        case .offline:
+            return interfaceLocale.text("Can't reach the store right now. Check the internet and try again.")
+        case .notAnswering:
+            return interfaceLocale.text("The App Store isn't answering right now. Please try again in a little while.")
+        case .productUnavailable:
+            return interfaceLocale.text("Unlock everything isn't available in the App Store right now. Please try again later.")
+        case .purchasesNotAllowed:
+            return interfaceLocale.text("Purchases are turned off on this device. A parent can allow them in Settings > Screen Time.")
+        }
     }
 
     private var busyMessage: String {

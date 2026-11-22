@@ -117,6 +117,34 @@ the app no longer depends on them to let the child in:
   - A later App Store date can only move the start earlier, so this never gives a second week.
 - **Buying full access still needs the App Store.** Restore stays available.
 
+## Bug report of 22 November 2026: button text and the store message
+
+**Button text sat low (iPhone and iPad).** Fredoka's line box has more room above the letters than below
+(ascender 974, descender 236 per 1000), and Hebrew letters and words without capitals have no ink near the top. So
+SwiftUI centred the line box, not the letters, and labels like "המשך" sat about 3 pt low. The window's buttons now
+use `MinikInkCenteredText` (`Sources/MinikPrettyDesign.swift`): it measures the label's glyph bounds with Core
+Text and moves the label so the letters are in the middle. This is how Android's `PrettyButton` already does it.
+
+**"Can't reach the store" on an iPad that was online.** The window showed that text for every store failure. On
+TestFlight the App Store answers without products that are not yet ready in App Store Connect, so an online iPad
+was told to check its internet. `MinikCommerceController.storeProblem` now keeps the reason of the latest failure,
+and the window says:
+
+| Reason | Message |
+|---|---|
+| `.offline` (no network path, `NWPathMonitor`) | Can't reach the store right now. Check the internet and try again. |
+| `.notAnswering` (online; timeout or an App Store error) | The App Store isn't answering right now. Please try again in a little while. |
+| `.productUnavailable` (the App Store answered without Unlock everything) | Unlock everything isn't available in the App Store right now. Please try again later. |
+| `.purchasesNotAllowed` (a purchase failed and `AppStore.canMakePayments` is false) | Purchases are turned off on this device. A parent can allow them in Settings > Screen Time. |
+
+All four are in both String Catalogs, in every language of the two apps. If TestFlight shows "isn't available in
+the App Store", complete `minik_plus_full_access` in App Store Connect (texts, price, review screenshot), so that
+it is at least "Ready to Submit".
+
+`ios-run-check.yml` installs a fresh app on an iPhone and an iPad Simulator, launches it in the chosen languages
+(default `en he`), checks that it is still running after the wait, and keeps screenshots. A fresh Minik Plus shows
+the welcome window.
+
 ## The window once a day during the free week (16 November 2026)
 
 Owner's rule, the same on Android:

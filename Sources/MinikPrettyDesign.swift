@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreText
 import UIKit
 
 // MARK: - Palette and fonts
@@ -459,6 +460,47 @@ extension MinikPretty {
                 .brightness(configuration.isPressed ? -0.03 : 0)
                 .animation(reduceMotion ? nil : .easeOut(duration: 0.14), value: configuration.isPressed)
         }
+    }
+}
+
+// MARK: - Labels centered on their letters
+
+extension MinikPretty {
+    /// How far to move a button label so its visible letters, not the font's line box, sit in the
+    /// middle of the button. Fredoka's line box has more room above the letters than below, so Hebrew
+    /// words and words without capitals looked low on the buttons (bug report of 22 November 2026).
+    /// Android's PrettyButton centers the letters the same way. Negative moves up.
+    static func inkCenterOffset(_ text: String, fontSize: CGFloat) -> CGFloat {
+        guard !text.isEmpty, fontSize > 0 else { return 0 }
+        let font = UIFont(name: "Fredoka-Bold", size: fontSize)
+            ?? UIFont.systemFont(ofSize: fontSize, weight: .bold)
+        let line = CTLineCreateWithAttributedString(
+            NSAttributedString(string: text, attributes: [.font: font])
+        )
+        let ink = CTLineGetBoundsWithOptions(line, .useGlyphPathBounds)
+        guard !ink.isNull, !ink.isEmpty, ink.midY.isFinite else { return 0 }
+        // Both measured upwards from the baseline; the descender is negative.
+        let lineBoxCenter = (font.ascender + font.descender) / 2
+        let offset = ink.midY - lineBoxCenter
+        let limit = fontSize * 0.2
+        return (min(limit, max(-limit, offset)) * 2).rounded() / 2
+    }
+}
+
+/// A Fredoka Bold button label whose visible letters are centered (see `MinikPretty.inkCenterOffset`).
+/// Give it the same font size as the button style.
+struct MinikInkCenteredText: View {
+    private let text: String
+    private let fontSize: CGFloat
+
+    init(_ text: String, fontSize: CGFloat) {
+        self.text = text
+        self.fontSize = fontSize
+    }
+
+    var body: some View {
+        Text(verbatim: text)
+            .offset(y: MinikPretty.inkCenterOffset(text, fontSize: fontSize))
     }
 }
 

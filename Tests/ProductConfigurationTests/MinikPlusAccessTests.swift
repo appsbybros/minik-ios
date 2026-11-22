@@ -464,6 +464,7 @@ final class MinikPlusAccessTests: XCTestCase {
         let controller = makeController(store: store, clock: clock, accessDefaults: accessDefaults)
         await controller.start()
         XCTAssertEqual(controller.status, .failed)
+        XCTAssertEqual(controller.storeProblem, .productUnavailable, "online: never blame the internet")
         XCTAssertFalse(controller.isBusy)
         XCTAssertNil(controller.fullAccessProduct)
         XCTAssertEqual(controller.plusAccess, .trialNotStarted)
@@ -485,6 +486,7 @@ final class MinikPlusAccessTests: XCTestCase {
         let controller = makeController(store: store, storeRequestTimeout: .milliseconds(200))
         await controller.start()
         XCTAssertEqual(controller.status, .failed)
+        XCTAssertEqual(controller.storeProblem, .notAnswering)
         XCTAssertFalse(controller.isBusy)
         XCTAssertNil(controller.fullAccessProduct)
 
@@ -546,7 +548,78 @@ final class MinikPlusAccessTests: XCTestCase {
         await controller.start()
         await controller.purchaseFullAccess()
         XCTAssertEqual(controller.status, .failed)
+        XCTAssertEqual(controller.storeProblem, .productUnavailable)
         XCTAssertEqual(controller.plusAccess, .trialNotStarted)
+    }
+
+    // MARK: - The message names the real problem (bug report of 22 November 2026)
+
+    @MainActor
+    func testOnlyAnOfflineDeviceIsToldToCheckTheInternet() async {
+        let offline = makeController(
+            store: ScriptedCommerceStore(products: products(), answersProductRequests: false),
+            storeRequestTimeout: .milliseconds(200),
+            isOffline: { true }
+        )
+        await offline.start()
+        XCTAssertEqual(offline.status, .failed)
+        XCTAssertEqual(offline.storeProblem, .offline)
+
+        let online = makeController(
+            store: ScriptedCommerceStore(products: products(), answersProductRequests: false),
+            storeRequestTimeout: .milliseconds(200),
+            isOffline: { false }
+        )
+        await online.start()
+        XCTAssertEqual(online.storeProblem, .notAnswering)
+    }
+
+    @MainActor
+    func testAnEmptyAnswerSaysTheProductIsNotAvailableEvenWhenOffline() async {
+        // The App Store did answer, so the device reached it: the product is what is missing.
+        let controller = makeController(store: ScriptedCommerceStore(products: []), isOffline: { true })
+        await controller.start()
+        XCTAssertEqual(controller.storeProblem, .productUnavailable)
+    }
+
+    @MainActor
+    func testAFailedPurchaseWithPurchasesTurnedOffSaysSo() async {
+        // The products load; the purchase fails (no outcome configured, so it throws).
+        let store = InMemoryCommerceStore(products: products())
+        let restricted = makeController(store: store, canMakePayments: { false })
+        await restricted.start()
+        XCTAssertEqual(restricted.status, .ready)
+        await restricted.purchaseFullAccess()
+        XCTAssertEqual(restricted.status, .failed)
+        XCTAssertEqual(restricted.storeProblem, .purchasesNotAllowed)
+        await store.finishUpdates()
+
+        let other = InMemoryCommerceStore(products: products())
+        let allowed = makeController(store: other, canMakePayments: { true })
+        await allowed.start()
+        await allowed.purchaseFullAccess()
+        XCTAssertEqual(allowed.storeProblem, .notAnswering)
+        await other.finishUpdates()
+    }
+
+    @MainActor
+    func testALaterAnswerReplacesTheEarlierProblem() async {
+        let store = ScriptedCommerceStore(products: [])
+        let controller = makeController(store: store)
+        await controller.start()
+        XCTAssertEqual(controller.storeProblem, .productUnavailable)
+        await store.setProducts(products())
+        await controller.reloadStore()
+        XCTAssertEqual(controller.status, .ready)
+        XCTAssertNotNil(controller.fullAccessProduct)
+    }
+
+    func testButtonLabelsMoveOnlyALittleToCenterTheirLetters() {
+        XCTAssertEqual(MinikPretty.inkCenterOffset("", fontSize: 22), 0)
+        for label in ["Unlock everything", "Continue", "פתחו את הכול", "המשך", "Открыть всё"] {
+            let offset = MinikPretty.inkCenterOffset(label, fontSize: 22)
+            XCTAssertLessThanOrEqual(abs(offset), 22 * 0.2, label)
+        }
     }
 
     func testStoreDeadlinePassesAnswersAndErrorsAndStopsWaiting() async throws {
@@ -682,7 +755,9 @@ final class MinikPlusAccessTests: XCTestCase {
         reader: (any MinikFreeWeekStartReading)? = nil,
         calendar: Calendar? = nil,
         accessDefaults: UserDefaults? = nil,
-        storeRequestTimeout: Duration = .seconds(12)
+        storeRequestTimeout: Duration = .seconds(12),
+        isOffline: @escaping @Sendable () -> Bool = { false },
+        canMakePayments: @escaping @Sendable () -> Bool = { true }
     ) -> MinikCommerceController {
         let resolvedClock = clock ?? TestClock(start)
         return MinikCommerceController(
@@ -694,7 +769,9 @@ final class MinikPlusAccessTests: XCTestCase {
             clock: { resolvedClock.now },
             calendar: calendar ?? self.calendar("Asia/Jerusalem"),
             storeRequestTimeout: storeRequestTimeout,
-            isStoreScreenshotCapture: false
+            isStoreScreenshotCapture: false,
+            isOffline: isOffline,
+            canMakePayments: canMakePayments
         )
     }
 

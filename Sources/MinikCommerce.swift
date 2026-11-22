@@ -1,6 +1,8 @@
 import AppStoreCommerceKit
 import Combine
 import Foundation
+import Network
+import StoreKit
 
 extension EntitlementID {
     static let minikRemoveAds = EntitlementID(rawValue: "remove_ads")
@@ -174,6 +176,49 @@ enum MinikCommerceComposition {
     }
 }
 
+/// Minik Plus: why the App Store could not sell Unlock everything, so the window says what really
+/// happened instead of always blaming the internet (bug report of 22 November 2026: an iPad that was
+/// online showed "Can't reach the store..." because the App Store answered without the product).
+enum MinikStoreProblem: Equatable, Sendable {
+    /// The device has no internet connection.
+    case offline
+    /// Online, but the App Store did not answer in time or answered with an error.
+    case notAnswering
+    /// The App Store answered, but without the Unlock everything product.
+    case productUnavailable
+    /// In-app purchases are turned off on this device (Screen Time).
+    case purchasesNotAllowed
+}
+
+/// Whether the device has a network path now. Only used to word a store failure.
+final class MinikNetworkStatus: @unchecked Sendable {
+    static let shared = MinikNetworkStatus()
+
+    private let monitor = NWPathMonitor()
+    private let lock = NSLock()
+    private var isSatisfied: Bool?
+
+    private init() {
+        monitor.pathUpdateHandler = { [weak self] path in
+            self?.update(path.status == .satisfied)
+        }
+        monitor.start(queue: DispatchQueue(label: "minik.network-status"))
+    }
+
+    /// True only when the device is known to be offline (no Wi-Fi or mobile data).
+    var isOffline: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return isSatisfied == false
+    }
+
+    private func update(_ satisfied: Bool) {
+        lock.lock()
+        isSatisfied = satisfied
+        lock.unlock()
+    }
+}
+
 @MainActor
 final class MinikCommerceController: ObservableObject {
     enum Status: Equatable {
@@ -202,6 +247,8 @@ final class MinikCommerceController: ObservableObject {
     /// The window is up during the free week: a grown-up opened it (the chip or the Parent Area),
     /// or it opened by itself the first time the app became active today.
     @Published private(set) var isPaywallRequested = false
+    /// Minik Plus: the reason of the latest store failure, for the window's message.
+    @Published private(set) var storeProblem: MinikStoreProblem = .notAnswering
 
     let configuration: MinikCommerceConfiguration
     private let store: (any CommerceStore)?
@@ -216,6 +263,10 @@ final class MinikCommerceController: ObservableObject {
     private let storeRequestTimeout: Duration
     /// App Store screenshot and parity captures (StoreScreenshotScene) show the app, not the wall.
     private let isStoreScreenshotCapture: Bool
+    /// True when the device has no internet connection now.
+    private let isOffline: @Sendable () -> Bool
+    /// False when in-app purchases are turned off on this device (Screen Time).
+    private let canMakePayments: @Sendable () -> Bool
     private var accessRecord: MinikPlusAccessRecord
     private var updateTask: Task<Void, Never>?
     private var hasStarted = false
@@ -229,7 +280,9 @@ final class MinikCommerceController: ObservableObject {
         clock: @escaping @Sendable () -> Date = { Date() },
         calendar: Calendar = .autoupdatingCurrent,
         storeRequestTimeout: Duration = .seconds(12),
-        isStoreScreenshotCapture: Bool = StoreScreenshotScene.name != nil
+        isStoreScreenshotCapture: Bool = StoreScreenshotScene.name != nil,
+        isOffline: @escaping @Sendable () -> Bool = { MinikNetworkStatus.shared.isOffline },
+        canMakePayments: @escaping @Sendable () -> Bool = { AppStore.canMakePayments }
     ) {
         self.configuration = configuration
         self.store = store
@@ -240,6 +293,11 @@ final class MinikCommerceController: ObservableObject {
         self.calendar = calendar
         self.storeRequestTimeout = storeRequestTimeout
         self.isStoreScreenshotCapture = isStoreScreenshotCapture
+        self.isOffline = isOffline
+        self.canMakePayments = canMakePayments
+        if configuration.paywall != nil {
+            _ = MinikNetworkStatus.shared  // starts watching the network before the first store request
+        }
         isRemoveAdsActive = repository.isRemoveAdsActive(for: configuration.product)
         status = store == nil ? .unconfigured : .loading
         var record = accessRepository.load(for: configuration.product)
@@ -370,7 +428,7 @@ final class MinikCommerceController: ObservableObject {
             apply(state)
             if status != .pending { status = .ready }
         } catch {
-            status = .failed
+            fail(connectionProblem())
         }
     }
 
@@ -407,7 +465,7 @@ final class MinikCommerceController: ObservableObject {
             apply(state)
             status = .ready
         } catch {
-            status = .failed
+            fail(connectionProblem())
         }
     }
 
@@ -439,13 +497,17 @@ final class MinikCommerceController: ObservableObject {
         status = .purchasing
         if freeWeekProduct == nil {
             // The products did not load at launch: ask once more, briefly.
-            if let loaded = try? await MinikStoreDeadline.value(within: storeRequestTimeout, {
-                try await store.loadProducts()
-            }) {
+            do {
+                let loaded = try await MinikStoreDeadline.value(within: storeRequestTimeout, {
+                    try await store.loadProducts()
+                })
                 freeWeekProduct = loaded.first { $0.id == paywall.freeWeekProductID }
                 if let fullAccess = loaded.first(where: { $0.id == paywall.fullAccessProductID }) {
                     fullAccessProduct = fullAccess
                 }
+                if fullAccessProduct == nil { storeProblem = .productUnavailable }
+            } catch {
+                storeProblem = connectionProblem()
             }
         }
         guard freeWeekProduct != nil else {
@@ -501,7 +563,7 @@ final class MinikCommerceController: ObservableObject {
                 status = .cancelled
             }
         } catch {
-            status = .failed
+            fail(purchaseProblem(error))
         }
     }
 
@@ -553,7 +615,32 @@ final class MinikCommerceController: ObservableObject {
             await recordFreeWeekStartFromStore()
             apply(state)
         }
-        status = fullAccessProduct != nil && state != nil ? .ready : .failed
+        if fullAccessProduct != nil && state != nil {
+            status = .ready
+        } else if loadedProducts != nil && fullAccessProduct == nil {
+            // The App Store answered, without Unlock everything (e.g. not yet ready in App Store Connect).
+            fail(.productUnavailable)
+        } else {
+            fail(connectionProblem())
+        }
+    }
+
+    private func fail(_ problem: MinikStoreProblem) {
+        storeProblem = problem
+        status = .failed
+    }
+
+    /// A request that got no answer: the device is offline, or the App Store itself is not answering.
+    private func connectionProblem() -> MinikStoreProblem {
+        isOffline() ? .offline : .notAnswering
+    }
+
+    private func purchaseProblem(_ error: Error) -> MinikStoreProblem {
+        if let commerceError = error as? CommerceError, case .productNotFound = commerceError {
+            return .productUnavailable
+        }
+        if !canMakePayments() { return .purchasesNotAllowed }
+        return connectionProblem()
     }
 
     private func apply(_ state: EntitlementState) {
@@ -589,7 +676,7 @@ final class MinikCommerceController: ObservableObject {
             apply(state)
             status = .ready
         case .failure:
-            status = .failed
+            fail(connectionProblem())
         }
     }
 
