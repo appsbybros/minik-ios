@@ -560,7 +560,9 @@ final class ArenaView: UIView {
         if !playerCamera && !fitEveryone {
             // `targetCamera` already fitted you, the followed player and the ball into the field area; keep its
             // distance and only centre it on the field area beside the side column.
-            return base.copy(centerX: (left + right) / 2 / w, centerY: (top + bottom) / 2 / h)
+            // The camera never pulls back beyond the arena's standard distance (26): players far apart stay large and
+            // the ones out of view keep their name tag at the screen's edge.
+            return base.copy(distance: min(base.distance, 26.0), centerX: (left + right) / 2 / w, centerY: (top + bottom) / 2 / h)
         }
         if !playerCamera {
             // Owner's request 2026-11-22 (players too small): landscape Action view frames the players head to toe,
