@@ -193,7 +193,8 @@ enum GameText {
     static func overriddenKeys() -> [String] { return Array(overrides.keys) }
 
     /// Kotlin `SpudFollowupText.copy + mapOf(...)`: the inline rows below win over the follow-up copy.
-    private static let overrides: [String: [String]] = SpudFollowupText.copy.merging([
+    /// iOS: `SpudIOSText.copy` (bug report 2026-11-22) wins over the follow-up copy.
+    private static let overrides: [String: [String]] = SpudFollowupText.copy.merging(SpudIOSText.copy) { _, ios in ios }.merging([
         "MINIK AMUDU": ["Spud", "עמודו", "Pies Quietos!", "لعبة أسماء", "Naam Aur Ball", "Stand in de mand"],
         "Your Amudu code": ["Your Spud code", "הקוד שלכם לעמודו", "Tu código de Pies Quietos!", "رمز لعبة أسماء الخاص بك", "आपका Naam Aur Ball कोड", "Je code voor Stand in de mand"],
         "Amudu code": ["Spud code", "קוד לעמודו", "Código de Pies Quietos!", "رمز لعبة أسماء", "Naam Aur Ball कोड", "Code voor Stand in de mand"],

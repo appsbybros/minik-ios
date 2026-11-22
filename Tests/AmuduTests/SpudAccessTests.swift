@@ -81,14 +81,42 @@ final class SpudAccessTests: XCTestCase {
         for c in PracticeConditions.allCases where c != .space { XCTAssertFalse(SpudAccess.conditionsLocked(c, owner: false), c.rawValue) }
     }
 
-    func testOnlySoftFoamAndBeachBallAreFreeAndThePaintBalloonIsMetered() {
-        XCTAssertEqual(SpudAccess.freeBalls, [.foam, .beach])
+    func testOnlySoftFoamIsFreeAndThePaintBalloonIsMetered() {
+        // Bug report 2026-11-22 (2.3): the Beach ball needs the full game too.
+        XCTAssertEqual(SpudAccess.freeBalls, [.foam])
         XCTAssertFalse(SpudAccess.ballLocked(.foam, owner: false))
-        XCTAssertFalse(SpudAccess.ballLocked(.beach, owner: false))
+        XCTAssertTrue(SpudAccess.ballLocked(.beach, owner: false))
         XCTAssertTrue(SpudAccess.ballLocked(.neon, owner: false))
         XCTAssertTrue(SpudAccess.ballLocked(.tennis, owner: false))
         XCTAssertFalse(SpudAccess.ballLocked(.paint, owner: false))
         for kind in BallKind.allCases { XCTAssertFalse(SpudAccess.ballLocked(kind, owner: true)) }
+    }
+
+    // MARK: Characters (bug report 2026-11-22, 2.3)
+
+    func testFlareKyraGayaAndMiaNeedTheFullGame() {
+        XCTAssertEqual(Set(SpudAccess.lockedCharacters), ["flare", "kyra", "gaya", "mia"])
+        for c in AmuduCharacters.all {
+            let locked = ["flare", "kyra", "gaya", "mia"].contains(c.id)
+            XCTAssertEqual(SpudAccess.characterLocked(c.id, owner: false), locked, c.id)
+            XCTAssertFalse(SpudAccess.characterLocked(c.id, owner: true), c.id + ": everything unlocks after the purchase")
+            XCTAssertEqual(SpudAccess.avatar(c.id, owner: true), c.id)
+            XCTAssertEqual(SpudAccess.avatar(c.id, owner: false), locked ? "miniko" : c.id)
+        }
+        XCTAssertFalse(SpudAccess.characterLocked(SpudAccess.freeAvatar, owner: false))
+        // Locked house players never join a free game, whatever was saved; owners keep them all.
+        let saved = SpudAccess.Choices(players: 3, scene: .park, ball: .foam, house: ["kyra", "june", "mia", "comet"])
+        XCTAssertEqual(SpudAccess.clamp(saved, owner: false).house, ["june", "comet"])
+        XCTAssertEqual(SpudAccess.clamp(saved, owner: true).house, ["kyra", "june", "mia", "comet"])
+    }
+
+    func testEverythingUnlocksForAnOwner() {
+        for n in 2...SpudAccess.fullPlayers { XCTAssertFalse(SpudAccess.playersLocked(n, owner: true)) }
+        for s in ArenaScene.allCases { XCTAssertFalse(SpudAccess.sceneLocked(s, owner: true)) }
+        for b in BallKind.allCases { XCTAssertFalse(SpudAccess.ballLocked(b, owner: true)) }
+        for c in AmuduCharacters.all { XCTAssertFalse(SpudAccess.characterLocked(c.id, owner: true)) }
+        for step in 0..<(SpudJourney.size * 3) { XCTAssertFalse(SpudAccess.challengeLocked(step, owner: true)) }
+        for c in PracticeConditions.allCases { XCTAssertFalse(SpudAccess.conditionsLocked(c, owner: true)) }
     }
 
     // MARK: Paint balloon
@@ -202,15 +230,16 @@ final class SpudAccessTests: XCTestCase {
     func testOldSavedSettingsAreClampedAtTheStart() {
         let saved = SpudAccess.Choices(players: 6, scene: .andromeda, ball: .neon, house: ["mia", "kyra", "gaya", "flare", "june"])
         let free = SpudAccess.clamp(saved, owner: false)
-        XCTAssertEqual(free, SpudAccess.Choices(players: 3, scene: .park, ball: .foam, house: ["mia", "kyra"]))
+        XCTAssertEqual(free, SpudAccess.Choices(players: 3, scene: .park, ball: .foam, house: ["june"]))
         XCTAssertEqual(SpudAccess.clamp(saved, owner: true), saved, "owners keep their settings")
         // Free values pass unchanged; the paint balloon stays (it is metered when the game starts).
-        let small = SpudAccess.Choices(players: 2, scene: .park, ball: .paint, house: ["mia", "kyra"])
-        XCTAssertEqual(SpudAccess.clamp(small, owner: false), SpudAccess.Choices(players: 2, scene: .park, ball: .paint, house: ["mia"]))
+        let small = SpudAccess.Choices(players: 2, scene: .park, ball: .paint, house: ["amber", "comet"])
+        XCTAssertEqual(SpudAccess.clamp(small, owner: false), SpudAccess.Choices(players: 2, scene: .park, ball: .paint, house: ["amber"]))
         XCTAssertEqual(SpudAccess.clamp(SpudAccess.Choices(players: 10, scene: .beach, ball: .tennis), owner: false).players, 3)
         // Challenges and lessons.
         XCTAssertEqual(SpudAccess.practiceBall(.neon, allowed: BallKind.allCases, owner: false), .foam)
-        XCTAssertEqual(SpudAccess.practiceBall(.tennis, allowed: [.tennis, .beach], owner: false), .beach)
+        XCTAssertEqual(SpudAccess.practiceBall(.tennis, allowed: [.tennis, .beach], owner: false), .foam)
+        XCTAssertEqual(SpudAccess.practiceBall(.beach, allowed: [.beach, .foam], owner: false), .foam)
         XCTAssertEqual(SpudAccess.practiceBall(.neon, allowed: BallKind.allCases, owner: true), .neon)
         XCTAssertEqual(SpudAccess.practiceBall(.paint, allowed: [.paint], owner: false), .paint)
         XCTAssertEqual(SpudAccess.practiceConditions(.space, owner: false), .calm)
@@ -236,7 +265,10 @@ final class SpudAccessTests: XCTestCase {
         XCTAssertTrue(StoreText.buy(price: "$4.99", language: "en").contains("$4.99"))
         // The iOS-only texts stay out of the catalog generated from Android.
         let catalog = Set(AppText.keys())
-        for key in StoreText.Key.allCases { XCTAssertFalse(catalog.contains(StoreText.get(key, language: "en")), key.rawValue) }
+        // "Try again" (bug report 2026-11-22, 2.2) is also an Android catalog row; its iOS translations are the store's own.
+        for key in StoreText.Key.allCases where key != .reload {
+            XCTAssertFalse(catalog.contains(StoreText.get(key, language: "en")), key.rawValue)
+        }
     }
 
     func testPaintGamesLeftUsesEachLanguagesPlural() {

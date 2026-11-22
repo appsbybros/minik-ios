@@ -12,7 +12,8 @@ unlocks everything. Without it:
 | --- | --- | --- |
 | Players | at most 3 in a game (the player + house players and/or people); 4-10 shown with a lock | `SpudAccess.clamp` / `playersLocked`; `AppModel.config(_:limited:)`, `spudPlayers`, `spudHouse`, `capacityNote`, `houseEnabled`, `setHouse`, `startLocal`, `openPrivateRoom`, `setupLeagueAction` |
 | Arenas | Sunshine park only | `sceneLocked`; setup pictures (`chooseScene`), lesson conditions (`practiceConditions`: Andromeda = `.space`) |
-| Balls | Soft foam and Beach ball; Neon party and Tennis ball locked | `ballLocked`; setup pictures (`chooseBall`), practice ball menu (`practiceBall`) |
+| Balls | Soft foam only; Beach ball (since 2026-11-22), Neon party and Tennis ball locked | `ballLocked`; setup pictures (`chooseBall`), practice ball menu (`practiceBall`) |
+| Characters | Flare, Kyra, Gaya and Mia locked (2026-11-22), as the player's character and as house players; a locked saved character plays as Miniko, the saved choice is kept | `SpudAccess.lockedCharacters` / `characterLocked` / `avatar`; `AppModel.playAvatar` (every game, room and league identity), `clamp` (house players), the home avatar (lock, tap opens the unlock screen), the setup house-player rows |
 | Paint balloon | 3 free welcome games, then 1 free game per local calendar day (no accumulation; the day the last welcome game is used counts as that day's game). Counted per game, never per throw | `PaintBalloonAllowance` (pure: stored state + date + calendar), `PaintBalloonAllowanceRepository` (`amudu.store.paintWelcomeUsed`, `amudu.store.paintFreeDay`), `SpudStore.usePaintGame`, `AppModel.spudMayStart`: a local match (`startLocal`), a hosted private room (`openPrivateRoom`, when the host opens it), a hosted league round (`setupLeagueAction`, purpose 2), a challenge or lesson run (`launchPractice`) |
 | Daily challenges | steps 0-6 (challenges 1-7 of the first cycle) free; later ones show a lock and Start opens the unlock screen | `challengeLocked`; `AppModel.spudPractice` (from `launchPractice`), `PracticeOptions`, the challenge map |
 | Lessons | same arena/ball limits; the paint lesson uses a free paint game | `spudPractice`, `PracticeOptions` |
@@ -658,3 +659,44 @@ Android 372c448 (2026-11-19 sync). `app/build.gradle.kts` and `app/src/main/Andr
 | `firebase/firebase.json` | `8980a41bdbd7e364174987800b571acfefb536320293a4bc2fdae3d7c1510e75` |
 | `firebase/rules-test.cjs` | `867ebd57d4ee444a84d56b764d7861ead885b74483135b5a334e86aae0e7553d` |
 | `firebase/start-emulators.ps1` | `28c3a00402243f93613c6d97a5eded2a27cb62ea3d243678bbc607c34c5d71f2` |
+
+## Bug report of 22 November 2026 (spud_ios_bug_report.pdf, 14 sections)
+
+Fixed on iOS; each fix carries a `Bug report 2026-11-22` comment, and `Tests/AmuduTests/SpudBugReportTests.swift` pins
+what a test can.
+
+- **Arena missing (3.5), iOS only:** `ArenaWorldView` needs `park_sky`, `beach_sky`, `andromeda_sky`, `grass` and
+  `sand`; they were only in the Splash target, so the Metal world never became ready and every arena was plain navy.
+  The five imagesets are now in `Amudu/Assets.xcassets`, and `ArenaView` hides the world view when it is not ready, so
+  the arena picture shows instead.
+- **Letters low in buttons (1.1, 2.1, 9.3, 10.1, 13):** Spud sets `FamilyKit.Lettering.opticalOffset = 0` (it was 3
+  points below the face centre). Pickers (`ChoiceMenu`) are aligned the same way and wrap instead of truncating.
+- **Lag diagnosis (1.2):** hidden; a 2-second press on the "Settings & feedback" title shows it (`AmuduPage
+  titleLongPress`). It stays visible while a diagnosis runs. Android shows it as a normal button.
+- **Unlock screen (2.2):** `SpudStoreProblem` (offline / App Store not answering / product not available / purchases
+  turned off), as Minik Plus; requests have 12 s. "Load the price again" is "Try again". The red problem line sits
+  directly above the yellow button; Restore purchases (required by App Review Guideline 3.1.1 for a non-consumable)
+  stands 20 points apart with its own messages under it.
+- **Free tier (2.3):** the Beach ball and the characters Flare, Kyra, Gaya and Mia need the full game (table above).
+- **Game screen (3.x, 4.x, 5.x):** `paragraph()` shrinks a text that does not fit (to 75%, at least 11 pt), then starts
+  it at the box top and clips it, so a sentence never loses its beginning; the portrait instruction box grows to the
+  field top; the status box grows upwards from 6 pt above the view button; landscape boxes fit their text and stop
+  above the "Out" box; "Out" texts use 14 pt at the reading edge; no running hint for a player who is out; 8 pt under
+  the bottom buttons; a compact rotate button with a centred SF Symbol; name tags beside their own player
+  (`StableLabels.placeNear`: below, above, right, left), never under the Catch bar.
+- **Ball sizes (3.1, 6.x):** `BallKind.drawScale` (beach 1.4, paint 1.5) changes drawing only; a paint balloon at rest
+  lies on its side.
+- **Dialogs (7.1, 9.1, 9.2):** the close button is the Minik red X picture (`minik_close`) in the panel's corner; the
+  title starts one row below it; list rows have 16 pt side padding.
+- **Cards (8.x):** top-aligned rows of equal height, lock beside the name, one-word names never break, a full-width
+  shine, arena pictures from the card's top edge with the outline drawn over them, 10 pt under every name.
+- **Texts (10.2, 11, 12, 14):** no promised catch-window length; store numbers formatted from `SpudAccess`; plain burst,
+  timer and idle rules; "Steps after Stop!" with an explanation; lessons put their conditions first with an Andromeda
+  note, then "Your throw". New and reworded texts are in `Amudu/Text/SpudIOSText.swift` (six languages) or their
+  `RuleText` / `LearningCopy` rows.
+
+### Deliberate differences 2026-11-22
+
+Android keeps its older wording for the rewritten texts (listed in `Scripts/audit-amudu.py`, `IOS_REWORDED_2026_11_22`).
+A sync from Android must keep the iOS rows above.
+

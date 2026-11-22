@@ -67,7 +67,7 @@ IAP review note (English):
 
 ```
 One-time, non-consumable unlock of the full game (Family Sharing on). Without it: up to 3 players, the Sunshine park
-arena, the Soft foam and Beach ball balls, the paint balloon for 3 welcome games and then one game a day, and the first
+arena, the Soft foam ball, seven of the eleven characters (Flare, Kyra, Gaya and Mia need it), the paint balloon for 3 welcome games and then one game a day, and the first
 7 challenges. With it: up to 10 players, all three arenas, all five balls, paint balloons any time and every challenge.
 To reach it: Home > Play > Create game > tap any choice marked with a lock (e.g. Room capacity 4, Tropical beach or
 Neon party) > "Unlock the full game · <price>" > answer the grown-up multiplication question. Restore purchases is on

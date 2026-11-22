@@ -81,6 +81,7 @@ struct SkySurface: View {
     var strokeWidth: CGFloat = 0
     var strokeColor: UInt32 = 0
     var pressed = false
+    var wideShine = false
     @Environment(\.displayScale) private var displayScale
 
     var body: some View {
@@ -90,11 +91,12 @@ struct SkySurface: View {
         let lineWidth = strokeWidth
         let lineColor = strokeColor
         let down = pressed
+        let wide = wideShine
         let px = 1 / max(displayScale, 1)
         let opacity = Double(SkyPalette.alpha(SkyPalette.palette(fill))) / 255
         return Canvas { context, size in
             SkyPainter.draw(&context, size, color: fill, radius: corner, panel: isPanel, strokeWidth: lineWidth,
-                            strokeColor: lineColor, pressed: down, px: px)
+                            strokeColor: lineColor, pressed: down, px: px, wideShine: wide)
         }
         // Android draws the whole surface in one layer at the colour's alpha.
         .opacity(opacity)
@@ -115,7 +117,7 @@ enum SkyPainter {
     }
 
     static func draw(_ context: inout GraphicsContext, _ size: CGSize, color: UInt32, radius: CGFloat, panel: Bool,
-                     strokeWidth: CGFloat, strokeColor: UInt32, pressed: Bool, px: CGFloat) {
+                     strokeWidth: CGFloat, strokeColor: UInt32, pressed: Bool, px: CGFloat, wideShine: Bool = false) {
         let box = CGRect(origin: .zero, size: size)
         guard usable(box) else { return }
         let base = SkyPalette.palette(color)
@@ -167,7 +169,7 @@ enum SkyPainter {
 
         // The shine of a control.
         if !panel {
-            let shine = face.insetBy(dx: min(radius * 0.8, face.width * 0.12), dy: rim * 3)
+            let shine = face.insetBy(dx: wideShine ? rim * 3 : min(radius * 0.8, face.width * 0.12), dy: rim * 3)
             if usable(shine) {
                 let band = CGRect(x: shine.minX, y: shine.minY, width: shine.width, height: min(shine.height, face.height * 0.25))
                 if usable(band) {
@@ -195,12 +197,14 @@ struct SkyButtonStyle: ButtonStyle {
     /// Android `clipToOutline` (the picture cards).
     var clips = false
     var raisedLettering = true
+    /// The shine spans the face (the picture cards); otherwise it keeps Android's inset from the corners.
+    var wideShine = false
 
     func makeBody(configuration: Configuration) -> some View {
         let surface = configuration.label
             .modifier(SkyLettering(active: raisedLettering && !panel, radius: radius, pressed: configuration.isPressed))
             .background(SkySurface(color: color, radius: radius, panel: panel, strokeWidth: strokeWidth,
-                                   strokeColor: strokeColor, pressed: configuration.isPressed))
+                                   strokeColor: strokeColor, pressed: configuration.isPressed, wideShine: wideShine))
         return surface.clipShape(RoundedRectangle(cornerRadius: clips ? radius : 0))
     }
 }

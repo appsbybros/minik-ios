@@ -133,20 +133,6 @@ struct SpudDialogPanel<Content: View>: View {
                     .contentShape(Rectangle())
                     .onTapGesture { if allowClose { onClose() } }
                 VStack(spacing: 0) {
-                    if allowClose {
-                        HStack {
-                            Spacer(minLength: 0)
-                            Button(action: onClose) {
-                                Text("×")
-                                    .font(.system(size: 30))
-                                    .foregroundColor(Color(argb: SpudDialogStyle.pink))
-                                    .frame(width: 48, height: 48)
-                                    .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel(AppText.t("Close", "סגירה"))
-                        }
-                    }
                     if !title.isEmpty {
                         Text(title)
                             .font(.system(size: 23, weight: .bold))
@@ -158,18 +144,45 @@ struct SpudDialogPanel<Content: View>: View {
                     }
                     content
                 }
-                .padding(20)
+                // Bug report 2026-11-22 (9.1, 9.2): the close button sits in the panel's top corner (overlay below) and
+                // the title starts one row under it, instead of a 48-point row of its own above the title.
+                .padding(EdgeInsets(top: allowClose ? 40 : 20, leading: 20, bottom: 20, trailing: 20))
                 .background(
                     RoundedRectangle(cornerRadius: 24)
                         .fill(Color(argb: SpudDialogStyle.panel))
                         .overlay(RoundedRectangle(cornerRadius: 24).strokeBorder(Color(argb: SpudDialogStyle.outline), lineWidth: 1))
                 )
+                .overlay(alignment: .topTrailing) {
+                    if allowClose {
+                        SpudCloseButton(action: onClose)
+                            .padding(2)
+                    }
+                }
                 .frame(width: max(0, min(geo.size.width - 32, maxWidth)))
                 .frame(maxHeight: max(0, geo.size.height - 24))
             }
             .frame(width: geo.size.width, height: geo.size.height)
         }
         .environment(\.layoutDirection, AppText.rtl ? .rightToLeft : .leftToRight)
+    }
+}
+
+/// The app's close button (bug report 2026-11-22, 9.1): the Minik red X picture (`minik_close`, the owner's
+/// minik_close_button.webp), 30 points inside a 44-point touch area, in every dialog of the app.
+struct SpudCloseButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image("minik_close")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 30, height: 30)
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(AppText.t("Close", "סגירה"))
     }
 }
 
@@ -242,7 +255,9 @@ struct SpudDialogView: View {
                                         .foregroundColor(Color(argb: SpudDialogStyle.ink))
                                         .multilineTextAlignment(.leading)
                                         .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
-                                        .padding(.horizontal, 8)
+                                        // Bug report 2026-11-22 (7.1): "Choose a player" and other lists keep room
+                                        // from the panel's sides.
+                                        .padding(.horizontal, 16)
                                         .contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)

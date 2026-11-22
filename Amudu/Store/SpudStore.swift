@@ -87,6 +87,8 @@ final class SpudStore: ObservableObject {
     @Published private(set) var status: Status
     @Published private(set) var notice: Notice?
     @Published private(set) var paint: PaintBalloonAllowance
+    /// Why the full game cannot be bought right now (shown while there is no price, or after a failed purchase).
+    @Published private(set) var problem: SpudStoreProblem = .notAnswering
     /// The unlock screen covers the current page (`RootView`).
     @Published private(set) var unlockVisible = false
 
@@ -96,6 +98,9 @@ final class SpudStore: ObservableObject {
     private let paintRepository: PaintBalloonAllowanceRepository
     private let clock: () -> Date
     private let calendar: Calendar
+    private let isOffline: @Sendable () -> Bool
+    private let canMakePayments: @Sendable () -> Bool
+    private let requestTimeout: Duration
     /// App Store captures (`SpudScreenshot`) show the whole game.
     private let isStoreScreenshotCapture: Bool
     private var updateTask: Task<Void, Never>?
@@ -108,7 +113,10 @@ final class SpudStore: ObservableObject {
          paintRepository: PaintBalloonAllowanceRepository = PaintBalloonAllowanceRepository(),
          clock: @escaping () -> Date = { Date() },
          calendar: Calendar = .autoupdatingCurrent,
-         isStoreScreenshotCapture: Bool = SpudScreenshot.name != nil) {
+         isStoreScreenshotCapture: Bool = SpudScreenshot.countsAsOwner,
+         isOffline: @escaping @Sendable () -> Bool = { SpudNetworkStatus.shared.isOffline },
+         canMakePayments: @escaping @Sendable () -> Bool = { SpudNetworkStatus.canMakePayments },
+         requestTimeout: Duration = .seconds(12)) {
         self.configuration = configuration
         self.store = store
         self.repository = repository
@@ -116,6 +124,9 @@ final class SpudStore: ObservableObject {
         self.clock = clock
         self.calendar = calendar
         self.isStoreScreenshotCapture = isStoreScreenshotCapture
+        self.isOffline = isOffline
+        self.canMakePayments = canMakePayments
+        self.requestTimeout = requestTimeout
         ownsFullGame = repository.ownsFullGame
         paint = paintRepository.load()
         status = store == nil ? .unconfigured : .loading
@@ -228,7 +239,28 @@ final class SpudStore: ObservableObject {
         } catch {
             status = product == nil ? .unavailable : .ready
             notice = .purchaseFailed
+            problem = purchaseProblem(error)
         }
+    }
+
+    private func purchaseProblem(_ error: Error) -> SpudStoreProblem {
+        var notFound = false
+        if case CommerceError.productNotFound = error { notFound = true }
+        return SpudStore.problemAfterPurchaseError(productNotFound: notFound, canMakePayments: canMakePayments(), offline: isOffline())
+    }
+
+    /// After loading the products: nil when the product came; an answer without it is not a connection problem.
+    nonisolated static func problemAfterLoad(answered: Bool, hasProduct: Bool, offline: Bool) -> SpudStoreProblem? {
+        if hasProduct { return nil }
+        if answered { return .productUnavailable }
+        return offline ? .offline : .notAnswering
+    }
+
+    /// After a failed purchase.
+    nonisolated static func problemAfterPurchaseError(productNotFound: Bool, canMakePayments: Bool, offline: Bool) -> SpudStoreProblem {
+        if productNotFound { return .productUnavailable }
+        if !canMakePayments { return .purchasesNotAllowed }
+        return offline ? .offline : .notAnswering
     }
 
     /// Restores the purchase (no grown-up gate: it buys nothing).
@@ -256,12 +288,20 @@ final class SpudStore: ObservableObject {
             return
         }
         status = .loading
-        let loaded = try? await store.loadProducts()
-        if let state = try? await store.refreshEntitlements() {
+        // Each request has `requestTimeout` to answer, so the screen never waits forever on "Loading…".
+        let timeout = requestTimeout
+        async let products = SpudStoreDeadline.value(within: timeout) { try await store.loadProducts() }
+        async let entitlements = SpudStoreDeadline.value(within: timeout) { try await store.refreshEntitlements() }
+        let loaded = try? await products
+        if let state = try? await entitlements {
             apply(state)
         }
         if let loaded {
             product = loaded.first { $0.id == productID }
+        }
+        // Bug report 2026-11-22 (2.2): an answer without the product is not a connection problem.
+        if let found = SpudStore.problemAfterLoad(answered: loaded != nil, hasProduct: product != nil, offline: isOffline()) {
+            problem = found
         }
         status = product == nil ? .unavailable : .ready
     }

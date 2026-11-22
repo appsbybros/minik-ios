@@ -359,6 +359,35 @@ def literals(path, decoder):
     return found
 
 
+# Android sentences iOS rewords on purpose (bug report of 22 November 2026; docs/amudu-ios-handoff.md,
+# "Deliberate differences 2026-11-22"): Amudu/Text/SpudIOSText.swift and the RuleText/LearningCopy rows.
+IOS_REWORDED_2026_11_22 = {
+    " · 0–4",
+    "Bij twee actieve menselijke spelers zie je de laatste vijf seconden aftellen. Na drie onvoltooide beurten kijk je mee. In het bijnamenspel kun je drie keer terugkeer vragen; het spel pauzeert voor de stemming.",
+    "Bij twee of meer actieve menselijke spelers. De bal oprapen start een nieuwe timer; richten niet.",
+    "Con dos o más personas activas. Recoger el balón reinicia el tiempo; apuntar no.",
+    "Con dos personas activas, el contador aparece en los últimos cinco segundos. Tres turnos sin completar te dejan mirando. En el modo de apodos puedes pedir volver tres veces; se vota con el juego en pausa.",
+    "Control difficulty",
+    "Pasos después de gritar",
+    "Stappen na het roepen",
+    "Steps after calling",
+    "Tap Catch as the ball arrives. Your catch window lasts half a second; catch before the ground.",
+    "With two active human players, the action timer counts down only in the last five seconds. Three unfinished turns means watching. In the nickname game, you can ask to return up to three times; active people vote during a pause.",
+    "With two or more active human players. Picking up the ball starts a fresh timer; aiming does not.",
+    "געו בתפיסה כשהכדור מתקרב. יש חצי שנייה לתפוס לפני הנגיעה בקרקע.",
+    "כשיש לפחות שני שחקנים אנושיים פעילים. איסוף הכדור מתחיל זמן חדש; כיוון לא מאפס אותו.",
+    "כשיש שני שחקנים אנושיים פעילים, הספירה מוצגת רק בחמש השניות האחרונות. אחרי שלוש פעולות שלא הושלמו עוברים לצפייה. במשחק הכינויים אפשר לבקש לחזור עד שלוש פעמים; השחקנים הפעילים מצביעים בהפסקה.",
+    "צעדים אחרי הקריאה",
+    "רמת שליטה",
+    "الخطوات بعد النداء",
+    "عند وجود لاعبين بشريين نشطين أو أكثر. التقاط الكرة يبدأ مهلة جديدة؛ التصويب لا يجددها.",
+    "مع لاعبين بشريين نشطين يظهر العد في آخر خمس ثوانٍ. بعد ثلاث فرص دون إكمال الدور تصبح مشاهداً. في وضع الألقاب يمكنك طلب العودة ثلاث مرات ويصوّت اللاعبون أثناء توقف اللعب.",
+    "दो या अधिक सक्रिय मानव खिलाड़ियों के साथ। गेंद उठाने पर नया समय मिलता है; निशाना लगाने पर नहीं।",
+    "दो सक्रिय मानव खिलाड़ियों के साथ आख़िरी पाँच सेकंड में उलटी गिनती दिखती है। तीन अधूरे अवसरों के बाद आप दर्शक बनते हैं। उपनाम वाले खेल में तीन बार वापसी माँग सकते हैं; खेल रोककर मतदान होता है।",
+    "पुकारने के बाद कदम",
+}
+
+
 def swift_files(*roots):
     for root in roots:
         for base, _, files in os.walk(root):
@@ -375,7 +404,7 @@ def check_strings(android):
     for rel in KOTLIN_SOURCES:
         path = os.path.join(android, rel)
         for text in literals(path, decode_kotlin):
-            if text in EXCLUDED_EXACT or text in EQUIVALENT or text in ANDROID_ONLY_2026_11 or any(x in text for x in EXCLUDED_SUBSTRINGS):
+            if text in EXCLUDED_EXACT or text in EQUIVALENT or text in ANDROID_ONLY_2026_11 or text in IOS_REWORDED_2026_11_22 or any(x in text for x in EXCLUDED_SUBSTRINGS):
                 continue
             if len(text) <= 1:
                 continue

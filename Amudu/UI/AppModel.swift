@@ -285,6 +285,9 @@ struct ShareText: Identifiable {
         defaults = d
         // Android `FamilyButtonAlignment.useFullRaisedFace(true)`: SPUD centres button lettering on the whole raised face.
         FamilyKit.Lettering.fullRaisedFace = true
+        // Bug report 2026-11-22 (1.1, 2.1, 9.3, 10.1, 13): the letters sat low in every button. They are centred on
+        // the bright face itself, without the extra 3-point drop.
+        FamilyKit.Lettering.opticalOffset = 0
         let storedAvatar = d.string(forKey: Keys.avatar) ?? "miniko"
         avatar = AmuduCharacters.exists(storedAvatar) ? storedAvatar : "miniko"
         playerName = d.string(forKey: Keys.name) ?? ""
@@ -469,7 +472,7 @@ struct ShareText: Identifiable {
     /// Android `setup()`: the player's own avatar is never a house player, and the room keeps a place for each chosen
     /// house player and the player.
     func openSetup() {
-        house.removeAll { $0 == avatar }
+        house.removeAll { $0 == playAvatar }
         count = max(count, min(house.count + 1, 10))
         league?.hide()
         environmentOpen = false
@@ -784,8 +787,9 @@ struct ShareText: Identifiable {
         default: sign = "☀ "
         }
         let light = sign + tr(c.daylight.en, c.daylight.he)
-        let space = c.scene == .andromeda ? tr(c.scene.en, c.scene.he) : ""
-        return [light, windText, space].filter { !$0.isEmpty }.joined(separator: " · ")
+        // Bug report 2026-11-22 (11): Andromeda first, with what it changes ("Andromeda · low gravity · light wind").
+        if c.scene == .andromeda { return LearningCopy.get("conditions_space") }
+        return [light, windText].filter { !$0.isEmpty }.joined(separator: " · ")
     }
 
     /// Android `getString("journeyControl", "EASY")`.
@@ -820,8 +824,8 @@ struct ShareText: Identifiable {
         activeLeagueRound = false
         localLeagueId = ""
         let d = SpudPractice(step, 1, topic)
-        var used: Set<String> = [avatar]
-        var members = [Member("p0", avatar, AmuduCharacters.get(avatar).name(hebrew: hebrew), bot: false, hebrew: hebrew)]
+        var used: Set<String> = [playAvatar]
+        var members = [Member("p0", playAvatar, AmuduCharacters.get(playAvatar).name(hebrew: hebrew), bot: false, hebrew: hebrew)]
         for i in 0..<d.stage.bots {
             let bot = d.stage.bot(d.cycle, used)
             used.insert(bot.id)
@@ -936,7 +940,7 @@ struct ShareText: Identifiable {
         rules = value
         loadRulePreferences(value)
         persist()
-        house.removeAll { $0 == avatar }
+        house.removeAll { $0 == playAvatar }
         count = max(count, min(house.count + 1, 10))
         environmentOpen = false
         advancedOpen = false
@@ -952,7 +956,7 @@ struct ShareText: Identifiable {
     /// Android `updateCapacity()`: "You + {0} house players · {1} places for friends".
     var capacityNote: String {
         // iOS payment model (CLAUDE.md): the places and house players a game can have (`spudPlayers`, `spudHouse`).
-        let selected = spudHouse.filter { $0 != avatar }.count
+        let selected = spudHouse.filter { $0 != playAvatar }.count
         let free = spudPlayers - selected - 1
         return tr("You + {0} house players · {1} places for friends", "אתם + {0} שחקני בית · {1} מקומות לחברים")
             .replacingOccurrences(of: "{0}", with: String(selected)).replacingOccurrences(of: "{1}", with: String(free))
@@ -960,9 +964,9 @@ struct ShareText: Identifiable {
 
     /// Android: a house player can be added only while the room has a free place; never while opening a league round.
     func houseEnabled(_ id: String) -> Bool {
-        if id == avatar { return false }
+        if id == playAvatar { return false }
         // iOS payment model (CLAUDE.md): without the full game, the places of a 3-player game.
-        let free = spudPlayers - spudHouse.filter { $0 != avatar }.count - 1
+        let free = spudPlayers - spudHouse.filter { $0 != playAvatar }.count - 1
         return setupPurpose != 2 && (spudHouse.contains(id) || free > 0)
     }
 
@@ -993,7 +997,7 @@ struct ShareText: Identifiable {
         persist()
         activeLeagueRound = false
         localLeagueId = ""
-        var roster = [Member("p0", avatar, AmuduCharacters.get(avatar).name(hebrew: hebrew), bot: false, hebrew: hebrew)]
+        var roster = [Member("p0", playAvatar, AmuduCharacters.get(playAvatar).name(hebrew: hebrew), bot: false, hebrew: hebrew)]
         // iOS payment model (CLAUDE.md): without the full game, at most 3 players, the free arena and balls.
         let team = spudHouse
         let chosen = Array(AmuduCharacters.availableBots(humans: [roster[0]], requested: team, fillTo: 0).prefix(team.count))
@@ -1577,7 +1581,7 @@ struct ShareText: Identifiable {
         connectingInfo = tr("Connecting to your private room.", "מתחברים לחדר הפרטי.")
         connectingLeague = false
         screen = .connecting
-        let identity = Member("", avatar, Kotlin.trim(playerName), bot: false, hebrew: hebrew, points: rankPoints)
+        let identity = Member("", playAvatar, Kotlin.trim(playerName), bot: false, hebrew: hebrew, points: rankPoints)
         // iOS payment model (CLAUDE.md): only the host's room is limited (`code == nil`); joiners never are.
         let hosting = SpudAccess.limitsRoom(owner: fullGame, hosting: code == nil)
         let net = OnlineRoom(model: self, identity: identity, config: config(nil, limited: hosting) ?? GameConfig.defaults,
@@ -1734,7 +1738,7 @@ struct ShareText: Identifiable {
 
     /// Android `leagueIdentity()`.
     func leagueIdentity() -> Member {
-        return Member("", avatar, Kotlin.trim(playerName), bot: false, hebrew: hebrew, points: rankPoints)
+        return Member("", playAvatar, Kotlin.trim(playerName), bot: false, hebrew: hebrew, points: rankPoints)
     }
 
     /// Android home "Family league".
@@ -1823,7 +1827,12 @@ extension AppModel {
     /// App Store captures only (SpudScreenshot): opens one screen at launch. Matches are local, seeded and offline
     /// (house players only), and nothing is saved: rank points shown on a page are staged in memory.
     func applyStoreScreenshotScene() {
-        guard let scene = SpudScreenshot.value(after: "spud"), screen == .home, gameView == nil else { return }
+        guard screen == .home, gameView == nil else { return }
+        if let qa = SpudScreenshot.value(after: "spudqa") {
+            applyQAScene(qa.replacingOccurrences(of: "+owner", with: ""))
+            return
+        }
+        guard let scene = SpudScreenshot.value(after: "spud") else { return }
         switch scene {
         case "home": rankPoints = 260
         case "park": playStoreMatch(.park, .foam, .noon)
@@ -1839,9 +1848,36 @@ extension AppModel {
         }
     }
 
+    /// QA captures only (`spudqa.<scene>`): the screens of the bug report of 22 November 2026. "game.*" matches stay in
+    /// their first moment (the player holds the ball: instruction, labels, bottom buttons); "play.*" matches go on as
+    /// the App Store's do (the player runs).
+    private func applyQAScene(_ scene: String) {
+        switch scene {
+        case "home": break
+        case "home.locked": avatar = "kyra"
+        case "settings": screen = .support
+        case "gate": openSettings()
+        case "join": joinDialog()
+        case "unlock": openUnlock()
+        case "setup": openSetup()
+        case "help": openHelp()
+        case "lessons": openLessonHub()
+        case "lesson.wind": openLesson("wind")
+        case "lesson.light": openLesson("light")
+        case "lesson.gravity": openLesson("gravity")
+        case "journey": openJourney(0)
+        case "game.park": playStoreMatch(.park, .beach, .noon, mode: .easy, toss: false)
+        case "game.paint": playStoreMatch(.park, .paint, .noon, mode: .easy, toss: false)
+        case "play.park": playStoreMatch(.park, .beach, .noon)
+        case "play.paint": playStoreMatch(.park, .paint, .noon)
+        default: break
+        }
+    }
+
     /// A six-player SPUD match against the house players. The player throws the ball up and calls Minik's name, so
     /// the capture shows the others running while Minik goes for the catch.
-    private func playStoreMatch(_ arena: ArenaScene, _ kind: BallKind, _ light: Daylight) {
+    private func playStoreMatch(_ arena: ArenaScene, _ kind: BallKind, _ light: Daylight, mode: ThrowMode = .standard,
+                                toss: Bool = true) {
         scene = arena
         ball = kind
         daylight = light
@@ -1849,7 +1885,7 @@ extension AppModel {
         requireCall = true
         stepsAfterCall = 4
         freeze = .freeze
-        throwMode = .standard
+        throwMode = mode
         wind = Wind.none
         turns = 20
         count = 6
@@ -1862,6 +1898,7 @@ extension AppModel {
               let engine = try? AmuduEngine(members: roster, config: cfg, seed: SpudScreenshot.seed) else { return }
         present(engine, uid: "p0", network: nil)
         if SpudScreenshot.wantsLandscape { ScreenOrientation.apply(.landscapeRight) }
+        guard toss else { return }
         _ = afterDelay(1.5) { [weak self] in
             guard let view = self?.gameView, view.engine.phase == .circle else { return }
             view.command(.select(target: "house0"))

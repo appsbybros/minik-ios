@@ -20,17 +20,29 @@ struct SpudUnlockScreen: View {
                 AmuduLabel(StoreText.get(.thanksBody), size: 20, color: 0xffffdf70)
             } else {
                 AmuduParagraph(StoreText.get(.intro), size: 18, color: 0xffa8f7df)
-                ForEach([StoreText.Key.featurePlayers, .featureArenas, .featureBalls, .featurePaint, .featureChallenges], id: \.self) { key in
+                ForEach([StoreText.Key.featurePlayers, .featureCharacters, .featureArenas, .featureBalls, .featurePaint,
+                         .featureChallenges], id: \.self) { key in
                     AmuduParagraph(StoreText.get(key), size: 17)
                 }
                 AmuduLabel(StoreText.get(.oneTime), size: 17, color: 0xffffdf70)
                     .padding(.top, 8)
-                buyButton
-                if let line = statusLine {
-                    AmuduParagraph(line, size: 16, color: 0xffd0e4ee)
+                // Bug report 2026-11-22 (2.2): a line about buying sits directly above the yellow button it belongs
+                // to; a problem is red. A line about restoring sits under Restore purchases, which stays apart.
+                if let line = buyLine {
+                    AmuduParagraph(line.text, size: 16, color: line.problem ? 0xffff8a80 : 0xffd0e4ee)
+                        .padding(.top, 8)
+                        .padding(.bottom, -8)
                 }
+                buyButton
+                // Apple requires a visible way to restore a non-consumable purchase (App Review Guideline 3.1.1):
+                // it is how a new device, a reinstall or Family Sharing gets the full game back.
                 AmuduButton(StoreText.get(.restore), color: 0xffb7dcff, enabled: !store.isBusy && store.status != .unconfigured) {
                     Task { await store.restore() }
+                }
+                .padding(.top, 20)
+                if let line = restoreLine {
+                    AmuduParagraph(line, size: 16, color: store.notice == .restoreFailed ? 0xffff8a80 : 0xffd0e4ee)
+                        .padding(.top, -8)
                 }
             }
             AmuduButton(model.tr("Back", "חזרה")) { store.closeUnlock() }
@@ -57,20 +69,31 @@ struct SpudUnlockScreen: View {
         }
     }
 
-    private var statusLine: String? {
-        if let notice = store.notice {
-            switch notice {
-            case .pending: return StoreText.get(.pending)
-            case .purchaseFailed: return StoreText.get(.purchaseFailed)
-            case .restoreFailed: return StoreText.get(.restoreFailed)
-            case .nothingToRestore: return StoreText.get(.nothingToRestore)
-            }
+    /// The line above the buy button: loading, buying, a purchase answer, or why there is no price.
+    private var buyLine: (text: String, problem: Bool)? {
+        switch store.notice {
+        case .pending: return (StoreText.get(.pending), false)
+        case .purchaseFailed:
+            // A known reason (no product, purchases turned off, offline) says more than "did not go through".
+            let reason = store.problem
+            return (reason == .notAnswering ? StoreText.get(.purchaseFailed) : StoreText.problem(reason), true)
+        case .restoreFailed, .nothingToRestore, nil: break
         }
         switch store.status {
-        case .loading: return StoreText.get(.loading)
-        case .purchasing, .restoring: return StoreText.get(.working)
-        case .unavailable, .unconfigured: return store.product == nil ? StoreText.get(.unavailable) : nil
-        case .ready: return nil
+        case .loading: return (StoreText.get(.loading), false)
+        case .purchasing: return (StoreText.get(.working), false)
+        case .unconfigured: return (StoreText.get(.productUnavailable), true)
+        case .unavailable: return store.product == nil ? (StoreText.problem(store.problem), true) : nil
+        case .restoring, .ready: return nil
+        }
+    }
+
+    /// The line under Restore purchases.
+    private var restoreLine: String? {
+        switch store.notice {
+        case .restoreFailed: return StoreText.get(.restoreFailed)
+        case .nothingToRestore: return StoreText.get(.nothingToRestore)
+        default: return store.status == .restoring ? StoreText.get(.working) : nil
         }
     }
 }

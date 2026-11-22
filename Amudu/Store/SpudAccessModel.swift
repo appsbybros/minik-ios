@@ -39,6 +39,15 @@ extension AppModel {
         return spudChoices.house
     }
 
+    /// The character this player plays as (the saved one, or Miniko while the saved one is locked).
+    var playAvatar: String {
+        return SpudAccess.avatar(avatar, owner: fullGame)
+    }
+
+    func characterLocked(_ id: String) -> Bool {
+        return SpudAccess.characterLocked(id, owner: fullGame)
+    }
+
     func openUnlock() {
         spud.openUnlock()
     }

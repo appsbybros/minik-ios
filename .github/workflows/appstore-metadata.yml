@@ -22,6 +22,10 @@ on:
         description: Run ID of an "App Store screenshots" run whose AppStore-screenshots artifact to upload (empty = no screenshots)
         required: false
         default: ""
+      screenshots_folder:
+        description: Repository folder with ready screenshots (<folder>/<Scheme>/<locale>/<slot>/), e.g. appstore/screenshots-static; used when no run ID is given
+        required: false
+        default: ""
       request:
         description: Optional note shown in the run name; leave empty
         required: false
@@ -54,11 +58,15 @@ jobs:
         env:
           APPS: ${{ inputs.apps }}
           SCREENSHOTS_RUN_ID: ${{ inputs.screenshots_run_id }}
+          SCREENSHOTS_FOLDER: ${{ inputs.screenshots_folder }}
         run: |
           set -euo pipefail
           args=(--check-only --apps "$APPS")
           if [ -n "$SCREENSHOTS_RUN_ID" ]; then
             args+=(--screenshots build/AppStore-screenshots)
+          elif [ -n "$SCREENSHOTS_FOLDER" ]; then
+            [[ "$SCREENSHOTS_FOLDER" =~ ^appstore/[A-Za-z0-9/_-]+$ ]] || { echo "::error::screenshots_folder must be a folder under appstore/"; exit 1; }
+            args+=(--screenshots "$SCREENSHOTS_FOLDER")
           fi
           python3 Scripts/appstore-metadata.py "${args[@]}"
 
@@ -72,6 +80,7 @@ jobs:
           DRY_RUN: ${{ inputs.dry_run }}
           ATTACH_BUILD: ${{ inputs.attach_build }}
           SCREENSHOTS_RUN_ID: ${{ inputs.screenshots_run_id }}
+          SCREENSHOTS_FOLDER: ${{ inputs.screenshots_folder }}
         run: |
           set -euo pipefail
           export ASC_KEY_ID="$(printf '%s' "$ASC_KEY_ID" | tr -d '[:space:]')"
@@ -86,5 +95,8 @@ jobs:
           fi
           if [ -n "$SCREENSHOTS_RUN_ID" ]; then
             args+=(--screenshots build/AppStore-screenshots)
+          elif [ -n "$SCREENSHOTS_FOLDER" ]; then
+            [[ "$SCREENSHOTS_FOLDER" =~ ^appstore/[A-Za-z0-9/_-]+$ ]] || { echo "::error::screenshots_folder must be a folder under appstore/"; exit 1; }
+            args+=(--screenshots "$SCREENSHOTS_FOLDER")
           fi
           python3 Scripts/appstore-metadata.py "${args[@]}"

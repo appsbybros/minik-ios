@@ -15,7 +15,13 @@ enum SpudAccess {
     static let fullPlayers = 10
     static let freeScenes: [ArenaScene] = [.park]
     /// The paint balloon is not in this list: it is metered (`PaintBalloonAllowance`), never locked outright.
-    static let freeBalls: [BallKind] = [.foam, .beach]
+    /// Bug report 2026-11-22 (2.3): the Beach ball is part of the full game too; only Soft foam is free.
+    static let freeBalls: [BallKind] = [.foam]
+    /// Bug report 2026-11-22 (2.3): these characters need the full game, as the player's own character and as house
+    /// players. The others (Miniko, Minik, Moshiko, Amber, Comet, June, Coach 67) stay free.
+    static let lockedCharacters: [String] = ["flare", "kyra", "gaya", "mia"]
+    /// The character a player without the full game plays as when the saved one is locked.
+    static let freeAvatar = "miniko"
     /// Steps 0...6 of the daily skill journey (challenges 1-7 of the first cycle).
     static let freeChallenges = 7
     /// Free paint-balloon games before the one-a-day allowance starts.
@@ -32,6 +38,16 @@ enum SpudAccess {
     /// Neon and tennis need the full game; the paint balloon only needs a free paint game (or the full game).
     static func ballLocked(_ ball: BallKind, owner: Bool) -> Bool {
         return !owner && ball != .paint && !freeBalls.contains(ball)
+    }
+
+    static func characterLocked(_ id: String, owner: Bool) -> Bool {
+        return !owner && lockedCharacters.contains(id)
+    }
+
+    /// The character this player plays as: a locked saved one (chosen before, or kept after a refund) plays as Miniko;
+    /// the saved choice is never rewritten, so buying brings it back.
+    static func avatar(_ id: String, owner: Bool) -> String {
+        return characterLocked(id, owner: owner) ? freeAvatar : id
     }
 
     static func challengeLocked(_ step: Int, owner: Bool) -> Bool {
@@ -74,7 +90,7 @@ enum SpudAccess {
         out.players = min(choices.players, freePlayers)
         if sceneLocked(choices.scene, owner: false) { out.scene = freeScenes[0] }
         if ballLocked(choices.ball, owner: false) { out.ball = freeBalls[0] }
-        out.house = Array(choices.house.prefix(max(out.players - 1, 0)))
+        out.house = Array(choices.house.filter { !characterLocked($0, owner: false) }.prefix(max(out.players - 1, 0)))
         return out
     }
 

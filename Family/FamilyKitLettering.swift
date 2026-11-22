@@ -50,8 +50,9 @@ extension FamilyKit {
         /// whole raised face (`copyFaceBounds`).
         static var fullRaisedFace = false
 
-        /// Android `opticalOffsetPx`: lettering sits 3 points below the centre of its face target.
-        static let opticalOffset: CGFloat = 3
+        /// Android `opticalOffsetPx`: lettering sits 3 points below the centre of its face target. An app-level
+        /// choice, set once before the first screen: Spud uses 0 (its reviewer saw every label sitting low).
+        static var opticalOffset: CGFloat = 3
 
         /// Where the middle of the ink belongs in a raised button of this size (not a panel).
         static func target(size: CGSize, cornerRadius: CGFloat, pressed: Bool, pixel: CGFloat) -> CGFloat? {

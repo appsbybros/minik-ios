@@ -169,6 +169,8 @@ struct AmuduPage<Content: View>: View {
     let scrollCue: Bool
     /// Android `screenBack(action)` (2026-11): the back arrow at the top start of the header; nil on the home page.
     let back: (() -> Void)?
+    /// A hidden action on a two-second press of the title (Settings & feedback: the support lag tool).
+    let titleLongPress: (() -> Void)?
     let content: Content
     @State private var scrollHandle = ScrollHandle()
     @State private var moreBelow = false
@@ -177,11 +179,13 @@ struct AmuduPage<Content: View>: View {
     private let space = "amuduPageScroll"
     private let endID = "amuduPageEnd"
 
-    init(_ title: String, background: UIImage, scrollCue: Bool = false, back: (() -> Void)? = nil, @ViewBuilder content: () -> Content) {
+    init(_ title: String, background: UIImage, scrollCue: Bool = false, back: (() -> Void)? = nil,
+         titleLongPress: (() -> Void)? = nil, @ViewBuilder content: () -> Content) {
         self.title = title
         self.background = background
         self.scrollCue = scrollCue
         self.back = back
+        self.titleLongPress = titleLongPress
         self.content = content()
     }
 
@@ -222,6 +226,9 @@ struct AmuduPage<Content: View>: View {
                                         .padding(.horizontal, 48)
                                         .padding(.vertical, 7)
                                         .frame(maxWidth: .infinity, minHeight: 48)
+                                        .contentShape(Rectangle())
+                                        .onLongPressGesture(minimumDuration: 2) { titleLongPress?() }
+                                        .accessibilityAddTraits(.isHeader)
                                     if let back {
                                         BackChevron(action: back)
                                     }
@@ -502,6 +509,8 @@ struct PictureOption: Identifiable {
     let id: String
     let name: String
     let image: UIImage
+    /// iOS payment model (CLAUDE.md): drawn as a lock beside the name (never inside it, so a name never wraps around it).
+    var locked = false
 }
 
 /// Android `PictureChoices`: small, visible photo choices, three per row; choosing never rebuilds or scrolls the form.
@@ -518,12 +527,15 @@ struct PictureChoices: View {
     var body: some View {
         VStack(spacing: 8) {
             ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
-                HStack(spacing: 6) {
+                // Bug report 2026-11-22 (8.3): the cards of a row share their top and their height, so a card with a
+                // one-line name no longer sits lower than its two-line neighbours (Android's row aligns to the top).
+                HStack(alignment: .top, spacing: 6) {
                     ForEach(row) { option in card(option) }
                     ForEach(0..<(3 - row.count), id: \.self) { _ in
                         Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
                     }
                 }
+                .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 3)
             }
         }
@@ -545,6 +557,28 @@ struct PictureChoices: View {
         }
     }
 
+    /// The name, with the lock beside the whole (one- or two-line) name and centred on it (bug report 2026-11-22, 8.4).
+    /// A one-word name ("Andromeda") stays on one line and shrinks a little if it must; it never breaks inside the
+    /// word (8.1).
+    private func caption(_ option: PictureOption, ink: UInt32) -> some View {
+        let oneWord = !option.name.contains(" ")
+        return HStack(alignment: .center, spacing: 3) {
+            if option.locked {
+                Text("🔒")
+                    .font(.system(size: 12))
+                    .accessibilityHidden(true)
+            }
+            Text(option.name)
+                .font(.system(size: 15, weight: .bold))
+                .foregroundColor(Color(argb: ink))
+                .multilineTextAlignment(.center)
+                .lineLimit(oneWord ? 1 : 2)
+                .minimumScaleFactor(0.7)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
     private func card(_ option: PictureOption) -> some View {
         let isSelected = option.id == selected
         return Button {
@@ -553,24 +587,34 @@ struct PictureChoices: View {
             VStack(spacing: 0) {
                 picture(option)
                     .accessibilityHidden(true)
-                Text(option.name)
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundColor(Color(argb: isSelected ? 0xff12324a : 0xfff4faff))
-                    .multilineTextAlignment(.center)
+                caption(option, ink: isSelected ? 0xff12324a : 0xfff4faff)
                     .padding(.horizontal, 2)
                     .padding(.vertical, 5)
                     .frame(maxWidth: .infinity, minHeight: 51)
+                Spacer(minLength: 0)
             }
-            // Android (2026-11): arena cards keep 6 dp above the picture, ball cards 14 dp; no padding below the caption.
-            .padding(EdgeInsets(top: arena ? 6 : 14, leading: 5, bottom: 0, trailing: 5))
+            // Bug report 2026-11-22 (8.1, 8.5): every arena picture starts at the card's top edge (no top padding, the
+            // same for all three), ball cards keep 14 above the ball, and every card has 10 below its name, clear of
+            // the card's lower lip.
+            .padding(EdgeInsets(top: arena ? 0 : 14, leading: arena ? 0 : 5, bottom: 10, trailing: arena ? 0 : 5))
+            .frame(maxHeight: .infinity, alignment: .top)
+            .overlay {
+                // The outline over the picture, so a picture that reaches the edge never hides the selection.
+                if arena {
+                    RoundedRectangle(cornerRadius: 15)
+                        .strokeBorder(Color(argb: isSelected ? 0xff72d4ff : 0xff4e748a), lineWidth: isSelected ? 3 : 1)
+                }
+            }
             .contentShape(Rectangle())
         }
         // Android: a raised sky card (selected pale blue, otherwise dark navy) outlined 3 or 1 dp, clipped to its outline.
+        // Bug report 2026-11-22 (8.2): its shine spans the card's width.
         .buttonStyle(SkyButtonStyle(color: isSelected ? 0xffc5ecff : 0xff153c54, radius: 15, strokeWidth: isSelected ? 3 : 1,
-                                    strokeColor: isSelected ? 0xff72d4ff : 0xff4e748a, clips: true, raisedLettering: false))
+                                    strokeColor: isSelected ? 0xff72d4ff : 0xff4e748a, clips: true, raisedLettering: false,
+                                    wideShine: true))
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(option.name)
+        .accessibilityLabel((option.locked ? AppModel.lockMark : "") + option.name)
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : [.isButton])
     }
 }
@@ -867,8 +911,10 @@ struct ChoiceMenu: View {
                         .font(.system(size: 19))
                         .foregroundColor(Color(argb: learning ? 0xff17384d : 0xff14324a))
                         .multilineTextAlignment(.leading)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
+                        // Bug report 2026-11-22: never cut a choice off; a long one wraps to a second line.
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.85)
+                        .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     if !learning {
                         DropdownShape()
@@ -880,6 +926,8 @@ struct ChoiceMenu: View {
                 .padding(.trailing, 14)
                 .padding(.vertical, 10)
                 .frame(maxWidth: .infinity, minHeight: 54)
+                // Android `SpudSpinnerAlignment`: the choice's letters are centred on the raised face like a button's.
+                .modifier(FamilyKit.RaisedLettering(cornerRadius: 18))
                 .background(SkySurface(color: 0xffe3f4ff, radius: 18))
                 .contentShape(Rectangle())
             }

@@ -74,8 +74,8 @@ struct SpudStage {
     func brief(_ he: Bool) -> String {
         switch skill {
         case .catching:
-            return he ? "געו בתפיסה כשהכדור מתקרב. יש חצי שנייה לתפוס לפני הנגיעה בקרקע."
-                : "Tap Catch as the ball arrives. Your catch window lasts half a second; catch before the ground."
+            // Bug report 2026-11-22 (10.2): no promised duration (the window is `CatchPhysics.HUMAN_WINDOW`).
+            return he ? "געו בתפיסה כשהכדור מגיע, לפני שהוא נוגע בקרקע." : SpudIOSText.catchBrief
         case .tag:
             return he ? "פגעו בשחקן המסומן. בדקו אם מותרת נגיעה בקרקע לפני הפגיעה."
                 : "Hit the marked player. Check whether a ground bounce is allowed before the hit."

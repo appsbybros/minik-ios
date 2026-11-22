@@ -11,7 +11,9 @@ Android Spud has ads and a "Remove ads" purchase. iOS Spud has **no ads** and in
 purchase, `com.appsbybros.minik.spud.full_game` (Family Sharing on), with a free tier:
 - up to 3 players in a game (bots or people); more needs the purchase;
 - the Sunshine Park arena only; the other arenas need the purchase;
-- the Soft foam and Beach ball balls only; the others need the purchase, except the paint balloon below;
+- the Soft foam ball only; the others (Beach ball since 2026-11-22) need the purchase, except the paint balloon below;
+- the characters Flare, Kyra, Gaya and Mia need the purchase, as the player's own character and as house players
+  (a locked saved character plays as Miniko; `SpudAccess.lockedCharacters`, 2026-11-22);
 - the paint balloon: 3 free games to start, then 1 free game a day (counted per game, never per throw);
 - the first 7 daily challenges; the rest need the purchase;
 - online rooms: only the host needs the purchase. The host's choices (players, arena, ball) apply to everyone in

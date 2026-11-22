@@ -19,6 +19,10 @@ on:
         description: "Seconds to wait after launch before the screenshot (the store request gives up after 12 s)"
         required: true
         default: "30"
+      scenes:
+        description: "Optional screens to capture, separated by spaces: scene[@landscape][@seconds], e.g. spudqa.unlock spudqa.game.park@landscape@6 (the app's -MinikScreenshotScene)"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -32,6 +36,7 @@ jobs:
       SCHEME: ${{ inputs.scheme }}
       LANGUAGES: ${{ inputs.languages }}
       WAIT: ${{ inputs.wait }}
+      SCENES: ${{ inputs.scenes }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -43,6 +48,7 @@ jobs:
           [[ "$SCHEME" =~ ^[A-Za-z]+$ ]] || { echo "::error::scheme must be a plain scheme name"; exit 1; }
           [[ "$LANGUAGES" =~ ^[A-Za-z\ -]+$ ]] || { echo "::error::languages must be codes like en he pt-BR"; exit 1; }
           [[ "$WAIT" =~ ^[0-9]{1,3}$ ]] || { echo "::error::wait must be a number of seconds"; exit 1; }
+          [[ "$SCENES" =~ ^[A-Za-z0-9.+@\ _-]*$ ]] || { echo "::error::scenes must be names like spudqa.unlock@landscape@8"; exit 1; }
 
       - name: Generate project
         shell: bash
@@ -150,6 +156,29 @@ jobs:
               fi
               limit 60 xcrun simctl io "$UDID" screenshot "$OUT" < /dev/null > /dev/null 2>&1 \
                 && echo "Captured $OUT" || echo "::warning::No screenshot for $NAME ($LANGUAGE)"
+              # The requested screens, each from a fresh launch (the app opens the scene itself).
+              for ENTRY in $SCENES; do
+                IFS='@' read -r SCENE PART2 PART3 <<< "$ENTRY"
+                ORIENTATION=portrait
+                SECONDS_WAIT=8
+                for PART in $PART2 $PART3; do
+                  if [ "$PART" = "landscape" ]; then ORIENTATION=landscape; elif [ -n "$PART" ]; then SECONDS_WAIT="$PART"; fi
+                done
+                SHOT="build/run/$SCHEME-$DEVICE-$LANGUAGE-$SCENE-$ORIENTATION.png"
+                limit 60 xcrun simctl terminate "$UDID" "$BUNDLE" < /dev/null > /dev/null 2>&1
+                if ! limit 300 xcrun simctl launch "$UDID" "$BUNDLE" -MinikOfflineSmoke YES -AppleLanguages "($LANGUAGE)" \
+                  -MinikScreenshotScene "$SCENE" -MinikScreenshotOrientation "$ORIENTATION" < /dev/null > /dev/null 2>&1; then
+                  echo "::warning::$SCENE did not launch on $NAME ($LANGUAGE)"
+                  continue
+                fi
+                sleep "$SECONDS_WAIT"
+                if ! limit 60 xcrun simctl spawn "$UDID" launchctl list < /dev/null | grep -F "$BUNDLE" > /dev/null; then
+                  echo "::error::$SCHEME is no longer running on $NAME ($LANGUAGE, $SCENE): a crash?"
+                  problems=$((problems + 1))
+                fi
+                limit 60 xcrun simctl io "$UDID" screenshot "$SHOT" < /dev/null > /dev/null 2>&1 \
+                  && echo "Captured $SHOT" || echo "::warning::No screenshot of $SCENE on $NAME ($LANGUAGE)"
+              done
             done
             limit 60 xcrun simctl terminate "$UDID" "$BUNDLE" < /dev/null > /dev/null 2>&1
             # Crash reports of this app, if any, go into the artifact.

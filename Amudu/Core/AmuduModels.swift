@@ -216,6 +216,16 @@ enum BallKind: String, CaseIterable {
         }
     }
 
+    /// How much larger the ball is drawn than its contact size (bug report 2026-11-22, 3.1 and 6.1: the beach ball and
+    /// the paint balloon looked too small next to the players). Drawing only; the physics keep `visualScale`.
+    var drawScale: Double {
+        switch self {
+        case .beach: return 1.4
+        case .paint: return 1.5
+        default: return 1.0
+        }
+    }
+
     var visualScale: Double {
         switch self {
         case .tennis: return 0.72

@@ -15,6 +15,19 @@ enum SpudScreenshot {
         return value
     }
 
+    /// QA captures (`spudqa.<scene>`, the "iOS Run Check" workflow's `scenes`): the screens of a bug report, in the free
+    /// tier unless the name ends with "+owner"; their matches count as owned so the chosen arena and ball are kept.
+    static var isQA: Bool {
+        return name?.hasPrefix("spudqa.") == true
+    }
+
+    /// App Store captures show the whole game (no locks).
+    static var countsAsOwner: Bool {
+        guard let name else { return false }
+        if !isQA { return true }
+        return name.hasSuffix("+owner") || name.hasPrefix("spudqa.game") || name.hasPrefix("spudqa.play")
+    }
+
     static var wantsLandscape: Bool {
         return UserDefaults.standard.string(forKey: "MinikScreenshotOrientation") == "landscape"
     }

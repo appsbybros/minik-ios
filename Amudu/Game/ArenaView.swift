@@ -173,6 +173,9 @@ final class ArenaView: UIView {
         backgroundView.clipsToBounds = true
         backgroundView.isUserInteractionEnabled = false
         backgroundView.isHidden = world.ready
+        // The world view is opaque: if its art did not load (bug report 2026-11-22: the park, grass and sky were all
+        // missing because the five world textures were not in the Spud bundle), the arena picture shows, never navy.
+        world.isHidden = !world.ready
         canvas.isOpaque = false
         canvas.backgroundColor = .clear
         canvas.contentMode = .redraw
@@ -541,12 +544,22 @@ final class ArenaView: UIView {
         let right = w - 12
         let top = Double(fieldTop())
         let bottom = Double(fieldBottom())
-        var camera = base.copy(x: playerCamera ? base.x : cfg.width / 2, y: playerCamera ? base.y : cfg.depth / 2, distance: base.distance * 0.78,
+        // Action view centres on the players (owner's request 2026-11-22), not on the middle of the field.
+        let actors = engine.activeActors.map { $0.position }
+        let middle = actors.count >= 2
+            ? V((actors.map { $0.x }.min()! + actors.map { $0.x }.max()!) / 2, (actors.map { $0.y }.min()! + actors.map { $0.y }.max()!) / 2)
+            : V(cfg.width / 2, cfg.depth / 2)
+        var camera = base.copy(x: playerCamera ? base.x : middle.x, y: playerCamera ? base.y : middle.y, distance: base.distance * 0.78,
                                focusHeight: playerCamera ? base.focusHeight : 0.0, centerX: (left + right) / 2 / w,
                                centerY: (top + bottom) / 2 / h, tilt: 0.76)
         if !playerCamera {
-            var points: [(Double, Double, Double)] = [V(0.5, 0.5), V(cfg.width - 0.5, 0.5), V(0.5, cfg.depth - 0.5),
-                                                      V(cfg.width - 0.5, cfg.depth - 0.5)].map { ($0.x, $0.y, 0.0) }
+            // Owner's request 2026-11-22 (players too small): landscape Action view frames the players head to toe,
+            // not the four field corners as well, so the players fill the view (Android still adds the corners).
+            var points: [(Double, Double, Double)] = []
+            if engine.activeActors.count < 2 {
+                points = [V(0.5, 0.5), V(cfg.width - 0.5, 0.5), V(0.5, cfg.depth - 0.5),
+                          V(cfg.width - 0.5, cfg.depth - 0.5)].map { ($0.x, $0.y, 0.0) }
+            }
             for a in engine.activeActors {
                 points.append((a.position.x, a.position.y, 0.0))
                 points.append((a.position.x, a.position.y, 4.0))
@@ -608,27 +621,45 @@ final class ArenaView: UIView {
 
     /// Android `paragraph`: a `StaticLayout` inset in `box` (6 points each side when centered, 12 when start-aligned),
     /// vertically centered, written in the language's direction.
+    ///
+    /// Bug report 2026-11-22 (3.2, 4.1, 4.2, 5.1, 5.3): a text taller than its box used to be centred on it, so its
+    /// first line rose above the box (onto the dark top bar, where the dark ink vanished: "name to bring the target…"
+    /// with the start of the sentence missing) and its last line fell under the next control. Now a text that does not
+    /// fit first shrinks, down to 75% (never under 11 points); if it still does not fit it starts at the box's top and
+    /// is clipped at the box, so the beginning of a sentence is always shown.
     private func paragraph(_ s: String, _ box: CGRect, _ size: CGFloat, _ color: UInt32 = 0xffffffff, center: Bool = true) {
         let rect = box.insetBy(dx: center ? 6 : 12, dy: 3)
         let w = max(rect.width, 1)
-        let key = "\(s)/\(Int(w))/\(Double(size))/\(color)/\(center)"
-        let entry: (NSAttributedString, CGFloat)
-        if let cached = cachedLayouts[key] {
-            entry = cached
-        } else {
-            if cachedLayouts.count > 90 { cachedLayouts.removeAll() }
-            let style = NSMutableParagraphStyle()
-            style.alignment = center ? .center : .natural
-            style.baseWritingDirection = AppText.rtl ? .rightToLeft : .leftToRight
-            style.lineBreakMode = .byWordWrapping
-            let attributed = NSAttributedString(string: s, attributes: [.font: font(size), .foregroundColor: argbColor(color), .paragraphStyle: style])
-            let bounding = attributed.boundingRect(with: CGSize(width: w, height: CGFloat.greatestFiniteMagnitude),
-                                                   options: [.usesLineFragmentOrigin, .usesFontLeading], context: nil)
-            entry = (attributed, ceil(bounding.height))
-            cachedLayouts[key] = entry
+        let smallest = max(11, size * 0.75)
+        var fitted = size
+        var entry = paragraphLayout(s, w, fitted, color, center)
+        while entry.1 > rect.height && fitted - 0.5 >= smallest {
+            fitted -= 0.5
+            entry = paragraphLayout(s, w, fitted, color, center)
         }
-        let target = CGRect(x: rect.minX, y: rect.minY + (rect.height - entry.1) / 2, width: w, height: entry.1)
-        entry.0.draw(with: target, options: [.usesLineFragmentOrigin, .usesFontLeading], context: nil)
+        let top = entry.1 > rect.height ? rect.minY : rect.minY + (rect.height - entry.1) / 2
+        let context = UIGraphicsGetCurrentContext()
+        context?.saveGState()
+        context?.clip(to: box)
+        entry.0.draw(with: CGRect(x: rect.minX, y: top, width: w, height: entry.1), options: [.usesLineFragmentOrigin, .usesFontLeading], context: nil)
+        context?.restoreGState()
+    }
+
+    /// The shaped paragraph and its height (cached like Android's `StaticLayout`s).
+    private func paragraphLayout(_ s: String, _ w: CGFloat, _ size: CGFloat, _ color: UInt32, _ center: Bool) -> (NSAttributedString, CGFloat) {
+        let key = "\(s)/\(Int(w))/\(Double(size))/\(color)/\(center)"
+        if let cached = cachedLayouts[key] { return cached }
+        if cachedLayouts.count > 90 { cachedLayouts.removeAll() }
+        let style = NSMutableParagraphStyle()
+        style.alignment = center ? .center : .natural
+        style.baseWritingDirection = AppText.rtl ? .rightToLeft : .leftToRight
+        style.lineBreakMode = .byWordWrapping
+        let attributed = NSAttributedString(string: s, attributes: [.font: font(size), .foregroundColor: argbColor(color), .paragraphStyle: style])
+        let bounding = attributed.boundingRect(with: CGSize(width: w, height: CGFloat.greatestFiniteMagnitude),
+                                               options: [.usesLineFragmentOrigin, .usesFontLeading], context: nil)
+        let entry = (attributed, ceil(bounding.height))
+        cachedLayouts[key] = entry
+        return entry
     }
 
     private func panel(_ ctx: CGContext, _ r: CGRect, _ color: UInt32 = 0xe6173049) {
@@ -848,8 +879,8 @@ final class ArenaView: UIView {
         } else if [DrillSkill.tree, .ring, .ground, .tag, .call].contains(d.stage.skill) {
             action = tr("Watch where your throw goes. Adjust your next throw.", "עקבו אחרי הכדור והתאימו את הזריקה הבאה.")
         } else {
-            action = tr("Tap Catch as the ball arrives. Your catch window lasts half a second; catch before the ground.",
-                        "געו בתפיסה כשהכדור מתקרב. יש חצי שנייה לתפוס לפני הנגיעה בקרקע.")
+            // Bug report 2026-11-22 (10.2): no promised duration (the window is `CatchPhysics.HUMAN_WINDOW`).
+            action = tr(SpudIOSText.catchBrief, "געו בתפיסה כשהכדור מגיע, לפני שהוא נוגע בקרקע.")
         }
         return tr(engine.config.throwMode.en, engine.config.throwMode.he) + " · " + tr(engine.config.ball.en, engine.config.ball.he) + "\n" + action
     }
@@ -885,8 +916,17 @@ final class ArenaView: UIView {
         let rtl = AppText.rtl
         backRect = CGRect(x: rtl ? top.maxX - 52 : top.minX, y: top.minY, width: 52, height: top.height)
         rotateRect = CGRect(x: rtl ? backRect.minX - 50 : backRect.maxX + 2, y: top.minY, width: 48, height: top.height)
-        panel(ctx, rotateRect, 0xe01b5668)
-        text("↻", rotateRect.midX, rotateRect.midY + 6, 22)
+        // Bug report 2026-11-22 (3.4): the touch area stays the bar's height, but the drawn button is a compact face
+        // inside it (room above and below), with the rotate symbol centred on it both ways.
+        let rotateFace = rotateRect.insetBy(dx: 5, dy: wide ? 6 : 8)
+        ctx.setFillColor(argbColor(0xe01b5668).cgColor)
+        ctx.addPath(UIBezierPath(roundedRect: rotateFace, cornerRadius: 12).cgPath)
+        ctx.fillPath()
+        if let symbol = UIImage(systemName: "arrow.clockwise", withConfiguration: UIImage.SymbolConfiguration(pointSize: 17, weight: .bold))?
+            .withTintColor(.white, renderingMode: .alwaysOriginal) {
+            let s = symbol.size
+            symbol.draw(in: CGRect(x: rotateFace.midX - s.width / 2, y: rotateFace.midY - s.height / 2, width: s.width, height: s.height))
+        }
         let cx = backRect.midX
         let cy = backRect.midY
         let arrow: CGFloat = rtl ? -5 : 5
@@ -935,12 +975,16 @@ final class ArenaView: UIView {
             let steps = engine.stepRemaining / (min(cfg.width, cfg.depth) * cfg.stepLengthFraction)
             instructionText += "\n" + RuleText.format(RuleText["stepsLeft"], steps)
         }
+        // Bug report 2026-11-22: landscape boxes are as tall as their text plus a little (5.2: "You are watching" had
+        // 13 points above and below its one line); the portrait box may grow to the top of the field for a long text.
         let instructionBox: CGRect
         if wide {
-            let bottom = min(height - 166, 64 + paragraphHeight(instructionText, sideWidth - 12, 16) + 20)
+            let bottom = min(height - 166, 64 + paragraphHeight(instructionText, sideWidth - 12, 16) + 12)
             instructionBox = CGRect(x: 12, y: 64, width: sideWidth - 12, height: max(bottom - 64, 1))
         } else {
-            instructionBox = CGRect(x: 14, y: 72, width: width - 28, height: max(height * 0.215 - 72, 1))
+            let need = paragraphHeight(instructionText, width - 28, 16) + 8
+            let most = max(fieldTop() - 6 - 72, 1)
+            instructionBox = CGRect(x: 14, y: 72, width: width - 28, height: min(max(height * 0.215 - 72, need), most))
         }
         panel(ctx, instructionBox, 0xf066b9ef)
         paragraph(instructionText, instructionBox, 16, 0xff102940, center: false)
@@ -958,19 +1002,31 @@ final class ArenaView: UIView {
                 status = tr("Practice at your own pace · progress is saved", "מתאמנים בקצב שלכם · ההתקדמות נשמרת")
             } else if engine.time < engine.infoUntil {
                 status = feedbackText()
+            } else if mine?.active == false {
+                // A player who is out cannot run or catch: no running hint (bug report 2026-11-22, 5.x).
+                status = ""
             } else {
                 status = tr("Drag to run · Time your catch\nJump low balls · Duck high balls", "גררו לריצה · תזמנו את התפיסה\nקפצו מעל כדור נמוך · התכופפו מתחת לגבוה")
             }
             let r: CGRect
             if wide {
+                // Bug report 2026-11-22 (5.1, 5.3): the status ends above the box drawn at height - 122 (the "Out"
+                // box, the call or "Choose player"), which used to cover its last lines.
+                let lowerBoxShown = mine?.active == false || (engine.phase == .circle && engine.thrower == ownId)
+                let limit = lowerBoxShown ? height - 130 : height - 66
                 let statusTop = instructionBox.maxY + 8
-                let statusBottom = min(height - 66, instructionBox.maxY + 28 + paragraphHeight(status, sideWidth - 12, 14))
+                let statusBottom = min(limit, instructionBox.maxY + 20 + paragraphHeight(status, sideWidth - 12, 14))
                 r = CGRect(x: 12, y: statusTop, width: sideWidth - 12, height: max(statusBottom - statusTop, 0))
             } else {
-                r = CGRect(x: 12, y: height * 0.865, width: width - 24, height: height * 0.946 - height * 0.865)
+                // Bug report 2026-11-22 (3.2): the box ends 6 points above the view button and grows upwards to hold
+                // its text (never above the action bar's top).
+                let bottom = height - 50
+                let need = paragraphHeight(status, width - 24, 14) + 8
+                let topEdge = max(min(height * 0.865, bottom - need), height * 0.795)
+                r = CGRect(x: 12, y: topEdge, width: width - 24, height: max(bottom - topEdge, 1))
             }
             // In landscape the thrower's "Choose player" button takes this place.
-            if !(wide && engine.phase == .circle && engine.thrower == ownId) {
+            if !status.isEmpty && r.height > 8 && !(wide && engine.phase == .circle && engine.thrower == ownId) {
                 panel(ctx, r)
                 paragraph(status, r, 14, center: false)
             }
@@ -978,8 +1034,12 @@ final class ArenaView: UIView {
         returnRect = .zero
         if let mine, !mine.active {
             shoutRect = .zero
-            let box = wide ? CGRect(x: 12, y: height - 122, width: sideWidth - 12, height: 56)
-                : CGRect(x: 12, y: height * 0.855, width: width - 24, height: height * 0.947 - height * 0.855)
+            // Bug report 2026-11-22 (5.4): the same 14-point, reading-edge text as the status above it; in landscape the
+            // box is as tall as its text and ends above the view button.
+            let outText = engine.time < engine.infoUntil ? feedbackText() : (rules == .spud ? RuleText["spudOut"] : RuleText["askReturn"])
+            let outHeight = wide ? max(44, paragraphHeight(outText, sideWidth - 12, 14) + 14) : 0
+            let box = wide ? CGRect(x: 12, y: height - 66 - outHeight, width: sideWidth - 12, height: outHeight)
+                : CGRect(x: 12, y: height * 0.855, width: width - 24, height: height - 50 - height * 0.855)
             let canRequest = rules == .nicknames && mine.returnAttempts < cfg.returnAttemptLimit && !mine.returnQueued && engine.returnTarget != ownId
             let label: String
             if rules == .spud {
@@ -992,10 +1052,11 @@ final class ArenaView: UIView {
                 label = RuleText["askReturn"]
             }
             panel(ctx, box, canRequest ? 0xffe91e63 : 0xff173047)
-            paragraph(engine.time < engine.infoUntil ? feedbackText() : label, box, 16)
+            paragraph(engine.time < engine.infoUntil ? feedbackText() : label, box, 14, center: false)
             returnRect = canRequest ? box : .zero
         }
-        cameraRect = CGRect(x: 12, y: height - (wide ? 60 : 39), width: (wide ? sideWidth - 49 : width - 70) - 12, height: wide ? 48 : 36)
+        // Bug report 2026-11-22 (3.3): 8 points under the bottom buttons in portrait (3 before).
+        cameraRect = CGRect(x: 12, y: height - (wide ? 60 : 44), width: (wide ? sideWidth - 49 : width - 70) - 12, height: wide ? 48 : 36)
         if engine.practice == nil {
             panel(ctx, cameraRect, 0xe01b5668)
             paragraph(playerCamera ? tr("Your view · switch", "המבט שלכם · החלפה") : tr("Action view · switch", "מבט כללי · החלפה"), cameraRect, 13)
@@ -1054,7 +1115,7 @@ final class ArenaView: UIView {
             rosterRect = .zero
         }
         if engine.practice == nil && speechAvailable {
-            chatRect = wide ? CGRect(x: sideWidth - 44, y: height - 60, width: 44, height: 48) : CGRect(x: width - 57, y: height - 39, width: 45, height: 36)
+            chatRect = wide ? CGRect(x: sideWidth - 44, y: height - 60, width: 44, height: 48) : CGRect(x: width - 57, y: height - 44, width: 45, height: 36)
             panel(ctx, chatRect, 0xc5173049)
             ctx.setFillColor(UIColor.white.cgColor)
             for i in -1...1 {
@@ -1291,11 +1352,14 @@ final class ArenaView: UIView {
 
     /// Android `ballSize`: one physical-looking diameter for possession, flight and shadows. Never enlarge a held ball to
     /// make its touch target easier; input has its own hit tolerance.
+    ///
+    /// Bug report 2026-11-22 (3.1, 6.1): the beach ball and the paint balloon are drawn larger (`BallKind.drawScale`),
+    /// in proportion to the players; catching and hitting still use `BallContact.radius`, so the game plays the same.
     private func ballSize(_ v: V, _ z: Double) -> CGFloat {
         let r = BallContact.radius(engine.config.ball)
         let a = project(V(v.x - r, v.y), z * 2)
         let b = project(V(v.x + r, v.y), z * 2)
-        return abs(b.x - a.x)
+        return abs(b.x - a.x) * CGFloat(engine.config.ball.drawScale)
     }
 
     /// Android `ballArt`: the paint balloon in the current paint colour, or the ball artwork.
@@ -1312,7 +1376,9 @@ final class ArenaView: UIView {
         let obstacles = Array(actorRects.values) + (practiceObstacle.map { [$0] } ?? [])
         let bodies = obstacles.map { LabelBox(x: Float($0.minX - 3), y: Float($0.minY - 3), w: Float($0.width + 6), h: Float($0.height + 6)) }
         let left = fieldLeft()
-        let bounds = LabelBox(x: Float(left), y: Float(fieldTop()), w: Float(width - left - 5), h: Float((wide ? height - 70 : fieldBottom()) - fieldTop()))
+        // Bug report 2026-11-22 (4.3): in portrait a tag never goes under the Catch / Jump / Duck bar drawn over the field.
+        let lowest = wide ? height - 70 : min(fieldBottom(), catchRect == .zero ? fieldBottom() : catchRect.minY - 4)
+        let bounds = LabelBox(x: Float(left), y: Float(fieldTop()), w: Float(width - left - 5), h: Float(lowest - fieldTop()))
         let ordered = tags.sorted { l, r in
             let lo = l.actor.member.id == ownId ? 0 : 1
             let ro = r.actor.member.id == ownId ? 0 : 1
@@ -1329,11 +1395,23 @@ final class ArenaView: UIView {
             let ink: UInt32 = selected ? 0xff122e43 : (mine ? rank.ink : 0xffffffff)
             let shaped = tagLayout(tag.text, w - 12, size, ink)
             let tagH = max(22, shaped.1 + 6)
-            let b = stableLabels.place(tag.actor.member.id, Float(tag.base.x), Float(tag.base.y + 5), Float(w), Float(tagH), bounds, bodies, used, 24)
+            // Bug report 2026-11-22 (4.3): a tag sits beside its own player (below, above, right or left), never over
+            // another player; a player without a drawn body keeps the old search around the feet.
+            let id = tag.actor.member.id
+            let b: LabelBox
+            if let own = actorRects[id] {
+                let body = LabelBox(x: Float(own.minX), y: Float(own.minY), w: Float(own.width), h: Float(own.height))
+                let others = obstacles.enumerated().filter { $0.element != own }.map { bodies[$0.offset] }
+                b = stableLabels.placeNear(id, body: body, Float(w), Float(tagH), bounds, others, used)
+            } else {
+                b = stableLabels.place(id, Float(tag.base.x), Float(tag.base.y + 5), Float(w), Float(tagH), bounds, bodies, used, 24)
+            }
             let rect = CGRect(x: CGFloat(b.x), y: CGFloat(b.y), width: CGFloat(b.w), height: CGFloat(b.h))
             used.append(b)
             if tag.actor.active { tagRects.append((tag.actor.member.id, rect)) }
-            if distance2D(CGFloat(b.cx) - tag.base.x, CGFloat(b.y) - tag.base.y) > 28 {
+            // A leader line only when the tag is away from its player (pinned at the edge, or pushed off by others).
+            let besideOwner = actorRects[id].map { $0.insetBy(dx: -14, dy: -14).intersects(rect) } ?? false
+            if !besideOwner && distance2D(CGFloat(b.cx) - tag.base.x, CGFloat(b.y) - tag.base.y) > 28 {
                 line(ctx, tag.base, CGPoint(x: CGFloat(b.cx), y: CGFloat(b.cy)), 0x88122e43, 1)
             }
             panel(ctx, rect, selected ? 0xffffea00 : (mine ? rank.color : 0xf0153043))
@@ -1405,6 +1483,18 @@ final class ArenaView: UIView {
             ctx.setStrokeColor(argbColor(0xffbafff4).cgColor)
             ctx.setLineWidth(2.5)
             ctx.strokeEllipse(in: CGRect(x: p.x - r, y: p.y - r, width: r * 2, height: r * 2))
+        }
+        // Bug report 2026-11-22 (6.2): a paint balloon lying on the ground lies on its side, a little squashed,
+        // instead of standing upright on its knot.
+        if engine.config.ball == .paint && b.holder == nil && b.height <= 0.24 && abs(b.vz) < 0.7 {
+            let ground = ballPoint(b.position, 0)
+            ctx.saveGState()
+            ctx.translateBy(x: p.x, y: max(p.y, ground.y - size * 0.3))
+            ctx.rotate(by: (b.position.x < engine.config.width / 2 ? 1 : -1) * .pi / 2)
+            ctx.scaleBy(x: 0.82, y: 1)
+            ballArt(CGRect(x: -size / 2, y: -size / 2, width: size, height: size))
+            ctx.restoreGState()
+            return
         }
         ballArt(CGRect(x: p.x - size / 2, y: p.y - size / 2, width: size, height: size))
     }

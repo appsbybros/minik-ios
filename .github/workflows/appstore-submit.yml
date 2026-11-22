@@ -1,0 +1,48 @@
+name: App Store submit
+# Reports whether an app's App Store version is ready for App Review (check), or sends it (submit): attaches the
+# newest processed build, submits ready in-app purchases with it, and submits the version. It never releases a
+# version. Only started by hand, and "submit" only when the owner asked for it.
+run-name: ${{ format('App Store submit {0} ({1})', inputs.apps, inputs.mode) }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      apps:
+        description: Schemes separated by commas (e.g. MinikPlus,MinikAmudu)
+        required: true
+        default: MinikPlus
+      mode:
+        description: check (only report) or submit (send to App Review)
+        required: true
+        default: check
+        type: choice
+        options:
+          - check
+          - submit
+
+permissions:
+  contents: read
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Report or submit
+        shell: bash
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+          APPS: ${{ inputs.apps }}
+          MODE: ${{ inputs.mode }}
+        run: |
+          set -euo pipefail
+          [[ "$APPS" =~ ^[A-Za-z,]+$ ]] || { echo "::error::apps must be scheme names separated by commas"; exit 1; }
+          export ASC_KEY_ID="$(printf '%s' "$ASC_KEY_ID" | tr -d '[:space:]')"
+          export ASC_ISSUER_ID="$(printf '%s' "$ASC_ISSUER_ID" | tr -d '[:space:]')"
+          python3 -m pip install --quiet "pyjwt[crypto]"
+          python3 Scripts/appstore-submit.py --apps "$APPS" "--$MODE"

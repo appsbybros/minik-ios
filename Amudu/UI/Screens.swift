@@ -93,7 +93,9 @@ struct HomeScreen: View {
                 .frame(height: 3)
             AmuduParagraph(model.tr("Used only when you play with friends in a private room.", "ישמש רק במשחק עם חברים בחדר פרטי."), size: 14, color: MenuColors.ink)
             avatarRow
-            AmuduLabel(AmuduCharacters.get(model.avatar).name(hebrew: model.hebrew), size: 16, color: 0xff17384d)
+            // Bug report 2026-11-22 (2.3): a locked character shows its lock; until the full game is bought, games use Miniko.
+            AmuduLabel((model.characterLocked(model.avatar) ? AppModel.lockMark : "") + AmuduCharacters.get(model.avatar).name(hebrew: model.hebrew),
+                       size: 16, color: 0xff17384d)
                 .padding(.top, 10)
                 .padding(.bottom, 18)
         }
@@ -108,9 +110,16 @@ struct HomeScreen: View {
             Image(uiImage: model.art.portrait(model.avatar))
                 .resizable()
                 .scaledToFit()
+                .opacity(model.characterLocked(model.avatar) ? 0.55 : 1)
+                .overlay(alignment: .bottomTrailing) {
+                    if model.characterLocked(model.avatar) {
+                        Text("🔒").font(.system(size: 30))
+                    }
+                }
                 .frame(maxWidth: .infinity)
                 .frame(height: 126)
                 .contentShape(Rectangle())
+                .onTapGesture { if model.characterLocked(model.avatar) { model.openUnlock() } }
                 .simultaneousGesture(DragGesture(minimumDistance: 20).onEnded { value in
                     let dx = value.translation.width
                     let dy = value.translation.height
@@ -149,12 +158,12 @@ struct SetupScreen: View {
             }
             AmuduParagraph(model.capacityNote, size: 16, color: 0xffa8f7df)
             FieldTitle(model.tr("Arena", "זירה"))
-            PictureChoices(options: ArenaScene.allCases.map { PictureOption(id: $0.rawValue, name: model.sceneTitle($0), image: model.art.scene($0)) },
+            PictureChoices(options: ArenaScene.allCases.map { PictureOption(id: $0.rawValue, name: model.tr($0.en, $0.he), image: model.art.scene($0), locked: SpudAccess.sceneLocked($0, owner: model.fullGame)) },
                            selected: model.spudScene.rawValue, arena: true) { id in
                 model.chooseScene(ArenaScene(rawValue: id) ?? .park)
             }
             FieldTitle(model.tr("Ball", "כדור"))
-            PictureChoices(options: BallKind.allCases.map { PictureOption(id: $0.rawValue, name: model.ballTitle($0), image: model.art.ballPreview($0)) },
+            PictureChoices(options: BallKind.allCases.map { PictureOption(id: $0.rawValue, name: model.tr($0.en, $0.he), image: model.art.ballPreview($0), locked: SpudAccess.ballLocked($0, owner: model.fullGame)) },
                            selected: model.spudBall.rawValue, arena: false) { id in
                 model.chooseBall(BallKind(rawValue: id) ?? .foam)
             }
@@ -230,6 +239,7 @@ struct SetupScreen: View {
                 model.stepsAfterCall = i
                 model.persist()
             }
+            AmuduParagraph(model.tr(SpudIOSText.stepsExplained, SpudIOSText.he(SpudIOSText.stepsExplained)), size: 14, color: 0xffd0e4ee)
             ChoiceMenu(title: model.tr("Throw mode", "מצב זריקה"), items: ThrowMode.allCases.map { model.tr($0.en, $0.he) },
                        selected: ThrowMode.allCases.firstIndex(of: model.throwMode) ?? 0) { i in
                 model.throwMode = ThrowMode.allCases[i]
@@ -250,7 +260,7 @@ struct SetupScreen: View {
 
     /// Android (2026-11): the portrait and the check box on one line, the five ratings (with Jump) indented below.
     private func characterRow(_ c: AmuduCharacter) -> some View {
-        let isAvatar = c.id == model.avatar
+        let isAvatar = c.id == model.playAvatar
         let title = c.name(hebrew: model.hebrew) + (isAvatar ? model.tr(" · Your avatar", " · הדמות שלכם") : "")
         let q = c.qualities
         let ratings: [(String, Int)] = [(model.tr("Accuracy", "דיוק"), q.accuracy), (model.tr("Power", "עוצמה"), q.power),
@@ -263,8 +273,15 @@ struct SetupScreen: View {
                     .scaledToFit()
                     .frame(width: 54, height: 78)
                 // iOS payment model (CLAUDE.md): the house players that fit the game (`spudHouse`).
-                HouseCheck(title: title, checked: model.spudHouse.contains(c.id), enabled: model.houseEnabled(c.id)) { selected in
-                    model.setHouse(c.id, selected)
+                // Bug report 2026-11-22 (2.3): Flare, Kyra, Gaya and Mia need the full game; their lock opens the unlock screen.
+                let locked = model.characterLocked(c.id)
+                HouseCheck(title: (locked ? AppModel.lockMark : "") + title, checked: !locked && model.spudHouse.contains(c.id),
+                           enabled: locked || model.houseEnabled(c.id)) { selected in
+                    if locked {
+                        model.openUnlock()
+                    } else {
+                        model.setHouse(c.id, selected)
+                    }
                 }
             }
             VStack(spacing: 0) {
@@ -298,8 +315,8 @@ struct HelpScreen: View {
             AmuduParagraph(model.tr("Turn your phone to play in landscape, or tap ↻ during a game. Your chosen orientation is remembered for the next game.",
                                     "סובבו את הטלפון למשחק לרוחב, או געו ב־↻ בזמן המשחק. הכיוון שבחרתם נשמר למשחק הבא."), size: 17)
             AmuduParagraph(RuleText["rulesHint"], size: 17)
-            AmuduParagraph(model.tr("Tap Catch as the ball arrives: you have half a second. Jump over low balls or duck under high balls. Low balls are hardest to catch; high balls are a little harder than centre throws. Skill, speed and facing still matter.",
-                                    "לחצו תפיסה כשהכדור מגיע: יש לכם חצי שנייה. קפצו מעל כדור נמוך או התכופפו מתחת לכדור גבוה. כדור נמוך הכי קשה לתפוס; כדור גבוה קצת קשה יותר מכדור למרכז הגוף. המיומנות, המהירות וכיוון העמידה עדיין משפיעים."), size: 17)
+            // Bug report 2026-11-22 (10.2): no promised duration (the window is `CatchPhysics.HUMAN_WINDOW`).
+            AmuduParagraph(model.tr(SpudIOSText.helpCatch, SpudIOSText.he(SpudIOSText.helpCatch)), size: 17)
             AmuduLabel(RuleText["nicknames"], size: 21, color: 0xffa8f7df)
             AmuduParagraph(RuleText["nickHelp"], size: 17)
             AmuduLabel(RuleText["spud"], size: 21, color: 0xffa8f7df)
@@ -312,7 +329,9 @@ struct HelpScreen: View {
             AmuduParagraph(model.learn("burst_rule"), size: 17)
             AmuduParagraph(RuleText["timerHint"], size: 17)
             AmuduParagraph(RuleText["idleHelp"], size: 17)
-            AmuduLabel(RuleText["steps"] + " · 0–4", size: 18)
+            // Bug report 2026-11-22 (14): the setting named and explained, instead of "Steps after calling · 0–4".
+            AmuduLabel(RuleText["steps"], size: 18)
+            AmuduParagraph(model.tr(SpudIOSText.stepsExplained, SpudIOSText.he(SpudIOSText.stepsExplained)), size: 17)
         }
     }
 }
@@ -348,6 +367,18 @@ struct PracticeOptions: View {
         _conditions = State(initialValue: SpudAccess.practiceConditions(initial, owner: model.fullGame))
     }
 
+    /// The lesson's conditions. iOS payment model (CLAUDE.md): Andromeda keeps a lock mark and opens the unlock screen.
+    private var conditionsMenu: some View {
+        ChoiceMenu(title: model.learn("conditions"), items: PracticeConditions.allCases.map { model.conditionsTitle($0) },
+                   selected: PracticeConditions.allCases.firstIndex(of: conditions) ?? 0, learning: true) { i in
+            if SpudAccess.conditionsLocked(PracticeConditions.allCases[i], owner: model.fullGame) {
+                model.openUnlock()
+                return
+            }
+            conditions = PracticeConditions.allCases[i]
+        }
+    }
+
     private var stage: SpudStage {
         return ["ground", "paint"].contains(topic) ? SpudStage("lesson_tag", "Hit the target", "פוגעים במטרה", .tag) : SpudJourney.stage(step)
     }
@@ -357,8 +388,17 @@ struct PracticeOptions: View {
         let modes = ThrowMode.allCases
         let allowed = PracticeCurriculum.balls(step, topic)
         let locked = topic.isEmpty && model.challengeLocked(step)
+        let environmentLesson = ["wind", "gravity", "light"].contains(topic)
         return VStack(spacing: 0) {
-            ChoiceMenu(title: model.tr("Control difficulty", "רמת שליטה"), items: modes.map { model.tr($0.en, $0.he) },
+            // Bug report 2026-11-22 (11, 12): in the wind, gravity and light lessons the lesson's own choice (the
+            // conditions) comes first, with what Andromeda means; the throw choices follow under "Your throw".
+            if environmentLesson {
+                conditionsMenu
+                AmuduParagraph(model.tr(SpudIOSText.conditionsNote, SpudIOSText.he(SpudIOSText.conditionsNote)), size: 15, color: 0xffd0e4ee)
+                AmuduParagraph(model.tr(SpudIOSText.yourThrow, SpudIOSText.he(SpudIOSText.yourThrow)), size: 16, color: 0xffa8f7df)
+                    .padding(.top, 12)
+            }
+            ChoiceMenu(title: model.tr(SpudIOSText.howYouThrow, SpudIOSText.he(SpudIOSText.howYouThrow)), items: modes.map { model.tr($0.en, $0.he) },
                        selected: modes.firstIndex(of: mode) ?? 0, learning: true) { i in
                 mode = modes[i]
                 model.setJourneyControl(mode)
@@ -384,17 +424,7 @@ struct PracticeOptions: View {
             if s.skill == .rebound {
                 AmuduParagraph(model.learn("no_balloon_rebound"), size: 16)
             }
-            if ["wind", "gravity", "light"].contains(topic) {
-                // iOS payment model (CLAUDE.md): Andromeda keeps a lock mark and opens the unlock screen.
-                ChoiceMenu(title: model.learn("conditions"), items: PracticeConditions.allCases.map { model.conditionsTitle($0) },
-                           selected: PracticeConditions.allCases.firstIndex(of: conditions) ?? 0, learning: true) { i in
-                    if SpudAccess.conditionsLocked(PracticeConditions.allCases[i], owner: model.fullGame) {
-                        model.openUnlock()
-                        return
-                    }
-                    conditions = PracticeConditions.allCases[i]
-                }
-            }
+
             if topic == "ground" {
                 ChoiceMenu(title: model.learn("ground_title"), items: [model.learn("ground_forbidden"), model.learn("ground_allowed")],
                            selected: ground ? 1 : 0, learning: true) { i in
@@ -429,7 +459,7 @@ struct JourneyScreen: View {
         let p = model.journeyProgress()
         let d = SpudPractice(safe)
         let s = d.stage
-        let bot = s.bot(d.cycle, [model.avatar])
+        let bot = s.bot(d.cycle, [model.playAvatar])
         let size = SpudJourney.size
         let cycle = safe / size
         let female = ["mia", "kyra", "gaya", "amber", "june"].contains(bot.id)
@@ -582,16 +612,22 @@ struct LessonResultScreen: View {
 struct SupportScreen: View {
     @ObservedObject var model: AppModel
     @State private var zoomOpen = false
+    /// Bug report 2026-11-22 (1.2): "Diagnose online lag" is a support tool, not a player's setting. It shows after a
+    /// two-second press on the page title (or while a diagnosis runs, so it can be stopped).
+    @State private var lagShown = false
 
     var body: some View {
-        AmuduPage(model.tr("Settings & feedback", "הגדרות ומשוב"), background: model.art.scene(model.scene), back: { model.home() }) {
+        AmuduPage(model.tr("Settings & feedback", "הגדרות ומשוב"), background: model.art.scene(model.scene), back: { model.home() },
+                  titleLongPress: { lagShown = true }) {
             Color.clear.frame(height: 24)
             // iOS payment model (CLAUDE.md): the full game, owned or not (where Android's "Ads & purchases" would be).
             AmuduButton(model.spudSettingsTitle, color: 0xffb8f3dc) { model.openUnlock() }
             AmuduButton(model.tr("Rate the app", "דירוג האפליקציה"), color: 0xffffd65a) { model.rateApp() }
             AmuduButton(model.tr("Share the game", "שיתוף המשחק"), color: 0xffff5b67) { model.openShare() }
             AmuduButton(model.tr("Send feedback", "שליחת משוב"), color: 0xffff5ba6) { model.openFeedback() }
-            AmuduButton(model.lagButtonTitle, color: 0xffa6dcff) { model.lagDiagnosis() }
+            if lagShown || LagDiagnostics.active {
+                AmuduButton(model.lagButtonTitle, color: 0xffa6dcff) { model.lagDiagnosis() }
+            }
             AmuduButton(model.tr("Ball approach zoom", "מיקוד המצלמה בכדור"), color: 0xffdfcfff) { zoomOpen.toggle() }
             if zoomOpen {
                 VStack(spacing: 0) {
