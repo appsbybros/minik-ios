@@ -154,12 +154,6 @@ def run(scheme, version, submit, iap_ids=(), replace_build=False):
         if not ok:
             return False
 
-    for p in iaps:
-        if p["attributes"].get("state") == "READY_TO_SUBMIT" and p["attributes"].get("productId") in iap_ids:
-            write("POST", "/inAppPurchaseSubmissions",
-                  {"data": {"type": "inAppPurchaseSubmissions",
-                            "relationships": {"inAppPurchaseV2": {"data": {"type": "inAppPurchases", "id": p["id"]}}}}})
-
     open_states = {"READY_FOR_REVIEW", "UNRESOLVED_ISSUES"}
     submission = next((s for s in submissions if s["attributes"].get("state") in open_states), None)
     if submission is None:
@@ -183,6 +177,13 @@ def run(scheme, version, submit, iap_ids=(), replace_build=False):
                           "appStoreVersion": {"data": {"type": "appStoreVersions", "id": version_id}}}}})
         if not ok:
             return False
+    # A first non-consumable must go to review together with a version: it is added once the version is in the
+    # submission (Apple: STATE_ERROR.FIRST_NON_CONSUMABLE_MUST_BE_SUBMITTED_ON_VERSION otherwise).
+    for p in iaps:
+        if p["attributes"].get("state") == "READY_TO_SUBMIT" and p["attributes"].get("productId") in iap_ids:
+            write("POST", "/inAppPurchaseSubmissions",
+                  {"data": {"type": "inAppPurchaseSubmissions",
+                            "relationships": {"inAppPurchaseV2": {"data": {"type": "inAppPurchases", "id": p["id"]}}}}})
     ok, payload = write("PATCH", f"/reviewSubmissions/{submission_id}",
                         {"data": {"type": "reviewSubmissions", "id": submission_id, "attributes": {"submitted": True}}})
     if ok:
