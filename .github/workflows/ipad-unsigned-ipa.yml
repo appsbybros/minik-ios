@@ -1,7 +1,17 @@
-name: MinikMathPlus Unsigned IPA
+name: Unsigned IPA
 
+# An unsigned Debug .ipa of one app, for installing on a device with a sideloading tool (e.g. Sideloadly,
+# which signs it with your own Apple Account). In-app purchases need the TestFlight build instead.
 on:
   workflow_dispatch:
+    inputs:
+      scheme:
+        description: "App scheme, e.g. MinikPlus or MinikMathPlus"
+        required: true
+        default: MinikMathPlus
+
+env:
+  SCHEME: ${{ inputs.scheme }}
 
 permissions:
   contents: read
@@ -35,11 +45,15 @@ jobs:
             exit 1
           fi
 
-      - name: Build unsigned MinikMathPlus app
+      - name: Build the unsigned app
         run: |
+          if [[ ! "$SCHEME" =~ ^[A-Za-z]+$ ]]; then
+            echo "Error: scheme must be a plain scheme name such as MinikPlus." >&2
+            exit 1
+          fi
           xcodebuild \
             -project Minik.xcodeproj \
-            -scheme MinikMathPlus \
+            -scheme "$SCHEME" \
             -configuration Debug \
             -destination 'generic/platform=iOS' \
             -derivedDataPath "$RUNNER_TEMP/MinikDerivedData" \
@@ -51,7 +65,7 @@ jobs:
         run: |
           BUILD_SETTINGS="$(xcodebuild \
             -project Minik.xcodeproj \
-            -scheme MinikMathPlus \
+            -scheme "$SCHEME" \
             -configuration Debug \
             -destination 'generic/platform=iOS' \
             -derivedDataPath "$RUNNER_TEMP/MinikDerivedData" \
@@ -85,7 +99,7 @@ jobs:
           APP_MATCHES="$(find "$TARGET_BUILD_DIR" -maxdepth 1 -type d -name "$FULL_PRODUCT_NAME" -print)"
           APP_MATCH_COUNT="$(printf '%s\n' "$APP_MATCHES" | sed '/^$/d' | wc -l | tr -d ' ')"
           if [[ "$APP_MATCH_COUNT" != "1" ]]; then
-            echo "Error: Expected exactly one built MinikMathPlus app, found $APP_MATCH_COUNT." >&2
+            echo "Error: Expected exactly one built $SCHEME app, found $APP_MATCH_COUNT." >&2
             printf '%s\n' "$APP_MATCHES" >&2
             exit 1
           fi
@@ -97,18 +111,18 @@ jobs:
 
       - name: Package unsigned IPA
         run: |
-          PACKAGE_ROOT="$(mktemp -d "$RUNNER_TEMP/minikmath-ipa.XXXXXX")"
+          PACKAGE_ROOT="$(mktemp -d "$RUNNER_TEMP/unsigned-ipa.XXXXXX")"
           mkdir -p "$PACKAGE_ROOT/Payload"
           cp -R "$BUILT_APP_PATH" "$PACKAGE_ROOT/Payload/$BUILT_APP_NAME"
 
           cd "$PACKAGE_ROOT"
-          zip -qry "$GITHUB_WORKSPACE/MinikMathPlus-unsigned.ipa" Payload
+          zip -qry "$GITHUB_WORKSPACE/$SCHEME-unsigned.ipa" Payload
 
       - name: Verify unsigned IPA
         run: |
-          IPA_PATH="$GITHUB_WORKSPACE/MinikMathPlus-unsigned.ipa"
+          IPA_PATH="$GITHUB_WORKSPACE/$SCHEME-unsigned.ipa"
           if [[ ! -s "$IPA_PATH" ]]; then
-            echo "Error: MinikMathPlus-unsigned.ipa is missing or empty." >&2
+            echo "Error: $SCHEME-unsigned.ipa is missing or empty." >&2
             exit 1
           fi
 
@@ -126,7 +140,7 @@ jobs:
       - name: Upload unsigned IPA
         uses: actions/upload-artifact@v7
         with:
-          name: MinikMathPlus-unsigned-ipa
-          path: MinikMathPlus-unsigned.ipa
+          name: ${{ inputs.scheme }}-unsigned-ipa
+          path: ${{ inputs.scheme }}-unsigned.ipa
           if-no-files-found: error
           compression-level: 0
