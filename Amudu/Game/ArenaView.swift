@@ -549,9 +549,19 @@ final class ArenaView: UIView {
         let middle = actors.count >= 2
             ? V((actors.map { $0.x }.min()! + actors.map { $0.x }.max()!) / 2, (actors.map { $0.y }.min()! + actors.map { $0.y }.max()!) / 2)
             : V(cfg.width / 2, cfg.depth / 2)
-        var camera = base.copy(x: playerCamera ? base.x : middle.x, y: playerCamera ? base.y : middle.y, distance: base.distance * 0.78,
-                               focusHeight: playerCamera ? base.focusHeight : 0.0, centerX: (left + right) / 2 / w,
+        // Only while everyone stands in the circle does Action view fit all the players; once play starts it follows
+        // the action (the thrower, the called player, you and the ball, as `targetCamera` frames them), as portrait
+        // does, so the players stay large instead of the whole field shrinking them (owner's request 2026-11-22).
+        let fitEveryone = engine.phase == .circle
+        var camera = base.copy(x: playerCamera || !fitEveryone ? base.x : middle.x, y: playerCamera || !fitEveryone ? base.y : middle.y,
+                               distance: base.distance * 0.78,
+                               focusHeight: playerCamera || !fitEveryone ? base.focusHeight : 0.0, centerX: (left + right) / 2 / w,
                                centerY: (top + bottom) / 2 / h, tilt: 0.76)
+        if !playerCamera && !fitEveryone {
+            // `targetCamera` already fitted you, the followed player and the ball into the field area; keep its
+            // distance and only centre it on the field area beside the side column.
+            return base.copy(centerX: (left + right) / 2 / w, centerY: (top + bottom) / 2 / h)
+        }
         if !playerCamera {
             // Owner's request 2026-11-22 (players too small): landscape Action view frames the players head to toe,
             // not the four field corners as well, so the players fill the view (Android still adds the corners).

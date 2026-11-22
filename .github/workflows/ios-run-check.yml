@@ -176,8 +176,19 @@ jobs:
                   echo "::error::$SCHEME is no longer running on $NAME ($LANGUAGE, $SCENE): a crash?"
                   problems=$((problems + 1))
                 fi
-                limit 60 xcrun simctl io "$UDID" screenshot "$SHOT" < /dev/null > /dev/null 2>&1 \
-                  && echo "Captured $SHOT" || echo "::warning::No screenshot of $SCENE on $NAME ($LANGUAGE)"
+                limit 60 xcrun simctl io "$UDID" screenshot "$SHOT" < /dev/null > /dev/null 2>&1
+                # A first launch can stay on the white launch screen for minutes (about 100 KB): retake until drawn.
+                RETAKE=0
+                while [ -s "$SHOT" ] && [ "$(stat -f %z "$SHOT")" -lt 250000 ] && [ $RETAKE -lt 15 ]; do
+                  RETAKE=$((RETAKE + 1))
+                  sleep 8
+                  limit 60 xcrun simctl io "$UDID" screenshot "$SHOT" < /dev/null > /dev/null 2>&1
+                done
+                if [ -s "$SHOT" ] && [ "$(stat -f %z "$SHOT")" -ge 250000 ]; then
+                  echo "Captured $SHOT"
+                else
+                  echo "::warning::$SCENE still white on $NAME ($LANGUAGE)"
+                fi
               done
             done
             limit 60 xcrun simctl terminate "$UDID" "$BUNDLE" < /dev/null > /dev/null 2>&1
